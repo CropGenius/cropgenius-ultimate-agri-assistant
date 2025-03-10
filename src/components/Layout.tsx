@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Menu, Home, Seedling, Cloud, ShoppingCart } from "lucide-react";
+import { Menu, Home, Leaf, Cloud, ShoppingCart } from "lucide-react";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ const Layout = ({ children }: LayoutProps) => {
           <span className="text-xs mt-1">Home</span>
         </Link>
         <Link to="/scan" className="flex flex-col items-center text-crop-green-600 hover:text-crop-green-700 transition-colors">
-          <Seedling size={24} />
+          <Leaf size={24} />
           <span className="text-xs mt-1">Scan</span>
         </Link>
         <Link to="/weather" className="flex flex-col items-center text-crop-green-600 hover:text-crop-green-700 transition-colors">

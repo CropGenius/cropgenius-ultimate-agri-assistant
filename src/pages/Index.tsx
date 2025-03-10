@@ -1,7 +1,7 @@
 
 import { Card } from "@/components/ui/card";
 import Layout from "@/components/Layout";
-import { Seedling, Cloud, ShoppingCart, AlertTriangle } from "lucide-react";
+import { Leaf, Cloud, ShoppingCart, AlertTriangle } from "lucide-react";
 
 const Index = () => {
   return (
@@ -14,7 +14,7 @@ const Index = () => {
 
         <div className="grid grid-cols-2 gap-4">
           <Card className="p-4 hover:shadow-lg transition-shadow animate-slide-in bg-white/80 backdrop-blur">
-            <Seedling className="w-8 h-8 text-crop-green-600 mb-2" />
+            <Leaf className="w-8 h-8 text-crop-green-600 mb-2" />
             <h3 className="font-semibold text-sm">Crop Scanner</h3>
             <p className="text-xs text-gray-600 mt-1">Diagnose plant health</p>
           </Card>
