@@ -13,10 +13,18 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <Sonner />
+      <Sonner position="top-center" closeButton />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/scan" element={<NotFound />} />
+          <Route path="/weather" element={<NotFound />} />
+          <Route path="/market" element={<NotFound />} />
+          <Route path="/chat" element={<NotFound />} />
+          <Route path="/ai-assistant" element={<NotFound />} />
+          <Route path="/alerts" element={<NotFound />} />
+          <Route path="/predictions" element={<NotFound />} />
+          <Route path="/referrals" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

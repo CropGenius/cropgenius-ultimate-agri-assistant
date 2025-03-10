@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -20,27 +19,34 @@ export default {
     },
     extend: {
       colors: {
-        // Nature-inspired palette
+        // Africa-inspired color palette
         "crop-green": {
-          50: "#f0fdf4",
-          100: "#dcfce7",
-          500: "#22c55e",
-          600: "#16a34a",
-          700: "#15803d",
+          50: "#e6f5f0",
+          100: "#ccece2",
+          500: "#00875A", // Deep Green - represents fertile crops & trust
+          600: "#007048",
+          700: "#005C3B",
         },
         "soil-brown": {
-          50: "#fdf8f6",
-          100: "#f2e8e5",
-          500: "#8b5cf6",
-          600: "#7c3aed",
-          700: "#6d28d9",
+          50: "#f9f5f0",
+          100: "#f2ebe2",
+          500: "#A67C52", // Warm Brown - represents soil & hard work
+          600: "#8C6744",
+          700: "#735536",
         },
         "sky-blue": {
-          50: "#f0f9ff",
-          100: "#e0f2fe",
-          500: "#0ea5e9",
-          600: "#0284c7",
-          700: "#0369a1",
+          50: "#eef6fd",
+          100: "#dcedfa",
+          500: "#4A90E2", // Sky Blue - represents rain & growth
+          600: "#2978D9",
+          700: "#1A62B9",
+        },
+        "soft-cream": {
+          50: "#FFFDF9",
+          100: "#F9F7F2",
+          200: "#F4F1E6", // Soft Cream - clean, easy-to-read background
+          300: "#EBE6D6",
+          400: "#E2DBCB",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -99,6 +105,10 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out",
         "slide-in": "slide-in 0.5s ease-out",
+      },
+      fontSize: {
+        'xl-large': '1.375rem', // Large readable text for farmers
+        '2xl-large': '1.625rem', // Extra large headers for readability
       },
     },
   },
