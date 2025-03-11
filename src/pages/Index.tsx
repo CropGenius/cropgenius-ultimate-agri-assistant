@@ -89,7 +89,7 @@ const Index = () => {
       <div className="p-5 pb-24 animate-fade-in">
         {/* Personalized Greeting */}
         <div className="mb-5 pt-2">
-          <h1 className="text-2xl-large font-bold text-crop-green-700 mb-2">Hello, Emmanuel</h1>
+          <h1 className="text-2xl-large font-bold text-crop-green-700 mb-2">Hello, Brian</h1>
           <div className="flex items-center">
             <p className="text-md font-medium text-gray-700">Your farm looks great today</p>
             <Badge variant="outline" className="ml-2 bg-crop-green-50 text-crop-green-700 border-crop-green-200">
