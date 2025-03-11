@@ -27,6 +27,8 @@ const App = () => (
           <Route path="/referrals" element={<NotFound />} />
           <Route path="/community" element={<NotFound />} />
           <Route path="/challenges" element={<NotFound />} />
+          <Route path="/farm-plan" element={<NotFound />} />
+          <Route path="/farm-clans" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
