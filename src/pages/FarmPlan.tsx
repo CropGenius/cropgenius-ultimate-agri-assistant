@@ -57,7 +57,7 @@ interface WeatherAlert {
 
 const FarmPlan = () => {
   const [farmer, setFarmer] = useState({
-    name: "Emmanuel",
+    name: "Brian",
     location: "Central Region",
     mainCrops: ["Maize", "Tomatoes", "Cassava"],
     farmSize: 4.5, // acres
