@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 const Index = () => {
   const [farmTasks, setFarmTasks] = useState([
@@ -107,28 +107,28 @@ const Index = () => {
                 <span className="text-sm text-gray-600">Crop Health</span>
                 <span className="text-sm font-medium text-crop-green-700">{farmPerformance.cropHealth}%</span>
               </div>
-              <Progress value={farmPerformance.cropHealth} className="h-2 bg-gray-100" indicatorClassName="bg-crop-green-500" />
+              <Progress value={farmPerformance.cropHealth} className="h-2 bg-gray-100" />
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
                 <span className="text-sm text-gray-600">Soil Quality</span>
                 <span className="text-sm font-medium text-soil-brown-600">{farmPerformance.soilQuality}%</span>
               </div>
-              <Progress value={farmPerformance.soilQuality} className="h-2 bg-gray-100" indicatorClassName="bg-soil-brown-500" />
+              <Progress value={farmPerformance.soilQuality} className="h-2 bg-gray-100" />
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
                 <span className="text-sm text-gray-600">Yield Forecast</span>
                 <span className="text-sm font-medium text-sky-blue-600">{farmPerformance.yieldForecast}%</span>
               </div>
-              <Progress value={farmPerformance.yieldForecast} className="h-2 bg-gray-100" indicatorClassName="bg-sky-blue-500" />
+              <Progress value={farmPerformance.yieldForecast} className="h-2 bg-gray-100" />
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
                 <span className="text-sm text-gray-600">Profit Margin</span>
                 <span className="text-sm font-medium text-amber-600">{farmPerformance.profitMargin}%</span>
               </div>
-              <Progress value={farmPerformance.profitMargin} className="h-2 bg-gray-100" indicatorClassName="bg-amber-500" />
+              <Progress value={farmPerformance.profitMargin} className="h-2 bg-gray-100" />
             </div>
           </div>
         </div>
