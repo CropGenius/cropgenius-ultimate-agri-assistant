@@ -32,6 +32,29 @@ import {
   Calendar as CalendarIcon
 } from "lucide-react";
 
+interface Task {
+  id: number;
+  text: string;
+  category: string;
+  priority: string;
+  icon: any; // Using any for simplicity, but ideally should be more specific
+  due: string;
+  completed: boolean;
+  reminderSet: boolean;
+  aiRecommended: boolean;
+  conditions: string[];
+  isNew?: boolean; // Add the isNew property as optional
+}
+
+interface WeatherAlert {
+  id: number;
+  title: string;
+  description: string;
+  impact: string;
+  icon: any;
+  isNew: boolean;
+}
+
 const FarmPlan = () => {
   const [farmer, setFarmer] = useState({
     name: "Emmanuel",
@@ -42,7 +65,7 @@ const FarmPlan = () => {
     premiumStatus: true
   });
 
-  const [tasks, setTasks] = useState([
+  const [tasks, setTasks] = useState<Task[]>([
     { 
       id: 1, 
       text: "Delay watering - rain expected in 36 hours",
@@ -93,7 +116,7 @@ const FarmPlan = () => {
     }
   ]);
 
-  const [weatherAlerts, setWeatherAlerts] = useState([
+  const [weatherAlerts, setWeatherAlerts] = useState<WeatherAlert[]>([
     {
       id: 1,
       title: "Heavy Rain Warning",
@@ -132,7 +155,7 @@ const FarmPlan = () => {
       });
       
       // Add a new AI-suggested task with animation effect
-      const newTask = { 
+      const newTask: Task = { 
         id: tasks.length + 1, 
         text: "Apply calcium nitrate to tomato plants to prevent blossom end rot", 
         category: "fertilizer", 
