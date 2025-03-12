@@ -488,6 +488,16 @@ const Market = () => {
     }, 2000);
   };
 
+  const placeBid = (listingId: number) => {
+    const listing = marketListings.find(l => l.id === listingId);
+    if (!listing || !listing.isMine) return;
+    
+    toast({
+      description: "Your bid has been placed. The seller will be notified.",
+      variant: "default",
+    });
+  };
+
   return (
     <Layout>
       <div className="p-5 pb-20 animate-fade-in">
