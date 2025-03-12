@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { 
@@ -36,7 +35,6 @@ import {
   Zap
 } from "lucide-react";
 
-// Type definitions
 interface CropListing {
   id: number;
   cropType: string;
@@ -116,7 +114,6 @@ interface BulkDeal {
 }
 
 const Market = () => {
-  // State hooks
   const [marketListings, setMarketListings] = useState<CropListing[]>([
     {
       id: 1,
@@ -383,11 +380,9 @@ const Market = () => {
     ]
   });
 
-  // Event handlers
   const refreshMarket = () => {
     setIsRefreshing(true);
     
-    // Simulate AI analysis and market update
     setTimeout(() => {
       toast.success("Market data updated with latest AI analysis", {
         description: "Analyzing crop prices, buyer demand, and market trends",
@@ -401,14 +396,13 @@ const Market = () => {
     const crop = myCrops.find(c => c.id === cropId);
     if (!crop) return;
     
-    // Create a new listing from the crop
     const newListing: CropListing = {
       id: marketListings.length + 1,
       cropType: crop.cropType,
       quantity: crop.quantity,
       unit: crop.unit,
       quality: crop.quality,
-      location: "Central Region", // Using default farmer location
+      location: "Central Region",
       price: crop.suggestedPrice,
       marketPrice: crop.currentPrice,
       expiresIn: "7 days",
@@ -420,7 +414,7 @@ const Market = () => {
         expectedIncrease: crop.marketTrend.status === "rising" ? Math.abs(crop.marketTrend.changePercent) : 0
       },
       seller: {
-        name: "Emmanuel", // Using default farmer name
+        name: "Emmanuel",
         rating: 4.6,
         verified: true,
         transactions: 15
@@ -428,7 +422,6 @@ const Market = () => {
       isMine: true
     };
     
-    // Update the listings and crop status
     setMarketListings([newListing, ...marketListings]);
     setMyCrops(myCrops.map(c => 
       c.id === cropId ? { ...c, isListed: true } : c
@@ -443,7 +436,6 @@ const Market = () => {
     const deal = bulkDeals.find(d => d.id === dealId);
     if (!deal) return;
     
-    // Update the bulk deal
     setBulkDeals(bulkDeals.map(d => 
       d.id === dealId ? { ...d, farmersJoined: d.farmersJoined + 1, isNew: false } : d
     ));
@@ -466,10 +458,8 @@ const Market = () => {
     const listing = marketListings.find(l => l.id === listingId);
     if (!listing || !listing.isMine) return;
     
-    // Remove the listing
     setMarketListings(marketListings.filter(l => l.id !== listingId));
     
-    // Update the crop status if it's one of mine
     setMyCrops(myCrops.map(c => 
       c.cropType === listing.cropType ? { ...c, isListed: false } : c
     ));
@@ -483,16 +473,13 @@ const Market = () => {
     const listing = marketListings.find(l => l.id === listingId);
     if (!listing || !listing.isMine) return;
     
-    toast({
-      title: "Completing Sale",
+    toast.info("Completing Sale", {
       description: "Processing your sale securely...",
     });
     
     setTimeout(() => {
-      // Remove the listing
       setMarketListings(marketListings.filter(l => l.id !== listingId));
       
-      // Update the crop status
       setMyCrops(myCrops.filter(c => c.cropType !== listing.cropType));
       
       toast.success(`Your ${listing.cropType} has been sold!`, {
@@ -504,7 +491,6 @@ const Market = () => {
   return (
     <Layout>
       <div className="p-5 pb-20 animate-fade-in">
-        {/* Header with AI Market Intelligence */}
         <div className="mb-5">
           <div className="flex items-center justify-between">
             <div>
@@ -530,7 +516,6 @@ const Market = () => {
             </Button>
           </div>
           
-          {/* AI Market Insights */}
           <Card className="mt-4 border-crop-green-200 bg-crop-green-50">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-center">
@@ -558,7 +543,6 @@ const Market = () => {
           </Card>
         </div>
 
-        {/* Main Tabs Navigation */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-6">
           <TabsList className="w-full bg-muted grid grid-cols-4">
             <TabsTrigger value="marketplace" className="text-xs sm:text-sm">
@@ -579,7 +563,6 @@ const Market = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Marketplace Tab */}
           <TabsContent value="marketplace" className="mt-4">
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-gray-800 flex items-center">
@@ -656,7 +639,6 @@ const Market = () => {
                           </div>
                         </div>
                         
-                        {/* Display bulk deal info if available */}
                         {listing.bulkDeal && (
                           <div className="mt-3 bg-amber-50 p-3 rounded-lg border border-amber-100">
                             <p className="flex items-center text-sm font-medium text-amber-800">
@@ -675,7 +657,6 @@ const Market = () => {
                           </div>
                         )}
                         
-                        {/* AI price recommendation */}
                         {listing.holdRecommendation.recommend && (
                           <div className="mt-3 bg-crop-green-50 p-3 rounded-lg border border-crop-green-100">
                             <p className="flex items-center text-sm font-medium text-crop-green-800">
@@ -690,7 +671,6 @@ const Market = () => {
                       </div>
                     </div>
                     
-                    {/* Action buttons */}
                     <div className="flex justify-end mt-4 space-x-2">
                       {listing.isMine ? (
                         <>
@@ -734,7 +714,6 @@ const Market = () => {
             </div>
           </TabsContent>
 
-          {/* My Crops Tab */}
           <TabsContent value="mycrops" className="mt-4">
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-gray-800 flex items-center">
@@ -795,7 +774,6 @@ const Market = () => {
                           <p className="text-xs text-gray-600">Total value: {crop.suggestedPrice * crop.quantity}</p>
                         </div>
                         
-                        {/* Market trend info */}
                         <div className={`mt-3 p-3 rounded-lg border ${
                           crop.marketTrend.status === 'rising'
                             ? 'bg-green-50 border-green-100'
@@ -826,7 +804,6 @@ const Market = () => {
                       </div>
                     </div>
                     
-                    {/* Action buttons */}
                     <div className="flex justify-end mt-4 space-x-2">
                       {!crop.isListed && crop.readyToSell && (
                         <Button 
@@ -858,7 +835,6 @@ const Market = () => {
             </div>
           </TabsContent>
 
-          {/* Bulk Deals Tab */}
           <TabsContent value="bulkdeals" className="mt-4">
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-gray-800 flex items-center">
@@ -933,7 +909,6 @@ const Market = () => {
                       </div>
                     </div>
                     
-                    {/* Action button */}
                     <div className="flex justify-end mt-4">
                       <Button 
                         size="sm" 
@@ -950,7 +925,6 @@ const Market = () => {
             </div>
           </TabsContent>
 
-          {/* Top Buyers Tab */}
           <TabsContent value="buyers" className="mt-4">
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-gray-800 flex items-center">
@@ -1027,7 +1001,6 @@ const Market = () => {
                       </div>
                     </div>
                     
-                    {/* Action buttons */}
                     <div className="flex justify-end mt-4 space-x-2">
                       <Button 
                         variant="outline" 
