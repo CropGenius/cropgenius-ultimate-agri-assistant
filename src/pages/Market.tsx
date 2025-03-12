@@ -491,7 +491,6 @@ const Market = () => {
   const handlePostTrade = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Form validation and data submission logic
     const form = e.target as HTMLFormElement;
     const cropType = form.cropType.value;
     const quantity = parseInt(form.quantity.value);
@@ -522,9 +521,25 @@ const Market = () => {
       bonusPercentage: parseInt(form.bulkDealBonusPercentage.value)
     };
     
-    // Logic to handle form submission and update state
-    // ...
-
+    setMarketListings(marketListings.map(l => 
+      l.id === listingId ? {
+        ...l,
+        cropType,
+        quantity,
+        unit,
+        quality,
+        location,
+        price,
+        marketPrice,
+        expiresIn,
+        priceStatus,
+        priceChange,
+        holdRecommendation,
+        seller,
+        isMine
+      } : l
+    ));
+    
     toast({
       variant: "default",
       description: "Trade posted successfully!"
@@ -875,4 +890,152 @@ const Market = () => {
                           className="text-gray-600"
                           onClick={() => {
                             const listing = marketListings.find(l => l.cropType === crop.cropType && l.isMine);
-                            if
+                            if (listing) {
+                              withdrawListing(listing.id);
+                            }
+                          }}
+                        >
+                          Remove Listing
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="bulkdeals" className="mt-4">
+            <div className="space-y-4">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                <Users className="h-5 w-5 mr-2 text-crop-green-600" />
+                Bulk Deals
+              </h2>
+              
+              {bulkDeals.map(deal => (
+                <Card key={deal.id} className="overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex items-start">
+                      <div className="flex-grow">
+                        <div className="flex items-center mb-1">
+                          <h3 className="font-semibold text-lg mr-2">{deal.cropType}</h3>
+                          <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                            {deal.isNew ? "New" : "Existing"}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div>
+                            <p className="text-sm text-gray-600">Organizer</p>
+                            <p className="font-medium">{deal.organizer}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Target Farmers</p>
+                            <p className="font-medium">{deal.targetFarmers}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Bonus Percentage</p>
+                            <p className="font-medium">{deal.priceBonus}%</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Deadline</p>
+                            <p className="font-medium">{deal.deadline}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row justify-between sm:items-end">
+                          <div>
+                            <p className="text-sm text-gray-600">Min Quantity</p>
+                            <p className="font-medium">{deal.minQuantity}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Buyer</p>
+                            <p className="font-medium">{deal.buyer}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end mt-4 space-x-2">
+                      <Button 
+                        size="sm" 
+                        className="bg-crop-green-600 hover:bg-crop-green-700 text-white"
+                        onClick={() => joinBulkDeal(deal.id)}
+                      >
+                        Join Group
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="buyers" className="mt-4">
+            <div className="space-y-4">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                <HandCoins className="h-5 w-5 mr-2 text-crop-green-600" />
+                Top Buyers
+              </h2>
+              
+              {topBuyers.map(buyer => (
+                <Card key={buyer.id} className="overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex items-start">
+                      <div className="flex-grow">
+                        <div className="flex items-center mb-1">
+                          <h3 className="font-semibold text-lg mr-2">{buyer.name}</h3>
+                          <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                            {buyer.verified ? "Verified" : "Unverified"}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div>
+                            <p className="text-sm text-gray-600">Location</p>
+                            <p className="font-medium">{buyer.location}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Deal Size</p>
+                            <p className="font-medium">{buyer.dealSize}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Pays Fast</p>
+                            <p className="font-medium">{buyer.paysFast ? "Yes" : "No"}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row justify-between sm:items-end">
+                          <div>
+                            <p className="text-sm text-gray-600">Looking For</p>
+                            <p className="font-medium">{buyer.lookingFor.join(", ")}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Transactions</p>
+                            <p className="font-medium">{buyer.transactions}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end mt-4 space-x-2">
+                      <Button 
+                        size="sm" 
+                        className="bg-crop-green-600 hover:bg-crop-green-700 text-white"
+                        onClick={() => contactBuyer(buyer.id)}
+                      >
+                        Contact
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Layout>
+  );
+};
+
+export default Market;
