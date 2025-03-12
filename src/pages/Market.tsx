@@ -875,4 +875,4 @@ const Market = () => {
                           className="text-gray-600"
                           onClick={() => {
                             const listing = marketListings.find(l => l.cropType === crop.cropType && l.isMine);
-                            if (listing)
+                            if
