@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Alert, AlertCircle, AlertTriangle, CloudLightning, Droplets, Thermometer } from "lucide-react";
+import { AlertCircle, AlertTriangle, CloudLightning, Droplets, Thermometer, Bell } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -81,7 +80,7 @@ export default function DisasterAlerts() {
   const getAlertIcon = (type: string) => {
     switch (type) {
       case "critical":
-        return <Alert className="h-5 w-5 text-red-500" />;
+        return <Bell className="h-5 w-5 text-red-500" />;
       case "warning":
         return <AlertTriangle className="h-5 w-5 text-amber-500" />;
       case "advisory":
@@ -169,7 +168,7 @@ export default function DisasterAlerts() {
                       </ul>
                       <div className="mt-3 flex">
                         <Button size="sm" variant="outline" className="mr-2">
-                          <Alert className="mr-1 h-4 w-4" />
+                          <Bell className="mr-1 h-4 w-4" />
                           Set SMS Alert
                         </Button>
                         <Button size="sm" variant="outline">

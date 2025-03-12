@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Sun, Cloud, CloudRain, CloudSnow, CloudLightning, Thermometer, Wind, Droplet } from "lucide-react";
+import { Sun, Cloud, CloudRain, CloudSnow, CloudLightning, Thermometer, Wind, Droplet, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";

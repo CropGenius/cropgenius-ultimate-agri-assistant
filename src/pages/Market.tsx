@@ -1017,8 +1017,7 @@ const Market = () => {
                         size="sm" 
                         className="text-gray-600"
                         onClick={() => {
-                          toast({
-                            title: "Buyer Details",
+                          toast.success("Buyer Details", {
                             description: `View detailed purchase history and verification data for ${buyer.name}`,
                           });
                         }}
