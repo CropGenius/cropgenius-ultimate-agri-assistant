@@ -10,6 +10,7 @@ import Scan from "./pages/Scan";
 import FarmPlan from "./pages/FarmPlan";
 import YieldPredictor from "./pages/YieldPredictor";
 import Market from "./pages/Market";
+import Weather from "./pages/Weather";
 
 const queryClient = new QueryClient();
 
@@ -25,7 +26,7 @@ const App = () => (
           <Route path="/farm-plan" element={<FarmPlan />} />
           <Route path="/predictions" element={<YieldPredictor />} />
           <Route path="/market" element={<Market />} />
-          <Route path="/weather" element={<NotFound />} />
+          <Route path="/weather" element={<Weather />} />
           <Route path="/chat" element={<NotFound />} />
           <Route path="/ai-assistant" element={<NotFound />} />
           <Route path="/alerts" element={<NotFound />} />

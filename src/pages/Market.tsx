@@ -144,7 +144,7 @@ const Market = () => {
       cropType: "Tomatoes",
       quantity: 850,
       unit: "kg",
-      quality: "Standard",
+4 quality: "Standard",
       location: "Western Region",
       price: 120,
       marketPrice: 125,
@@ -486,6 +486,59 @@ const Market = () => {
         description: `Payment of ${listing.price * listing.quantity} has been processed securely`,
       });
     }, 2000);
+  };
+
+  const handlePostTrade = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Form validation and data submission logic
+    const form = e.target as HTMLFormElement;
+    const cropType = form.cropType.value;
+    const quantity = parseInt(form.quantity.value);
+    const unit = form.unit.value;
+    const quality = form.quality.value;
+    const location = form.location.value;
+    const price = parseInt(form.price.value);
+    const marketPrice = parseInt(form.marketPrice.value);
+    const expiresIn = form.expiresIn.value;
+    const priceStatus = form.priceStatus.value;
+    const priceChange = parseInt(form.priceChange.value);
+    const holdRecommendation = {
+      recommend: form.holdRecommendation.value === "true",
+      days: parseInt(form.holdRecommendationDays.value),
+      expectedIncrease: parseInt(form.holdRecommendationExpectedIncrease.value)
+    };
+    const seller = {
+      name: form.sellerName.value,
+      rating: parseInt(form.sellerRating.value),
+      verified: form.sellerVerified.value === "true",
+      transactions: parseInt(form.sellerTransactions.value)
+    };
+    const isMine = form.isMine.value === "true";
+    const photo = form.photo.value;
+    const bulkDeal = {
+      farmersJoined: parseInt(form.bulkDealFarmersJoined.value),
+      targetFarmers: parseInt(form.bulkDealTargetFarmers.value),
+      bonusPercentage: parseInt(form.bulkDealBonusPercentage.value)
+    };
+    
+    // Logic to handle form submission and update state
+    // ...
+
+    toast({
+      variant: "default",
+      description: "Trade posted successfully!"
+    });
+  };
+
+  const handleContactSeller = () => {
+    const seller = marketListings.find(l => l.id === selectedTab);
+    if (!seller) return;
+    
+    toast({
+      variant: "default",
+      description: "Contact request sent to seller!"
+    });
   };
 
   return (
