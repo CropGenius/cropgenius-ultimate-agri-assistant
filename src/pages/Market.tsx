@@ -521,37 +521,22 @@ const Market = () => {
       bonusPercentage: parseInt(form.bulkDealBonusPercentage.value)
     };
     
-    setMarketListings(marketListings.map(l => 
-      l.id === listingId ? {
+    setMarketListings(prevListings => {
+      return prevListings.map(l => ({
         ...l,
-        cropType,
-        quantity,
-        unit,
-        quality,
-        location,
-        price,
-        marketPrice,
-        expiresIn,
-        priceStatus,
-        priceChange,
-        holdRecommendation,
-        seller,
-        isMine
-      } : l
-    ));
+      }));
+    });
     
     toast({
-      variant: "default",
       description: "Trade posted successfully!"
     });
   };
 
   const handleContactSeller = () => {
-    const seller = marketListings.find(l => l.id === selectedTab);
+    const seller = marketListings.find(l => l.id === parseInt(selectedTab));
     if (!seller) return;
     
     toast({
-      variant: "default",
       description: "Contact request sent to seller!"
     });
   };
