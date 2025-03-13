@@ -527,18 +527,14 @@ const Market = () => {
       }));
     });
     
-    toast({
-      description: "Trade posted successfully!"
-    });
+    toast("Trade posted successfully!");
   };
 
   const handleContactSeller = () => {
     const seller = marketListings.find(l => l.id === parseInt(selectedTab));
     if (!seller) return;
     
-    toast({
-      description: "Contact request sent to seller!"
-    });
+    toast("Contact request sent to seller!");
   };
 
   return (
