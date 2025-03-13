@@ -24,7 +24,7 @@ import {
   Wheat,
   Zap,
 } from "lucide-react";
-import { fetchAIResponse } from "@/utils/aiChatService";
+import { ChatCategory, fetchAIResponse } from "@/utils/aiChatService";
 
 interface Message {
   id: string;
@@ -45,7 +45,7 @@ export default function Chat() {
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState<ChatCategory>("all");
 
   const generateUniqueId = () => {
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
