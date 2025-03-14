@@ -1,50 +1,47 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FcGoogle } from "react-icons/fc";
-import { Loader2 } from "lucide-react";
 import { signInWithEmail, signUpWithEmail, signInWithGoogle } from "@/utils/authService";
-import { toast } from "@/components/ui/use-toast";
-import Layout from "@/components/Layout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Auth() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const { data, error } = await signInWithEmail(email, password);
       
       if (error) {
         toast({
-          title: "Login failed",
+          title: "Sign in failed",
           description: error,
           variant: "destructive",
         });
-        return;
+      } else if (data.session) {
+        toast({
+          title: "Signed in successfully",
+          description: "Welcome back to CropGenius!",
+        });
+        navigate("/");
       }
-      
+    } catch (err: any) {
       toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      
-      navigate("/");
-    } catch (error: any) {
-      toast({
-        title: "Login failed",
-        description: error.message,
+        title: "Sign in failed",
+        description: err.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -54,41 +51,38 @@ export default function Auth() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!fullName.trim()) {
+    setIsLoading(true);
+
+    if (!fullName) {
       toast({
-        title: "Signup failed",
-        description: "Please enter your full name",
+        title: "Full name is required",
+        description: "Please enter your full name to create an account",
         variant: "destructive",
       });
+      setIsLoading(false);
       return;
     }
-    
-    setIsLoading(true);
-    
+
     try {
       const { data, error } = await signUpWithEmail(email, password, fullName);
       
       if (error) {
         toast({
-          title: "Signup failed",
+          title: "Sign up failed",
           description: error,
           variant: "destructive",
         });
-        return;
+      } else {
+        toast({
+          title: "Account created",
+          description: "Please check your email to confirm your account",
+        });
+        // Stay on the sign-in tab after registration
       }
-      
+    } catch (err: any) {
       toast({
-        title: "Signup successful",
-        description: "Please check your email to verify your account",
-      });
-      
-      // Automatically switch to login tab
-      setActiveTab("login");
-    } catch (error: any) {
-      toast({
-        title: "Signup failed",
-        description: error.message,
+        title: "Sign up failed",
+        description: err.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -98,189 +92,171 @@ export default function Auth() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    
     try {
-      const { data, error } = await signInWithGoogle();
-      
-      if (error) {
-        toast({
-          title: "Google login failed",
-          description: error,
-          variant: "destructive",
-        });
-      }
-    } catch (error: any) {
+      await signInWithGoogle();
+      // No need for success toast here as the user will be redirected to the OAuth provider
+    } catch (err: any) {
       toast({
-        title: "Google login failed",
-        description: error.message,
+        title: "Google sign in failed",
+        description: err.message || "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Layout>
-      <div className="container max-w-lg py-10">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
-          </TabsList>
+    <div className="min-h-screen flex items-center justify-center bg-green-50 p-4">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-green-800">CropGenius</h1>
+          <p className="text-gray-600">Your AI-powered farming assistant</p>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-center">Welcome</CardTitle>
+            <CardDescription className="text-center">
+              Sign in to access your farm insights
+            </CardDescription>
+          </CardHeader>
           
-          <TabsContent value="login">
-            <Card>
-              <CardHeader>
-                <CardTitle>Login to CropGenius</CardTitle>
-                <CardDescription>
-                  Enter your email and password to access your account
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleLogin} className="space-y-4">
+          <Tabs defaultValue="signin" className="w-full">
+            <TabsList className="grid grid-cols-2 mb-4 mx-4">
+              <TabsTrigger value="signin">Sign In</TabsTrigger>
+              <TabsTrigger value="signup">Create Account</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="signin">
+              <form onSubmit={handleSignIn}>
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="Email"
+                      placeholder="name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
                     />
                   </div>
                   <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                      <a 
+                        href="#" 
+                        className="text-sm text-green-600 hover:text-green-800"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          toast({
+                            title: "Password Reset",
+                            description: "This feature is coming soon!",
+                          });
+                        }}
+                      >
+                        Forgot password?
+                      </a>
+                    </div>
                     <Input
                       id="password"
                       type="password"
-                      placeholder="Password"
+                      placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Logging in...
-                      </>
-                    ) : (
-                      "Log in"
-                    )}
+                </CardContent>
+                <CardFooter className="flex flex-col space-y-4">
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
-                </form>
-                
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="bg-white px-2 text-gray-500">Or continue with</span>
-                  </div>
-                </div>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoading}
-                >
-                  <FcGoogle className="mr-2 h-5 w-5" />
-                  Google
-                </Button>
-              </CardContent>
-              <CardFooter className="flex justify-center">
-                <Button variant="link" onClick={() => setActiveTab("signup")}>
-                  Don't have an account? Sign up
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="signup">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create an account</CardTitle>
-                <CardDescription>
-                  Enter your details to create a CropGenius account
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSignUp} className="space-y-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading}
+                  >
+                    <FcGoogle className="mr-2 h-4 w-4" />
+                    Sign in with Google
+                  </Button>
+                </CardFooter>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="signup">
+              <form onSubmit={handleSignUp}>
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name</Label>
                     <Input
                       id="fullName"
-                      type="text"
-                      placeholder="Full Name"
+                      placeholder="John Doe"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="signupEmail">Email</Label>
                     <Input
                       id="signupEmail"
                       type="email"
-                      placeholder="Email"
+                      placeholder="name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="signupPassword">Password</Label>
                     <Input
                       id="signupPassword"
                       type="password"
-                      placeholder="Password"
+                      placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      minLength={6}
                       required
                     />
+                    <p className="text-xs text-gray-500">
+                      Password must be at least 6 characters long
+                    </p>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating account...
-                      </>
-                    ) : (
-                      "Sign up"
-                    )}
+                </CardContent>
+                <CardFooter className="flex flex-col space-y-4">
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Creating Account..." : "Create Account"}
                   </Button>
-                </form>
-                
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="bg-white px-2 text-gray-500">Or continue with</span>
-                  </div>
-                </div>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoading}
-                >
-                  <FcGoogle className="mr-2 h-5 w-5" />
-                  Google
-                </Button>
-              </CardContent>
-              <CardFooter className="flex justify-center">
-                <Button variant="link" onClick={() => setActiveTab("login")}>
-                  Already have an account? Log in
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading}
+                  >
+                    <FcGoogle className="mr-2 h-4 w-4" />
+                    Sign up with Google
+                  </Button>
+                </CardFooter>
+              </form>
+            </TabsContent>
+          </Tabs>
+        </Card>
+        
+        <p className="text-center mt-4 text-sm text-gray-600">
+          By signing in, you agree to our Terms of Service and Privacy Policy
+        </p>
       </div>
-    </Layout>
+    </div>
   );
 }

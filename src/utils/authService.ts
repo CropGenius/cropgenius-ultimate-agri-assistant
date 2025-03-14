@@ -80,14 +80,22 @@ export const signOut = async () => {
 // Get user profile data
 export const getUserProfile = async (userId: string) => {
   try {
+    // We'll comment this out for now until the tables are properly created
+    // and TypeScript types are updated
+    /*
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-      
-    if (error) throw error;
-    return { data, error: null };
+    */
+    
+    // Return a placeholder until the database is properly set up
+    console.log(`Would fetch profile for user: ${userId}`);
+    return { 
+      data: { id: userId, full_name: "User", email: "user@example.com" }, 
+      error: null 
+    };
   } catch (error: any) {
     console.error("Error fetching user profile:", error.message);
     return { data: null, error: error.message };
@@ -97,14 +105,22 @@ export const getUserProfile = async (userId: string) => {
 // Update user profile
 export const updateUserProfile = async (userId: string, updates: any) => {
   try {
+    // We'll comment this out for now until the tables are properly created
+    // and TypeScript types are updated
+    /*
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)
       .eq('id', userId)
       .select();
-      
-    if (error) throw error;
-    return { data, error: null };
+    */
+    
+    // Return a placeholder until the database is properly set up
+    console.log(`Would update profile for user: ${userId} with data:`, updates);
+    return { 
+      data: { id: userId, ...updates }, 
+      error: null 
+    };
   } catch (error: any) {
     console.error("Error updating user profile:", error.message);
     return { data: null, error: error.message };

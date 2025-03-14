@@ -116,29 +116,14 @@ serve(async (req) => {
       language: language
     };
     
-    // Attempt to save chat history to database if userId is provided
+    // For now, we'll skip the database operations since the tables may not be created yet
+    // We'll log that we would save the chat history
     if (userId) {
-      try {
-        const { supabaseClient } = await import 'https://esm.sh/@supabase/supabase-js@2.39.6';
-        const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-        
-        if (supabaseUrl && supabaseAnonKey) {
-          const supabase = supabaseClient(supabaseUrl, supabaseAnonKey);
-          
-          await supabase.from('chat_history').insert({
-            user_id: userId,
-            category: category,
-            user_message: message,
-            ai_response: aiResponse,
-            language: language,
-            ai_model: usingFallback ? 'fallback' : 'gemini-pro'
-          });
-        }
-      } catch (dbError) {
-        console.error("Error saving chat history:", dbError);
-        // Non-blocking - continue even if saving to DB fails
-      }
+      console.log("Would save chat history for user:", userId, {
+        category,
+        message,
+        response: aiResponse
+      });
     }
     
     return new Response(

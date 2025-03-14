@@ -103,10 +103,3 @@ const fileToBase64 = (file: File): Promise<string> => {
     reader.onerror = error => reject(error);
   });
 };
-
-// Create an edge function for crop disease detection (to be implemented)
-export const setupCropScanEdgeFunction = async () => {
-  // This would be implemented in a Supabase Edge Function
-  // It would call the Gemini Vision API and/or Plant.id API
-  // to analyze the crop image and detect diseases
-};
