@@ -23,8 +23,15 @@ import {
   User,
   Wheat,
   Zap,
+  Globe,
 } from "lucide-react";
-import { ChatCategory, fetchAIResponse } from "@/utils/aiChatService";
+import { 
+  ChatCategory, 
+  fetchAIResponse, 
+  availableLanguages,
+  translateMessage
+} from "@/utils/aiChatService";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Message {
   id: string;
@@ -46,6 +53,7 @@ export default function Chat() {
   const [inputMessage, setInputMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeCategory, setActiveCategory] = useState<ChatCategory>("all");
+  const [language, setLanguage] = useState("en");
 
   const generateUniqueId = () => {
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -67,14 +75,19 @@ export default function Chat() {
     setIsSubmitting(true);
     
     try {
-      // In a production app, this would call a Supabase Edge Function to handle API calls securely
-      const response = await fetchAIResponse(userMessage.content, activeCategory);
+      // Call the AI service to get a response
+      const aiResponseText = await fetchAIResponse(userMessage.content, activeCategory);
+      
+      // Translate the response if needed
+      const translatedResponse = language !== "en" 
+        ? await translateMessage(aiResponseText, language)
+        : aiResponseText;
       
       // Add AI response to chat
       const aiMessage: Message = {
         id: generateUniqueId(),
         role: "assistant",
-        content: response,
+        content: translatedResponse,
         timestamp: new Date(),
       };
       
@@ -120,13 +133,33 @@ export default function Chat() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">AI Farming Assistant</h1>
             <p className="text-muted-foreground">
-              Expert agricultural knowledge powered by advanced AI
+              Expert agricultural knowledge powered by Gemini AI
             </p>
           </div>
-          <Button variant="outline" onClick={clearConversation} className="w-full md:w-auto">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Clear Conversation
-          </Button>
+          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              <Select
+                value={language}
+                onValueChange={(value) => setLanguage(value)}
+              >
+                <SelectTrigger className="w-full md:w-[140px]">
+                  <SelectValue placeholder="Language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableLanguages.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="outline" onClick={clearConversation} className="w-full md:w-auto">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Clear Conversation
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">

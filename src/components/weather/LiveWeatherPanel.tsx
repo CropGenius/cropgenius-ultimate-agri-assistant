@@ -14,19 +14,17 @@ import {
   CloudSnow,
   CloudLightning,
 } from "lucide-react";
+import { fetchWeatherData, WeatherData, LocationData } from "@/utils/weatherService";
+import { toast } from "sonner";
 
 interface LiveWeatherPanelProps {
-  location: {
-    lat: number;
-    lng: number;
-    name: string;
-  };
+  location: LocationData;
 }
 
 export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
-  const [weather, setWeather] = useState({
+  const [weather, setWeather] = useState<WeatherData>({
     temp: 28,
-    condition: "Sunny",
+    condition: "Loading weather data...",
     humidity: 65,
     windSpeed: 12,
     windDirection: "NE",
@@ -36,22 +34,37 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
     icon: "sun",
     alert: null,
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // In a real app, we would fetch real weather data based on location
-    // This is a simulation that changes the weather data slightly every few seconds
+    // Load initial weather data
+    loadWeatherData();
+    
+    // Set up refresh interval - refresh every 10 minutes
     const interval = setInterval(() => {
-      setWeather(prev => ({
-        ...prev,
-        temp: prev.temp + (Math.random() - 0.5) * 0.5,
-        humidity: Math.min(100, Math.max(30, prev.humidity + (Math.random() - 0.5) * 2)),
-        windSpeed: Math.max(0, prev.windSpeed + (Math.random() - 0.5) * 0.8),
-        soilMoisture: Math.max(0, Math.min(100, prev.soilMoisture - 0.1)),
-      }));
-    }, 5000);
+      loadWeatherData();
+    }, 10 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [location]);
+
+  const loadWeatherData = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchWeatherData(location);
+      setWeather(data);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to load weather data:", err);
+      setError("Unable to load weather data. Using cached data instead.");
+      toast.error("Weather data update failed", {
+        description: "Using cached weather data. Will retry later."
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getWeatherIcon = () => {
     switch(weather.icon) {
@@ -151,7 +164,11 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
                 <li className="flex items-start gap-2">
                   <ThermometerSun className="h-5 w-5 text-amber-500 mt-0.5" />
                   <span>
-                    Temperature optimal for maize growth today
+                    {weather.temp > 30 
+                      ? "High temperature may stress crops - monitor closely" 
+                      : weather.temp < 15
+                        ? "Low temperature may slow growth for warm-season crops"
+                        : "Temperature optimal for most crop growth today"}
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
@@ -163,7 +180,9 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
                 <li className="flex items-start gap-2">
                   <Wind className="h-5 w-5 text-slate-500 mt-0.5" />
                   <span>
-                    Wind conditions suitable for pesticide application
+                    {weather.windSpeed > 15
+                      ? "Wind conditions not suitable for pesticide application"
+                      : "Wind conditions suitable for pesticide application"}
                   </span>
                 </li>
               </ul>
