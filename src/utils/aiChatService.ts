@@ -39,9 +39,6 @@ export const fetchAIResponse = async (
     // Save chat to history if user is logged in
     if (userId) {
       try {
-        // We'll comment out this database operation for now until the tables are properly created
-        // and TypeScript types are updated
-        /*
         await supabase.from('chat_history').insert({
           user_id: userId,
           category: category,
@@ -49,13 +46,6 @@ export const fetchAIResponse = async (
           ai_response: data.response,
           language: language,
           ai_model: data.usingFallback ? 'fallback' : 'gemini-pro'
-        });
-        */
-        console.log("Chat would be saved to history:", {
-          user_id: userId,
-          category,
-          message,
-          response: data.response
         });
       } catch (dbError) {
         console.error("Error saving chat to history:", dbError);
