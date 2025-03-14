@@ -2,32 +2,16 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import Layout from "@/components/Layout";
-import { ArrowUpRight, Leaf, CloudSun, BarChart4, ShoppingCart, MessageSquareText, AlertTriangle, Users, Gift, Award } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-
-interface FeatureLinkProps {
-  to: string;
-  icon: JSX.Element;
-  title: string;
-  description: string;
-}
-
-const FeatureLink = ({ to, icon, title, description }: FeatureLinkProps) => (
-  <Link to={to} className="block">
-    <Card className="h-full transition-all hover:shadow-md hover:border-primary/50">
-      <CardContent className="pt-6">
-        <div className="mb-4 text-primary">{icon}</div>
-        <h3 className="text-xl font-medium mb-2 flex items-center gap-2">
-          {title} <ArrowUpRight className="h-4 w-4" />
-        </h3>
-        <p className="text-muted-foreground text-sm">{description}</p>
-      </CardContent>
-    </Card>
-  </Link>
-);
+import { supabase } from "@/integrations/supabase/client";
+import TodaysFarmPlan from "@/components/home/TodaysFarmPlan";
+import CropScannerPreview from "@/components/home/CropScannerPreview";
+import WeatherPreview from "@/components/home/WeatherPreview";
+import MarketPreview from "@/components/home/MarketPreview";
+import AIChatPreview from "@/components/home/AIChatPreview";
+import FeatureLink from "@/components/home/FeatureLink";
+import { Leaf, CloudSun, BarChart4, ShoppingCart, MessageSquareText, AlertTriangle, Users, Gift, Award } from "lucide-react";
 
 export default function Index() {
   const navigate = useNavigate();
@@ -113,8 +97,9 @@ export default function Index() {
 
   return (
     <Layout>
-      <div className="container py-8 md:py-12">
-        <div className="text-center mb-10">
+      <div className="container py-4 md:py-8">
+        {/* Hero Section */}
+        <div className="text-center mb-8 md:mb-10">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
             AI-Powered Farming Assistant
           </h1>
@@ -143,6 +128,30 @@ export default function Index() {
           </div>
         </div>
 
+        {/* Premium Features Showcase */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2">
+            <CropScannerPreview />
+          </div>
+          <div>
+            <WeatherPreview />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-1">
+            <TodaysFarmPlan />
+          </div>
+          <div className="lg:col-span-1">
+            <MarketPreview />
+          </div>
+          <div className="lg:col-span-1">
+            <AIChatPreview />
+          </div>
+        </div>
+
+        {/* Feature Links Grid - Kept from original but moved down */}
+        <h2 className="text-2xl font-bold mb-4 mt-10">All CropGenius Features</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {featuresData.map((feature, index) => (
             <FeatureLink key={index} {...feature} />
