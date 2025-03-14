@@ -7,8 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// In production, we would use these API keys securely from environment variables
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || 'DEMO_KEY'; 
+// Get API keys from environment variables
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || 'DEMO_KEY';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -17,9 +17,9 @@ serve(async (req) => {
   }
 
   try {
-    const { message, category } = await req.json();
+    const { message, category, language = 'en', userId } = await req.json();
     
-    console.log(`Processing AI chat request in category: ${category}`);
+    console.log(`Processing AI chat request in category: ${category}, language: ${language}`);
     console.log(`User message: ${message}`);
     
     // Call Gemini API for a realistic response
@@ -37,7 +37,7 @@ serve(async (req) => {
       };
       
       const context = contextByCategory[category] || contextByCategory.all;
-      const systemPrompt = `${context} Provide specific, actionable advice for farmers in Africa, with a focus on sustainable practices. Keep responses concise (max 150 words). Base answers on scientific agricultural knowledge.`;
+      const systemPrompt = `${context} Provide specific, actionable advice for farmers in Africa, with a focus on sustainable practices. Keep responses concise (max 150 words). Base answers on scientific agricultural knowledge. Respond in ${language} language.`;
       
       // Make the API request to Gemini
       const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent", {
@@ -106,13 +106,28 @@ serve(async (req) => {
       aiResponse = fallbackResponses[category] || fallbackResponses['all'];
     }
     
+    // Create response object
+    const responseObj = {
+      response: aiResponse,
+      source: usingFallback ? "AI Agricultural Assistant (offline mode)" : "Gemini AI Agricultural Expert",
+      timestamp: new Date().toISOString(),
+      usingFallback: usingFallback,
+      category: category,
+      language: language
+    };
+    
+    // For now, we'll skip the database operations since the tables may not be created yet
+    // We'll log that we would save the chat history
+    if (userId) {
+      console.log("Would save chat history for user:", userId, {
+        category,
+        message,
+        response: aiResponse
+      });
+    }
+    
     return new Response(
-      JSON.stringify({ 
-        response: aiResponse,
-        source: usingFallback ? "AI Agricultural Assistant (offline mode)" : "Gemini AI Agricultural Expert",
-        timestamp: new Date().toISOString(),
-        usingFallback: usingFallback
-      }),
+      JSON.stringify(responseObj),
       { 
         headers: { 
           ...corsHeaders,

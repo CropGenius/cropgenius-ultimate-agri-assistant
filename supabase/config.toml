@@ -29,7 +29,13 @@ refresh_token_reuse_interval = 10
 [functions]
 enabled = true
 
-[functions.ai-chat]
+# Configure both functions with proper paths and verification settings
+[[functions.function]]
+name = "ai-chat"
+verify_jwt = false
+
+[[functions.function]]
+name = "crop-scan"
 verify_jwt = false
 
 [analytics]
