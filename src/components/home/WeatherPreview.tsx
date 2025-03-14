@@ -2,9 +2,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Cloud, CloudRain, Sun, Wind, ArrowRight, Droplet, CloudLightning } from "lucide-react";
+import { Cloud, CloudRain, Sun, Wind, ArrowRight, Droplet, CloudLightning, Thermometer, CloudSun, Umbrella } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { Progress } from "@/components/ui/progress";
 
 interface WeatherPreview {
   temp: number;
@@ -12,12 +13,20 @@ interface WeatherPreview {
   icon: "sun" | "cloud" | "rain" | "storm";
   rainChance: number;
   humidity: number;
+  windSpeed: number;
   recommendation: string;
+  forecast: Array<{
+    day: string;
+    temp: number;
+    icon: "sun" | "cloud" | "rain" | "storm";
+    rainChance: number;
+  }>;
 }
 
 export default function WeatherPreview() {
   const [weather, setWeather] = useState<WeatherPreview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeDay, setActiveDay] = useState(0);
   
   useEffect(() => {
     // Simulate fetching weather data
@@ -28,24 +37,33 @@ export default function WeatherPreview() {
         icon: "cloud",
         rainChance: 30,
         humidity: 65,
-        recommendation: "Good conditions for field work today, rain expected tomorrow"
+        windSpeed: 12,
+        recommendation: "Good conditions for field work today, rain expected tomorrow.",
+        forecast: [
+          { day: "Today", temp: 28, icon: "cloud", rainChance: 30 },
+          { day: "Tue", temp: 24, icon: "rain", rainChance: 70 },
+          { day: "Wed", temp: 26, icon: "rain", rainChance: 60 },
+          { day: "Thu", temp: 29, icon: "sun", rainChance: 10 },
+          { day: "Fri", temp: 30, icon: "sun", rainChance: 5 },
+        ]
       });
       setLoading(false);
     }, 1200);
   }, []);
 
-  const getWeatherIcon = (icon: string) => {
+  const getWeatherIcon = (icon: string, size: number = 10) => {
+    const className = `h-${size} w-${size}`;
     switch(icon) {
-      case "rain": return <CloudRain className="h-10 w-10 text-blue-500" />;
-      case "cloud": return <Cloud className="h-10 w-10 text-slate-400" />;
-      case "storm": return <CloudLightning className="h-10 w-10 text-purple-500" />;
-      default: return <Sun className="h-10 w-10 text-amber-500" />;
+      case "rain": return <CloudRain className={className} style={{height: `${size/4}rem`, width: `${size/4}rem`}} text-blue-500" />;
+      case "cloud": return <CloudSun className={className} style={{height: `${size/4}rem`, width: `${size/4}rem`}} text-slate-400" />;
+      case "storm": return <CloudLightning className={className} style={{height: `${size/4}rem`, width: `${size/4}rem`}} text-purple-500" />;
+      default: return <Sun className={className} style={{height: `${size/4}rem`, width: `${size/4}rem`}} text-amber-500" />;
     }
   };
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
+    <Card className="h-full border-2 hover:border-primary/50 transition-all">
+      <CardHeader className="pb-3 bg-gradient-to-r from-blue-50 to-sky-50 dark:from-blue-950/30 dark:to-sky-950/30">
         <CardTitle className="flex justify-between items-center">
           <span>Farm Weather</span>
           <Badge className="text-xs animate-pulse bg-green-600 hover:bg-green-700">LIVE</Badge>
@@ -63,21 +81,67 @@ export default function WeatherPreview() {
         ) : weather ? (
           <div>
             <div className="flex items-center gap-4 mb-4">
-              {getWeatherIcon(weather.icon)}
+              <div className="relative">
+                {getWeatherIcon(weather.icon, 10)}
+                <div className="absolute inset-0 rounded-full bg-blue-200/20 dark:bg-blue-500/10 blur-xl -z-10"></div>
+              </div>
               <div>
-                <div className="text-3xl font-bold tracking-tighter">{weather.temp}°C</div>
-                <div className="text-sm text-muted-foreground">{weather.condition}</div>
+                <div className="text-3xl font-bold tracking-tighter flex items-start">
+                  {weather.temp}°C
+                  <span className="text-sm text-muted-foreground ml-1 mt-1">
+                    {weather.condition}
+                  </span>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Wind: {weather.windSpeed} km/h
+                </div>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="flex items-center gap-2 text-sm">
-                <Droplet className="h-4 w-4 text-blue-500" />
-                <span>Humidity: {weather.humidity}%</span>
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Droplet className="h-4 w-4 text-blue-500" />
+                    <span>Humidity</span>
+                  </div>
+                  <span className="text-sm">{weather.humidity}%</span>
+                </div>
+                <Progress value={weather.humidity} className="h-2" />
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <CloudRain className="h-4 w-4 text-blue-500" />
-                <span>Rain: {weather.rainChance}%</span>
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <div className="flex items-center gap-2 text-sm">
+                    <CloudRain className="h-4 w-4 text-blue-500" />
+                    <span>Rain</span>
+                  </div>
+                  <span className="text-sm">{weather.rainChance}%</span>
+                </div>
+                <Progress value={weather.rainChance} className="h-2" />
+              </div>
+            </div>
+            
+            <div className="mb-4 overflow-x-auto">
+              <div className="flex space-x-1 pb-1 min-w-max">
+                {weather.forecast.map((day, index) => (
+                  <div 
+                    key={index}
+                    className={`p-2 rounded-lg flex-1 min-w-24 text-center cursor-pointer transition-all ${
+                      activeDay === index 
+                        ? 'bg-primary text-primary-foreground shadow-md' 
+                        : 'bg-muted/50 hover:bg-muted'
+                    }`}
+                    onClick={() => setActiveDay(index)}
+                  >
+                    <div className="font-medium text-xs">{day.day}</div>
+                    <div className="my-1">{getWeatherIcon(day.icon, 6)}</div>
+                    <div className="text-sm font-semibold">{day.temp}°</div>
+                    <div className="text-xs flex justify-center items-center gap-1">
+                      <Umbrella className="h-3 w-3" />
+                      {day.rainChance}%
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
             
@@ -88,11 +152,11 @@ export default function WeatherPreview() {
             </div>
             
             <Link to="/weather">
-              <Button variant="outline" size="sm" className="w-full">
+              <Button variant="outline" size="sm" className="w-full group">
                 <span className="flex items-center gap-2">
                   <Cloud className="h-4 w-4" />
                   Full Weather Forecast
-                  <ArrowRight className="h-3 w-3 ml-auto" />
+                  <ArrowRight className="h-3 w-3 ml-auto group-hover:translate-x-1 transition-transform" />
                 </span>
               </Button>
             </Link>

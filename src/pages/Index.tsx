@@ -99,11 +99,11 @@ export default function Index() {
     <Layout>
       <div className="container py-4 md:py-8">
         {/* Hero Section */}
-        <div className="text-center mb-8 md:mb-10">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+        <div className="text-center mb-8 md:mb-12 max-w-3xl mx-auto">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-emerald-500 dark:from-green-400 dark:to-emerald-300">
             AI-Powered Farming Assistant
           </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6">
+          <p className="text-xl text-muted-foreground mb-6">
             Increase yields, prevent diseases, and maximize profits with real-time AI insights
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -112,24 +112,32 @@ export default function Index() {
                 <span className="animate-pulse">Loading...</span>
               </Button>
             ) : user ? (
-              <Button size="lg" onClick={() => navigate("/scan")}>
-                Start Scanning Your Crops
+              <Button size="lg" onClick={() => navigate("/scan")} className="relative group overflow-hidden">
+                <span className="relative z-10 flex items-center gap-2">
+                  <Leaf className="h-5 w-5" />
+                  Start Scanning Your Crops
+                </span>
+                <div className="absolute inset-0 bg-green-600 transform translate-y-full group-hover:translate-y-0 transition-transform duration-200"></div>
               </Button>
             ) : (
               <>
-                <Button size="lg" onClick={() => navigate("/auth")}>
-                  Login / Sign Up
+                <Button size="lg" onClick={() => navigate("/auth")} className="relative group overflow-hidden">
+                  <span className="relative z-10">Login / Sign Up</span>
+                  <div className="absolute inset-0 bg-green-600 transform translate-y-full group-hover:translate-y-0 transition-transform duration-200"></div>
                 </Button>
-                <Button size="lg" variant="outline" onClick={() => navigate("/scan")}>
-                  Try Without Account
+                <Button size="lg" variant="outline" onClick={() => navigate("/scan")} className="group">
+                  <span className="flex items-center gap-2">
+                    Try Without Account
+                    <ArrowUpRight className="h-4 w-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                  </span>
                 </Button>
               </>
             )}
           </div>
         </div>
 
-        {/* Premium Features Showcase */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* Premium Features Showcase - First Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           <div className="lg:col-span-2">
             <CropScannerPreview />
           </div>
@@ -138,7 +146,8 @@ export default function Index() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* Premium Features Showcase - Second Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           <div className="lg:col-span-1">
             <TodaysFarmPlan />
           </div>
@@ -151,11 +160,13 @@ export default function Index() {
         </div>
 
         {/* Feature Links Grid - Kept from original but moved down */}
-        <h2 className="text-2xl font-bold mb-4 mt-10">All CropGenius Features</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuresData.map((feature, index) => (
-            <FeatureLink key={index} {...feature} />
-          ))}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-6 text-center">All CropGenius Features</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuresData.map((feature, index) => (
+              <FeatureLink key={index} {...feature} />
+            ))}
+          </div>
         </div>
       </div>
     </Layout>
