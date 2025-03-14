@@ -8,25 +8,15 @@ export interface ChatResponse {
   source: string;
   timestamp: string;
   usingFallback?: boolean;
-  category?: string;
-  language?: string;
 }
 
-export const fetchAIResponse = async (
-  message: string, 
-  category: ChatCategory = "all", 
-  language: string = "en"
-): Promise<string> => {
+export const fetchAIResponse = async (message: string, category: ChatCategory = "all"): Promise<string> => {
   try {
-    console.log(`Sending message to AI in category: ${category}, language: ${language}`);
-    
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id;
+    console.log(`Sending message to AI in category: ${category}`);
     
     // Try to call the Supabase Edge Function
     const { data, error } = await supabase.functions.invoke('ai-chat', {
-      body: { message, category, language, userId },
+      body: { message, category },
     });
     
     if (error) {
@@ -35,23 +25,6 @@ export const fetchAIResponse = async (
     }
     
     console.log("AI Response:", data);
-    
-    // Save chat to history if user is logged in
-    if (userId) {
-      try {
-        await supabase.from('chat_history').insert({
-          user_id: userId,
-          category: category,
-          user_message: message,
-          ai_response: data.response,
-          language: language,
-          ai_model: data.usingFallback ? 'fallback' : 'gemini-pro'
-        });
-      } catch (dbError) {
-        console.error("Error saving chat to history:", dbError);
-        // Non-blocking - continue even if saving to DB fails
-      }
-    }
     
     if (data && data.response) {
       return data.response;
@@ -87,35 +60,18 @@ export const availableLanguages = [
 ];
 
 export const translateMessage = async (message: string, targetLanguage: string = "en"): Promise<string> => {
-  // If language is English, return the original message
+  // In production, this would call a translation API
+  // For now, we'll return the original message for English and a placeholder for other languages
   if (targetLanguage === "en") {
     return message;
   }
   
   try {
-    // Call the edge function for translation
-    const { data, error } = await supabase.functions.invoke('ai-chat', {
-      body: { 
-        message: `Translate the following text to ${getLanguageName(targetLanguage)}: "${message}"`,
-        category: "all",
-        language: targetLanguage
-      },
-    });
-    
-    if (error) {
-      console.error("Translation error:", error);
-      return message; // Fallback to original message
-    }
-    
-    return data.response || message;
+    // Call translation service through Supabase function (to be implemented)
+    // For now, return a message indicating translation would happen
+    return `[Translated to ${targetLanguage}]: ${message}`;
   } catch (error) {
     console.error("Translation error:", error);
     return message; // Fallback to original message
   }
 };
-
-// Helper function to get language name from code
-function getLanguageName(code: string): string {
-  const language = availableLanguages.find(lang => lang.code === code);
-  return language ? language.name : "English";
-}

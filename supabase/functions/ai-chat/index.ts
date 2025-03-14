@@ -7,8 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Get API keys from environment variables
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || 'DEMO_KEY';
+// In production, we would use these API keys securely from environment variables
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || 'DEMO_KEY'; 
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -17,9 +17,9 @@ serve(async (req) => {
   }
 
   try {
-    const { message, category, language = 'en', userId } = await req.json();
+    const { message, category } = await req.json();
     
-    console.log(`Processing AI chat request in category: ${category}, language: ${language}`);
+    console.log(`Processing AI chat request in category: ${category}`);
     console.log(`User message: ${message}`);
     
     // Call Gemini API for a realistic response
@@ -37,7 +37,7 @@ serve(async (req) => {
       };
       
       const context = contextByCategory[category] || contextByCategory.all;
-      const systemPrompt = `${context} Provide specific, actionable advice for farmers in Africa, with a focus on sustainable practices. Keep responses concise (max 150 words). Base answers on scientific agricultural knowledge. Respond in ${language} language.`;
+      const systemPrompt = `${context} Provide specific, actionable advice for farmers in Africa, with a focus on sustainable practices. Keep responses concise (max 150 words). Base answers on scientific agricultural knowledge.`;
       
       // Make the API request to Gemini
       const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent", {
@@ -106,43 +106,13 @@ serve(async (req) => {
       aiResponse = fallbackResponses[category] || fallbackResponses['all'];
     }
     
-    // Create response object
-    const responseObj = {
-      response: aiResponse,
-      source: usingFallback ? "AI Agricultural Assistant (offline mode)" : "Gemini AI Agricultural Expert",
-      timestamp: new Date().toISOString(),
-      usingFallback: usingFallback,
-      category: category,
-      language: language
-    };
-    
-    // Attempt to save chat history to database if userId is provided
-    if (userId) {
-      try {
-        const { supabaseClient } = await import 'https://esm.sh/@supabase/supabase-js@2.39.6';
-        const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
-        
-        if (supabaseUrl && supabaseAnonKey) {
-          const supabase = supabaseClient(supabaseUrl, supabaseAnonKey);
-          
-          await supabase.from('chat_history').insert({
-            user_id: userId,
-            category: category,
-            user_message: message,
-            ai_response: aiResponse,
-            language: language,
-            ai_model: usingFallback ? 'fallback' : 'gemini-pro'
-          });
-        }
-      } catch (dbError) {
-        console.error("Error saving chat history:", dbError);
-        // Non-blocking - continue even if saving to DB fails
-      }
-    }
-    
     return new Response(
-      JSON.stringify(responseObj),
+      JSON.stringify({ 
+        response: aiResponse,
+        source: usingFallback ? "AI Agricultural Assistant (offline mode)" : "Gemini AI Agricultural Expert",
+        timestamp: new Date().toISOString(),
+        usingFallback: usingFallback
+      }),
       { 
         headers: { 
           ...corsHeaders,
