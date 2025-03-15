@@ -53,11 +53,17 @@ export default function WeatherPreview() {
 
   const getWeatherIcon = (icon: string, size: number = 10) => {
     const className = `h-${size} w-${size}`;
+    const iconStyle = { height: `${size/4}rem`, width: `${size/4}rem` };
+    
     switch(icon) {
-      case "rain": return <CloudRain className={className} style={{height: `${size/4}rem`, width: `${size/4}rem`}} text-blue-500" />;
-      case "cloud": return <CloudSun className={className} style={{height: `${size/4}rem`, width: `${size/4}rem`}} text-slate-400" />;
-      case "storm": return <CloudLightning className={className} style={{height: `${size/4}rem`, width: `${size/4}rem`}} text-purple-500" />;
-      default: return <Sun className={className} style={{height: `${size/4}rem`, width: `${size/4}rem`}} text-amber-500" />;
+      case "rain": 
+        return <CloudRain className={className} style={iconStyle} className="text-blue-500" />;
+      case "cloud": 
+        return <CloudSun className={className} style={iconStyle} className="text-slate-400" />;
+      case "storm": 
+        return <CloudLightning className={className} style={iconStyle} className="text-purple-500" />;
+      default: 
+        return <Sun className={className} style={iconStyle} className="text-amber-500" />;
     }
   };
 

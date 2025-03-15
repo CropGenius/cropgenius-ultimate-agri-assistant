@@ -2,10 +2,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, CircleDollarSign, ShoppingCart, ArrowRight, BarChart3, AlertTriangle } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, CircleDollarSign, ShoppingCart, ArrowRight, BarChart3, AlertTriangle, LineChart, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
 
 interface MarketTrend {
   crop: string;
@@ -16,6 +18,14 @@ interface MarketTrend {
   reason: string;
   buyRecommendation: boolean;
   sellRecommendation: boolean;
+  historicalData: Array<{
+    date: string;
+    price: number;
+  }>;
+  predictedData: Array<{
+    date: string; 
+    price: number;
+  }>;
 }
 
 export default function MarketPreview() {
@@ -23,6 +33,7 @@ export default function MarketPreview() {
   const [loading, setLoading] = useState(true);
   const [selectedTrend, setSelectedTrend] = useState<MarketTrend | null>(null);
   const [showInsight, setShowInsight] = useState(false);
+  const [showChart, setShowChart] = useState(false);
   
   useEffect(() => {
     // Simulate fetching market data
@@ -36,7 +47,19 @@ export default function MarketPreview() {
           forecast: "rising" as const,
           reason: "Reduced harvests in neighboring regions due to unexpected rainfall patterns",
           buyRecommendation: false,
-          sellRecommendation: true
+          sellRecommendation: true,
+          historicalData: [
+            { date: "May", price: 35.20 },
+            { date: "Jun", price: 36.10 },
+            { date: "Jul", price: 36.80 },
+            { date: "Aug", price: 37.50 },
+            { date: "Sep", price: 38.50 }
+          ],
+          predictedData: [
+            { date: "Oct", price: 39.70 },
+            { date: "Nov", price: 41.30 },
+            { date: "Dec", price: 40.80 }
+          ]
         },
         { 
           crop: "Beans", 
@@ -46,7 +69,19 @@ export default function MarketPreview() {
           forecast: "stable" as const,
           reason: "Steady demand with slightly decreased supply in central markets",
           buyRecommendation: false,
-          sellRecommendation: false
+          sellRecommendation: false,
+          historicalData: [
+            { date: "May", price: 93.25 },
+            { date: "Jun", price: 94.10 },
+            { date: "Jul", price: 94.60 },
+            { date: "Aug", price: 95.15 },
+            { date: "Sep", price: 95.75 }
+          ],
+          predictedData: [
+            { date: "Oct", price: 96.20 },
+            { date: "Nov", price: 96.35 },
+            { date: "Dec", price: 96.10 }
+          ]
         },
         { 
           crop: "Tomatoes", 
@@ -56,7 +91,19 @@ export default function MarketPreview() {
           forecast: "falling" as const,
           reason: "Peak harvest season with oversupply in most regional markets",
           buyRecommendation: true,
-          sellRecommendation: false
+          sellRecommendation: false,
+          historicalData: [
+            { date: "May", price: 73.80 },
+            { date: "Jun", price: 71.40 },
+            { date: "Jul", price: 69.50 },
+            { date: "Aug", price: 67.80 },
+            { date: "Sep", price: 65.30 }
+          ],
+          predictedData: [
+            { date: "Oct", price: 62.80 },
+            { date: "Nov", price: 60.40 },
+            { date: "Dec", price: 64.70 }
+          ]
         },
       ];
       
@@ -69,11 +116,29 @@ export default function MarketPreview() {
   const handleTrendClick = (trend: MarketTrend) => {
     setSelectedTrend(trend);
     setShowInsight(true);
+    setShowChart(false);
     
     // Auto-hide insight after delay
     setTimeout(() => {
       setShowInsight(false);
     }, 5000);
+  };
+
+  const handleShowChart = () => {
+    setShowChart(true);
+    setShowInsight(false);
+  };
+
+  const combineChartData = (trend: MarketTrend) => {
+    const historical = trend.historicalData.map(item => ({
+      ...item,
+      type: 'historical'
+    }));
+    const predicted = trend.predictedData.map(item => ({
+      ...item,
+      type: 'predicted'
+    }));
+    return [...historical, ...predicted];
   };
 
   return (
@@ -152,7 +217,83 @@ export default function MarketPreview() {
                         </Badge>
                       )}
                     </div>
+                    
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="mt-3 w-full flex items-center justify-center gap-2"
+                      onClick={handleShowChart}
+                    >
+                      <LineChart className="h-4 w-4" />
+                      View Price Trends
+                    </Button>
                   </div>
+                </div>
+              </div>
+            )}
+            
+            {showChart && selectedTrend && (
+              <div className="bg-white dark:bg-gray-800/50 rounded-lg p-3 animate-fade-in">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="text-sm font-medium">{selectedTrend.crop} Price Forecast</h4>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" /> 
+                    <span>3-Month</span>
+                  </Badge>
+                </div>
+                
+                <div className="h-[160px] w-full mt-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsLineChart
+                      data={combineChartData(selectedTrend)}
+                      margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} tickMargin={5} />
+                      <YAxis hide />
+                      <Tooltip content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white dark:bg-gray-800 p-2 shadow-md rounded border text-xs">
+                              <p className="font-medium">{data.date}</p>
+                              <p className="text-green-600 dark:text-green-400">${data.price.toFixed(2)}</p>
+                              <p className="text-xs text-gray-500">{data.type === 'predicted' ? 'Forecast' : 'Historical'}</p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }} />
+                      <Line
+                        type="monotone"
+                        dataKey="price"
+                        stroke="#2563eb"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 6, fill: "#2563eb", stroke: "#fff", strokeWidth: 2 }}
+                      />
+                    </RechartsLineChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                <div className="flex justify-between items-center mt-1 text-xs text-muted-foreground">
+                  <div>
+                    <Badge variant="outline" className="text-xs">Historical</Badge>
+                  </div>
+                  <div>
+                    <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-900/20">AI Prediction</Badge>
+                  </div>
+                </div>
+                
+                <div className="mt-2">
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setShowChart(false)}
+                  >
+                    Back to Market View
+                  </Button>
                 </div>
               </div>
             )}

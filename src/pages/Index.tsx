@@ -42,25 +42,25 @@ export default function Index() {
     {
       to: "/scan",
       icon: <Leaf className="h-8 w-8" />,
-      title: "Scan Crop",
+      title: "AI Crop Scanner",
       description: "Identify diseases and get instant treatment recommendations",
     },
     {
       to: "/weather",
       icon: <CloudSun className="h-8 w-8" />,
-      title: "Weather",
+      title: "Weather AI",
       description: "Get hyperlocal forecasts and smart farming advisories",
     },
     {
       to: "/farm-plan",
       icon: <BarChart4 className="h-8 w-8" />,
-      title: "Farm Plan",
+      title: "AI Farm Plan",
       description: "AI-generated plans optimized for your farm conditions",
     },
     {
       to: "/market",
       icon: <ShoppingCart className="h-8 w-8" />,
-      title: "Market",
+      title: "Smart Market",
       description: "Find buyers, track prices, and maximize your profits",
     },
     {
@@ -72,13 +72,13 @@ export default function Index() {
     {
       to: "/alerts",
       icon: <AlertTriangle className="h-8 w-8" />,
-      title: "Alerts",
+      title: "AI Alerts",
       description: "Receive timely alerts for weather, pests, and market changes",
     },
     {
       to: "/community",
       icon: <Users className="h-8 w-8" />,
-      title: "Community",
+      title: "Farmer Network",
       description: "Connect with farmers and share knowledge",
     },
     {
@@ -90,7 +90,7 @@ export default function Index() {
     {
       to: "/challenges",
       icon: <Award className="h-8 w-8" />,
-      title: "Challenges",
+      title: "Farm Challenges",
       description: "Complete farming challenges to unlock rewards",
     },
   ];
@@ -128,7 +128,7 @@ export default function Index() {
                 <Button size="lg" variant="outline" onClick={() => navigate("/scan")} className="group">
                   <span className="flex items-center gap-2">
                     Try Without Account
-                    <ArrowUpRight className="h-4 w-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    <Award className="h-4 w-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                   </span>
                 </Button>
               </>
