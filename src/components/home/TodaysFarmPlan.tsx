@@ -6,6 +6,7 @@ import { Tractor, CheckCircle, AlertTriangle, Calendar, ArrowRight, Clock, Dropl
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 interface Task {
   id: string;
@@ -36,7 +37,7 @@ export default function TodaysFarmPlan() {
     // In a production app, this would fetch from Supabase
     // For now, we'll use sample data that simulates AI farm recommendations
     setTimeout(() => {
-      const todaysTasks = [
+      const todaysTasks: Task[] = [
         {
           id: "1",
           title: "Water tomato beds - predicted rainfall insufficient",
@@ -107,6 +108,38 @@ export default function TodaysFarmPlan() {
       setTasks(todaysTasks);
       setLoading(false);
       calculateFarmScore(todaysTasks);
+      
+      // Simulate an AI-generated alert after a few seconds
+      setTimeout(() => {
+        const newTask: Task = {
+          id: "urgent-" + Date.now(),
+          title: "URGENT: Pest outbreak detected in eastern field",
+          priority: "high",
+          completed: false,
+          dueDate: "Today",
+          dueTime: "Immediately",
+          type: "pest",
+          completionPercentage: 0,
+          weather: {
+            affectedBy: "Warm, humid conditions ideal for pest proliferation",
+            recommendation: "Apply organic pesticide immediately to prevent spread"
+          },
+          aiImportance: 10,
+          impact: "Prevents potential crop loss of 40-60%",
+          isOverdue: false
+        };
+        
+        setTasks(prevTasks => [newTask, ...prevTasks]);
+        
+        toast.warning("New Urgent Farm Task", {
+          description: "AI has detected a pest outbreak requiring immediate attention.",
+          action: {
+            label: "View",
+            onClick: () => setExpandedTask(newTask.id)
+          }
+        });
+      }, 8000);
+      
     }, 1000);
   }, []);
 
@@ -160,6 +193,14 @@ export default function TodaysFarmPlan() {
     // Show animation briefly
     setShowAnimation(true);
     setTimeout(() => setShowAnimation(false), 2000);
+    
+    // Show toast for completed task
+    const task = tasks.find(t => t.id === id);
+    if (!task?.completed) {
+      toast.success("Task marked as complete", {
+        description: `AI will update your farm plan based on this action.`
+      });
+    }
   };
 
   const updateProgress = (id: string, percentage: number) => {
@@ -176,6 +217,14 @@ export default function TodaysFarmPlan() {
     
     setTasks(updatedTasks);
     calculateFarmScore(updatedTasks);
+    
+    if (percentage === 100) {
+      toast.success("Task completed!", {
+        description: "Great job! Your farm health score has improved."
+      });
+    } else {
+      toast.info(`Task progress updated: ${percentage}%`);
+    }
   };
 
   const getPriorityBadge = (priority: string) => {
@@ -190,18 +239,19 @@ export default function TodaysFarmPlan() {
   };
 
   const getTypeIcon = (type: string, size: number = 4) => {
-    const className = `h-${size} w-${size}`;
+    const iconSize = `${size/4}rem`;
+    
     switch (type) {
       case "irrigation":
-        return <Droplet className={className} style={{ height: `${size/4}rem`, width: `${size/4}rem` }} className="text-blue-500" />;
+        return <Droplet style={{ height: iconSize, width: iconSize }} className="text-blue-500" />;
       case "harvest":
-        return <Tractor className={className} style={{ height: `${size/4}rem`, width: `${size/4}rem` }} className="text-green-500" />;
+        return <Tractor style={{ height: iconSize, width: iconSize }} className="text-green-500" />;
       case "pest":
-        return <ShieldAlert className={className} style={{ height: `${size/4}rem`, width: `${size/4}rem` }} className="text-amber-500" />;
+        return <ShieldAlert style={{ height: iconSize, width: iconSize }} className="text-amber-500" />;
       case "fertilizer":
-        return <ThermometerSun className={className} style={{ height: `${size/4}rem`, width: `${size/4}rem` }} className="text-purple-500" />;
+        return <ThermometerSun style={{ height: iconSize, width: iconSize }} className="text-purple-500" />;
       default:
-        return <Calendar className={className} style={{ height: `${size/4}rem`, width: `${size/4}rem` }} className="text-gray-500" />;
+        return <Calendar style={{ height: iconSize, width: iconSize }} className="text-gray-500" />;
     }
   };
 
@@ -398,7 +448,7 @@ export default function TodaysFarmPlan() {
             
             <Link to="/farm-plan">
               <Button variant="ghost" size="sm" className="w-full mt-2 group">
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-2">
                   <Tractor className="h-4 w-4" />
                   View Complete Farm Plan
                   <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />

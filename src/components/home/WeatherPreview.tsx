@@ -2,10 +2,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Cloud, CloudRain, Sun, Wind, ArrowRight, Droplet, CloudLightning, Thermometer, CloudSun, Umbrella } from "lucide-react";
+import { Cloud, CloudRain, Sun, Wind, ArrowRight, Droplet, CloudLightning, Thermometer, CloudSun, Umbrella, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 interface WeatherPreview {
   temp: number;
@@ -15,6 +16,8 @@ interface WeatherPreview {
   humidity: number;
   windSpeed: number;
   recommendation: string;
+  farmAction: string;
+  urgency: "normal" | "warning" | "critical";
   forecast: Array<{
     day: string;
     temp: number;
@@ -27,55 +30,116 @@ export default function WeatherPreview() {
   const [weather, setWeather] = useState<WeatherPreview | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeDay, setActiveDay] = useState(0);
+  const [animation, setAnimation] = useState(false);
+  const [locationName, setLocationName] = useState("Your Farm");
   
   useEffect(() => {
-    // Simulate fetching weather data
+    // Simulate fetching location
     setTimeout(() => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setLocationName("Detected Farm Location");
+            fetchWeatherData(position.coords.latitude, position.coords.longitude);
+          },
+          () => {
+            fetchWeatherData(-1.2921, 36.8219); // Default to Nairobi if location not available
+          }
+        );
+      } else {
+        fetchWeatherData(-1.2921, 36.8219); // Default to Nairobi if geolocation not supported
+      }
+    }, 800);
+  }, []);
+  
+  const fetchWeatherData = (lat: number, lon: number) => {
+    // In a real app, this would fetch from a weather API
+    // For now, we'll simulate AI-generated weather insights
+    setTimeout(() => {
+      // Determine if we should show a weather alert based on random chance (30%)
+      const hasAlert = Math.random() > 0.7;
+      
       setWeather({
-        temp: 28,
-        condition: "Partly Cloudy",
-        icon: "cloud",
-        rainChance: 30,
-        humidity: 65,
-        windSpeed: 12,
-        recommendation: "Good conditions for field work today, rain expected tomorrow.",
+        temp: Math.floor(22 + Math.random() * 10),
+        condition: hasAlert ? "Heavy Rain Expected" : "Partly Cloudy",
+        icon: hasAlert ? "rain" : "cloud",
+        rainChance: hasAlert ? 80 : 30,
+        humidity: 55 + Math.floor(Math.random() * 20),
+        windSpeed: 8 + Math.floor(Math.random() * 10),
+        recommendation: hasAlert 
+          ? "Delay field work and secure crops before heavy rainfall arrives."
+          : "Good conditions for field work today, monitor humidity levels for disease prevention.",
+        farmAction: hasAlert
+          ? "URGENT: Harvest mature crops within next 6 hours"
+          : "Optimal conditions for applying foliar fertilizer",
+        urgency: hasAlert ? "critical" : "normal",
         forecast: [
-          { day: "Today", temp: 28, icon: "cloud", rainChance: 30 },
+          { day: "Today", temp: 28, icon: hasAlert ? "rain" : "cloud", rainChance: hasAlert ? 80 : 30 },
           { day: "Tue", temp: 24, icon: "rain", rainChance: 70 },
           { day: "Wed", temp: 26, icon: "rain", rainChance: 60 },
           { day: "Thu", temp: 29, icon: "sun", rainChance: 10 },
           { day: "Fri", temp: 30, icon: "sun", rainChance: 5 },
         ]
       });
+      
       setLoading(false);
+      
+      // Animate data refresh
+      setAnimation(true);
+      setTimeout(() => setAnimation(false), 1500);
+      
+      // Show alert if critical weather
+      if (hasAlert) {
+        setTimeout(() => {
+          toast.warning("Weather Alert Detected", {
+            description: "Heavy rainfall expected within 24 hours. AI recommends immediate action.",
+            action: {
+              label: "View Details",
+              onClick: () => {}
+            }
+          });
+        }, 1000);
+      }
     }, 1200);
-  }, []);
+  };
 
   const getWeatherIcon = (icon: string, size: number = 10) => {
-    const className = `h-${size} w-${size}`;
-    const iconStyle = { height: `${size/4}rem`, width: `${size/4}rem` };
+    const iconSize = `${size/4}rem`;
     
     switch(icon) {
       case "rain": 
-        return <CloudRain className={className} style={iconStyle} className="text-blue-500" />;
+        return <CloudRain style={{ height: iconSize, width: iconSize }} className="text-blue-500" />;
       case "cloud": 
-        return <CloudSun className={className} style={iconStyle} className="text-slate-400" />;
+        return <CloudSun style={{ height: iconSize, width: iconSize }} className="text-slate-400" />;
       case "storm": 
-        return <CloudLightning className={className} style={iconStyle} className="text-purple-500" />;
+        return <CloudLightning style={{ height: iconSize, width: iconSize }} className="text-purple-500" />;
       default: 
-        return <Sun className={className} style={iconStyle} className="text-amber-500" />;
+        return <Sun style={{ height: iconSize, width: iconSize }} className="text-amber-500" />;
     }
   };
 
+  const refreshWeather = () => {
+    setLoading(true);
+    fetchWeatherData(-1.2921, 36.8219);
+  };
+
   return (
-    <Card className="h-full border-2 hover:border-primary/50 transition-all">
+    <Card className={`h-full border-2 hover:border-primary/50 transition-all ${animation ? 'animate-pulse' : ''}`}>
       <CardHeader className="pb-3 bg-gradient-to-r from-blue-50 to-sky-50 dark:from-blue-950/30 dark:to-sky-950/30">
         <CardTitle className="flex justify-between items-center">
-          <span>Farm Weather</span>
+          <span>AI Weather Intelligence</span>
           <Badge className="text-xs animate-pulse bg-green-600 hover:bg-green-700">LIVE</Badge>
         </CardTitle>
-        <CardDescription>
-          Hyperlocal weather for your exact farm location
+        <CardDescription className="flex items-center gap-2">
+          <span>Hyperlocal forecast for {locationName}</span>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-5 w-5" 
+            onClick={refreshWeather}
+          >
+            <Cloud className="h-3 w-3" />
+          </Button>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -151,9 +215,26 @@ export default function WeatherPreview() {
               </div>
             </div>
             
-            <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg mb-4">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                <span className="font-medium">Farm Advice:</span> {weather.recommendation}
+            <div className={`p-3 rounded-lg mb-4 ${
+              weather.urgency === 'critical' 
+                ? 'bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 animate-pulse' 
+                : weather.urgency === 'warning'
+                  ? 'bg-amber-50 dark:bg-amber-900/30 border-l-4 border-amber-500'
+                  : 'bg-blue-50 dark:bg-blue-900/30'
+            }`}>
+              {weather.urgency === 'critical' && (
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle className="h-4 w-4 text-red-500" />
+                  <span className="text-xs font-bold text-red-600 dark:text-red-400">WEATHER ALERT</span>
+                </div>
+              )}
+              
+              <p className={`text-sm ${
+                weather.urgency === 'critical' 
+                  ? 'text-red-800 dark:text-red-200 font-medium' 
+                  : 'text-blue-800 dark:text-blue-200'
+              }`}>
+                <span className="font-medium">AI Farm Action:</span> {weather.farmAction}
               </p>
             </div>
             
@@ -161,7 +242,7 @@ export default function WeatherPreview() {
               <Button variant="outline" size="sm" className="w-full group">
                 <span className="flex items-center gap-2">
                   <Cloud className="h-4 w-4" />
-                  Full Weather Forecast
+                  Full Weather Intelligence
                   <ArrowRight className="h-3 w-3 ml-auto group-hover:translate-x-1 transition-transform" />
                 </span>
               </Button>
@@ -170,7 +251,7 @@ export default function WeatherPreview() {
         ) : (
           <div className="text-center py-6">
             <p>Unable to load weather data</p>
-            <Button variant="outline" size="sm" className="mt-2">
+            <Button variant="outline" size="sm" className="mt-2" onClick={refreshWeather}>
               Retry
             </Button>
           </div>

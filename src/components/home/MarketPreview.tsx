@@ -2,313 +2,368 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, CircleDollarSign, ShoppingCart, ArrowRight, BarChart3, AlertTriangle, LineChart, Calendar } from "lucide-react";
+import { 
+  ShoppingCart, 
+  ArrowRight, 
+  TrendingUp, 
+  TrendingDown, 
+  Wheat, 
+  BarChart3, 
+  Timer, 
+  DollarSign, 
+  ArrowUpRight, 
+  ArrowDownRight,
+  AlertTriangle
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Progress } from "@/components/ui/progress";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
+import { toast } from "sonner";
 
-interface MarketTrend {
-  crop: string;
-  price: number;
+interface CropPricing {
+  name: string;
+  currentPrice: number;
   change: number;
-  trend: "up" | "down";
-  forecast: "rising" | "falling" | "stable";
-  reason: string;
-  buyRecommendation: boolean;
-  sellRecommendation: boolean;
-  historicalData: Array<{
-    date: string;
+  trend: "up" | "down" | "stable";
+  aiRecommendation: string;
+  action: "buy" | "sell" | "hold";
+  urgency: "high" | "medium" | "low";
+  opportunity?: string;
+  prediction?: {
+    days: number;
     price: number;
-  }>;
-  predictedData: Array<{
-    date: string; 
-    price: number;
-  }>;
+    reason: string;
+  };
 }
 
 export default function MarketPreview() {
-  const [marketTrends, setMarketTrends] = useState<MarketTrend[]>([]);
+  const [marketData, setMarketData] = useState<CropPricing[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTrend, setSelectedTrend] = useState<MarketTrend | null>(null);
-  const [showInsight, setShowInsight] = useState(false);
-  const [showChart, setShowChart] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   
   useEffect(() => {
-    // Simulate fetching market data
+    fetchMarketData();
+    
+    // Set up interval to periodically update prices
+    const interval = setInterval(() => {
+      updateRandomPrice();
+    }, 8000);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  const fetchMarketData = () => {
+    // In a real app, this would fetch from an API
+    // For now, we'll generate realistic pricing data
     setTimeout(() => {
-      const trends = [
-        { 
-          crop: "Maize", 
-          price: 38.50, 
-          change: 2.5, 
-          trend: "up" as const, 
-          forecast: "rising" as const,
-          reason: "Reduced harvests in neighboring regions due to unexpected rainfall patterns",
-          buyRecommendation: false,
-          sellRecommendation: true,
-          historicalData: [
-            { date: "May", price: 35.20 },
-            { date: "Jun", price: 36.10 },
-            { date: "Jul", price: 36.80 },
-            { date: "Aug", price: 37.50 },
-            { date: "Sep", price: 38.50 }
-          ],
-          predictedData: [
-            { date: "Oct", price: 39.70 },
-            { date: "Nov", price: 41.30 },
-            { date: "Dec", price: 40.80 }
-          ]
+      const crops: CropPricing[] = [
+        {
+          name: "Maize",
+          currentPrice: 42.75,
+          change: 3.8,
+          trend: "up",
+          aiRecommendation: "Strong demand due to regional shortages. AI predicts continued price increases over next 10 days.",
+          action: "hold",
+          urgency: "medium",
+          prediction: {
+            days: 10,
+            price: 47.25,
+            reason: "Regional shortages and increased demand from processors"
+          }
         },
-        { 
-          crop: "Beans", 
-          price: 95.75, 
-          change: 1.2, 
-          trend: "up" as const, 
-          forecast: "stable" as const,
-          reason: "Steady demand with slightly decreased supply in central markets",
-          buyRecommendation: false,
-          sellRecommendation: false,
-          historicalData: [
-            { date: "May", price: 93.25 },
-            { date: "Jun", price: 94.10 },
-            { date: "Jul", price: 94.60 },
-            { date: "Aug", price: 95.15 },
-            { date: "Sep", price: 95.75 }
-          ],
-          predictedData: [
-            { date: "Oct", price: 96.20 },
-            { date: "Nov", price: 96.35 },
-            { date: "Dec", price: 96.10 }
-          ]
+        {
+          name: "Coffee",
+          currentPrice: 238.15,
+          change: -2.1,
+          trend: "down",
+          aiRecommendation: "Temporary price drop due to market oversupply. Hold until next month for better prices.",
+          action: "hold",
+          urgency: "low",
+          prediction: {
+            days: 30,
+            price: 255.30,
+            reason: "Seasonal demand increase and projected export growth"
+          }
         },
-        { 
-          crop: "Tomatoes", 
-          price: 65.30, 
-          change: 3.7, 
-          trend: "down" as const, 
-          forecast: "falling" as const,
-          reason: "Peak harvest season with oversupply in most regional markets",
-          buyRecommendation: true,
-          sellRecommendation: false,
-          historicalData: [
-            { date: "May", price: 73.80 },
-            { date: "Jun", price: 71.40 },
-            { date: "Jul", price: 69.50 },
-            { date: "Aug", price: 67.80 },
-            { date: "Sep", price: 65.30 }
-          ],
-          predictedData: [
-            { date: "Oct", price: 62.80 },
-            { date: "Nov", price: 60.40 },
-            { date: "Dec", price: 64.70 }
-          ]
-        },
+        {
+          name: "Tomatoes",
+          currentPrice: 85.30,
+          change: 12.5,
+          trend: "up",
+          aiRecommendation: "URGENT: Current prices exceptionally high due to regional shortages. Sell immediately to maximize profit.",
+          action: "sell",
+          urgency: "high",
+          opportunity: "3 buyers within 50km offering premium rates",
+          prediction: {
+            days: 7,
+            price: 76.45,
+            reason: "Incoming harvest from northern region will increase supply"
+          }
+        }
       ];
       
-      setMarketTrends(trends);
-      setSelectedTrend(trends[0]);
+      setMarketData(crops);
       setLoading(false);
-    }, 1500);
-  }, []);
-
-  const handleTrendClick = (trend: MarketTrend) => {
-    setSelectedTrend(trend);
-    setShowInsight(true);
-    setShowChart(false);
+      
+      // Show toast for high urgency actions
+      const urgentCrops = crops.filter(c => c.urgency === 'high');
+      if (urgentCrops.length > 0) {
+        setTimeout(() => {
+          toast.warning(`Market Alert: ${urgentCrops[0].name}`, {
+            description: urgentCrops[0].aiRecommendation
+          });
+        }, 2000);
+      }
+    }, 1000);
+  };
+  
+  const updateRandomPrice = () => {
+    if (marketData.length === 0) return;
     
-    // Auto-hide insight after delay
+    // Update a random crop with a small price change
+    const index = Math.floor(Math.random() * marketData.length);
+    const changeAmount = (Math.random() * 0.5) * (Math.random() > 0.5 ? 1 : -1);
+    
+    setMarketData(prevData => {
+      const newData = [...prevData];
+      const crop = {...newData[index]};
+      const oldPrice = crop.currentPrice;
+      const newPrice = parseFloat((oldPrice + (oldPrice * changeAmount / 100)).toFixed(2));
+      
+      crop.currentPrice = newPrice;
+      crop.change = parseFloat(((newPrice - oldPrice) / oldPrice * 100).toFixed(1));
+      crop.trend = newPrice > oldPrice ? "up" : newPrice < oldPrice ? "down" : "stable";
+      
+      // Update recommendation based on significant changes
+      if (Math.abs(crop.change) > 3) {
+        if (crop.trend === "up") {
+          crop.aiRecommendation = "Prices rising quickly. Consider selling if ready for market.";
+          crop.action = "sell";
+          crop.urgency = "medium";
+        } else {
+          crop.aiRecommendation = "Prices dropping. Hold until market stabilizes.";
+          crop.action = "hold";
+          crop.urgency = "low";
+        }
+        
+        // Show toast for significant changes
+        toast.info(`${crop.name} price update`, {
+          description: `Price ${crop.trend === "up" ? "increased" : "decreased"} by ${Math.abs(crop.change).toFixed(1)}%`
+        });
+      }
+      
+      newData[index] = crop;
+      return newData;
+    });
+  };
+
+  const refreshMarketData = () => {
+    setRefreshing(true);
+    // Simulate refresh
     setTimeout(() => {
-      setShowInsight(false);
-    }, 5000);
+      // Update all prices with small variations
+      setMarketData(prevData => 
+        prevData.map(crop => {
+          const changeAmount = (Math.random() * 2 - 1) * (Math.random() > 0.7 ? 3 : 1);
+          const oldPrice = crop.currentPrice;
+          const newPrice = parseFloat((oldPrice + (oldPrice * changeAmount / 100)).toFixed(2));
+          
+          return {
+            ...crop,
+            currentPrice: newPrice,
+            change: parseFloat(((newPrice - oldPrice) / oldPrice * 100).toFixed(1)),
+            trend: newPrice > oldPrice ? "up" : newPrice < oldPrice ? "down" : "stable"
+          };
+        })
+      );
+      
+      setRefreshing(false);
+      toast.success("Market data updated", {
+        description: "Latest prices and AI predictions refreshed"
+      });
+    }, 1500);
   };
-
-  const handleShowChart = () => {
-    setShowChart(true);
-    setShowInsight(false);
+  
+  const toggleExpand = (cropName: string) => {
+    if (expanded === cropName) {
+      setExpanded(null);
+    } else {
+      setExpanded(cropName);
+    }
   };
-
-  const combineChartData = (trend: MarketTrend) => {
-    const historical = trend.historicalData.map(item => ({
-      ...item,
-      type: 'historical'
-    }));
-    const predicted = trend.predictedData.map(item => ({
-      ...item,
-      type: 'predicted'
-    }));
-    return [...historical, ...predicted];
+  
+  const getActionButton = (crop: CropPricing) => {
+    switch(crop.action) {
+      case "sell":
+        return (
+          <Button 
+            size="sm" 
+            className={crop.urgency === "high" ? "bg-green-600 hover:bg-green-700 animate-pulse" : ""}
+            onClick={() => {
+              toast.success(`AI Market Action: ${crop.name}`, {
+                description: `Finding best buyers for your ${crop.name} harvest...`
+              });
+            }}
+          >
+            <span className="flex items-center gap-1">
+              <DollarSign className="h-3.5 w-3.5" />
+              Sell Now
+            </span>
+          </Button>
+        );
+      case "buy":
+        return (
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => {
+              toast.success(`AI Market Action: ${crop.name}`, {
+                description: `Finding best suppliers for ${crop.name}...`
+              });
+            }}
+          >
+            <span className="flex items-center gap-1">
+              <ShoppingCart className="h-3.5 w-3.5" />
+              Buy
+            </span>
+          </Button>
+        );
+      default:
+        return (
+          <Button 
+            size="sm" 
+            variant="secondary"
+            onClick={() => {
+              toast.info(`AI Market Action: ${crop.name}`, {
+                description: `Setting price alert for ${crop.name}...`
+              });
+            }}
+          >
+            <span className="flex items-center gap-1">
+              <Timer className="h-3.5 w-3.5" />
+              Set Alert
+            </span>
+          </Button>
+        );
+    }
   };
 
   return (
-    <Card className="h-full border-2 hover:border-primary/50 transition-all relative overflow-hidden">
+    <Card className="h-full border-2 hover:border-primary/50 transition-all">
       <CardHeader className="pb-3 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30">
-        <CardTitle className="flex items-center gap-2">
-          <CircleDollarSign className="h-5 w-5 text-amber-500" />
-          Smart Market
+        <CardTitle className="flex justify-between items-center">
+          <span>Smart Market</span>
+          <Badge variant="outline" className="text-xs">
+            <span className="flex items-center gap-1">
+              <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+              <span className={refreshing ? "animate-pulse" : ""}>Live Prices</span>
+            </span>
+          </Badge>
         </CardTitle>
-        <CardDescription>
-          Real-time prices and AI predictions for your crops
+        <CardDescription className="flex justify-between items-center">
+          <span>AI-powered price analytics & alerts</span>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6" 
+            onClick={refreshMarketData}
+            disabled={refreshing}
+          >
+            <BarChart3 className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          </Button>
         </CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="space-y-4">
-            <div className="h-14 bg-gray-100 animate-pulse rounded-md"></div>
-            <div className="h-14 bg-gray-100 animate-pulse rounded-md"></div>
-            <div className="h-14 bg-gray-100 animate-pulse rounded-md"></div>
+          <div className="space-y-3">
+            <div className="h-16 bg-gray-100 animate-pulse rounded-md"></div>
+            <div className="h-16 bg-gray-100 animate-pulse rounded-md"></div>
           </div>
         ) : (
           <div className="space-y-4">
-            {marketTrends.map((item, index) => (
-              <div 
-                key={index} 
-                className={`flex items-center space-x-3 p-3 rounded-lg transition-all cursor-pointer ${
-                  selectedTrend?.crop === item.crop ? 'bg-amber-50 dark:bg-amber-900/20 shadow-sm' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                }`}
-                onClick={() => handleTrendClick(item)}
-              >
-                <div className={`p-2 rounded-full ${item.trend === 'up' ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300'}`}>
-                  {item.trend === 'up' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-medium">{item.crop}</h4>
-                    <Badge className={item.trend === 'up' ? 'bg-green-500' : 'bg-red-500'}>
-                      {item.trend === 'up' ? '+' : '-'}{item.change.toFixed(1)}%
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm text-muted-foreground">
-                      <span className="font-medium">${item.price.toFixed(2)}</span> per bag
-                    </p>
-                    <div className="flex items-center gap-1 text-xs">
-                      <span className={
-                        item.forecast === 'rising' ? 'text-green-500' : 
-                        item.forecast === 'falling' ? 'text-red-500' : 
-                        'text-amber-500'
-                      }>
-                        {item.forecast === 'rising' ? 'Rising' : item.forecast === 'falling' ? 'Falling' : 'Stable'}
+            {marketData.map((crop) => (
+              <div key={crop.name} className="border rounded-lg overflow-hidden">
+                <div 
+                  className="p-3 cursor-pointer"
+                  onClick={() => toggleExpand(crop.name)}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="flex items-center gap-2">
+                      <Wheat className="h-4 w-4 text-amber-600" />
+                      <h3 className="font-medium">{crop.name}</h3>
+                    </div>
+                    
+                    <div className={`flex items-center gap-1 ${
+                      crop.trend === 'up' 
+                        ? 'text-green-600' 
+                        : crop.trend === 'down' 
+                          ? 'text-red-600' 
+                          : 'text-gray-600'
+                    }`}>
+                      {crop.trend === 'up' 
+                        ? <ArrowUpRight className="h-4 w-4" /> 
+                        : crop.trend === 'down' 
+                          ? <ArrowDownRight className="h-4 w-4" /> 
+                          : <TrendingUp className="h-4 w-4" />
+                      }
+                      <span className="font-medium">${crop.currentPrice.toFixed(2)}</span>
+                      <span className="text-xs">
+                        {crop.change > 0 ? '+' : ''}{crop.change}%
                       </span>
                     </div>
                   </div>
+                  
+                  {crop.urgency === "high" && (
+                    <div className="flex items-center gap-1 mt-1 text-xs bg-amber-50 dark:bg-amber-900/20 p-1 px-2 rounded-md">
+                      <AlertTriangle className="h-3 w-3 text-amber-600" />
+                      <span className="text-amber-800 dark:text-amber-200 font-medium">{crop.aiRecommendation}</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
-            
-            {showInsight && selectedTrend && (
-              <div className="bg-amber-50 dark:bg-amber-900/30 p-4 rounded-lg animate-fade-in">
-                <div className="flex items-start gap-2">
-                  <BarChart3 className="h-5 w-5 text-amber-600 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-sm">AI Market Insight</h4>
-                    <p className="text-xs mt-1 text-amber-800 dark:text-amber-200">{selectedTrend.reason}</p>
-                    
-                    <div className="flex mt-3 gap-2">
-                      {selectedTrend.buyRecommendation && (
-                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 hover:bg-green-200">
-                          Good Time to Buy
-                        </Badge>
+                
+                {expanded === crop.name && (
+                  <div className="p-3 pt-0 border-t animate-fade-in">
+                    <div className="bg-amber-50 dark:bg-amber-900/20 p-2 rounded-md">
+                      <p className="text-xs text-amber-800 dark:text-amber-200">
+                        <span className="font-semibold">AI Market Analysis:</span> {crop.aiRecommendation}
+                      </p>
+                      
+                      {crop.prediction && (
+                        <div className="flex items-center gap-2 mt-2 text-xs">
+                          <Timer className="h-3.5 w-3.5 text-amber-600" />
+                          <div className="text-amber-800 dark:text-amber-200">
+                            <span className="font-medium">AI Prediction:</span> ${crop.prediction.price.toFixed(2)} in {crop.prediction.days} days
+                          </div>
+                        </div>
                       )}
-                      {selectedTrend.sellRecommendation && (
-                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 hover:bg-blue-200">
-                          Consider Selling
-                        </Badge>
+                      
+                      {crop.opportunity && (
+                        <div className="flex items-center gap-2 mt-2 text-xs">
+                          <ShoppingCart className="h-3.5 w-3.5 text-amber-600" />
+                          <div className="text-amber-800 dark:text-amber-200">
+                            <span className="font-medium">Opportunity:</span> {crop.opportunity}
+                          </div>
+                        </div>
                       )}
                     </div>
                     
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="mt-3 w-full flex items-center justify-center gap-2"
-                      onClick={handleShowChart}
-                    >
-                      <LineChart className="h-4 w-4" />
-                      View Price Trends
-                    </Button>
+                    <div className="flex justify-end mt-3">
+                      {getActionButton(crop)}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            ))}
             
-            {showChart && selectedTrend && (
-              <div className="bg-white dark:bg-gray-800/50 rounded-lg p-3 animate-fade-in">
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-sm font-medium">{selectedTrend.crop} Price Forecast</h4>
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" /> 
-                    <span>3-Month</span>
-                  </Badge>
-                </div>
-                
-                <div className="h-[160px] w-full mt-2">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsLineChart
-                      data={combineChartData(selectedTrend)}
-                      margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis dataKey="date" tick={{ fontSize: 11 }} tickMargin={5} />
-                      <YAxis hide />
-                      <Tooltip content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white dark:bg-gray-800 p-2 shadow-md rounded border text-xs">
-                              <p className="font-medium">{data.date}</p>
-                              <p className="text-green-600 dark:text-green-400">${data.price.toFixed(2)}</p>
-                              <p className="text-xs text-gray-500">{data.type === 'predicted' ? 'Forecast' : 'Historical'}</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }} />
-                      <Line
-                        type="monotone"
-                        dataKey="price"
-                        stroke="#2563eb"
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 6, fill: "#2563eb", stroke: "#fff", strokeWidth: 2 }}
-                      />
-                    </RechartsLineChart>
-                  </ResponsiveContainer>
-                </div>
-                
-                <div className="flex justify-between items-center mt-1 text-xs text-muted-foreground">
-                  <div>
-                    <Badge variant="outline" className="text-xs">Historical</Badge>
-                  </div>
-                  <div>
-                    <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-900/20">AI Prediction</Badge>
-                  </div>
-                </div>
-                
-                <div className="mt-2">
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => setShowChart(false)}
-                  >
-                    Back to Market View
-                  </Button>
-                </div>
-              </div>
-            )}
-            
-            <div className="border-t pt-3 mt-3">
-              <Link to="/market">
-                <Button variant="outline" size="sm" className="w-full group">
-                  <span className="flex items-center gap-2">
-                    <ShoppingCart className="h-4 w-4" />
-                    Visit Marketplace
-                    <ArrowRight className="h-3 w-3 ml-auto group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </Button>
-              </Link>
-            </div>
+            <Link to="/market">
+              <Button variant="ghost" size="sm" className="w-full group">
+                <span className="flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4" />
+                  View Full Market Intelligence
+                  <ArrowRight className="h-3 w-3 ml-auto group-hover:translate-x-1 transition-transform" />
+                </span>
+              </Button>
+            </Link>
           </div>
         )}
       </CardContent>

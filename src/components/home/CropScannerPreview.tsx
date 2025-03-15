@@ -1,264 +1,210 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Leaf, Camera, ArrowRight, Check, Clock, AlertTriangle, Smartphone, Scan, Loader } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Leaf, ScanLine, Camera, ArrowRight, CheckCircle, AlertTriangle, BarChart } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+
+type ScanStatus = "healthy" | "issue" | "critical";
 
 interface ScanHistory {
   id: string;
   cropType: string;
-  status: "healthy" | "issue" | "critical";
+  status: ScanStatus;
   date: string;
   imageUrl: string;
   confidence: number;
-  recommendations?: string[];
+  recommendations: string[];
 }
 
 export default function CropScannerPreview() {
-  const [isHovering, setIsHovering] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanHistory, setScanHistory] = useState<ScanHistory[]>([
-    {
-      id: "scan-1",
-      cropType: "Tomato",
-      status: "healthy",
-      date: "Today, 10:25 AM",
-      imageUrl: "https://images.unsplash.com/photo-1592841200221-a6898f307baa?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80",
-      confidence: 98,
-      recommendations: ["Continue regular watering schedule", "Monitor for early signs of blight"]
-    },
-    {
-      id: "scan-2",
-      cropType: "Maize",
-      status: "issue",
-      date: "Yesterday, 4:12 PM",
-      imageUrl: "https://images.unsplash.com/photo-1559813114-ccd7f491cf21?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80",
-      confidence: 94,
-      recommendations: ["Apply organic fungicide", "Ensure adequate spacing between plants"]
-    },
-    {
-      id: "scan-3",
-      cropType: "Cassava",
-      status: "critical",
-      date: "3 days ago",
-      imageUrl: "https://images.unsplash.com/photo-1598515823267-e793cb7251a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80",
-      confidence: 99,
-      recommendations: ["Immediate action: Remove affected plants", "Apply recommended treatment to prevent spread"]
-    }
-  ]);
-  const [selectedScan, setSelectedScan] = useState<ScanHistory | null>(null);
-  const [showScanDetails, setShowScanDetails] = useState(false);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [scanHistory, setScanHistory] = useState<ScanHistory[]>([]);
+  const [scanning, setScanning] = useState(false);
+  const [animatePing, setAnimatePing] = useState(false);
   
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case "healthy": return "text-green-600 bg-green-100 dark:bg-green-900 dark:text-green-300";
-      case "issue": return "text-amber-600 bg-amber-100 dark:bg-amber-900 dark:text-amber-300";
-      case "critical": return "text-red-600 bg-red-100 dark:bg-red-900 dark:text-red-300";
-      default: return "text-gray-600 bg-gray-100 dark:bg-gray-900 dark:text-gray-300";
-    }
-  };
-  
-  const getStatusIcon = (status: string) => {
-    switch(status) {
-      case "healthy": return <Check className="h-3 w-3" />;
-      case "issue": return <Clock className="h-3 w-3" />;
-      case "critical": return <AlertTriangle className="h-3 w-3" />;
-      default: return <Leaf className="h-3 w-3" />;
-    }
-  };
-
-  const handleScan = () => {
-    setIsScanning(true);
+  useEffect(() => {
+    // Simulate API fetch for scan history
     setTimeout(() => {
-      setIsScanning(false);
-      // Simulate adding a new scan to history
-      const newScan = {
-        id: `scan-${Date.now()}`,
-        cropType: "Pepper",
-        status: "healthy",
-        date: "Just now",
-        imageUrl: "https://images.unsplash.com/photo-1588891558371-c4c613a7eae4?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80",
-        confidence: 97,
-        recommendations: ["Continue current care regimen", "Consider additional watering during dry periods"]
-      };
-      setScanHistory([newScan, ...scanHistory.slice(0, 2)]);
-    }, 2000);
-  };
+      const history: ScanHistory[] = [
+        {
+          id: "scan-123",
+          cropType: "Maize",
+          status: "healthy",
+          date: "Today, 8:45 AM",
+          imageUrl: "/placeholder.svg",
+          confidence: 96,
+          recommendations: ["Continue current irrigation schedule", "Monitor for any signs of pests"]
+        },
+        {
+          id: "scan-122",
+          cropType: "Tomatoes",
+          status: "issue",
+          date: "Yesterday",
+          imageUrl: "/placeholder.svg",
+          confidence: 89,
+          recommendations: ["Apply organic fungicide within 24 hours", "Increase airflow between plants"]
+        },
+        {
+          id: "scan-121",
+          cropType: "Coffee",
+          status: "critical",
+          date: "3 days ago",
+          imageUrl: "/placeholder.svg",
+          confidence: 95,
+          recommendations: ["Immediate application of copper-based fungicide", "Isolate affected plants", "Reduce irrigation frequency"]
+        }
+      ];
+      
+      setScanHistory(history);
+      setLoading(false);
+      
+      // Set up the animation ping every 5 seconds
+      const interval = setInterval(() => {
+        setAnimatePing(true);
+        setTimeout(() => setAnimatePing(false), 2000);
+      }, 5000);
+      
+      return () => clearInterval(interval);
+    }, 1000);
+  }, []);
 
-  const handleScanClick = (scan: ScanHistory) => {
-    setSelectedScan(scan);
-    setShowScanDetails(true);
+  const startScan = () => {
+    setScanning(true);
+    
+    // Simulate camera opening and scanning process
+    setTimeout(() => {
+      navigate("/scan");
+    }, 800);
+  };
+  
+  const getStatusColor = (status: ScanStatus) => {
+    switch(status) {
+      case "healthy": return "text-green-500 bg-green-100 dark:bg-green-900/30";
+      case "issue": return "text-amber-500 bg-amber-100 dark:bg-amber-900/30";
+      case "critical": return "text-red-500 bg-red-100 dark:bg-red-900/30";
+    }
+  };
+  
+  const getStatusBadge = (status: ScanStatus) => {
+    switch(status) {
+      case "healthy": return <Badge className="bg-green-500">Healthy</Badge>;
+      case "issue": return <Badge className="bg-amber-500">Issue Detected</Badge>;
+      case "critical": return <Badge className="bg-red-500 animate-pulse">Critical</Badge>;
+    }
   };
 
   return (
-    <Card className="h-full overflow-hidden border-2 hover:border-primary/50 transition-all">
+    <Card className="h-full border-2 hover:border-primary/50 transition-all">
       <CardHeader className="pb-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
-        <CardTitle className="flex items-center gap-2">
-          <Leaf className="h-5 w-5 text-green-500" />
-          AI Crop Scanner
+        <CardTitle className="flex justify-between items-center">
+          <span>AI Crop Scanner</span>
+          <Badge variant="outline" className="animate-pulse text-xs">In-field Diagnosis</Badge>
         </CardTitle>
         <CardDescription>
-          Scan crops to identify diseases and get instant treatments
+          Instant disease detection & AI treatment plans
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="relative overflow-hidden">
-          <div 
-            className="bg-gradient-to-b from-green-100 to-green-300 dark:from-green-900 dark:to-green-700 aspect-video flex items-center justify-center transform transition-transform duration-500 ease-out"
-            style={{ 
-              transform: isHovering ? 'scale(1.05)' : 'scale(1)', 
-            }}
-          >
-            <div 
-              className="text-center p-4 relative z-10"
-              onMouseEnter={() => setIsHovering(true)}
-              onMouseLeave={() => setIsHovering(false)}
-            >
-              {isScanning ? (
-                <div className="flex flex-col items-center">
-                  <div className="mx-auto mb-3 p-4 rounded-full bg-white/90 dark:bg-black/30 shadow-lg animate-pulse">
-                    <Loader className="h-10 w-10 text-green-600 dark:text-green-300 animate-spin" />
-                  </div>
-                  <h3 className="font-medium text-green-800 dark:text-green-200">Analyzing Crop...</h3>
-                  <p className="text-sm text-green-700 dark:text-green-300">Using advanced AI vision models</p>
-                </div>
-              ) : (
-                <>
-                  <div className={`mx-auto mb-3 p-4 rounded-full bg-white/90 dark:bg-black/30 shadow-lg ${isHovering ? 'animate-pulse' : ''}`}>
-                    <Camera className="h-10 w-10 text-green-600 dark:text-green-300" />
-                  </div>
-                  <h3 className="font-medium mb-1 text-green-800 dark:text-green-200">Instant Disease Detection</h3>
-                  <p className="text-sm text-green-700 dark:text-green-300 mb-4">Identify problems with 98% accuracy</p>
-                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                    <Button className="bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg transition-all" onClick={handleScan}>
-                      <span className="flex items-center gap-2">
-                        <Camera className="h-4 w-4" />
-                        Scan Now
-                      </span>
-                    </Button>
-                    <Link to="/scan">
-                      <Button variant="outline" className="bg-white/80 hover:bg-white dark:bg-black/50 dark:hover:bg-black/70">
-                        <span className="flex items-center gap-2">
-                          <Smartphone className="h-4 w-4" />
-                          Upload Photo
-                        </span>
-                      </Button>
-                    </Link>
-                  </div>
-                </>
-              )}
-            </div>
-            
-            {/* Animated patterns */}
-            <div className="absolute inset-0 opacity-20 dark:opacity-10">
-              <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_rgba(255,255,255,0.2),_transparent_40%)]"></div>
-              <div className="absolute top-1/3 left-1/4 w-24 h-24 rounded-full bg-white dark:bg-green-300 blur-2xl"></div>
-              <div className="absolute bottom-1/4 right-1/3 w-32 h-32 rounded-full bg-white dark:bg-green-400 blur-3xl"></div>
-            </div>
+      <CardContent>
+        {loading ? (
+          <div className="space-y-3">
+            <div className="h-16 bg-gray-100 animate-pulse rounded-md"></div>
+            <div className="h-16 bg-gray-100 animate-pulse rounded-md"></div>
           </div>
-          
-          <div className="p-4 bg-white dark:bg-gray-800">
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <h4 className="font-medium">Recent Scans</h4>
-                {scanHistory.length > 0 ? (
-                  <p className="text-xs text-muted-foreground">Latest crop health analysis</p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Scan your first crop to see history</p>
-                )}
-              </div>
-              <Link to="/scan">
-                <Button variant="ghost" size="sm" className="h-8 group">
-                  <span className="flex items-center gap-1 text-xs">
-                    View All
-                    <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </Button>
-              </Link>
-            </div>
+        ) : (
+          <div className="space-y-4">
+            <Button 
+              className={cn(
+                "w-full relative group overflow-hidden",
+                scanning ? "bg-green-600 cursor-wait" : "bg-primary"
+              )}
+              onClick={startScan}
+              disabled={scanning}
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                <Camera className="h-5 w-5" />
+                {scanning ? "Launching Camera..." : "Scan Crops Now"}
+              </span>
+              <span className={cn(
+                "absolute inset-0 flex items-center justify-center bg-green-600 transition-transform",
+                scanning ? "translate-x-0" : "translate-x-full group-hover:translate-x-0"
+              )}>
+                <ScanLine className="h-5 w-5 text-white" />
+              </span>
+            </Button>
             
-            {!showScanDetails ? (
-              <div className="space-y-2">
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium flex items-center gap-2">
+                  <Leaf className="h-4 w-4 text-green-600" />
+                  Recent AI Scans
+                </h3>
+                <Badge variant="outline" className="text-xs">Auto-updating</Badge>
+              </div>
+              
+              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                 {scanHistory.map((scan) => (
                   <div 
                     key={scan.id} 
-                    className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer"
-                    onClick={() => handleScanClick(scan)}
+                    className="border rounded-lg overflow-hidden transition-all hover:shadow-md cursor-pointer"
                   >
-                    <img src={scan.imageUrl} alt={scan.cropType} className="w-10 h-10 rounded-md object-cover" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center">
-                        <p className="font-medium text-sm truncate">{scan.cropType}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${getStatusColor(scan.status)}`}>
-                          {getStatusIcon(scan.status)}
-                          <span>{scan.status === "healthy" ? "Healthy" : scan.status === "issue" ? "Minor Issue" : "Critical"}</span>
-                        </span>
+                    <div className="p-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-start gap-2">
+                          <div className="mt-0.5">
+                            {scan.status === "healthy" ? (
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                            ) : scan.status === "issue" ? (
+                              <AlertTriangle className="h-5 w-5 text-amber-500" />
+                            ) : (
+                              <AlertTriangle className={`h-5 w-5 text-red-500 ${animatePing && scan.status === "critical" ? "animate-ping" : ""}`} />
+                            )}
+                          </div>
+                          <div>
+                            <div className="flex items-center">
+                              <h4 className="font-medium">{scan.cropType}</h4>
+                              <div className="ml-2">{getStatusBadge(scan.status)}</div>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{scan.date}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <BarChart className="h-3 w-3 text-indigo-500" />
+                          <span className="text-xs font-medium">{scan.confidence}%</span>
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">{scan.date}</p>
+                      
+                      {scan.status !== "healthy" && (
+                        <div className={`mt-2 p-2 rounded-md text-xs ${getStatusColor(scan.status)}`}>
+                          <p className="font-medium">AI Treatment Plan:</p>
+                          <ul className="list-disc pl-4 mt-1 space-y-1">
+                            {scan.recommendations.map((rec, idx) => (
+                              <li key={idx}>{rec}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
-            ) : selectedScan && (
-              <div className="animate-fade-in">
-                <div className="flex items-center gap-3 mb-3">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="p-0 h-8 w-8"
-                    onClick={() => setShowScanDetails(false)}
-                  >
-                    <ArrowRight className="h-4 w-4 rotate-180" />
-                  </Button>
-                  <h3 className="font-medium">Scan Details</h3>
-                </div>
-                
-                <div className="flex gap-3 mb-3">
-                  <img 
-                    src={selectedScan.imageUrl} 
-                    alt={selectedScan.cropType} 
-                    className="w-16 h-16 rounded-md object-cover" 
-                  />
-                  <div>
-                    <h4 className="font-medium">{selectedScan.cropType}</h4>
-                    <p className="text-xs text-muted-foreground">{selectedScan.date}</p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${getStatusColor(selectedScan.status)}`}>
-                        {getStatusIcon(selectedScan.status)}
-                        <span>{selectedScan.status === "healthy" ? "Healthy" : selectedScan.status === "issue" ? "Minor Issue" : "Critical"}</span>
-                      </span>
-                      <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 px-2 py-0.5 rounded-full">
-                        {selectedScan.confidence}% confident
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                {selectedScan.recommendations && (
-                  <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-md">
-                    <h4 className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">AI Recommendations:</h4>
-                    <ul className="space-y-1">
-                      {selectedScan.recommendations.map((recommendation, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <Check className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
-                          <span className="text-xs text-green-700 dark:text-green-300">{recommendation}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                <div className="mt-3">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <Scan className="h-4 w-4 mr-2" />
-                    Scan Again
-                  </Button>
-                </div>
-              </div>
-            )}
+            </div>
+            
+            <Link to="/scan">
+              <Button variant="ghost" size="sm" className="w-full mt-2 group">
+                <span className="flex items-center gap-2">
+                  <ScanLine className="h-4 w-4" />
+                  View All Scan History
+                  <ArrowRight className="h-3 w-3 ml-auto group-hover:translate-x-1 transition-transform" />
+                </span>
+              </Button>
+            </Link>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

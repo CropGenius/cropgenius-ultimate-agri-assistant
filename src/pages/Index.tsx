@@ -12,24 +12,55 @@ import MarketPreview from "@/components/home/MarketPreview";
 import AIChatPreview from "@/components/home/AIChatPreview";
 import FeatureLink from "@/components/home/FeatureLink";
 import { Leaf, CloudSun, BarChart4, ShoppingCart, MessageSquareText, AlertTriangle, Users, Gift, Award } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Index() {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
+    // Check for user session
     const checkUser = async () => {
       const { data } = await supabase.auth.getSession();
       setUser(data.session?.user || null);
       setLoading(false);
     };
 
+    // Get user location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          
+          // Show toast for location detection
+          toast.success("Farm location detected", {
+            description: "AI is analyzing your local conditions"
+          });
+        },
+        () => {
+          // Failed to get location
+          setLocation(null);
+        }
+      );
+    }
+
     checkUser();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user || null);
+        
+        // Show welcome message on login
+        if (event === 'SIGNED_IN') {
+          toast.success("Welcome to CropGenius", {
+            description: "AI is analyzing your farm data"
+          });
+        }
       }
     );
 
@@ -101,7 +132,7 @@ export default function Index() {
         {/* Hero Section */}
         <div className="text-center mb-8 md:mb-12 max-w-3xl mx-auto">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-emerald-500 dark:from-green-400 dark:to-emerald-300">
-            AI-Powered Farming Assistant
+            AI-Powered Farming Intelligence
           </h1>
           <p className="text-xl text-muted-foreground mb-6">
             Increase yields, prevent diseases, and maximize profits with real-time AI insights
@@ -136,7 +167,7 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Premium Features Showcase - First Row */}
+        {/* AI-Powered Premium Features */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           <div className="lg:col-span-2">
             <CropScannerPreview />
@@ -146,7 +177,7 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Premium Features Showcase - Second Row */}
+        {/* AI-Powered Premium Features - Second Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           <div className="lg:col-span-1">
             <TodaysFarmPlan />
@@ -159,7 +190,7 @@ export default function Index() {
           </div>
         </div>
 
-        {/* Feature Links Grid - Kept from original but moved down */}
+        {/* Feature Links Grid */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-6 text-center">All CropGenius Features</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
