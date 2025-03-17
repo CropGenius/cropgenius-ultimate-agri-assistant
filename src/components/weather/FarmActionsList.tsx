@@ -1,27 +1,16 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  Clock,
-  Droplet,
   CheckCircle,
-  Tractor,
-  Wheat,
   MoreHorizontal,
   ArrowRight,
-  ShieldAlert,
-  CircleDollarSign,
-  XCircle,
-  BarChart4,
   Zap,
-  LineChart,
-  Sprout,
   BadgeCheck,
-  LucideProps,
 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import FarmScoreCard from "./FarmScoreCard";
+import ActionItem from "./ActionItem";
 
 interface FarmActionsListProps {
   location: {
@@ -217,39 +206,6 @@ export default function FarmActionsList({ location, crops }: FarmActionsListProp
     }, 2000);
   };
 
-  const getActionIcon = (icon: string) => {
-    switch(icon) {
-      case "droplet": return <Droplet className="h-5 w-5" />;
-      case "shield-alert": return <ShieldAlert className="h-5 w-5" />;
-      case "tractor": return <Tractor className="h-5 w-5" />;
-      case "circle-dollar-sign": return <CircleDollarSign className="h-5 w-5" />;
-      case "x-circle": return <XCircle className="h-5 w-5" />;
-      default: return <Wheat className="h-5 w-5" />;
-    }
-  };
-
-  const getUrgencyColor = (urgency: string) => {
-    switch(urgency) {
-      case "high": return "bg-red-500 hover:bg-red-600";
-      case "medium": return "bg-amber-500 hover:bg-amber-600";
-      default: return "bg-blue-500 hover:bg-blue-600";
-    }
-  };
-
-  const getUrgencyBadge = (urgency: string) => {
-    switch(urgency) {
-      case "high": return (
-        <Badge className="bg-red-500">Urgent</Badge>
-      );
-      case "medium": return (
-        <Badge className="bg-amber-500">Important</Badge>
-      );
-      default: return (
-        <Badge className="bg-blue-500">Plan Ahead</Badge>
-      );
-    }
-  };
-
   const toggleActionComplete = (id: string) => {
     const action = actions.find(a => a.id === id);
     if (!action) return;
@@ -283,37 +239,6 @@ export default function FarmActionsList({ location, crops }: FarmActionsListProp
     }, 2000);
   };
 
-  // Simplified mini chart component
-  const MiniChart = ({ type, data, labels }: { type: string, data: number[], labels: string[] }) => {
-    const maxValue = Math.max(...data);
-    const heights = data.map(val => (val / maxValue) * 100);
-    
-    const getChartColor = () => {
-      switch(type) {
-        case "rainfall": return "bg-blue-500";
-        case "temperature": return "bg-red-500";
-        case "humidity": return "bg-cyan-500";
-        case "price": return "bg-green-500";
-        case "harvest": return "bg-amber-500";
-        default: return "bg-gray-500";
-      }
-    };
-    
-    return (
-      <div className="flex items-end h-16 gap-1 pt-2">
-        {heights.map((height, i) => (
-          <div key={i} className="flex flex-col items-center flex-1">
-            <div 
-              className={`w-full rounded-t ${getChartColor()}`} 
-              style={{ height: `${height}%` }}
-            ></div>
-            <span className="text-[8px] mt-1 text-gray-500">{labels[i]}</span>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   if (actions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
@@ -327,130 +252,21 @@ export default function FarmActionsList({ location, crops }: FarmActionsListProp
   return (
     <div className="space-y-4">
       {/* Farm Efficiency Score */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg border p-3 mb-4">
-        <div className="flex justify-between items-center mb-1">
-          <h3 className="font-medium text-sm flex items-center">
-            <BarChart4 className="h-4 w-4 mr-1 text-purple-500" />
-            AI Farm Efficiency Score
-          </h3>
-          <div className="flex items-center">
-            <span className="font-bold text-xl">{farmScore}%</span>
-            {showScoreAnimation && (
-              <span className={`ml-1 text-xs ${scoreChange > 0 ? 'text-green-500' : 'text-red-500'} animate-fade-in`}>
-                {scoreChange > 0 ? `+${scoreChange}` : scoreChange}
-              </span>
-            )}
-          </div>
-        </div>
-        
-        <Progress 
-          value={farmScore} 
-          className="h-2 mb-3"
-        />
-        
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded flex flex-col">
-            <span className="text-muted-foreground">Task Completion</span>
-            <span className="font-medium">{taskStats.completed}/{taskStats.total} Tasks</span>
-          </div>
-          
-          <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded flex flex-col">
-            <span className="text-muted-foreground">Yield Impact</span>
-            <span className="font-medium text-green-600 dark:text-green-400">+{taskStats.yieldBoost}% Boost</span>
-          </div>
-        </div>
-      </div>
+      <FarmScoreCard 
+        farmScore={farmScore}
+        scoreChange={scoreChange}
+        showScoreAnimation={showScoreAnimation}
+        taskStats={taskStats}
+      />
       
       {/* Actions List */}
       {actions.map((action) => (
-        <div 
-          key={action.id} 
-          className={`flex flex-col space-y-3 p-3 rounded-lg border ${
-            completedActions.includes(action.id) 
-              ? 'bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-slate-800 opacity-75' 
-              : 'bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800'
-          }`}
-        >
-          <div className="flex items-start space-x-3">
-            <div className={`p-2 rounded-full ${getUrgencyColor(action.urgency)} text-white`}>
-              {getActionIcon(action.icon)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-start">
-                <h4 className={`font-semibold ${completedActions.includes(action.id) ? 'line-through text-muted-foreground' : ''}`}>
-                  {action.title}
-                </h4>
-                {!completedActions.includes(action.id) && getUrgencyBadge(action.urgency)}
-              </div>
-              <p className={`text-sm mt-1 ${completedActions.includes(action.id) ? 'text-muted-foreground' : ''}`}>
-                {action.description}
-              </p>
-              <div className="flex justify-between items-center mt-2">
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  <span>Expires in: {action.expiresIn}</span>
-                </div>
-                <Button 
-                  variant={completedActions.includes(action.id) ? "outline" : "ghost"} 
-                  size="sm" 
-                  className="h-7 text-xs"
-                  onClick={() => toggleActionComplete(action.id)}
-                >
-                  {completedActions.includes(action.id) ? (
-                    <span className="flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3" />
-                      Completed
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1">
-                      Mark Complete
-                      <CheckCircle className="h-3 w-3" />
-                    </span>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Data Visualization & Action Button */}
-          {!completedActions.includes(action.id) && (
-            <div className="pt-1 border-t">
-              {/* Mini Chart Visualization */}
-              <div className="mb-3">
-                <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                  <span className="flex items-center">
-                    <LineChart className="h-3 w-3 mr-1" />
-                    {action.chartData.type === 'rainfall' && 'Rainfall Forecast (mm)'}
-                    {action.chartData.type === 'temperature' && 'Temperature Trend (°C)'}
-                    {action.chartData.type === 'humidity' && 'Humidity Levels (%)'}
-                    {action.chartData.type === 'price' && 'Market Price Trend (%)'}
-                    {action.chartData.type === 'harvest' && 'Crop Maturity Index (%)'}
-                  </span>
-                  <span className="flex items-center">
-                    <Sprout className="h-3 w-3 mr-1 text-green-500" />
-                    Impact: +{action.yieldImpact}% Yield
-                  </span>
-                </div>
-                
-                <MiniChart 
-                  type={action.chartData.type} 
-                  data={action.chartData.values}
-                  labels={action.chartData.labels}
-                />
-              </div>
-              
-              {/* Instant Action Button */}
-              <Button 
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white"
-                size="sm"
-                onClick={action.actionButton.onClick}
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                {action.actionButton.text}
-              </Button>
-            </div>
-          )}
-        </div>
+        <ActionItem 
+          key={action.id}
+          action={action}
+          isCompleted={completedActions.includes(action.id)}
+          onToggleComplete={toggleActionComplete}
+        />
       ))}
       
       <Button variant="ghost" className="w-full text-sm" size="sm">
