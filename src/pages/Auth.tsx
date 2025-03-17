@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Toaster, toast } from "sonner";
@@ -790,4 +791,600 @@ export default function Auth() {
                       </Alert>
                     )}
                     
-                    {weather
+                    {weatherAlert && (
+                      <Alert className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/40 dark:to-yellow-950/40 border-amber-100 dark:border-amber-900/50">
+                        <CloudSun className="h-5 w-5 text-amber-500" />
+                        <AlertTitle className="flex items-center gap-2">
+                          AI Weather Intelligence
+                          <Badge className="bg-amber-500 text-white">LIVE</Badge>
+                        </AlertTitle>
+                        <AlertDescription>
+                          {weatherAlert}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {marketInsight && (
+                      <Alert className="bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-950/40 dark:to-fuchsia-950/40 border-purple-100 dark:border-purple-900/50">
+                        <BarChart4 className="h-5 w-5 text-purple-500" />
+                        <AlertTitle className="flex items-center gap-2">
+                          AI Market Intelligence
+                          <Badge className="bg-purple-500 text-white">LIVE</Badge>
+                        </AlertTitle>
+                        <AlertDescription>
+                          {marketInsight}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {aiRecommendation && (
+                      <Alert className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40 border-green-100 dark:border-green-900/50">
+                        <Zap className="h-5 w-5 text-green-500" />
+                        <AlertTitle className="flex items-center gap-2">
+                          AI Farm Recommendation
+                          <Badge className="bg-green-500/90 text-white">PREMIUM</Badge>
+                        </AlertTitle>
+                        <AlertDescription>
+                          {aiRecommendation}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {predictedYield && (
+                      <Card className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/40 dark:to-green-950/40 border-emerald-100 dark:border-emerald-900/50">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                              <Badge className="bg-white text-emerald-600 hover:bg-white">AI PREDICTION</Badge>
+                              Yield Increase Potential
+                            </div>
+                            <div className="font-bold text-2xl text-emerald-600">+{predictedYield}%</div>
+                          </div>
+                          <Progress value={predictedYield} max={100} className="h-2 bg-emerald-100 dark:bg-emerald-900/40">
+                            <div className="h-full bg-gradient-to-r from-emerald-500 to-green-500 rounded-full"></div>
+                          </Progress>
+                          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2">
+                            AI has analyzed soil conditions, weather patterns, and crop data in your region to predict potential yield increase with smart farming.
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Auth Tabs */}
+            <Tabs defaultValue={authMode} onValueChange={(value) => setAuthMode(value as "signin" | "signup")} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Register Farm</TabsTrigger>
+              </TabsList>
+              
+              {/* Sign In Content */}
+              <TabsContent value="signin" className="mt-0">
+                <Card className="border-gray-200 dark:border-gray-800">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl">
+                      {returningUser ? "Welcome Back, Farmer!" : "Access Your AI Farm System"}
+                    </CardTitle>
+                    <CardDescription>
+                      {returningUser 
+                        ? "Your AI farm assistant has been monitoring your crops while you were away." 
+                        : "Sign in to access your personalized AI farm intelligence tools."}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {returningUser && (
+                      <Alert className="bg-blue-50 dark:bg-blue-950/40 mb-4 border-blue-100 dark:border-blue-900/50">
+                        <Bot className="h-5 w-5 text-blue-500" />
+                        <AlertTitle>AI Farm Update</AlertTitle>
+                        <AlertDescription className="text-sm">
+                          Your crops need attention. AI has detected 3 tasks that require your action today.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    <form onSubmit={handleSignIn} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <Mail className="h-4 w-4 text-gray-400" />
+                          </div>
+                          <Input 
+                            id="email" 
+                            type="email" 
+                            placeholder="farmer@example.com" 
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <LockKeyhole className="h-4 w-4 text-gray-400" />
+                          </div>
+                          <Input 
+                            id="password" 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="••••••••" 
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="pl-10"
+                          />
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            className="absolute right-0 top-0 h-full px-3 py-2 text-gray-400 hover:text-gray-600"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? "Hide" : "Show"}
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <Loader className="mr-2 h-4 w-4 animate-spin" />
+                            Connecting to AI Farm System...
+                          </>
+                        ) : (
+                          <>
+                            {returningUser ? "Continue to AI Dashboard" : "Sign In to AI Farm System"}
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </CardContent>
+                  <CardFooter className="flex flex-col space-y-4 pt-0">
+                    <div className="text-sm text-gray-500 dark:text-gray-400 text-center w-full">
+                      Don't have an account yet?{" "}
+                      <Button variant="link" className="p-0 h-auto text-green-600 dark:text-green-400" onClick={() => setAuthMode("signup")}>
+                        Register your farm
+                      </Button>
+                    </div>
+                    
+                    <Button variant="outline" className="w-full" onClick={handleGuestAccess}>
+                      <Bot className="mr-2 h-4 w-4" />
+                      Try Demo Mode (Limited AI Features)
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+              
+              {/* Sign Up Content */}
+              <TabsContent value="signup" className="mt-0">
+                <Card className="border-gray-200 dark:border-gray-800">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-xl flex items-center justify-between">
+                      <span>Register Your Farm for AI Optimization</span>
+                      <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">FREE TRIAL</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Set up your farm profile and unlock the power of AI-driven agriculture
+                    </CardDescription>
+                    
+                    {/* Signup Progress */}
+                    <div className="mt-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>AI Farm System Setup: Stage {formStage} of 3</span>
+                        <span className="text-green-600 dark:text-green-400">{signupProgress}%</span>
+                      </div>
+                      <Progress value={signupProgress} max={100} className="h-2">
+                        <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"></div>
+                      </Progress>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-4">
+                    <form onSubmit={handleSignUp} className="space-y-4">
+                      {formStage === 1 && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="signup-email">Email</Label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <Mail className="h-4 w-4 text-gray-400" />
+                              </div>
+                              <Input 
+                                id="signup-email" 
+                                type="email" 
+                                placeholder="farmer@example.com" 
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className={`pl-10 ${validationErrors.email ? 'border-red-500' : ''}`}
+                              />
+                              {validationErrors.email && (
+                                <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="signup-password">Password</Label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <LockKeyhole className="h-4 w-4 text-gray-400" />
+                              </div>
+                              <Input 
+                                id="signup-password" 
+                                type={showPassword ? "text" : "password"} 
+                                placeholder="Create a strong password" 
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className={`pl-10 ${validationErrors.password ? 'border-red-500' : ''}`}
+                              />
+                              {validationErrors.password && (
+                                <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>
+                              )}
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm" 
+                                className="absolute right-0 top-0 h-full px-3 py-2 text-gray-400 hover:text-gray-600"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? "Hide" : "Show"}
+                              </Button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      
+                      {formStage === 2 && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="farm-location">Farm Location</Label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <MapPinIcon className="h-4 w-4 text-gray-400" />
+                              </div>
+                              <Input 
+                                id="farm-location" 
+                                type="text" 
+                                placeholder="e.g. Central Kenya" 
+                                value={farmLocation}
+                                onChange={(e) => setFarmLocation(e.target.value)}
+                                className={`pl-10 ${validationErrors.farmLocation ? 'border-red-500' : ''}`}
+                              />
+                              {validationErrors.farmLocation && (
+                                <p className="text-red-500 text-xs mt-1">{validationErrors.farmLocation}</p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="main-crop">Main Crop</Label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <Leaf className="h-4 w-4 text-gray-400" />
+                              </div>
+                              <Input 
+                                id="main-crop" 
+                                type="text" 
+                                placeholder="e.g. Maize, Coffee, Rice" 
+                                value={mainCrop}
+                                onChange={(e) => setMainCrop(e.target.value)}
+                                className={`pl-10 ${validationErrors.mainCrop ? 'border-red-500' : ''}`}
+                              />
+                              {validationErrors.mainCrop && (
+                                <p className="text-red-500 text-xs mt-1">{validationErrors.mainCrop}</p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Farm Profile Suggestions */}
+                          <div className="space-y-2 mt-4">
+                            <Label>
+                              <div className="flex items-center gap-2">
+                                <Bot className="h-4 w-4 text-green-500" />
+                                AI-Suggested Farm Profiles
+                              </div>
+                            </Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {farmProfiles.map((profile) => (
+                                <Card 
+                                  key={profile.id} 
+                                  className={`cursor-pointer transition-all hover:border-green-500 hover:shadow-md ${
+                                    farmLocation === profile.name ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : ''
+                                  }`}
+                                  onClick={() => selectFarmProfile(profile)}
+                                >
+                                  <CardContent className="p-3">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <div className="font-semibold text-sm flex items-center gap-1">
+                                        <span>{profile.flag}</span> {profile.name}
+                                      </div>
+                                      {getWeatherIcon(profile.weather.condition)}
+                                    </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                      Main crops: {profile.crops.join(", ")}
+                                    </div>
+                                    <div className="flex justify-between items-center mt-2">
+                                      <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/30 rounded px-1.5 py-0.5 text-xs text-green-700 dark:text-green-400">
+                                        <Percent className="h-3 w-3" />
+                                        +{profile.yieldIncrease}% yield
+                                      </div>
+                                      <div className="flex items-center gap-1 text-xs">
+                                        {getMarketTrendIndicator(profile.marketTrend.status)}
+                                        {profile.marketTrend.status}
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                          </div>
+                          
+                          {/* Crop Suggestions */}
+                          <div className="space-y-2 mt-4">
+                            <Label>
+                              <div className="flex items-center gap-2">
+                                <Sprout className="h-4 w-4 text-green-500" />
+                                AI-Suggested Crops for Your Region
+                              </div>
+                            </Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {cropSuggestions.map((crop) => (
+                                <Card 
+                                  key={crop.id} 
+                                  className={`cursor-pointer transition-all hover:border-green-500 hover:shadow-md ${
+                                    mainCrop === crop.name ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : ''
+                                  }`}
+                                  onClick={() => selectCrop(crop)}
+                                >
+                                  <CardContent className="p-3">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <div className="text-lg">{crop.icon}</div>
+                                      <div className="font-semibold text-sm">{crop.name}</div>
+                                    </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                      <Droplets className="h-3 w-3" /> 
+                                      Water: {crop.waterNeeds}
+                                    </div>
+                                    <div className="flex justify-between items-center mt-2">
+                                      <div className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 rounded px-1.5 py-0.5 text-xs text-blue-700 dark:text-blue-400">
+                                        <BarChart4 className="h-3 w-3" />
+                                        {crop.market.demand} demand
+                                      </div>
+                                      <div className={`flex items-center gap-1 text-xs ${
+                                        crop.market.priceChange > 0 ? 'text-green-600' : 'text-red-500'
+                                      }`}>
+                                        {crop.market.priceChange > 0 ? '+' : ''}{crop.market.priceChange}%
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      
+                      {formStage === 3 && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="farm-size">Farm Size (Hectares/Acres)</Label>
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <MapPinIcon className="h-4 w-4 text-gray-400" />
+                              </div>
+                              <Input 
+                                id="farm-size" 
+                                type="text" 
+                                placeholder="e.g. 5 hectares" 
+                                value={farmSize}
+                                onChange={(e) => setFarmSize(e.target.value)}
+                                className={`pl-10 ${validationErrors.farmSize ? 'border-red-500' : ''}`}
+                              />
+                              {validationErrors.farmSize && (
+                                <p className="text-red-500 text-xs mt-1">{validationErrors.farmSize}</p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="farming-goals">Your Farming Goals (Optional)</Label>
+                            <Textarea 
+                              id="farming-goals" 
+                              placeholder="Tell us what you want to achieve with your farm. AI will create a personalized plan." 
+                              value={farmingGoals}
+                              onChange={(e) => setFarmingGoals(e.target.value)}
+                              rows={3}
+                              className="resize-none"
+                            />
+                          </div>
+                          
+                          <Alert className="bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/30">
+                            <BadgeCheck className="h-5 w-5 text-amber-600" />
+                            <AlertTitle>AI Farm System Ready</AlertTitle>
+                            <AlertDescription className="text-sm">
+                              Your profile is ready for AI optimization. Activate now to get personalized recommendations and increase your yield by up to {predictedYield || 35}%.
+                            </AlertDescription>
+                          </Alert>
+                        </>
+                      )}
+                      
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <Loader className="mr-2 h-4 w-4 animate-spin" />
+                            Activating AI Farm System...
+                          </>
+                        ) : (
+                          <>
+                            {formStage === 3 ? (
+                              <>Activate AI Farm System <Star className="ml-2 h-4 w-4" /></>
+                            ) : (
+                              <>Continue to Next Step <ArrowRight className="ml-2 h-4 w-4" /></>
+                            )}
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+            
+            {/* AI Testimonials */}
+            {analyticsData && (
+              <div className="mt-6">
+                <Separator className="my-4" />
+                <div className="text-center space-y-4">
+                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2">
+                    <BellRing className="h-4 w-4 text-emerald-500" />
+                    Transforming African Agriculture with AI
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                        {analyticsData.farmsManaged.toLocaleString()}+
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Farms Managed</div>
+                    </div>
+                    <div>
+                      <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                        +{analyticsData.yieldIncrease}%
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Avg. Yield Increase</div>
+                    </div>
+                    <div>
+                      <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                        {analyticsData.countries}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">African Countries</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Right Section - Preview of AI Features */}
+        <div className="hidden md:block md:w-1/2 bg-gradient-to-br from-emerald-500/90 to-green-600/90 p-8 text-white">
+          <div className="h-full flex flex-col">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold mb-2">CROPGenius AI Farm System</h2>
+              <p className="text-emerald-100">
+                Africa's most advanced agricultural AI system optimizing farms across the continent
+              </p>
+            </div>
+            
+            <div className="flex-1 space-y-6">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-xl border border-white/20">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-emerald-600 rounded-full">
+                    <CloudSun className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg">AI Weather Intelligence</h3>
+                    <p className="text-sm text-emerald-100">Hyperlocal farm-specific weather predictions</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="bg-white/10 rounded p-3 flex items-center gap-3">
+                    <ThermometerSun className="h-5 w-5 text-amber-300" />
+                    <div className="text-sm">
+                      <p className="font-medium">Heat wave predicted in 3 days</p>
+                      <p className="text-xs text-emerald-100">AI recommends protective irrigation schedule</p>
+                    </div>
+                  </div>
+                  <div className="bg-white/10 rounded p-3 flex items-center gap-3">
+                    <Droplets className="h-5 w-5 text-blue-300" />
+                    <div className="text-sm">
+                      <p className="font-medium">45% chance of rain in 48 hours</p>
+                      <p className="text-xs text-emerald-100">AI will notify you when to adjust irrigation</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-xl border border-white/20">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-emerald-600 rounded-full">
+                    <BarChart4 className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg">AI Market Intelligence</h3>
+                    <p className="text-sm text-emerald-100">Real-time price tracking and optimal selling time</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="bg-white/10 rounded p-3 flex items-center gap-3">
+                    <ArrowRight className="h-5 w-5 text-green-300" />
+                    <div className="text-sm">
+                      <p className="font-medium">Maize prices rising 6.3% this week</p>
+                      <p className="text-xs text-emerald-100">AI recommends holding for 7 more days</p>
+                    </div>
+                  </div>
+                  <div className="bg-white/10 rounded p-3 flex items-center gap-3">
+                    <Smartphone className="h-5 w-5 text-blue-300" />
+                    <div className="text-sm">
+                      <p className="font-medium">3 new buyers in your region</p>
+                      <p className="text-xs text-emerald-100">AI has matched them with your crop profile</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-xl border border-white/20">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-emerald-600 rounded-full">
+                    <Leaf className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg">AI Crop Management</h3>
+                    <p className="text-sm text-emerald-100">Precision farming with AI-optimized schedules</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="bg-white/10 rounded p-3 flex items-center gap-3">
+                    <Bot className="h-5 w-5 text-purple-300" />
+                    <div className="text-sm">
+                      <p className="font-medium">Disease predicted 9 days before symptoms</p>
+                      <p className="text-xs text-emerald-100">AI provides early treatment plan</p>
+                    </div>
+                  </div>
+                  <div className="bg-white/10 rounded p-3 flex items-center gap-3">
+                    <Tractor className="h-5 w-5 text-amber-300" />
+                    <div className="text-sm">
+                      <p className="font-medium">Custom planting schedule created</p>
+                      <p className="text-xs text-emerald-100">AI optimized for your soil and climate</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 text-center">
+              <p className="text-sm text-emerald-100">
+                {currentDate} • Africa's #1 AI-Powered Farming Intelligence System
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <Toaster />
+    </div>
+  );
+}
