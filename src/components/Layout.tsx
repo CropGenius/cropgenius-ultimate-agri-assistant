@@ -1,7 +1,11 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Leaf, Cloud, ShoppingCart, MessageCircle, HelpCircle } from "lucide-react";
+import { Home, Leaf, Cloud, ShoppingCart, MessageCircle, HelpCircle, Bot, Zap } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,65 +13,113 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const isMobile = useIsMobile();
   
   const isActive = (path: string) => {
     return location.pathname === path;
   };
   
+  const handleAIAction = () => {
+    // Simulate AI generating a personalized insight
+    toast.success("AI Farm Insight", {
+      description: "AI has detected an optimal time to plant maize in your region.",
+      action: {
+        label: "View Details",
+        onClick: () => console.log("Viewing AI insight details")
+      }
+    });
+  };
+  
   return (
-    <div className="min-h-screen bg-soft-cream-200">
+    <div className="min-h-screen bg-background">
       {/* Floating AI Assistant Button */}
-      <div className="fixed bottom-24 right-4 z-50">
-        <Link to="/ai-assistant" className="flex items-center justify-center w-14 h-14 rounded-full bg-crop-green-500 text-white shadow-lg hover:bg-crop-green-600 transition-colors">
-          <HelpCircle size={28} />
+      <div className="fixed bottom-24 right-4 z-50 flex flex-col gap-2">
+        <Button 
+          size="icon" 
+          className="w-12 h-12 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-colors"
+          onClick={handleAIAction}
+        >
+          <Zap className="h-5 w-5" />
+        </Button>
+        
+        <Link 
+          to="/chat" 
+          className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/90 text-white shadow-lg hover:bg-primary/80 transition-colors"
+        >
+          <Bot className="h-5 w-5" />
         </Link>
       </div>
       
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-3 px-2 flex justify-around items-center z-40 shadow-lg">
+      {/* Bottom Navigation Bar - Optimized for Mobile */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-gray-800 py-2 px-2 flex justify-around items-center z-40 shadow-lg">
         <Link 
           to="/" 
-          className={`flex flex-col items-center ${isActive('/') ? 'text-crop-green-500' : 'text-gray-600'} hover:text-crop-green-600 transition-colors`}
+          className={cn(
+            "flex flex-col items-center px-1 py-1 rounded-md transition-colors",
+            isActive('/') ? 
+              'text-primary bg-primary/10' : 
+              'text-muted-foreground hover:text-primary hover:bg-primary/5'
+          )}
         >
-          <Home size={26} />
-          <span className="text-sm font-medium mt-1">Home</span>
+          <Home size={isMobile ? 20 : 24} />
+          <span className="text-xs font-medium mt-1">Home</span>
         </Link>
         
         <Link 
           to="/scan" 
-          className={`flex flex-col items-center ${isActive('/scan') ? 'text-crop-green-500' : 'text-gray-600'} hover:text-crop-green-600 transition-colors`}
+          className={cn(
+            "flex flex-col items-center px-1 py-1 rounded-md transition-colors",
+            isActive('/scan') ? 
+              'text-primary bg-primary/10' : 
+              'text-muted-foreground hover:text-primary hover:bg-primary/5'
+          )}
         >
-          <Leaf size={26} />
-          <span className="text-sm font-medium mt-1">Scan</span>
+          <Leaf size={isMobile ? 20 : 24} />
+          <span className="text-xs font-medium mt-1">Scan</span>
         </Link>
         
         <Link 
           to="/weather" 
-          className={`flex flex-col items-center ${isActive('/weather') ? 'text-crop-green-500' : 'text-gray-600'} hover:text-crop-green-600 transition-colors`}
+          className={cn(
+            "flex flex-col items-center px-1 py-1 rounded-md transition-colors",
+            isActive('/weather') ? 
+              'text-primary bg-primary/10' : 
+              'text-muted-foreground hover:text-primary hover:bg-primary/5'
+          )}
         >
-          <Cloud size={26} />
-          <span className="text-sm font-medium mt-1">Weather</span>
+          <Cloud size={isMobile ? 20 : 24} />
+          <span className="text-xs font-medium mt-1">Weather</span>
         </Link>
         
         <Link 
           to="/market" 
-          className={`flex flex-col items-center ${isActive('/market') ? 'text-crop-green-500' : 'text-gray-600'} hover:text-crop-green-600 transition-colors`}
+          className={cn(
+            "flex flex-col items-center px-1 py-1 rounded-md transition-colors",
+            isActive('/market') ? 
+              'text-primary bg-primary/10' : 
+              'text-muted-foreground hover:text-primary hover:bg-primary/5'
+          )}
         >
-          <ShoppingCart size={26} />
-          <span className="text-sm font-medium mt-1">Market</span>
+          <ShoppingCart size={isMobile ? 20 : 24} />
+          <span className="text-xs font-medium mt-1">Market</span>
         </Link>
         
         <Link 
           to="/chat" 
-          className={`flex flex-col items-center ${isActive('/chat') ? 'text-crop-green-500' : 'text-gray-600'} hover:text-crop-green-600 transition-colors`}
+          className={cn(
+            "flex flex-col items-center px-1 py-1 rounded-md transition-colors",
+            isActive('/chat') ? 
+              'text-primary bg-primary/10' : 
+              'text-muted-foreground hover:text-primary hover:bg-primary/5'
+          )}
         >
-          <MessageCircle size={26} />
-          <span className="text-sm font-medium mt-1">Chat</span>
+          <MessageCircle size={isMobile ? 20 : 24} />
+          <span className="text-xs font-medium mt-1">Chat</span>
         </Link>
       </nav>
       
-      {/* Main Content Area */}
-      <main className="pb-24 min-h-screen">
+      {/* Main Content Area with proper padding for mobile */}
+      <main className="pb-20 min-h-screen">
         {children}
       </main>
     </div>
