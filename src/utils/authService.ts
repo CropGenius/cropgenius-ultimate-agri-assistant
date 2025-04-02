@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
+import { Database, Profile } from "@/types/supabase";
 
 // Types
 export interface AuthState {
@@ -99,7 +100,7 @@ export const getUserProfile = async (userId: string) => {
 };
 
 // Update user profile
-export const updateUserProfile = async (userId: string, updates: any) => {
+export const updateUserProfile = async (userId: string, updates: Partial<Profile>) => {
   try {
     const { data, error } = await supabase
       .from('profiles')

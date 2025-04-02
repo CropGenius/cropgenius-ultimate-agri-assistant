@@ -1,7 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { WeatherData, LocationData } from "./weatherService";
+import { WeatherData as AppWeatherData, LocationData } from "./weatherService";
+import { WeatherData as DbWeatherData } from "@/types/supabase";
 
 // Fetch weather data for a user's location from Supabase
 export const fetchUserWeatherData = async (userId: string, location: LocationData) => {
@@ -26,12 +27,12 @@ export const fetchUserWeatherData = async (userId: string, location: LocationDat
       console.log("Weather data found in Supabase:", data[0]);
       
       // Transform the data to match our WeatherData type
-      const weatherData: WeatherData = {
-        temp: data[0].temperature,
+      const weatherData: AppWeatherData = {
+        temp: data[0].temperature || 0,
         condition: data[0].forecast?.condition || "Clear",
-        humidity: data[0].humidity,
-        windSpeed: data[0].wind_speed,
-        windDirection: data[0].wind_direction,
+        humidity: data[0].humidity || 0,
+        windSpeed: data[0].wind_speed || 0,
+        windDirection: data[0].wind_direction || "N",
         rainChance: data[0].forecast?.rain_chance || 0,
         soilMoisture: data[0].forecast?.soil_moisture || 50,
         nextRainHours: data[0].forecast?.next_rain_hours || 0,
@@ -55,29 +56,31 @@ export const fetchUserWeatherData = async (userId: string, location: LocationDat
 };
 
 // Store weather data in Supabase
-export const storeWeatherData = async (userId: string, location: LocationData, weatherData: WeatherData) => {
+export const storeWeatherData = async (userId: string, location: LocationData, weatherData: AppWeatherData) => {
   try {
     console.log("Storing weather data in Supabase:", weatherData);
     
+    const newWeatherData = {
+      user_id: userId,
+      location: { lat: location.lat, lng: location.lng },
+      location_name: location.name,
+      temperature: weatherData.temp,
+      humidity: weatherData.humidity,
+      wind_speed: weatherData.windSpeed,
+      wind_direction: weatherData.windDirection,
+      forecast: {
+        condition: weatherData.condition,
+        rain_chance: weatherData.rainChance,
+        soil_moisture: weatherData.soilMoisture,
+        next_rain_hours: weatherData.nextRainHours,
+        icon: weatherData.icon,
+        alert: weatherData.alert
+      }
+    };
+    
     const { data, error } = await supabase
       .from('weather_data')
-      .insert({
-        user_id: userId,
-        location: { lat: location.lat, lng: location.lng },
-        location_name: location.name,
-        temperature: weatherData.temp,
-        humidity: weatherData.humidity,
-        wind_speed: weatherData.windSpeed,
-        wind_direction: weatherData.windDirection,
-        forecast: {
-          condition: weatherData.condition,
-          rain_chance: weatherData.rainChance,
-          soil_moisture: weatherData.soilMoisture,
-          next_rain_hours: weatherData.nextRainHours,
-          icon: weatherData.icon,
-          alert: weatherData.alert
-        }
-      })
+      .insert(newWeatherData)
       .select();
     
     if (error) throw error;
