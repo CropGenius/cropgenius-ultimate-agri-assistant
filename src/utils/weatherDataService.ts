@@ -47,7 +47,7 @@ export const fetchUserWeatherData = async (userId: string, location: LocationDat
         rainChance: data[0].forecast?.rain_chance || 0,
         soilMoisture: data[0].forecast?.soil_moisture || 50,
         nextRainHours: data[0].forecast?.next_rain_hours || 0,
-        icon: data[0].forecast?.icon || "sun",
+        icon: validateWeatherIcon(data[0].forecast?.icon),
         alert: data[0].forecast?.alert || null,
       };
       
@@ -176,7 +176,7 @@ export const subscribeToWeatherUpdates = (
             rainChance: newData.forecast?.rain_chance || 0,
             soilMoisture: newData.forecast?.soil_moisture || 50,
             nextRainHours: newData.forecast?.next_rain_hours || 0,
-            icon: newData.forecast?.icon || "sun",
+            icon: validateWeatherIcon(newData.forecast?.icon),
             alert: newData.forecast?.alert || null,
           };
           
@@ -191,3 +191,30 @@ export const subscribeToWeatherUpdates = (
     supabase.removeChannel(channel);
   };
 };
+
+/**
+ * Helper function to validate and convert weather icon strings to allowed types
+ * This ensures we never assign an invalid icon type
+ */
+const validateWeatherIcon = (icon?: string): "sun" | "rain" | "cloud" | "storm" | "snow" => {
+  if (!icon) return "sun"; // Default fallback
+  
+  // Check if the icon string is already a valid type
+  if (icon === "sun" || icon === "rain" || icon === "cloud" || icon === "storm" || icon === "snow") {
+    return icon;
+  }
+  
+  // Map similar strings to valid icons
+  if (icon.includes("rain") || icon.includes("drizzle")) {
+    return "rain";
+  } else if (icon.includes("cloud")) {
+    return "cloud";
+  } else if (icon.includes("storm") || icon.includes("thunder") || icon.includes("lightning")) {
+    return "storm";
+  } else if (icon.includes("snow") || icon.includes("frost") || icon.includes("freezing")) {
+    return "snow";
+  }
+  
+  // Fallback to sun for unknown icons
+  return "sun";
+}
