@@ -1,11 +1,13 @@
 
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Home, Leaf, Cloud, ShoppingCart, MessageCircle, HelpCircle, Bot, Zap } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Home, Leaf, Cloud, ShoppingCart, MessageCircle, HelpCircle, Bot, Zap, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { isAuthenticated } from "@/utils/authService";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,7 +15,35 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [userAuthenticated, setUserAuthenticated] = useState(false);
+  
+  useEffect(() => {
+    // Check authentication status
+    const checkAuth = async () => {
+      const authenticated = await isAuthenticated();
+      setUserAuthenticated(authenticated);
+      
+      // Set up auth state change listener
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          setUserAuthenticated(!!session);
+          
+          // On sign out, redirect to home
+          if (event === 'SIGNED_OUT') {
+            navigate('/', { replace: true });
+          }
+        }
+      );
+      
+      return () => {
+        subscription.unsubscribe();
+      };
+    };
+    
+    checkAuth();
+  }, [navigate]);
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -21,6 +51,17 @@ const Layout = ({ children }: LayoutProps) => {
   
   const handleAIAction = () => {
     // Simulate AI generating a personalized insight
+    if (!userAuthenticated) {
+      toast.info("Sign in to use AI features", {
+        description: "Create an account to access AI farming insights",
+        action: {
+          label: "Sign In",
+          onClick: () => navigate('/auth')
+        }
+      });
+      return;
+    }
+    
     toast.success("AI Farm Insight", {
       description: "AI has detected an optimal time to plant maize in your region.",
       action: {
@@ -43,7 +84,7 @@ const Layout = ({ children }: LayoutProps) => {
         </Button>
         
         <Link 
-          to="/chat" 
+          to={userAuthenticated ? "/chat" : "/auth"} 
           className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/90 text-white shadow-lg hover:bg-primary/80 transition-colors"
         >
           <Bot className="h-5 w-5" />
@@ -66,7 +107,7 @@ const Layout = ({ children }: LayoutProps) => {
         </Link>
         
         <Link 
-          to="/scan" 
+          to={userAuthenticated ? "/scan" : "/auth"} 
           className={cn(
             "flex flex-col items-center px-1 py-1 rounded-md transition-colors",
             isActive('/scan') ? 
@@ -92,7 +133,7 @@ const Layout = ({ children }: LayoutProps) => {
         </Link>
         
         <Link 
-          to="/market" 
+          to={userAuthenticated ? "/market" : "/auth"} 
           className={cn(
             "flex flex-col items-center px-1 py-1 rounded-md transition-colors",
             isActive('/market') ? 
@@ -105,7 +146,7 @@ const Layout = ({ children }: LayoutProps) => {
         </Link>
         
         <Link 
-          to="/chat" 
+          to={userAuthenticated ? "/chat" : "/auth"} 
           className={cn(
             "flex flex-col items-center px-1 py-1 rounded-md transition-colors",
             isActive('/chat') ? 

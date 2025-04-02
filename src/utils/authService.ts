@@ -19,6 +19,7 @@ export const signInWithEmail = async (email: string, password: string) => {
     });
     
     if (error) throw error;
+    console.log("Sign in successful:", data);
     return { data, error: null };
   } catch (error: any) {
     console.error("Error signing in:", error.message);
@@ -40,6 +41,7 @@ export const signUpWithEmail = async (email: string, password: string, fullName:
     });
     
     if (error) throw error;
+    console.log("Sign up successful:", data);
     return { data, error: null };
   } catch (error: any) {
     console.error("Error signing up:", error.message);
@@ -70,6 +72,7 @@ export const signOut = async () => {
   try {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    console.log("Sign out successful");
     return { error: null };
   } catch (error: any) {
     console.error("Error signing out:", error.message);
@@ -80,22 +83,15 @@ export const signOut = async () => {
 // Get user profile data
 export const getUserProfile = async (userId: string) => {
   try {
-    // We'll comment this out for now until the tables are properly created
-    // and TypeScript types are updated
-    /*
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single();
-    */
     
-    // Return a placeholder until the database is properly set up
-    console.log(`Would fetch profile for user: ${userId}`);
-    return { 
-      data: { id: userId, full_name: "User", email: "user@example.com" }, 
-      error: null 
-    };
+    if (error) throw error;
+    console.log("User profile fetched:", data);
+    return { data, error: null };
   } catch (error: any) {
     console.error("Error fetching user profile:", error.message);
     return { data: null, error: error.message };
@@ -105,22 +101,15 @@ export const getUserProfile = async (userId: string) => {
 // Update user profile
 export const updateUserProfile = async (userId: string, updates: any) => {
   try {
-    // We'll comment this out for now until the tables are properly created
-    // and TypeScript types are updated
-    /*
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)
       .eq('id', userId)
       .select();
-    */
     
-    // Return a placeholder until the database is properly set up
-    console.log(`Would update profile for user: ${userId} with data:`, updates);
-    return { 
-      data: { id: userId, ...updates }, 
-      error: null 
-    };
+    if (error) throw error;
+    console.log("Profile updated:", data);
+    return { data, error: null };
   } catch (error: any) {
     console.error("Error updating user profile:", error.message);
     return { data: null, error: error.message };
