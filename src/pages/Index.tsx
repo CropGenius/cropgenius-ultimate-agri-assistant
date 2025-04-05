@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,13 +5,6 @@ import Layout from "@/components/Layout";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
-import TodaysFarmPlan from "@/components/home/TodaysFarmPlan";
-import CropScannerPreview from "@/components/home/CropScannerPreview";
-import WeatherPreview from "@/components/home/WeatherPreview";
-import MarketPreview from "@/components/home/MarketPreview";
-import AIChatPreview from "@/components/home/AIChatPreview";
-import FeatureLink from "@/components/home/FeatureLink";
-import FarmScoreCard from "@/components/weather/FarmScoreCard";
 import { 
   Leaf, 
   CloudSun, 
@@ -400,61 +392,21 @@ export default function Index() {
 
         {/* SECTION 4: AI CROP SCANNER - EMPHASIZED */}
         <section className="mb-6">
-          <div className="relative group" onClick={(e) => !user && handlePremiumFeatureClick(e, "/scan")}>
-            <CropScannerPreview />
-            {!user && (
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg">
-                <Button className="bg-green-600 hover:bg-green-700 flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Try AI Crop Scanner
-                </Button>
-              </div>
-            )}
-          </div>
+          <CropScannerPreview />
         </section>
 
         {/* SECTION 5: WEATHER & MARKET - SIDE BY SIDE ON LARGER SCREENS */}
         <section className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative group" onClick={(e) => !user && handlePremiumFeatureClick(e, "/weather")}>
-              <WeatherPreview />
-              {!user && (
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg">
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 flex items-center gap-2">
-                    <Zap className="h-3 w-3" />
-                    Try AI Weather
-                  </Button>
-                </div>
-              )}
-            </div>
+            <WeatherPreview />
 
-            <div className="relative group" onClick={(e) => !user && handlePremiumFeatureClick(e, "/market")}>
-              <MarketPreview />
-              {!user && (
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg">
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 flex items-center gap-2">
-                    <Zap className="h-3 w-3" />
-                    Try AI Market
-                  </Button>
-                </div>
-              )}
-            </div>
+            <MarketPreview />
           </div>
         </section>
 
         {/* SECTION 6: AI CHAT */}
         <section className="mb-6">
-          <div className="relative group" onClick={(e) => !user && handlePremiumFeatureClick(e, "/chat")}>
-            <AIChatPreview />
-            {!user && (
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg">
-                <Button size="sm" className="bg-green-600 hover:bg-green-700 flex items-center gap-2">
-                  <Zap className="h-3 w-3" />
-                  Try AI Assistant
-                </Button>
-              </div>
-            )}
-          </div>
+          <AIChatPreview />
         </section>
 
         {/* CTA Banner - Mobile Optimized */}
