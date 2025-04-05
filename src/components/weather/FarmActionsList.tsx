@@ -1,19 +1,16 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  Clock,
-  Droplet,
   CheckCircle,
-  Tractor,
-  Wheat,
   MoreHorizontal,
   ArrowRight,
-  ShieldAlert,
-  CircleDollarSign,
-  XCircle,
+  Zap,
+  BadgeCheck,
 } from "lucide-react";
+import { toast } from "sonner";
+import FarmScoreCard from "./FarmScoreCard";
+import ActionItem from "./ActionItem";
 
 interface FarmActionsListProps {
   location: {
@@ -27,6 +24,15 @@ interface FarmActionsListProps {
 export default function FarmActionsList({ location, crops }: FarmActionsListProps) {
   const [actions, setActions] = useState<any[]>([]);
   const [completedActions, setCompletedActions] = useState<string[]>([]);
+  const [farmScore, setFarmScore] = useState(68);
+  const [showScoreAnimation, setShowScoreAnimation] = useState(false);
+  const [scoreChange, setScoreChange] = useState(0);
+  const [taskStats, setTaskStats] = useState({
+    completed: 0,
+    total: 0,
+    efficiencyGain: 0,
+    yieldBoost: 0
+  });
 
   useEffect(() => {
     // In a real app, we would fetch real farm actions based on weather and crops
@@ -43,6 +49,17 @@ export default function FarmActionsList({ location, crops }: FarmActionsListProp
         urgency: "medium",
         icon: "droplet",
         expiresIn: "36 hours",
+        efficiencyGain: 12,
+        yieldImpact: 3,
+        actionButton: {
+          text: "Adjust Water Schedule",
+          onClick: () => handleAutomatedAction("irrigation", "Adjusted irrigation schedule automatically based on weather forecast. Water resources saved.")
+        },
+        chartData: {
+          type: "rainfall",
+          values: [10, 8, 6, 5, 28, 32, 15],
+          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        }
       },
       {
         id: "heatwave",
@@ -51,6 +68,17 @@ export default function FarmActionsList({ location, crops }: FarmActionsListProp
         urgency: "high",
         icon: "shield-alert",
         expiresIn: "2 days",
+        efficiencyGain: 19,
+        yieldImpact: 8,
+        actionButton: {
+          text: "Deploy AI Heat Protection",
+          onClick: () => handleAutomatedAction("heatwave", "AI has generated a heat protection plan for your crops. Instructions sent to your mobile device.")
+        },
+        chartData: {
+          type: "temperature",
+          values: [30, 32, 34, 37, 39, 38, 35],
+          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        }
       },
       {
         id: "harvest",
@@ -59,6 +87,17 @@ export default function FarmActionsList({ location, crops }: FarmActionsListProp
         urgency: "high",
         icon: "tractor",
         expiresIn: "3 days",
+        efficiencyGain: 22,
+        yieldImpact: 12,
+        actionButton: {
+          text: "Schedule Harvest Team",
+          onClick: () => handleAutomatedAction("harvest", "AI has scheduled your harvest team for Thursday. Text messages sent to all workers.")
+        },
+        chartData: {
+          type: "harvest",
+          values: [92, 94, 97, 99, 85, 70, 68],
+          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        }
       },
       {
         id: "market",
@@ -67,6 +106,17 @@ export default function FarmActionsList({ location, crops }: FarmActionsListProp
         urgency: "low",
         icon: "circle-dollar-sign",
         expiresIn: "7 days",
+        efficiencyGain: 15,
+        yieldImpact: 0,
+        actionButton: {
+          text: "Find Best Buyers Now",
+          onClick: () => handleAutomatedAction("market", "AI is connecting you with the top 3 buyers in your region. Expected price: 12% above market average.")
+        },
+        chartData: {
+          type: "price",
+          values: [105, 107, 110, 114, 120, 125, 128],
+          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        }
       },
       {
         id: "pests",
@@ -75,6 +125,17 @@ export default function FarmActionsList({ location, crops }: FarmActionsListProp
         urgency: "medium",
         icon: "x-circle",
         expiresIn: "5 days",
+        efficiencyGain: 17,
+        yieldImpact: 7,
+        actionButton: {
+          text: "Generate Treatment Plan",
+          onClick: () => handleAutomatedAction("pests", "AI has analyzed your crops and generated a precise organic treatment plan to prevent fungal diseases.")
+        },
+        chartData: {
+          type: "humidity",
+          values: [65, 70, 75, 78, 72, 68, 65],
+          labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        }
       },
     ];
     
@@ -110,47 +171,72 @@ export default function FarmActionsList({ location, crops }: FarmActionsListProp
     });
     
     setActions(selectedActions);
+    
+    // Calculate task stats
+    const totalActions = selectedActions.length;
+    const completedCount = 0; // Initial completed count is 0
+    const avgEfficiency = selectedActions.reduce((sum, action) => sum + action.efficiencyGain, 0) / totalActions;
+    const totalYieldImpact = selectedActions.reduce((sum, action) => sum + action.yieldImpact, 0);
+    
+    setTaskStats({
+      completed: completedCount,
+      total: totalActions,
+      efficiencyGain: avgEfficiency,
+      yieldBoost: totalYieldImpact
+    });
   };
 
-  const getActionIcon = (icon: string) => {
-    switch(icon) {
-      case "droplet": return <Droplet className="h-5 w-5" />;
-      case "shield-alert": return <ShieldAlert className="h-5 w-5" />;
-      case "tractor": return <Tractor className="h-5 w-5" />;
-      case "circle-dollar-sign": return <CircleDollarSign className="h-5 w-5" />;
-      case "x-circle": return <XCircle className="h-5 w-5" />;
-      default: return <Wheat className="h-5 w-5" />;
-    }
-  };
-
-  const getUrgencyColor = (urgency: string) => {
-    switch(urgency) {
-      case "high": return "bg-red-500 hover:bg-red-600";
-      case "medium": return "bg-amber-500 hover:bg-amber-600";
-      default: return "bg-blue-500 hover:bg-blue-600";
-    }
-  };
-
-  const getUrgencyBadge = (urgency: string) => {
-    switch(urgency) {
-      case "high": return (
-        <Badge className="bg-red-500">Urgent</Badge>
-      );
-      case "medium": return (
-        <Badge className="bg-amber-500">Important</Badge>
-      );
-      default: return (
-        <Badge className="bg-blue-500">Plan Ahead</Badge>
-      );
-    }
+  const handleAutomatedAction = (actionId: string, message: string) => {
+    toast.success("AI Action Initiated", { 
+      description: message,
+      icon: <Zap className="h-5 w-5 text-amber-500" />
+    });
+    
+    // Simulate AI working
+    setTimeout(() => {
+      toast.success("AI Action Completed", { 
+        description: "Farm plan updated with new intelligence",
+        icon: <BadgeCheck className="h-5 w-5 text-green-500" />
+      });
+      
+      // Mark the action as completed
+      if (!completedActions.includes(actionId)) {
+        toggleActionComplete(actionId);
+      }
+    }, 2000);
   };
 
   const toggleActionComplete = (id: string) => {
+    const action = actions.find(a => a.id === id);
+    if (!action) return;
+    
+    let newCompletedActions;
+    let scoreChangeValue = 0;
+    let newStats = { ...taskStats };
+    
     if (completedActions.includes(id)) {
-      setCompletedActions(completedActions.filter(actionId => actionId !== id));
+      newCompletedActions = completedActions.filter(actionId => actionId !== id);
+      scoreChangeValue = -5;
+      newStats.completed--;
     } else {
-      setCompletedActions([...completedActions, id]);
+      newCompletedActions = [...completedActions, id];
+      scoreChangeValue = +5;
+      newStats.completed++;
     }
+    
+    setCompletedActions(newCompletedActions);
+    
+    // Update farm score with animation
+    setScoreChange(scoreChangeValue);
+    setShowScoreAnimation(true);
+    setFarmScore(prev => Math.min(100, Math.max(0, prev + scoreChangeValue)));
+    
+    // Update task stats
+    setTaskStats(newStats);
+    
+    setTimeout(() => {
+      setShowScoreAnimation(false);
+    }, 2000);
   };
 
   if (actions.length === 0) {
@@ -165,54 +251,22 @@ export default function FarmActionsList({ location, crops }: FarmActionsListProp
 
   return (
     <div className="space-y-4">
+      {/* Farm Efficiency Score */}
+      <FarmScoreCard 
+        farmScore={farmScore}
+        scoreChange={scoreChange}
+        showScoreAnimation={showScoreAnimation}
+        taskStats={taskStats}
+      />
+      
+      {/* Actions List */}
       {actions.map((action) => (
-        <div 
-          key={action.id} 
-          className={`flex items-start space-x-3 p-3 rounded-lg border ${
-            completedActions.includes(action.id) 
-              ? 'bg-slate-50 border-slate-200 dark:bg-slate-900/50 dark:border-slate-800 opacity-75' 
-              : 'bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800'
-          }`}
-        >
-          <div className={`p-2 rounded-full ${getUrgencyColor(action.urgency)} text-white`}>
-            {getActionIcon(action.icon)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-start">
-              <h4 className={`font-semibold ${completedActions.includes(action.id) ? 'line-through text-muted-foreground' : ''}`}>
-                {action.title}
-              </h4>
-              {!completedActions.includes(action.id) && getUrgencyBadge(action.urgency)}
-            </div>
-            <p className={`text-sm mt-1 ${completedActions.includes(action.id) ? 'text-muted-foreground' : ''}`}>
-              {action.description}
-            </p>
-            <div className="flex justify-between items-center mt-2">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                <span>Expires in: {action.expiresIn}</span>
-              </div>
-              <Button 
-                variant={completedActions.includes(action.id) ? "outline" : "ghost"} 
-                size="sm" 
-                className="h-7 text-xs"
-                onClick={() => toggleActionComplete(action.id)}
-              >
-                {completedActions.includes(action.id) ? (
-                  <span className="flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3" />
-                    Completed
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1">
-                    Mark Complete
-                    <CheckCircle className="h-3 w-3" />
-                  </span>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
+        <ActionItem 
+          key={action.id}
+          action={action}
+          isCompleted={completedActions.includes(action.id)}
+          onToggleComplete={toggleActionComplete}
+        />
       ))}
       
       <Button variant="ghost" className="w-full text-sm" size="sm">

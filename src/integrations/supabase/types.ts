@@ -9,7 +9,90 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          farm_size: number | null
+          farm_units: string | null
+          full_name: string | null
+          id: string
+          location: string | null
+          phone_number: string | null
+          preferred_language: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          farm_size?: number | null
+          farm_units?: string | null
+          full_name?: string | null
+          id: string
+          location?: string | null
+          phone_number?: string | null
+          preferred_language?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          farm_size?: number | null
+          farm_units?: string | null
+          full_name?: string | null
+          id?: string
+          location?: string | null
+          phone_number?: string | null
+          preferred_language?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      weather_data: {
+        Row: {
+          forecast: Json | null
+          humidity: number | null
+          id: string
+          location: Json
+          location_name: string | null
+          precipitation: number | null
+          recorded_at: string | null
+          temperature: number | null
+          user_id: string
+          uv_index: number | null
+          wind_direction: string | null
+          wind_speed: number | null
+        }
+        Insert: {
+          forecast?: Json | null
+          humidity?: number | null
+          id?: string
+          location: Json
+          location_name?: string | null
+          precipitation?: number | null
+          recorded_at?: string | null
+          temperature?: number | null
+          user_id: string
+          uv_index?: number | null
+          wind_direction?: string | null
+          wind_speed?: number | null
+        }
+        Update: {
+          forecast?: Json | null
+          humidity?: number | null
+          id?: string
+          location?: Json
+          location_name?: string | null
+          precipitation?: number | null
+          recorded_at?: string | null
+          temperature?: number | null
+          user_id?: string
+          uv_index?: number | null
+          wind_direction?: string | null
+          wind_speed?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

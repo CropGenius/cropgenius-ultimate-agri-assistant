@@ -1,69 +1,38 @@
-# Welcome to your Lovable project
 
-## Project info
+# CROPGenius - AI-Powered Farming Intelligence System
 
-**URL**: https://lovable.dev/projects/8f80d81c-0520-4012-b981-ade6300e6f41
+## Overview
+CROPGenius is an advanced AI-powered farming intelligence system designed specifically for farmers in Africa. The platform provides real-time insights, alerts, and recommendations to optimize farm operations, increase yields, and maximize profits.
 
-## How can I edit this code?
+## Key Features
+- 🌱 AI Crop Scanner: Instant disease detection with AI-prescribed treatment plans
+- 🌦️ AI Weather Engine: Hyperlocal weather forecasts with smart farming advisories
+- 📈 AI Smart Market: Real-time crop pricing and AI-driven sales strategies
+- 🚜 AI Farm Plan: Daily AI-generated task list optimized for local conditions
+- 💬 AI Chat Expert: 24/7 AI farming assistant with instant, expert-level answers
+- 📊 AI Yield Predictor: Analyzes farm data to predict harvest size and optimal selling time
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/8f80d81c-0520-4012-b981-ade6300e6f41) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
+## Technologies
+This project is built with:
 - Vite
 - TypeScript
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (backend)
 
-## How can I deploy this project?
+## Mobile-First Approach
+CROPGenius is designed with a mobile-first approach, optimized for the devices and connectivity conditions prevalent across Africa:
+- Responsive design that works on all screen sizes
+- Offline capabilities for areas with limited connectivity
+- Low data usage optimizations
+- Touch-friendly interface for field use
 
-Simply open [Lovable](https://lovable.dev/projects/8f80d81c-0520-4012-b981-ade6300e6f41) and click on Share -> Publish.
+## Future Development
+- Multi-language support for various African regions
+- Integration with IoT sensors for automated data collection
+- Expanded marketplace for connecting farmers with buyers
+- Community features for knowledge sharing between farmers
 
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+## License
+CROPGenius is licensed under the MIT License. See the LICENSE file for details.
