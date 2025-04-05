@@ -1,27 +1,49 @@
 
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowUpRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ReactNode } from "react";
 
 interface FeatureLinkProps {
   to: string;
-  icon: JSX.Element;
+  icon: ReactNode;
   title: string;
   description: string;
+  badge?: string;
+  className?: string;
 }
 
-export default function FeatureLink({ to, icon, title, description }: FeatureLinkProps) {
+export default function FeatureLink({ 
+  to, 
+  icon, 
+  title, 
+  description, 
+  badge, 
+  className 
+}: FeatureLinkProps) {
   return (
-    <Link to={to} className="block group">
-      <Card className="h-full transition-all border-2 hover:shadow-lg dark:hover:shadow-dark hover:border-primary/50 overflow-hidden">
-        <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full transform translate-x-4 -translate-y-4 group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform duration-300"></div>
-        <CardContent className="pt-6 relative z-10">
-          <div className="mb-4 text-primary transform group-hover:scale-110 transition-transform duration-200">{icon}</div>
-          <h3 className="text-xl font-medium mb-2 flex items-center gap-2">
-            {title}
-            <ArrowUpRight className="h-4 w-4 opacity-0 transform -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
-          </h3>
-          <p className="text-muted-foreground text-sm">{description}</p>
+    <Link to={to}>
+      <Card className={cn(
+        "h-full transition-all hover:shadow-md hover:border-primary/50", 
+        className
+      )}>
+        <CardContent className="p-4 flex flex-col justify-between h-full">
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <div className="bg-primary/10 dark:bg-primary/20 p-2 rounded-lg">
+                {icon}
+              </div>
+              {badge && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
+                  {badge}
+                </span>
+              )}
+            </div>
+            <h3 className="font-medium mt-2">{title}</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {description}
+            </p>
+          </div>
         </CardContent>
       </Card>
     </Link>

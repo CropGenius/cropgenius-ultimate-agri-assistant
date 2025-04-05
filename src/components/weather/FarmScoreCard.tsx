@@ -1,7 +1,7 @@
 
-import { useState, useEffect } from "react";
-import { BarChart4 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { BarChart3, Tractor, TrendingUp } from "lucide-react";
 
 interface FarmScoreCardProps {
   farmScore: number;
@@ -21,39 +21,59 @@ export default function FarmScoreCard({
   showScoreAnimation, 
   taskStats 
 }: FarmScoreCardProps) {
+  const getScoreColor = () => {
+    if (farmScore >= 80) return "text-green-600";
+    if (farmScore >= 60) return "text-amber-600";
+    return "text-red-600";
+  };
+
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-lg border p-3 mb-4">
-      <div className="flex justify-between items-center mb-1">
-        <h3 className="font-medium text-sm flex items-center">
-          <BarChart4 className="h-4 w-4 mr-1 text-purple-500" />
-          AI Farm Efficiency Score
-        </h3>
-        <div className="flex items-center">
-          <span className="font-bold text-xl">{farmScore}%</span>
-          {showScoreAnimation && (
-            <span className={`ml-1 text-xs ${scoreChange > 0 ? 'text-green-500' : 'text-red-500'} animate-fade-in`}>
-              {scoreChange > 0 ? `+${scoreChange}` : scoreChange}
-            </span>
-          )}
+    <Card className="mb-5 border-2 overflow-hidden">
+      <CardContent className="p-0">
+        <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold">Farm Health Score</h2>
+              <p className="text-sm text-muted-foreground">Based on AI analytics</p>
+            </div>
+            <div className="flex flex-col items-end">
+              <div className="flex items-center">
+                <div className={`text-3xl font-bold ${getScoreColor()}`}>
+                  {farmScore}%
+                </div>
+                {showScoreAnimation && (
+                  <span className="text-green-600 ml-1 animate-fade-in text-xs font-medium">
+                    +{scoreChange}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                <Tractor className="h-3 w-3 mr-1 opacity-70" />
+                <span>{taskStats.completed}/{taskStats.total} tasks completed</span>
+              </div>
+            </div>
+          </div>
+          
+          <Progress value={farmScore} className="h-2 mt-3" />
+          
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="flex items-center p-2 rounded-md bg-white dark:bg-gray-800 shadow-sm">
+              <TrendingUp className="h-4 w-4 text-green-600 mr-2" />
+              <div>
+                <p className="text-xs font-medium">Efficiency Gain</p>
+                <p className="text-sm font-bold text-green-600">+{taskStats.efficiencyGain}%</p>
+              </div>
+            </div>
+            <div className="flex items-center p-2 rounded-md bg-white dark:bg-gray-800 shadow-sm">
+              <BarChart3 className="h-4 w-4 text-amber-600 mr-2" />
+              <div>
+                <p className="text-xs font-medium">Yield Boost</p>
+                <p className="text-sm font-bold text-amber-600">+{taskStats.yieldBoost}%</p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      
-      <Progress 
-        value={farmScore} 
-        className="h-2 mb-3"
-      />
-      
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded flex flex-col">
-          <span className="text-muted-foreground">Task Completion</span>
-          <span className="font-medium">{taskStats.completed}/{taskStats.total} Tasks</span>
-        </div>
-        
-        <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded flex flex-col">
-          <span className="text-muted-foreground">Yield Impact</span>
-          <span className="font-medium text-green-600 dark:text-green-400">+{taskStats.yieldBoost}% Boost</span>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
