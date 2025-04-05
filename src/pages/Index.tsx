@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,13 @@ import Layout from "@/components/Layout";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
+import TodaysFarmPlan from "@/components/home/TodaysFarmPlan";
+import CropScannerPreview from "@/components/home/CropScannerPreview";
+import WeatherPreview from "@/components/home/WeatherPreview";
+import MarketPreview from "@/components/home/MarketPreview";
+import AIChatPreview from "@/components/home/AIChatPreview";
+import FeatureLink from "@/components/home/FeatureLink";
+import FarmScoreCard from "@/components/weather/FarmScoreCard";
 import { 
   Leaf, 
   CloudSun, 
