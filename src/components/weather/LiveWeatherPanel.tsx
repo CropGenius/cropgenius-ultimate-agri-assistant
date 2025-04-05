@@ -15,9 +15,7 @@ import {
   CloudLightning,
 } from "lucide-react";
 import { fetchWeatherData, WeatherData, LocationData } from "@/utils/weatherService";
-import { fetchUserWeatherData, storeWeatherData } from "@/utils/weatherDataService";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 interface LiveWeatherPanelProps {
   location: LocationData;
@@ -38,19 +36,6 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Check if user is authenticated
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.user?.id) {
-        setUserId(data.session.user.id);
-      }
-    };
-    
-    checkAuth();
-  }, []);
 
   useEffect(() => {
     // Load initial weather data
@@ -62,33 +47,14 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
     }, 10 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, [location, userId]);
+  }, [location]);
 
   const loadWeatherData = async () => {
     try {
       setLoading(true);
-      
-      // First try to get data from Supabase if user is authenticated
-      if (userId) {
-        const supabaseData = await fetchUserWeatherData(userId, location);
-        
-        if (supabaseData) {
-          setWeather(supabaseData);
-          setError(null);
-          setLoading(false);
-          return;
-        }
-      }
-      
-      // If no data in Supabase or user not authenticated, fetch from weather service
       const data = await fetchWeatherData(location);
       setWeather(data);
       setError(null);
-      
-      // Store the data in Supabase if user is authenticated
-      if (userId) {
-        await storeWeatherData(userId, location, data);
-      }
     } catch (err) {
       console.error("Failed to load weather data:", err);
       setError("Unable to load weather data. Using cached data instead.");
