@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +17,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, MapPin, Save } from "lucide-react";
 import FieldMap from "./FieldMap";
 
-// Define form schema
 const formSchema = z.object({
   name: z.string().min(2, "Field name must be at least 2 characters"),
   size: z.coerce.number().positive("Field size must be a positive number"),
@@ -45,7 +43,6 @@ export default function AddFieldForm({ farms = [], onSuccess, onCancel }: AddFie
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Get current user
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
@@ -57,7 +54,6 @@ export default function AddFieldForm({ farms = [], onSuccess, onCancel }: AddFie
     getUser();
   }, []);
 
-  // Load soil types
   useEffect(() => {
     const loadSoilTypes = async () => {
       try {
@@ -73,7 +69,6 @@ export default function AddFieldForm({ farms = [], onSuccess, onCancel }: AddFie
     loadSoilTypes();
   }, []);
 
-  // Initialize form with default values
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -87,7 +82,6 @@ export default function AddFieldForm({ farms = [], onSuccess, onCancel }: AddFie
     }
   });
 
-  // Handle form submission
   const onSubmit = async (values: FormValues) => {
     if (!userId) {
       toast({
@@ -139,20 +133,16 @@ export default function AddFieldForm({ farms = [], onSuccess, onCancel }: AddFie
     }
   };
 
-  // Handle map boundary update
   const handleBoundaryChange = (boundary: Boundary) => {
     setMapBoundary(boundary);
     
-    // If boundary is a polygon, calculate approximate area in hectares
     if (boundary.type === 'polygon' && boundary.coordinates.length > 2) {
       const area = calculatePolygonArea(boundary.coordinates);
       form.setValue('size', area);
     }
   };
 
-  // Basic polygon area calculation (approximate for small areas)
-  const calculatePolygonArea = (coordinates: Coordinates[]): number => {
-    // Simple implementation of shoelace formula
+  const calculatePolygonArea = (coordinates: { lat: number; lng: number }[]): number => {
     let area = 0;
     const n = coordinates.length;
     
@@ -164,8 +154,6 @@ export default function AddFieldForm({ farms = [], onSuccess, onCancel }: AddFie
     
     area = Math.abs(area) / 2;
     
-    // Convert to hectares (very approximate, would need projection)
-    // This is a simplification and would need to be improved for production
     const areaInHectares = area * 10000;
     return parseFloat(areaInHectares.toFixed(2));
   };

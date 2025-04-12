@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Layout } from "@/components/Layout";
+import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -13,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { getAllFields, initOfflineSync, syncOfflineData } from "@/services/fieldService";
 import AddFieldForm from "@/components/fields/AddFieldForm";
 import { Loader2, Plus, RefreshCw, MapPin, Farm as FarmIcon, Droplets } from "lucide-react";
-import { toast } from "sonner";
 
 export default function Fields() {
   const [fields, setFields] = useState<Field[]>([]);
@@ -25,7 +23,6 @@ export default function Fields() {
   const [farms, setFarms] = useState<Farm[]>([]);
   const navigate = useNavigate();
 
-  // Check online status
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -39,7 +36,6 @@ export default function Fields() {
     };
   }, []);
 
-  // Get user and initialize
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
@@ -48,7 +44,6 @@ export default function Fields() {
         setUserId(data.user.id);
         initOfflineSync(data.user.id);
       } else {
-        // Redirect to login if not authenticated
         navigate("/auth");
       }
     };
@@ -56,7 +51,6 @@ export default function Fields() {
     getUser();
   }, [navigate]);
 
-  // Load fields when user ID is available
   useEffect(() => {
     if (!userId) return;
     
@@ -101,7 +95,6 @@ export default function Fields() {
     loadFarms();
   }, [userId]);
 
-  // Handle sync button click
   const handleSync = async () => {
     if (!userId || !isOnline) return;
     
@@ -117,7 +110,6 @@ export default function Fields() {
       }
       
       if (success) {
-        // Reload fields after sync
         const { data } = await getAllFields(userId);
         setFields(data);
         
@@ -135,24 +127,19 @@ export default function Fields() {
     }
   };
 
-  // Handle field added
   const handleFieldAdded = (field: Field) => {
     setFields(prev => [field, ...prev]);
     setAddDialogOpen(false);
   };
 
-  // Group fields by farm
   const fieldsByFarm: Record<string, Field[]> = {};
   
-  // Initialize with "No Farm" category
   fieldsByFarm["no-farm"] = [];
   
-  // Add all farms
   farms.forEach(farm => {
     fieldsByFarm[farm.id] = [];
   });
   
-  // Group fields
   fields.forEach(field => {
     if (field.farm_id && fieldsByFarm[field.farm_id]) {
       fieldsByFarm[field.farm_id].push(field);
@@ -161,7 +148,6 @@ export default function Fields() {
     }
   });
 
-  // Find farm name by ID
   const getFarmName = (farmId: string | null) => {
     if (!farmId) return "Independent Field";
     const farm = farms.find(f => f.id === farmId);
@@ -253,9 +239,7 @@ export default function Fields() {
                 </TabsContent>
                 
                 <TabsContent value="by-farm" className="space-y-6">
-                  {/* Show fields grouped by farm */}
                   {Object.entries(fieldsByFarm).map(([farmId, farmFields]) => {
-                    // Skip empty farms
                     if (farmFields.length === 0) return null;
                     
                     const farmName = farmId === "no-farm" 
@@ -291,7 +275,6 @@ export default function Fields() {
   );
 }
 
-// Field Card Component
 interface FieldCardProps {
   field: Field;
   farmName: string;

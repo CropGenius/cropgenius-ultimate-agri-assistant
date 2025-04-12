@@ -34,6 +34,12 @@ const saveOfflineData = <T>(key: string, data: T[]): void => {
   }
 };
 
+// Fix Field type to include the 'deleted' property that's being used
+// by updating the field interface in our code rather than modifying type definitions
+interface FieldWithDeleteFlag extends Field {
+  deleted?: boolean;
+}
+
 // Field CRUD operations with offline support
 export const createField = async (field: Omit<Field, "id" | "created_at" | "updated_at">): Promise<{data: Field | null, error: string | null}> => {
   // Generate a temporary ID for offline use
@@ -146,8 +152,8 @@ export const getAllFields = async (userId: string): Promise<{data: Field[], erro
   }
 };
 
-// Update field with offline support
-export const updateField = async (field: Field): Promise<{data: Field | null, error: string | null}> => {
+// Update field with offline support - update the param type to include delete flag
+export const updateField = async (field: FieldWithDeleteFlag): Promise<{data: Field | null, error: string | null}> => {
   // Update local timestamp
   const updatedField = {
     ...field,
@@ -281,7 +287,7 @@ export const syncOfflineData = async (userId: string): Promise<{success: boolean
   
   try {
     // Sync fields
-    const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY)
+    const offlineFields = getOfflineData<FieldWithDeleteFlag>(OFFLINE_FIELDS_KEY)
       .filter(field => !field.is_synced && field.user_id === userId);
     
     // Process each field sequentially
@@ -301,7 +307,7 @@ export const syncOfflineData = async (userId: string): Promise<{success: boolean
         
         if (!error && data) {
           // Update the local storage with the new server ID
-          const allOfflineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
+          const allOfflineFields = getOfflineData<FieldWithDeleteFlag>(OFFLINE_FIELDS_KEY);
           const index = allOfflineFields.findIndex(f => f.offline_id === field.offline_id);
           
           if (index >= 0) {
@@ -322,7 +328,7 @@ export const syncOfflineData = async (userId: string): Promise<{success: boolean
     }
     
     // Update all synced status
-    const allOfflineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
+    const allOfflineFields = getOfflineData<FieldWithDeleteFlag>(OFFLINE_FIELDS_KEY);
     saveOfflineData(
       OFFLINE_FIELDS_KEY, 
       allOfflineFields.filter(f => !f.deleted).map(f => ({...f, is_synced: true}))

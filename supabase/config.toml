@@ -1,44 +1,153 @@
 
+# A string used to distinguish different Supabase projects on the same host. Defaults to the project ref.
 project_id = "bapqlyvfwxsichlyjxpd"
 
+# The port to use for the API URL.
+api_port = 54321
+
+# The port to use for the Auth server URL.
+auth_port = 54321
+
+# The port to use for the Storage server URL.
+storage_port = 54321
+
+# The port to use for the Studio URL.
+studio_port = 54321
+
 [api]
-enabled = true
+# Port to use for the local API URL.
 port = 54321
-schemas = ["public", "storage", "graphql_public"]
+# Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
+# endpoints. public and storage are always included.
+schemas = ["public", "storage"]
+# Extra schemas to add to the search_path of every request. public is always included.
+extra_search_path = ["public", "extensions"]
+# The maximum number of rows returns from a view, table, or stored procedure. Limits payload size
+# for accidental or malicious requests.
+max_rows = 1000
 
 [db]
+# Port to use for the local database URL.
 port = 54322
+# Port used by db diff command to initialize the shadow database.
 shadow_port = 54320
+# The database major version to use. This has to be the same as your remote database's. Run `SHOW
+# server_version;` on the remote database to check.
 major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
 
 [realtime]
 enabled = true
+refresh_jwt_keys = true
+
+[studio]
+enabled = true
+# Port to use for Supabase Studio.
+port = 54323
+# External URL of the API server that frontend connects to.
+api_url = "http://127.0.0.1"
+
+# Email testing server. Emails sent with the local dev setup are not actually sent - rather, they
+# are monitored, and you can view the emails that would have been sent from the web interface.
+[inbucket]
+enabled = true
+# Port to use for the email testing server web interface.
+port = 54324
+# Uncomment to expose additional ports for testing user applications that send emails.
+# smtp_port = 54325
+# pop3_port = 54326
 
 [storage]
 enabled = true
-file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
+# The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
+# in emails.
+site_url = "http://127.0.0.1:3000"
+# A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
+additional_redirect_urls = ["https://127.0.0.1:3000"]
+# How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
+# If disabled, the refresh token will never expire.
 enable_refresh_token_rotation = true
+# Allows refresh tokens to be reused after expiry, up to the specified interval in seconds.
+# Requires enable_refresh_token_rotation = true.
 refresh_token_reuse_interval = 10
+# Allow/disallow new user signups to your project.
+enable_signup = true
+
+[auth.email]
+# Allow/disallow new user signups via email to your project.
+enable_signup = true
+# If enabled, a user will be required to confirm any email change on both the old, and new email
+# addresses. If disabled, only the new email is required to confirm.
+double_confirm_changes = true
+# If enabled, users need to confirm their email address before signing in.
+enable_confirmations = false
+
+# Uncomment to customize email template
+# [auth.email.template.invite]
+# subject = "You have been invited"
+# content_path = "./supabase/templates/invite.html"
+# Uncomment to customize email template
+# [auth.email.template.confirmation]
+# subject = "Confirm Your Signup"
+# content_path = "./supabase/templates/confirmation.html"
+# Uncomment to customize email template
+# [auth.email.template.recovery]
+# subject = "Reset Your Password"
+# content_path = "./supabase/templates/recovery.html"
+# Uncomment to customize email template
+# [auth.email.template.magic_link]
+# subject = "Your Magic Link"
+# content_path = "./supabase/templates/magic_link.html"
+# Uncomment to customize email template
+# [auth.email.template.email_change]
+# subject = "Confirm Email Change"
+# content_path = "./supabase/templates/email_change.html"
+# Uncomment to customize email template
+# [auth.email.template.change_email]
+# subject = "Change Email"
+# content_path = "./supabase/templates/change_email.html"
+
+[auth.sms]
+# Allow/disallow new user signups via SMS to your project.
+enable_signup = true
+# If enabled, users need to confirm their phone number before signing in.
+enable_confirmations = false
+
+[auth.external.github]
+enabled = false
+client_id = ""
+secret = ""
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+# Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,
+# or any other third-party OIDC providers.
+url = ""
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+# Overrides the default auth redirectUrl.
+redirect_uri = ""
+
+[analytics]
+enabled = false
+port = 54327
+vector_port = 54328
 
 [functions]
 enabled = true
 
-# Configure both functions with proper paths and verification settings
-[[functions.function]]
-name = "ai-chat"
-verify_jwt = false
-
-[[functions.function]]
-name = "crop-scan"
-verify_jwt = false
-
-[analytics]
-enabled = false
-port = 54323
-vector_port = 54324
+[functions.field-ai-insights]
+# Set verify_jwt to true to enable JWT verification for this function.
+verify_jwt = true

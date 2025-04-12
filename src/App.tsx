@@ -18,6 +18,7 @@ import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import Fields from "./pages/Fields";
+import FieldDetail from "./pages/FieldDetail";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ const App = () => {
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/fields" element={<Fields />} />
+            <Route path="/fields/:id" element={<FieldDetail />} />
             <Route path="/alerts" element={<NotFound />} />
             <Route path="/referrals" element={<NotFound />} />
             <Route path="/community" element={<NotFound />} />
