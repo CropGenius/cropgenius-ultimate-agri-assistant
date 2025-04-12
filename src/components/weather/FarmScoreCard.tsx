@@ -88,8 +88,7 @@ export default function FarmScoreCard({
           
           <Progress 
             value={farmScore} 
-            className={`h-2 mt-3 transition-all duration-500 ${isHovering ? "h-3" : ""}`}
-            indicatorClassName={getProgressColor()}
+            className={`h-2 mt-3 transition-all duration-500 ${isHovering ? "h-3" : ""} ${getProgressColor()}`}
           />
           
           <div className="grid grid-cols-2 gap-4 mt-4">

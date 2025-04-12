@@ -51,7 +51,6 @@ export default function FeatureLink({
           </div>
         </CardContent>
         
-        {/* Subtle gradient overlay for depth */}
         <div className="absolute inset-0 bg-gradient-to-br from-transparent to-primary/5 dark:to-primary/10 opacity-0 group-hover:opacity-100 transition-all pointer-events-none"></div>
       </Card>
     </Link>
