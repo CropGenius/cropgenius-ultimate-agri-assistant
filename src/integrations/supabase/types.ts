@@ -9,6 +9,258 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      farms: {
+        Row: {
+          created_at: string | null
+          id: string
+          location: string | null
+          name: string
+          size_unit: string | null
+          total_size: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          size_unit?: string | null
+          total_size?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          size_unit?: string | null
+          total_size?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farms_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      field_crops: {
+        Row: {
+          created_at: string | null
+          crop_name: string
+          field_id: string
+          harvest_date: string | null
+          id: string
+          notes: string | null
+          planting_date: string | null
+          status: string | null
+          variety: string | null
+          yield_amount: number | null
+          yield_unit: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          crop_name: string
+          field_id: string
+          harvest_date?: string | null
+          id?: string
+          notes?: string | null
+          planting_date?: string | null
+          status?: string | null
+          variety?: string | null
+          yield_amount?: number | null
+          yield_unit?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          crop_name?: string
+          field_id?: string
+          harvest_date?: string | null
+          id?: string
+          notes?: string | null
+          planting_date?: string | null
+          status?: string | null
+          variety?: string | null
+          yield_amount?: number | null
+          yield_unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_crops_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      field_history: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          date: string
+          description: string
+          event_type: string
+          field_id: string
+          id: string
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          date: string
+          description: string
+          event_type: string
+          field_id: string
+          id?: string
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          date?: string
+          description?: string
+          event_type?: string
+          field_id?: string
+          id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_history_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      field_tasks: {
+        Row: {
+          ai_recommended: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          field_id: string
+          id: string
+          priority: string | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          ai_recommended?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          field_id: string
+          id?: string
+          priority?: string | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          ai_recommended?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          field_id?: string
+          id?: string
+          priority?: string | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_tasks_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fields: {
+        Row: {
+          boundary: Json | null
+          created_at: string | null
+          farm_id: string | null
+          id: string
+          irrigation_type: string | null
+          is_shared: boolean | null
+          location_description: string | null
+          name: string
+          shared_with: Json | null
+          size: number | null
+          size_unit: string | null
+          soil_type: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          boundary?: Json | null
+          created_at?: string | null
+          farm_id?: string | null
+          id?: string
+          irrigation_type?: string | null
+          is_shared?: boolean | null
+          location_description?: string | null
+          name: string
+          shared_with?: Json | null
+          size?: number | null
+          size_unit?: string | null
+          soil_type?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          boundary?: Json | null
+          created_at?: string | null
+          farm_id?: string | null
+          id?: string
+          irrigation_type?: string | null
+          is_shared?: boolean | null
+          location_description?: string | null
+          name?: string
+          shared_with?: Json | null
+          size?: number | null
+          size_unit?: string | null
+          soil_type?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fields_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fields_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -45,6 +297,27 @@ export type Database = {
           phone_number?: string | null
           preferred_language?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      soil_types: {
+        Row: {
+          description: string | null
+          id: string
+          name: string
+          properties: Json | null
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          name: string
+          properties?: Json | null
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          name?: string
+          properties?: Json | null
         }
         Relationships: []
       }

@@ -17,6 +17,7 @@ import Weather from "./pages/Weather";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
+import Fields from "./pages/Fields";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => {
             <Route path="/ai-assistant" element={<Chat />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/fields" element={<Fields />} />
             <Route path="/alerts" element={<NotFound />} />
             <Route path="/referrals" element={<NotFound />} />
             <Route path="/community" element={<NotFound />} />
