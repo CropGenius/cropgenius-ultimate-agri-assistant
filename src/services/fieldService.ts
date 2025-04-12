@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Field, Farm, FieldCrop, FieldHistory, Boundary } from "@/types/field";
 import { v4 as uuidv4 } from "uuid";
+import { Field, Farm, FieldCrop, FieldHistory, Boundary } from "@/types/field";
 
 // Local storage keys
 const OFFLINE_FIELDS_KEY = "cropgenius_offline_fields";

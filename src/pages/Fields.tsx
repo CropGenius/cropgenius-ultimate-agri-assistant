@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,7 +12,8 @@ import { Field, Farm } from "@/types/field";
 import { Badge } from "@/components/ui/badge";
 import { getAllFields, initOfflineSync, syncOfflineData } from "@/services/fieldService";
 import AddFieldForm from "@/components/fields/AddFieldForm";
-import { Loader2, Plus, RefreshCw, MapPin, Farm as FarmIcon, Droplets } from "lucide-react";
+import { Loader2, Plus, RefreshCw, MapPin, Tractor, Droplets } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Fields() {
   const [fields, setFields] = useState<Field[]>([]);

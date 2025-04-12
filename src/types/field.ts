@@ -25,6 +25,7 @@ export interface Field {
   is_synced?: boolean; // Track sync status
   is_shared?: boolean; // For co-op/shared management
   shared_with?: string[]; // User IDs the field is shared with
+  deleted?: boolean; // For tracking fields marked for deletion
 }
 
 export interface FieldCrop {
