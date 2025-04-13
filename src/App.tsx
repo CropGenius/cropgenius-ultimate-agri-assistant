@@ -1,11 +1,11 @@
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { AuthState } from "@/utils/authService";
+import { useState } from "react";
+import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Scan from "./pages/Scan";
@@ -19,76 +19,49 @@ import AuthCallback from "./pages/AuthCallback";
 import Fields from "./pages/Fields";
 import FieldDetail from "./pages/FieldDetail";
 import ManageFields from "./pages/ManageFields";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import DevDebugPanel from "@/components/debug/DevDebugPanel";
 
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    session: null,
-    isLoading: true,
-    error: null,
-  });
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      setAuthState((prev) => ({
-        ...prev,
-        user: session?.user || null,
-        session,
-        isLoading: false,
-        error: error?.message || null,
-      }));
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setAuthState({
-          user: session?.user || null,
-          session,
-          isLoading: false,
-          error: null,
-        });
-      }
-    );
-
-    // Cleanup
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+  // Development environment detection
+  const isDev = import.meta.env.MODE === "development";
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner position="top-center" closeButton />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/scan" element={<Scan />} />
-            <Route path="/farm-plan" element={<FarmPlan />} />
-            <Route path="/predictions" element={<YieldPredictor />} />
-            <Route path="/market" element={<Market />} />
-            <Route path="/weather" element={<Weather />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/ai-assistant" element={<Chat />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/fields" element={<Fields />} />
-            <Route path="/fields/:id" element={<FieldDetail />} />
-            {/* Ensure ManageFields route is correctly defined with priority */}
-            <Route path="/manage-fields" element={<ManageFields />} />
-            <Route path="/alerts" element={<NotFound />} />
-            <Route path="/referrals" element={<NotFound />} />
-            <Route path="/community" element={<NotFound />} />
-            <Route path="/challenges" element={<NotFound />} />
-            <Route path="/farm-clans" element={<NotFound />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <AuthProvider>
+          <Toaster />
+          <Sonner position="top-center" closeButton />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              
+              {/* Protected Routes */}
+              <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
+              <Route path="/farm-plan" element={<ProtectedRoute><FarmPlan /></ProtectedRoute>} />
+              <Route path="/predictions" element={<ProtectedRoute><YieldPredictor /></ProtectedRoute>} />
+              <Route path="/market" element={<ProtectedRoute><Market /></ProtectedRoute>} />
+              <Route path="/weather" element={<ProtectedRoute><Weather /></ProtectedRoute>} />
+              <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/ai-assistant" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/fields" element={<ProtectedRoute><Fields /></ProtectedRoute>} />
+              <Route path="/fields/:id" element={<ProtectedRoute><FieldDetail /></ProtectedRoute>} />
+              <Route path="/manage-fields" element={<ProtectedRoute><ManageFields /></ProtectedRoute>} />
+              <Route path="/alerts" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
+              <Route path="/referrals" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
+              <Route path="/community" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
+              <Route path="/challenges" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
+              <Route path="/farm-clans" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            
+            {isDev && <DevDebugPanel />}
+          </BrowserRouter>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

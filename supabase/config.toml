@@ -31,6 +31,12 @@ port = 54327
 [auth]
 enabled = true
 port = 54328
+# Additional auth configuration
+site_url = "http://localhost:5173"  # Update this in production
+additional_redirect_urls = ["http://localhost:5173/auth/callback"]
+jwt_expiry = 3600
+enable_signups = true
+autoconfirm = true  # For development - remove in production
 
 [realtime]
 enabled = true

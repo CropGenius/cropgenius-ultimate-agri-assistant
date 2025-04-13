@@ -1,15 +1,18 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("Auth callback: Processing authentication");
+    
     // Process the OAuth callback
     const processOAuthCallback = async () => {
       try {
@@ -32,7 +35,7 @@ export default function AuthCallback() {
           throw error;
         }
         
-        console.log("Auth callback session check:", data.session);
+        console.log("Auth callback session check:", data.session?.user?.id);
         
         if (data.session) {
           // Show success toast
@@ -40,8 +43,25 @@ export default function AuthCallback() {
             duration: 3000,
           });
           
-          // Redirect to the home page
-          navigate("/", { replace: true });
+          // Check if user has a farm
+          const { data: farmData } = await supabase
+            .from('farms')
+            .select('id')
+            .eq('user_id', data.session.user.id)
+            .limit(1);
+          
+          console.log("Farm check result:", farmData);
+          
+          if (farmData && farmData.length > 0) {
+            // Store farm ID in localStorage
+            localStorage.setItem("farmId", farmData[0].id);
+            // Redirect to home
+            navigate("/", { replace: true });
+          } else {
+            // No farm, redirect to home where they'll be shown the onboarding
+            console.log("No farm found, redirecting to onboarding flow");
+            navigate("/", { replace: true });
+          }
         } else {
           // If no session found but no errors, try to exchange the auth code
           console.log("No session found, checking URL params for auth code");
