@@ -19,6 +19,7 @@ import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
 import Fields from "./pages/Fields";
 import FieldDetail from "./pages/FieldDetail";
+import ManageFields from "./pages/ManageFields";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ const App = () => {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/fields" element={<Fields />} />
             <Route path="/fields/:id" element={<FieldDetail />} />
+            <Route path="/manage-fields" element={<ManageFields />} />
             <Route path="/alerts" element={<NotFound />} />
             <Route path="/referrals" element={<NotFound />} />
             <Route path="/community" element={<NotFound />} />

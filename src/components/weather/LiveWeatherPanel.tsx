@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +17,7 @@ import { fetchWeatherData, WeatherData, LocationData } from "@/utils/weatherServ
 import { fetchUserWeatherData, storeWeatherData } from "@/utils/weatherDataService";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import YourFarmButton from "@/components/weather/YourFarmButton";
 
 interface LiveWeatherPanelProps {
   location: LocationData;
@@ -140,8 +140,9 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
           <span>Live Farm Weather</span>
           <Badge className="text-xs animate-pulse bg-green-600 hover:bg-green-700">LIVE UPDATING</Badge>
         </CardTitle>
-        <CardDescription>
-          AI-powered hyperlocal weather tailored to your specific farm location
+        <CardDescription className="flex justify-between items-center">
+          <span>AI-powered hyperlocal weather tailored to your specific farm location</span>
+          <YourFarmButton size="sm" />
         </CardDescription>
       </CardHeader>
       <CardContent>
