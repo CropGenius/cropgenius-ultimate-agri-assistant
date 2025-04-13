@@ -375,7 +375,7 @@ export default function MapboxFieldMap({
     
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const { latitude, lat, longitude, lng } = position.coords;
+        const { latitude, longitude } = position.coords;
         
         // Fly to user location
         if (flyToLocation.current) {

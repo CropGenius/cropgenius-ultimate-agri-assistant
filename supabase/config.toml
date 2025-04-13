@@ -42,3 +42,4 @@ port = 54330
 
 [functions.field-analysis]
 verify_jwt = true
+

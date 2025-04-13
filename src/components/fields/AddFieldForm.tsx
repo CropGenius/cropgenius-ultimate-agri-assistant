@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -139,28 +138,37 @@ export default function AddFieldForm({
         shared_with: []
       };
       
-      const { data, error } = await createField(fieldData);
-      
-      if (error) throw new Error(error);
-      
-      if (data) {
-        toast.success("Field added successfully", {
-          description: `${values.name} has been added to your farm.`
+      createField(fieldData)
+        .then(({ data, error }) => {
+          if (error) throw new Error(error);
+          
+          if (data) {
+            toast.success("Field added successfully", {
+              description: `${values.name} has been added to your farm.`
+            });
+            
+            // Trigger AI analysis
+            if (connectionStatus === "online") {
+              triggerAiAnalysis(data.id);
+            }
+            
+            if (onSuccess) onSuccess(data);
+          }
+        })
+        .catch((error) => {
+          console.error("Error adding field:", error);
+          toast.error("Error adding field", {
+            description: error.message || "An unexpected error occurred"
+          });
+        })
+        .finally(() => {
+          setLoading(false);
         });
-        
-        // Trigger AI analysis
-        if (connectionStatus === "online") {
-          triggerAiAnalysis(data.id);
-        }
-        
-        if (onSuccess) onSuccess(data);
-      }
     } catch (error: any) {
       console.error("Error adding field:", error);
       toast.error("Error adding field", {
         description: error.message || "An unexpected error occurred"
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -252,7 +260,7 @@ export default function AddFieldForm({
               
               <TabsContent value="map" className="space-y-4 pt-2">
                 {connectionStatus === "offline" && (
-                  <Alert variant="warning" className="mb-2">
+                  <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
                       You are offline. Map functions will be limited, but you can still draw your field manually.
