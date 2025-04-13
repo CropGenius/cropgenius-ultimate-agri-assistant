@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { isAuthenticated } from "@/utils/authService";
+import LayoutMenu from "@/components/LayoutMenu"; // Make sure LayoutMenu is imported
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -73,6 +74,9 @@ const Layout = ({ children }: LayoutProps) => {
   
   return (
     <div className="min-h-screen bg-background">
+      {/* Add LayoutMenu at the top of the layout */}
+      <LayoutMenu />
+      
       {/* Floating AI Assistant Button */}
       <div className="fixed bottom-24 right-4 z-50 flex flex-col gap-2">
         <Button 

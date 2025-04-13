@@ -41,7 +41,6 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is authenticated
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session?.user?.id) {
@@ -53,10 +52,8 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
   }, []);
 
   useEffect(() => {
-    // Load initial weather data
     loadWeatherData();
     
-    // Set up refresh interval - refresh every 10 minutes
     const interval = setInterval(() => {
       loadWeatherData();
     }, 10 * 60 * 1000);
@@ -68,7 +65,6 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
     try {
       setLoading(true);
       
-      // First try to get data from Supabase if user is authenticated
       if (userId) {
         const supabaseData = await fetchUserWeatherData(userId, location);
         
@@ -80,12 +76,10 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
         }
       }
       
-      // If no data in Supabase or user not authenticated, fetch from weather service
       const data = await fetchWeatherData(location);
       setWeather(data);
       setError(null);
       
-      // Store the data in Supabase if user is authenticated
       if (userId) {
         await storeWeatherData(userId, location, data);
       }
@@ -142,7 +136,7 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
         </CardTitle>
         <CardDescription className="flex justify-between items-center">
           <span>AI-powered hyperlocal weather tailored to your specific farm location</span>
-          <YourFarmButton size="sm" />
+          <YourFarmButton size="sm" buttonText="View Your Farm" variant="secondary" />
         </CardDescription>
       </CardHeader>
       <CardContent>

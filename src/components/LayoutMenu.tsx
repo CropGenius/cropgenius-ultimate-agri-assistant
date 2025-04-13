@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import GlobalMenu from "@/components/GlobalMenu";
-import { Tractor } from "lucide-react";
+import { Tractor, Layers } from "lucide-react";
 
 export default function LayoutMenu() {
   return (
@@ -16,8 +16,11 @@ export default function LayoutMenu() {
       </div>
       
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/manage-fields">Manage Fields</Link>
+        <Button variant="outline" size="sm" asChild className="flex items-center gap-1">
+          <Link to="/manage-fields">
+            <Layers className="h-4 w-4 mr-1" />
+            Manage Fields
+          </Link>
         </Button>
       </div>
     </div>
