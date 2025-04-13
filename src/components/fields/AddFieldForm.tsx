@@ -147,7 +147,6 @@ export default function AddFieldForm({
               description: `${values.name} has been added to your farm.`
             });
             
-            // Trigger AI analysis
             if (connectionStatus === "online") {
               triggerAiAnalysis(data.id);
             }
@@ -177,8 +176,6 @@ export default function AddFieldForm({
     setAiAnalyzing(true);
     
     try {
-      // This will be implemented with Supabase Edge Function
-      // For now, we'll simulate the analysis
       setTimeout(() => {
         const insights = [
           "Soil composition indicates good suitability for maize and cassava.",
@@ -204,7 +201,6 @@ export default function AddFieldForm({
     setMapBoundary(boundary);
     
     if (boundary.type === 'polygon' && boundary.coordinates.length > 2) {
-      // Calculate area - in a real implementation, this would be more accurate
       const area = calculatePolygonArea(boundary.coordinates);
       form.setValue('size', area);
     }
@@ -224,7 +220,6 @@ export default function AddFieldForm({
     
     area = Math.abs(area) / 2;
     
-    // Converting to hectares - simplified calculation
     const areaInHectares = area * 111319.9 * 111319.9 / 10000;
     return parseFloat(areaInHectares.toFixed(2));
   };

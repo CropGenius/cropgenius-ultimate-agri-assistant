@@ -15,6 +15,27 @@ interface FieldAnalysisResult {
  */
 export const analyzeField = async (fieldId: string): Promise<FieldAnalysisResult | null> => {
   try {
+    // First try the new field-ai-insights function
+    const { data: aiData, error: aiError } = await supabase.functions.invoke("field-ai-insights", {
+      body: { field_id: fieldId, user_id: (await supabase.auth.getUser()).data.user?.id },
+    });
+    
+    if (!aiError && aiData) {
+      // Transform the response to match our expected format
+      return {
+        fieldId: fieldId,
+        insights: [
+          ...aiData.crop_rotation.suggestions.map((crop: string) => `Consider planting ${crop} next.`),
+          ...aiData.soil_health.recommendations,
+          ...aiData.disease_risks.risks.map((risk: any) => 
+            risk.risk > 0.5 ? `Warning: ${risk.disease} risk detected.` : `Low risk of ${risk.disease}.`
+          )
+        ],
+        analysisTimestamp: aiData.generated_at
+      };
+    }
+    
+    // Fallback to the original field-analysis function
     const { data, error } = await supabase.functions.invoke("field-analysis", {
       body: { fieldId },
     });

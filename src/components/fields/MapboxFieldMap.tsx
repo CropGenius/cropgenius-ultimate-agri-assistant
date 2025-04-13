@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Save, Undo, MapPin, Navigation, Search, X } from "lucide-react";
 import { toast } from "sonner";
-import * as MapboxClient from "@mapbox/mapbox-sdk";
-import * as MapboxGeocoding from "@mapbox/mapbox-sdk/services/geocoding";
+import MapboxSDK from "@mapbox/mapbox-sdk";
+import MapboxGeocoding from "@mapbox/mapbox-sdk/services/geocoding";
 
 // Temporary access token - will be moved to Supabase Edge Function secrets
 const MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoiY3JvcGdlbml1cyIsImEiOiJjbHQ1aWl0Zm8wcmd2MmptcXBvY2V5YWp2In0.HlnQI4Uy4R79P3QFKlKk4A";
@@ -35,14 +35,14 @@ export default function MapboxFieldMap({
   const [coordinates, setCoordinates] = useState<Coordinates[]>(initialBoundary?.coordinates || []);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
-  const geocodingClient = useRef<MapboxGeocoding.GeocodeService | null>(null);
+  const geocodingClient = useRef<any>(null);
   const drawMarkers = useRef<mapboxgl.Marker[]>([]);
-  const areaPolygon = useRef<mapboxgl.Polygon | null>(null);
+  const areaPolygon = useRef<any>(null);
   const flyToLocation = useRef<(lng: number, lat: number, zoom: number) => void>();
 
   // Initialize geocoding client
   useEffect(() => {
-    const baseClient = MapboxClient({ accessToken: MAPBOX_ACCESS_TOKEN });
+    const baseClient = MapboxSDK({ accessToken: MAPBOX_ACCESS_TOKEN });
     geocodingClient.current = MapboxGeocoding(baseClient);
   }, []);
 

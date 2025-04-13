@@ -13,6 +13,14 @@ interface WeatherData {
   location: string;
 }
 
+interface LiveWeatherPanelProps {
+  location?: {
+    lat: number;
+    lng: number;
+    name: string;
+  };
+}
+
 const sampleWeatherData: WeatherData = {
   temperature: 28,
   humidity: 75,
@@ -21,7 +29,7 @@ const sampleWeatherData: WeatherData = {
   location: "Your Farm"
 };
 
-export default function LiveWeatherPanel() {
+export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +42,10 @@ export default function LiveWeatherPanel() {
       try {
         // Replace this with actual API call
         setTimeout(() => {
-          setWeather(sampleWeatherData);
+          setWeather({
+            ...sampleWeatherData,
+            location: location?.name || sampleWeatherData.location
+          });
           setLoading(false);
         }, 1500);
       } catch (e: any) {
@@ -44,7 +55,7 @@ export default function LiveWeatherPanel() {
     };
 
     fetchWeatherData();
-  }, []);
+  }, [location]);
 
   return (
     <Card className="w-full">
