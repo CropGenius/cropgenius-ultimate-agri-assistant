@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Check, MapPin } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { MapPin, Ruler } from 'lucide-react';
 import { Coordinates } from '@/types/field';
 
 interface FieldConfirmationCardProps {
@@ -17,34 +17,36 @@ export default function FieldConfirmationCard({
   area,
   areaUnit
 }: FieldConfirmationCardProps) {
-  // Get appropriate emoji based on field size
-  const getEmoji = () => {
+  // Convert between hectares and acres
+  const convertArea = () => {
     if (areaUnit === 'hectares') {
-      if (area > 10) return '🚜'; // Large farm
-      if (area > 2) return '🌱'; // Medium farm
-      return '🌾'; // Small farm
+      return {
+        value: (area * 2.47105).toFixed(2),
+        unit: 'acres'
+      };
     } else {
-      if (area > 25) return '🚜'; // Large farm in acres
-      if (area > 5) return '🌱'; // Medium farm in acres
-      return '🌾'; // Small farm in acres
+      return {
+        value: (area * 0.404686).toFixed(2),
+        unit: 'hectares'
+      };
     }
   };
+  
+  const alternateArea = convertArea();
 
   return (
-    <Card className="w-full bg-primary/10 shadow-sm border-primary/20">
+    <Card className="bg-white/95 dark:bg-gray-900/95 shadow-md">
       <CardContent className="p-3">
-        <div className="flex items-center gap-2">
-          <div className="bg-primary/20 rounded-full p-1">
-            <Check className="h-4 w-4 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-primary" />
+            <span className="font-medium">{locationName}</span>
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              <span className="text-sm font-medium">{locationName}</span>
-            </div>
-            <div className="text-sm text-muted-foreground flex items-center gap-1">
-              <span>{getEmoji()} {area.toFixed(2)} {areaUnit} mapped successfully</span>
-            </div>
+          <div className="flex items-center gap-1">
+            <Ruler className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm">
+              {area} {areaUnit} ({alternateArea.value} {alternateArea.unit})
+            </span>
           </div>
         </div>
       </CardContent>

@@ -14,14 +14,15 @@ import FieldConfirmationCard from "./FieldConfirmationCard";
 import SmartFieldRecommender from "./SmartFieldRecommender";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 
-// Use environment variable for access token with fallback
+// Use environment variable for access token with fallback and UI error handling
 const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || "";
 
-// Set the token for mapbox-gl
+// Set the token for mapbox-gl if available
 if (MAPBOX_ACCESS_TOKEN) {
   mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
 } else {
-  console.error("❌ [MapboxFieldMap] MAPBOX_ACCESS_TOKEN not found in environment variables");
+  console.error("❌ [MapboxFieldMap] VITE_MAPBOX_ACCESS_TOKEN not found in environment variables");
+  // We'll handle the missing token in the component rendering
 }
 
 interface MapboxFieldMapProps {
@@ -59,17 +60,30 @@ export default function MapboxFieldMap({
   const markerPulse = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!MAPBOX_ACCESS_TOKEN) {
+      setMapError("Missing Mapbox access token. Please check your environment configuration.");
+      toast.error("Map configuration error", {
+        description: "Map loading failed – check your internet or configuration"
+      });
+      return;
+    }
+    
     try {
       const baseClient = MapboxSDK({ accessToken: MAPBOX_ACCESS_TOKEN });
       geocodingClient.current = MapboxGeocoding(baseClient);
       console.log("✅ [MapboxFieldMap] Geocoding client initialized");
     } catch (error) {
       logError(error as Error, { context: 'geocodingClientInit' });
+      setMapError("Failed to initialize geocoding client");
     }
   }, []);
 
   useEffect(() => {
     if (!mapContainer.current) return;
+    if (!MAPBOX_ACCESS_TOKEN) {
+      setMapError("Missing Mapbox access token. Please check your environment configuration.");
+      return;
+    }
     
     try {
       console.log("🗺️ [MapboxFieldMap] Initializing map");
@@ -224,7 +238,7 @@ export default function MapboxFieldMap({
       };
     } catch (error) {
       logError(error as Error, { context: 'mapInitialization' });
-      setMapError("Failed to load map");
+      setMapError("Failed to load map. Please check your internet connection.");
     }
   }, [defaultLocation, onLocationChange]);
 
@@ -612,6 +626,12 @@ export default function MapboxFieldMap({
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Retry
               </Button>
+              {!MAPBOX_ACCESS_TOKEN && (
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Missing VITE_MAPBOX_ACCESS_TOKEN in environment configuration.
+                  Please add it to your .env file.
+                </p>
+              )}
             </div>
           </div>
         )}

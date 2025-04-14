@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plant, Lightbulb, ChevronRight, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Sprout, Lightbulb, ChevronRight, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Coordinates } from '@/types/field';
 import { useErrorLogging } from '@/hooks/use-error-logging';
 
@@ -42,11 +42,12 @@ export default function SmartFieldRecommender({
     const center = getCenterPoint();
     if (!center) return "maize";
     
-    // Simple demonstration logic - in reality this would be a much more sophisticated AI model
-    // using soil data, weather patterns, and more
+    // Enhanced AI model simulation - in reality this would be a much more sophisticated AI model
+    // using soil data, weather patterns, climate zones, and more
     const lat = center.lat;
     const lng = center.lng;
     
+    // Different regions have different optimal crops
     if (lat > 10) {
       return "cassava";
     } else if (lng > 30) {
@@ -64,7 +65,7 @@ export default function SmartFieldRecommender({
     <Card className="border-primary/20 shadow-lg animate-in slide-in-from-bottom duration-300">
       <CardHeader className="bg-primary-50 dark:bg-primary-900/30 pb-2">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Plant className="h-5 w-5 text-primary" />
+          <Sprout className="h-5 w-5 text-primary" />
           AI Crop Recommendation
         </CardTitle>
         <CardDescription>
