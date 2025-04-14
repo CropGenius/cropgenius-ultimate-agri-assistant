@@ -1,11 +1,9 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Coordinates, Boundary } from "@/types/field";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Loader2, Save, Undo, MapPin, Navigation, Search, X } from "lucide-react";
+import { Loader2, Save, Undo, MapPin, Navigation, Search, X, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import MapboxSDK from "@mapbox/mapbox-sdk";
 import MapboxGeocoding from "@mapbox/mapbox-sdk/services/geocoding";
@@ -13,11 +11,18 @@ import { useErrorLogging } from "@/hooks/use-error-logging";
 import MapSearchInput from "./MapSearchInput";
 import MapNavigator from "./MapNavigator";
 import FieldConfirmationCard from "./FieldConfirmationCard";
+import SmartFieldRecommender from "./SmartFieldRecommender";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 
-// Temporary access token - will be moved to Supabase Edge Function secrets
-const MAPBOX_ACCESS_TOKEN = "pk.eyJ1IjoiY3JvcGdlbml1cyIsImEiOiJjbHQ1aWl0Zm8wcmd2MmptcXBvY2V5YWp2In0.HlnQI4Uy4R79P3QFKlKk4A";
-mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+// Use environment variable for access token with fallback
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || "";
+
+// Set the token for mapbox-gl
+if (MAPBOX_ACCESS_TOKEN) {
+  mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+} else {
+  console.error("❌ [MapboxFieldMap] MAPBOX_ACCESS_TOKEN not found in environment variables");
+}
 
 interface MapboxFieldMapProps {
   initialBoundary?: Boundary | null;
@@ -41,9 +46,11 @@ export default function MapboxFieldMap({
   const [isDrawing, setIsDrawing] = useState(false);
   const [coordinates, setCoordinates] = useState<Coordinates[]>(initialBoundary?.coordinates || []);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const [searchResults, setSearchResults] = useState<{ name: string; lat: number; lng: number } | null>(null);
   const [locationName, setLocationName] = useState<string>("");
+  const [showRecommender, setShowRecommender] = useState(false);
   const geocodingClient = useRef<any>(null);
   const drawMarkers = useRef<mapboxgl.Marker[]>([]);
   const areaPolygon = useRef<any>(null);
@@ -51,7 +58,6 @@ export default function MapboxFieldMap({
   const locationMarker = useRef<mapboxgl.Marker | null>(null);
   const markerPulse = useRef<HTMLDivElement | null>(null);
 
-  // Initialize geocoding client
   useEffect(() => {
     try {
       const baseClient = MapboxSDK({ accessToken: MAPBOX_ACCESS_TOKEN });
@@ -62,27 +68,24 @@ export default function MapboxFieldMap({
     }
   }, []);
 
-  // Initialize map when component mounts
   useEffect(() => {
     if (!mapContainer.current) return;
     
     try {
       console.log("🗺️ [MapboxFieldMap] Initializing map");
       
-      // Default center - can be Africa-centered coordinates
       const defaultCenter: [number, number] = defaultLocation 
         ? [defaultLocation.lng, defaultLocation.lat]
         : [20, 5]; // Center of Africa
 
       const mapInstance = new mapboxgl.Map({
         container: mapContainer.current,
-        style: "mapbox://styles/mapbox/satellite-streets-v12", // Satellite imagery with streets
+        style: "mapbox://styles/mapbox/satellite-streets-v12",
         center: defaultCenter,
         zoom: 4,
         attributionControl: false,
       });
 
-      // Add navigation controls
       mapInstance.addControl(
         new mapboxgl.NavigationControl({
           visualizePitch: true,
@@ -90,7 +93,6 @@ export default function MapboxFieldMap({
         "top-right"
       );
 
-      // Add scale control
       mapInstance.addControl(
         new mapboxgl.ScaleControl({
           maxWidth: 150,
@@ -99,7 +101,6 @@ export default function MapboxFieldMap({
         "bottom-left"
       );
 
-      // Add geolocate control
       const geolocateControl = new mapboxgl.GeolocateControl({
         positionOptions: {
           enableHighAccuracy: true,
@@ -108,7 +109,6 @@ export default function MapboxFieldMap({
       });
       mapInstance.addControl(geolocateControl, "top-right");
 
-      // Define the flyToLocation function with improved animation
       flyToLocation.current = (lng: number, lat: number, zoom: number = 16) => {
         if (!map.current) return;
         
@@ -120,18 +120,16 @@ export default function MapboxFieldMap({
           zoom: zoom,
           duration: 2000,
           pitch: 60,
-          bearing: Math.random() * 180 - 90, // Random bearing for dynamic feel
+          bearing: Math.random() * 180 - 90,
           easing: (t) => {
-            return t * (2 - t); // easeOutQuad for smoother animation
+            return t * (2 - t);
           }
         });
         
-        // Add animated marker at the target location
         if (locationMarker.current) {
           locationMarker.current.remove();
         }
         
-        // Create pulsing dot element
         const el = document.createElement('div');
         el.className = 'location-marker';
         el.innerHTML = `
@@ -139,7 +137,6 @@ export default function MapboxFieldMap({
           <div class="location-marker-pulse"></div>
         `;
         
-        // Add custom styles for the pulsing effect
         const style = document.createElement('style');
         style.innerHTML = `
           .location-marker {
@@ -181,29 +178,24 @@ export default function MapboxFieldMap({
         `;
         document.head.appendChild(style);
         
-        // Create and add the marker
         locationMarker.current = new mapboxgl.Marker({ element: el })
           .setLngLat([lng, lat])
           .addTo(map.current);
         
         markerPulse.current = el;
         
-        // Notify parent about location change if prop exists
         if (onLocationChange) {
           onLocationChange({ lng, lat });
         }
       };
 
-      // Handle map load event
       mapInstance.on("load", () => {
         console.log("✅ [MapboxFieldMap] Map loaded successfully");
         setMapLoaded(true);
 
-        // Add source for field polygon if coordinates exist
         if (coordinates.length > 2) {
           drawFieldPolygon(mapInstance, coordinates);
           
-          // Fit to coordinates bounds
           const bounds = new mapboxgl.LngLatBounds();
           coordinates.forEach((coord) => {
             bounds.extend([coord.lng, coord.lat]);
@@ -216,18 +208,15 @@ export default function MapboxFieldMap({
         }
       });
 
-      // Save map instance to ref
       map.current = mapInstance;
       logSuccess('map_initialized');
 
-      // Map click event handler for drawing
       mapInstance.on('click', (e) => {
         if (isDrawing && !readOnly) {
           handleMapClick(e);
         }
       });
 
-      // Cleanup function
       return () => {
         drawMarkers.current.forEach(marker => marker.remove());
         if (locationMarker.current) locationMarker.current.remove();
@@ -235,10 +224,10 @@ export default function MapboxFieldMap({
       };
     } catch (error) {
       logError(error as Error, { context: 'mapInitialization' });
+      setMapError("Failed to load map");
     }
   }, [defaultLocation, onLocationChange]);
 
-  // Handle search functionality
   const handleSearch = trackOperation('searchLocation', async (searchInput: string) => {
     if (!searchInput.trim() || !geocodingClient.current) {
       toast.warning("Please enter a search term");
@@ -253,7 +242,7 @@ export default function MapboxFieldMap({
         .forwardGeocode({
           query: searchInput,
           limit: 1,
-          countries: ["ng", "gh", "ke", "za", "et", "tz", "ug", "rw"], // Limit to African countries
+          countries: ["ng", "gh", "ke", "za", "et", "tz", "ug", "rw"],
         })
         .send();
 
@@ -278,12 +267,10 @@ export default function MapboxFieldMap({
           }
         });
         
-        // Fly to location with animation
         if (flyToLocation.current) {
           flyToLocation.current(lng, lat, 16);
         }
         
-        // Update location for parent component
         if (onLocationChange) {
           onLocationChange({ lng, lat });
         }
@@ -301,10 +288,8 @@ export default function MapboxFieldMap({
     }
   });
 
-  // Draw field polygon on the map
   const drawFieldPolygon = (mapInstance: mapboxgl.Map, fieldCoords: Coordinates[]) => {
     try {
-      // Remove existing polygon if any
       if (mapInstance.getSource('field-polygon')) {
         mapInstance.removeLayer('field-polygon-fill');
         mapInstance.removeLayer('field-polygon-outline');
@@ -313,10 +298,8 @@ export default function MapboxFieldMap({
       
       if (fieldCoords.length < 3) return;
       
-      // Convert coordinates to GeoJSON format
       const geojsonCoords = fieldCoords.map(coord => [coord.lng, coord.lat]);
       
-      // Add source for the polygon
       mapInstance.addSource('field-polygon', {
         type: 'geojson',
         data: {
@@ -325,14 +308,12 @@ export default function MapboxFieldMap({
           geometry: {
             type: 'Polygon',
             coordinates: [
-              // Close the polygon by repeating the first point
               [...geojsonCoords, geojsonCoords[0]]
             ]
           }
         }
       });
       
-      // Add fill layer for the polygon
       mapInstance.addLayer({
         id: 'field-polygon-fill',
         type: 'fill',
@@ -344,7 +325,6 @@ export default function MapboxFieldMap({
         }
       });
       
-      // Add outline layer for the polygon
       mapInstance.addLayer({
         id: 'field-polygon-outline',
         type: 'line',
@@ -362,7 +342,6 @@ export default function MapboxFieldMap({
     }
   };
 
-  // Handle starting the drawing mode
   const handleStartDrawing = (startPoint?: [number, number]) => {
     if (!map.current || readOnly) return;
     
@@ -372,11 +351,9 @@ export default function MapboxFieldMap({
       
       console.log("🖌️ [MapboxFieldMap] Drawing mode activated");
       
-      // Clear existing markers
       drawMarkers.current.forEach(marker => marker.remove());
       drawMarkers.current = [];
       
-      // If we have a starting point, add it automatically
       if (startPoint) {
         const [lng, lat] = startPoint;
         addPoint(lng, lat);
@@ -390,7 +367,6 @@ export default function MapboxFieldMap({
     }
   };
 
-  // Add a point to the field boundary
   const addPoint = (lng: number, lat: number) => {
     if (!map.current || !isDrawing || readOnly) return;
     
@@ -399,19 +375,16 @@ export default function MapboxFieldMap({
       const newCoords = [...coordinates, { lng, lat }];
       setCoordinates(newCoords);
       
-      // Add a marker for the point
       const marker = new mapboxgl.Marker({ color: "#FF5722" })
         .setLngLat([lng, lat])
         .addTo(map.current);
       
       drawMarkers.current.push(marker);
       
-      // If we have at least 3 points, draw the polygon
       if (newCoords.length >= 3) {
         drawFieldPolygon(map.current, newCoords);
       }
       
-      // Notify parent component
       if (onBoundaryChange) {
         onBoundaryChange({
           type: 'polygon',
@@ -423,7 +396,6 @@ export default function MapboxFieldMap({
     }
   };
 
-  // Handle map click for adding points
   const handleMapClick = (e: mapboxgl.MapMouseEvent) => {
     if (!isDrawing || readOnly) return;
     
@@ -435,7 +407,6 @@ export default function MapboxFieldMap({
     }
   };
 
-  // Complete the drawing
   const handleComplete = () => {
     try {
       if (coordinates.length < 3) {
@@ -458,12 +429,15 @@ export default function MapboxFieldMap({
       toast.success("Field boundary completed", { 
         description: `Field mapped with ${coordinates.length} points` 
       });
+
+      setTimeout(() => {
+        setShowRecommender(true);
+      }, 800);
     } catch (error) {
       logError(error as Error, { context: 'completeDrawing' });
     }
   };
 
-  // Remove the last point
   const handleUndo = () => {
     if (coordinates.length === 0) return;
     
@@ -472,13 +446,11 @@ export default function MapboxFieldMap({
       const newCoords = coordinates.slice(0, -1);
       setCoordinates(newCoords);
       
-      // Remove the last marker
       if (drawMarkers.current.length > 0) {
         const marker = drawMarkers.current.pop();
         if (marker) marker.remove();
       }
       
-      // Redraw polygon
       if (map.current) {
         if (newCoords.length >= 3) {
           drawFieldPolygon(map.current, newCoords);
@@ -489,7 +461,6 @@ export default function MapboxFieldMap({
         }
       }
       
-      // Notify parent component
       if (onBoundaryChange) {
         onBoundaryChange({
           type: 'polygon',
@@ -501,7 +472,6 @@ export default function MapboxFieldMap({
     }
   };
 
-  // Use current location
   const handleUseCurrentLocation = () => {
     if (!map.current) return;
     
@@ -512,19 +482,16 @@ export default function MapboxFieldMap({
           const { latitude, longitude } = position.coords;
           console.log("📍 [MapboxFieldMap] Got user location:", latitude, longitude);
           
-          // Fly to user location
           if (flyToLocation.current) {
             flyToLocation.current(longitude, latitude, 17);
           }
           
           if (isDrawing) {
-            // Add point to field boundary
             addPoint(longitude, latitude);
             toast.success("Added current location", {
               description: "Your current position has been added to the field boundary"
             });
           } else {
-            // Just center the map on user location
             toast.success("Located", {
               description: "Map centered on your current position"
             });
@@ -543,7 +510,6 @@ export default function MapboxFieldMap({
     }
   };
 
-  // Reset the field boundary
   const handleReset = () => {
     if (!map.current) return;
     
@@ -551,18 +517,15 @@ export default function MapboxFieldMap({
       console.log("🧹 [MapboxFieldMap] Resetting field boundary");
       setCoordinates([]);
       
-      // Clear markers
       drawMarkers.current.forEach(marker => marker.remove());
       drawMarkers.current = [];
       
-      // Clear polygon
       if (map.current.getSource('field-polygon')) {
         map.current.removeLayer('field-polygon-fill');
         map.current.removeLayer('field-polygon-outline');
         map.current.removeSource('field-polygon');
       }
       
-      // Notify parent component
       if (onBoundaryChange) {
         onBoundaryChange({
           type: 'polygon',
@@ -576,12 +539,9 @@ export default function MapboxFieldMap({
     }
   };
 
-  // Calculate area of the polygon in hectares
   const calculateArea = (coords: Coordinates[]): number => {
     if (coords.length < 3) return 0;
     
-    // Use turf.js or another geospatial library for accurate calculations
-    // This is a simplified implementation using the Shoelace formula
     let area = 0;
     for (let i = 0; i < coords.length; i++) {
       const j = (i + 1) % coords.length;
@@ -591,16 +551,20 @@ export default function MapboxFieldMap({
     
     area = Math.abs(area) / 2;
     
-    // Convert to hectares (approximate conversion)
-    // This simplified calculation needs to be replaced with proper geodesic area calculation
     const areaInHectares = area * 111319.9 * 111319.9 / 10000;
     return parseFloat(areaInHectares.toFixed(2));
+  };
+
+  const handleGetCropTips = () => {
+    setShowRecommender(false);
+    toast.success("Growing tips", {
+      description: "Expert growing tips are now available in your Farm Plan"
+    });
   };
 
   return (
     <ErrorBoundary>
       <div className="w-full h-full relative">
-        {/* Search bar with reusable component */}
         <div className="absolute top-2 left-2 right-16 z-10 bg-white/95 dark:bg-gray-900/95 rounded-md shadow-md">
           <MapSearchInput 
             onSearch={handleSearch}
@@ -614,7 +578,6 @@ export default function MapboxFieldMap({
           />
         </div>
 
-        {/* Drawing controls using MapNavigator component */}
         {!readOnly && (
           <div className="absolute top-16 right-2 z-10">
             <MapNavigator
@@ -628,18 +591,44 @@ export default function MapboxFieldMap({
           </div>
         )}
 
-        {/* Mapbox container */}
         <div 
           ref={mapContainer} 
           className="w-full h-full rounded-md overflow-hidden"
           onClick={(e) => {
-            // Prevent form submission when clicking on map
             e.stopPropagation();
           }}
         />
 
-        {/* Field confirmation card */}
-        {coordinates.length >= 3 && searchResults && (
+        {mapError && (
+          <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+            <div className="bg-background p-4 rounded-md shadow-md max-w-md text-center">
+              <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-2" />
+              <h3 className="text-lg font-bold mb-2">Map Error</h3>
+              <p className="text-muted-foreground mb-4">{mapError}</p>
+              <Button 
+                onClick={() => window.location.reload()}
+                className="mx-auto"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {showRecommender && coordinates.length >= 3 && (
+          <div className="absolute bottom-4 left-2 right-2 z-20">
+            <SmartFieldRecommender 
+              coordinates={coordinates}
+              locationName={locationName || "Your Field"}
+              area={calculateArea(coordinates)}
+              onClose={() => setShowRecommender(false)}
+              onGetTips={handleGetCropTips}
+            />
+          </div>
+        )}
+
+        {!showRecommender && coordinates.length >= 3 && searchResults && (
           <div className="absolute bottom-4 left-2 right-2 z-10">
             <FieldConfirmationCard
               locationName={locationName || "Your Field"}
@@ -650,8 +639,7 @@ export default function MapboxFieldMap({
           </div>
         )}
 
-        {/* Field information overlay */}
-        {coordinates.length >= 3 && (
+        {!showRecommender && coordinates.length >= 3 && (
           <div className="absolute bottom-20 left-2 bg-white/90 dark:bg-gray-900/90 p-2 rounded-md shadow-md text-xs space-y-1 max-w-xs">
             <div className="font-medium">Field Statistics:</div>
             <div>Points: {coordinates.length}</div>
@@ -662,8 +650,7 @@ export default function MapboxFieldMap({
           </div>
         )}
 
-        {/* Map loading overlay */}
-        {!mapLoaded && (
+        {!mapLoaded && !mapError && (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
             <div className="flex flex-col items-center gap-2">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -672,7 +659,6 @@ export default function MapboxFieldMap({
           </div>
         )}
 
-        {/* Instructions */}
         {isDrawing && !readOnly && (
           <div className="absolute bottom-2 left-2 right-2 bg-background/90 p-2 px-3 rounded text-xs text-center">
             Click on map to add points. Add at least 3 points to create a field boundary.

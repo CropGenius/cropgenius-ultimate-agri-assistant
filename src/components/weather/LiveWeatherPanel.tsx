@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Thermometer, Droplets, Wind, Sun, Loader2, MapPin } from 'lucide-react';
+import { Thermometer, Droplets, Wind, Sun, Loader2, MapPin, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import YourFarmButton from './YourFarmButton';
 import { Field } from '@/types/field';
@@ -43,13 +43,11 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
   const [addFieldDialogOpen, setAddFieldDialogOpen] = useState(false);
 
   useEffect(() => {
-    // Simulate fetching weather data
     const fetchWeatherData = async () => {
       setLoading(true);
       setError(null);
       try {
         console.log("📡 [LiveWeatherPanel] Fetching weather data for:", location?.name || "default location");
-        // Replace this with actual API call
         setTimeout(() => {
           setWeather({
             ...sampleWeatherData,
@@ -74,22 +72,16 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
   const handleFieldSelect = (field: Field) => {
     try {
       console.log("🗺️ [LiveWeatherPanel] Field selected:", field.name);
-      // Handle field selection logic here
       toast.success(`Field selected: ${field.name}`, {
         description: "Weather data will now be specific to this field."
       });
       
-      // Update location details based on selected field
       if (field.boundary?.coordinates && field.boundary.coordinates.length > 0) {
-        // Calculate center point of field for weather data
         const coords = field.boundary.coordinates;
         const centerLat = coords.reduce((sum, coord) => sum + coord.lat, 0) / coords.length;
         const centerLng = coords.reduce((sum, coord) => sum + coord.lng, 0) / coords.length;
         
-        // Refetch weather data for this field
-        // This would call an actual weather API in production
         setLoading(true);
-        
         setTimeout(() => {
           setWeather({
             ...sampleWeatherData,
@@ -112,7 +104,6 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
         description: "You can now view weather data specific to your field."
       });
       
-      // Auto-select the newly added field
       handleFieldSelect(field);
     } catch (error) {
       logError(error as Error, { context: 'addField' });
@@ -163,7 +154,6 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
                   <div className="text-sm text-muted-foreground">{weather.condition} in {weather.location}</div>
                 </div>
                 <div className="flex-shrink-0">
-                  {/* Weather icon would go here */}
                   <div className="h-14 w-14 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
                     <Sun className="h-8 w-8 text-yellow-500" />
                   </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +16,8 @@ import { Farm } from "@/types/field";
 import { useErrorLogging } from '@/hooks/use-error-logging';
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import { FieldFormProps } from "./types";
+
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 
 const formSchema = z.object({
   name: z.string().min(2, "Field name must be at least 2 characters"),
@@ -57,26 +58,29 @@ export default function AddFieldForm({
     },
   });
 
-  // Update boundary when the map selection changes
   useEffect(() => {
     form.setValue("boundary", boundary);
   }, [boundary, form]);
 
-  // Handle location update from map
   const handleLocationChange = (location: { lat: number; lng: number }) => {
     setFieldLocation(location);
-    // If no name has been set by the user yet, try to reverse geocode the location
     if (!form.getValues("name")) {
       fetchLocationName(location.lng, location.lat);
     }
   };
 
-  // Fetch location name for the coordinates
   const fetchLocationName = trackOperation('fetchLocationName', async (lng: number, lat: number) => {
     try {
       console.log(`🔍 [AddFieldForm] Reverse geocoding location: ${lng}, ${lat}`);
-      // This would be a call to a reverse geocoding service
-      // For now we'll just use a placeholder
+      
+      if (!MAPBOX_ACCESS_TOKEN) {
+        console.error("❌ [AddFieldForm] Missing Mapbox access token for reverse geocoding");
+        toast.error("Could not determine location name", { 
+          description: "Mapbox access token is missing"
+        });
+        return;
+      }
+      
       const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_ACCESS_TOKEN}&types=place,locality,neighborhood,address`);
       const data = await response.json();
       
@@ -85,7 +89,6 @@ export default function AddFieldForm({
         setSearchedLocation(placeName);
         console.log(`✅ [AddFieldForm] Location name found: ${placeName}`);
         
-        // Suggest a field name based on the location
         const suggestedName = `${placeName} Field`;
         if (!form.getValues("name")) {
           form.setValue("name", suggestedName);
@@ -93,10 +96,12 @@ export default function AddFieldForm({
       }
     } catch (error) {
       logError(error as Error, { context: 'reverseGeocoding' });
+      toast.error("Could not determine location name", { 
+        description: "Check your internet connection"
+      });
     }
   });
 
-  // Submit form
   const onSubmit = trackOperation('submitField', async (values: FormValues) => {
     try {
       console.log("📝 [AddFieldForm] Creating field with values:", values);
@@ -148,7 +153,6 @@ export default function AddFieldForm({
         description: `${values.name} has been added to your farm`
       });
       
-      // Call onSuccess callback or navigate away
       if (onSuccess) {
         onSuccess(field);
       } else {
@@ -164,7 +168,7 @@ export default function AddFieldForm({
       setIsSubmitting(false);
     }
   });
-  
+
   return (
     <ErrorBoundary>
       <Form {...form}>
