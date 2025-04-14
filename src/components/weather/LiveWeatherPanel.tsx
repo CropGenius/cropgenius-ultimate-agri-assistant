@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Thermometer, Droplets, Wind, Sun, Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import YourFarmButton from './YourFarmButton';
+import { Field } from '@/types/field';
 
 interface WeatherData {
   temperature: number;
@@ -40,6 +41,7 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
       setLoading(true);
       setError(null);
       try {
+        console.log("📡 [LiveWeatherPanel] Fetching weather data for:", location?.name || "default location");
         // Replace this with actual API call
         setTimeout(() => {
           setWeather({
@@ -47,15 +49,23 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
             location: location?.name || sampleWeatherData.location
           });
           setLoading(false);
+          console.log("✅ [LiveWeatherPanel] Weather data loaded successfully");
         }, 1500);
       } catch (e: any) {
-        setError(e.message || "Failed to fetch weather data");
+        const errorMsg = e.message || "Failed to fetch weather data";
+        setError(errorMsg);
         setLoading(false);
+        console.error("❌ [LiveWeatherPanel] Weather data fetch failed:", errorMsg);
       }
     };
 
     fetchWeatherData();
   }, [location]);
+
+  const handleFieldSelect = (field: Field) => {
+    console.log("🗺️ [LiveWeatherPanel] Field selected:", field.name);
+    // Handle field selection logic here
+  };
 
   return (
     <Card className="w-full">
@@ -66,7 +76,12 @@ export default function LiveWeatherPanel({ location }: LiveWeatherPanelProps) {
         </CardTitle>
         <CardDescription className="flex justify-between items-center">
           <span>AI-powered hyperlocal weather tailored to your specific farm location</span>
-          <YourFarmButton size="sm" buttonText="View Your Farm" variant="secondary" />
+          <YourFarmButton 
+            size="sm" 
+            buttonText="View Your Farm" 
+            variant="secondary" 
+            onSelect={handleFieldSelect}
+          />
         </CardDescription>
       </CardHeader>
       <CardContent>
