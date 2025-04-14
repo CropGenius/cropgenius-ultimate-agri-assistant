@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,13 +8,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { Field } from '@/types/field';
 import AddFieldForm from '@/components/fields/AddFieldForm';
+import { FieldSelectCallback } from '@/components/fields/types';
+import { useErrorLogging } from '@/hooks/use-error-logging';
 
 interface YourFarmButtonProps {
   className?: string;
   size?: "default" | "sm" | "lg" | "icon";
   variant?: "default" | "secondary" | "outline" | "ghost";
   buttonText?: string;
-  onSelect: (field: Field) => void;
+  onSelect: FieldSelectCallback;
 }
 
 export default function YourFarmButton({ 
@@ -25,6 +26,10 @@ export default function YourFarmButton({
   buttonText = "Your Farm",
   onSelect
 }: YourFarmButtonProps) {
+  const { logError, logSuccess } = useErrorLogging('YourFarmButton', { 
+    showToasts: true, 
+    criticalComponent: true 
+  });
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -142,37 +147,42 @@ export default function YourFarmButton({
   };
 
   const handleFieldAdded = (field: Field) => {
-    console.log("✅ [YourFarmButton] Field added:", field);
-    setFields(prev => [field, ...prev]);
-    setHasFields(true);
-    setShowDialog(false);
-    
-    toast.success("Field added", {
-      description: "Your field has been added successfully. Weather insights are now customized to your farm."
-    });
-    
-    // Handle field selection
-    if (onSelect) {
-      console.log("🔄 [YourFarmButton] Calling onSelect with field:", field.name);
-      onSelect(field);
+    try {
+      console.log("✅ [YourFarmButton] Field added:", field);
+      setFields(prev => [field, ...prev]);
+      setHasFields(true);
+      setShowDialog(false);
+      
+      toast.success("Field added", {
+        description: "Your field has been added successfully. Weather insights are now customized to your farm."
+      });
+      
+      // Handle field selection
+      if (onSelect) {
+        console.log("🔄 [YourFarmButton] Calling onSelect with field:", field.name);
+        onSelect(field);
+      }
+      
+      // Navigate to the field detail page
+      navigate(`/fields/${field.id}`);
+    } catch (error: any) {
+      logError(error, { context: 'handleFieldAdded' });
     }
-    
-    // Navigate to the field detail page
-    navigate(`/fields/${field.id}`);
   };
 
   const handleSelectField = (field: Field) => {
-    console.log("🎯 [YourFarmButton] Field selected:", field.name);
-    setSelectedFieldId(field.id);
-    setShowDialog(false);
-    
-    // Call the onSelect callback
-    if (onSelect) {
-      console.log("🔄 [YourFarmButton] Calling onSelect with field:", field.name);
+    try {
+      console.log("🎯 [YourFarmButton] Field selected:", field.name);
+      setSelectedFieldId(field.id);
+      setShowDialog(false);
+      
+      // Call the onSelect callback
       onSelect(field);
+      
+      navigate(`/fields/${field.id}`);
+    } catch (error: any) {
+      logError(error, { context: 'handleSelectField' });
     }
-    
-    navigate(`/fields/${field.id}`);
   };
 
   return (

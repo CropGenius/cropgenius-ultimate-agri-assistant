@@ -31,15 +31,19 @@ const queryClient = new QueryClient({
     queries: {
       retry: 2,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      onError: (error) => {
-        console.error("❌ [Query Error]", error);
-        diagnostics.logError(error as Error, { source: 'react-query' });
+      meta: {
+        onError: (error) => {
+          console.error("❌ [Query Error]", error);
+          diagnostics.logError(error as Error, { source: 'react-query' });
+        }
       }
     },
     mutations: {
-      onError: (error) => {
-        console.error("❌ [Mutation Error]", error);
-        diagnostics.logError(error as Error, { source: 'react-query-mutation' });
+      meta: {
+        onError: (error) => {
+          console.error("❌ [Mutation Error]", error);
+          diagnostics.logError(error as Error, { source: 'react-query-mutation' });
+        }
       }
     }
   }

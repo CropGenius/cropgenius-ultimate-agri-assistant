@@ -5,13 +5,17 @@ import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Edit, Map } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddFieldForm from "@/components/fields/AddFieldForm";
 import { Field } from "@/types/field";
 import { toast } from "sonner";
+import { useErrorLogging } from '@/hooks/use-error-logging';
+import ErrorBoundary from '@/components/error/ErrorBoundary';
+import { FieldSelectCallback } from '@/components/fields/types';
 
 const ManageFields = () => {
+  const { logError, logSuccess, trackOperation } = useErrorLogging('ManageFieldsPage');
   const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -72,13 +76,32 @@ const ManageFields = () => {
   };
 
   const handleFieldAdded = (field: Field) => {
-    console.log("✅ [ManageFieldsPage] Field added:", field.name);
-    setFields(prev => [field, ...prev]);
-    setAddDialogOpen(false);
-    toast.success("Field added successfully", {
-      description: `${field.name} has been added to your farm.`
-    });
+    try {
+      console.log("✅ [ManageFieldsPage] Field added:", field.name);
+      setFields(prev => [field, ...prev]);
+      setAddDialogOpen(false);
+      toast.success("Field added successfully", {
+        description: `${field.name} has been added to your farm.`
+      });
+      logSuccess('field_added', { field_id: field.id });
+    } catch (error: any) {
+      logError(error, { operation: 'handleFieldAdded' });
+    }
   };
+  
+  const handleDeleteField = trackOperation('deleteField', async (fieldId: string) => {
+    if (confirm("Are you sure you want to delete this field? This action cannot be undone.")) {
+      const { error } = await supabase
+        .from('fields')
+        .delete()
+        .eq('id', fieldId);
+        
+      if (error) throw error;
+      
+      setFields(prevFields => prevFields.filter(f => f.id !== fieldId));
+      toast.success("Field deleted successfully");
+    }
+  });
 
   return (
     <Layout>
@@ -91,36 +114,59 @@ const ManageFields = () => {
           </Button>
         </div>
 
-        {/* Fields management UI will go here */}
-        <div className="grid grid-cols-1 gap-4">
-          {fields.map(field => (
-            <Card key={field.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  {field.name}
-                  <Button variant="destructive" size="sm">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Size: {field.size} {field.size_unit}</p>
-                {field.soil_type && <p>Soil: {field.soil_type}</p>}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <ErrorBoundary>
+          <div className="grid grid-cols-1 gap-4">
+            {fields.map(field => (
+              <Card key={field.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <CardTitle className="flex justify-between items-center">
+                    {field.name}
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleDeleteField(field.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>Size: {field.size} {field.size_unit}</p>
+                  {field.soil_type && <p>Soil: {field.soil_type}</p>}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </ErrorBoundary>
+        
+        {fields.length === 0 && !loading && (
+          <div className="text-center py-10">
+            <p className="text-muted-foreground mb-4">You haven't added any fields yet.</p>
+            <Button onClick={() => setAddDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Your First Field
+            </Button>
+          </div>
+        )}
 
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Add New Field</DialogTitle>
             </DialogHeader>
-            <AddFieldForm 
-              farms={farms}
-              onSuccess={handleFieldAdded} 
-              onCancel={() => setAddDialogOpen(false)} 
-            />
+            <ErrorBoundary>
+              <AddFieldForm 
+                farms={farms}
+                onSuccess={handleFieldAdded} 
+                onCancel={() => setAddDialogOpen(false)} 
+              />
+            </ErrorBoundary>
           </DialogContent>
         </Dialog>
       </div>
