@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -16,13 +15,15 @@ interface YourFarmButtonProps {
   size?: "default" | "sm" | "lg" | "icon";
   variant?: "default" | "secondary" | "outline" | "ghost";
   buttonText?: string;
+  onSelect: (field: Field) => void;
 }
 
 export default function YourFarmButton({ 
   className, 
   size = "default",
   variant = "default",
-  buttonText = "Your Farm"
+  buttonText = "Your Farm",
+  onSelect
 }: YourFarmButtonProps) {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -208,11 +209,10 @@ export default function YourFarmButton({
               <div className="py-4">
                 <div className="grid gap-2 mb-4">
                   {fields.map(field => (
-                    <Button
+                    <div 
+                      className="cursor-pointer px-3 py-2 hover:bg-muted rounded-md"
+                      onClick={() => onSelect(field)}
                       key={field.id}
-                      variant="outline"
-                      className="justify-start h-auto py-3 px-4"
-                      onClick={() => handleSelectField(field.id)}
                     >
                       <Tractor className="h-4 w-4 mr-2" />
                       <div className="text-left">
@@ -221,7 +221,7 @@ export default function YourFarmButton({
                           {field.size} {field.size_unit}
                         </div>
                       </div>
-                    </Button>
+                    </div>
                   ))}
                 </div>
                 <Button onClick={handleAddField} className="w-full" variant="outline">

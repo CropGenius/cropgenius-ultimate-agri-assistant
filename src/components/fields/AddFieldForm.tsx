@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { Farm } from "@/types/field";
 
 const formSchema = z.object({
   name: z.string().min(2, "Field name must be at least 2 characters"),
@@ -27,8 +28,13 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-// The original component has title hardcoded here, but we're fixing the error by using the proper pattern
-export default function AddFieldForm({ onSuccess }: { onSuccess?: () => void }) {
+interface AddFieldFormProps {
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  farms?: Farm[];
+}
+
+export default function AddFieldForm({ onSuccess, onCancel, farms }: AddFieldFormProps) {
   const navigate = useNavigate();
   const { user, farmId } = useAuth();
   const [boundary, setBoundary] = useState<any>(null);

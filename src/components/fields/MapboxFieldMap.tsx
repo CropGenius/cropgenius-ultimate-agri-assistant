@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -17,6 +16,7 @@ mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
 interface MapboxFieldMapProps {
   initialBoundary?: Boundary | null;
   onBoundaryChange?: (boundary: Boundary) => void;
+  onLocationChange?: (location: Coordinates) => void;
   readOnly?: boolean;
   defaultLocation?: Coordinates;
 }
@@ -24,6 +24,7 @@ interface MapboxFieldMapProps {
 export default function MapboxFieldMap({
   initialBoundary,
   onBoundaryChange,
+  onLocationChange,
   readOnly = false,
   defaultLocation
 }: MapboxFieldMapProps) {
@@ -100,6 +101,11 @@ export default function MapboxFieldMap({
           pitch: 60,
           bearing: Math.random() * 180 - 90, // Random bearing for dynamic feel
         });
+        
+        // Notify parent about location change if prop exists
+        if (onLocationChange) {
+          onLocationChange({ lng, lat });
+        }
       }
     };
 
@@ -132,7 +138,7 @@ export default function MapboxFieldMap({
       drawMarkers.current.forEach(marker => marker.remove());
       mapInstance.remove();
     };
-  }, [defaultLocation]);
+  }, [defaultLocation, onLocationChange]);
 
   // Handle search submission
   const handleSearch = async () => {
@@ -158,6 +164,11 @@ export default function MapboxFieldMap({
         // Fly to location with animation
         if (flyToLocation.current) {
           flyToLocation.current(lng, lat, 15);
+        }
+        
+        // Update location for parent component
+        if (onLocationChange) {
+          onLocationChange({ lng, lat });
         }
         
         // Check if the location has polygon data (not typically available with geocoding)
