@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Sprout, Droplets, Leaf, ChevronRight, Volume2 } from 'lucide-react';
 import { useErrorLogging } from '@/hooks/use-error-logging';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface GeniusGrowProps {
   fieldName?: string;

@@ -3,19 +3,22 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Ruler } from 'lucide-react';
 import { Coordinates } from '@/types/field';
+import { cn } from '@/lib/utils';
 
 interface FieldConfirmationCardProps {
   locationName: string;
   coordinates: Coordinates[];
   area: number;
   areaUnit: string;
+  className?: string;
 }
 
 export default function FieldConfirmationCard({
   locationName,
   coordinates,
   area,
-  areaUnit
+  areaUnit,
+  className
 }: FieldConfirmationCardProps) {
   // Convert between hectares and acres
   const convertArea = () => {
@@ -35,7 +38,7 @@ export default function FieldConfirmationCard({
   const alternateArea = convertArea();
 
   return (
-    <Card className="bg-white/95 dark:bg-gray-900/95 shadow-md">
+    <Card className={cn("bg-white/95 dark:bg-gray-900/95 shadow-md", className)}>
       <CardContent className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -45,7 +48,7 @@ export default function FieldConfirmationCard({
           <div className="flex items-center gap-1">
             <Ruler className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm">
-              {area} {areaUnit} ({alternateArea.value} {alternateArea.unit})
+              {area.toFixed(2)} {areaUnit} ({alternateArea.value} {alternateArea.unit})
             </span>
           </div>
         </div>

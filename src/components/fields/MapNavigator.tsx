@@ -9,7 +9,7 @@ interface MapNavigatorProps {
   onUseCurrentLocation: () => void;
   onReset: () => void;
   isDrawing: boolean;
-  hasPoints: boolean;
+  hasPoints: boolean | number;
 }
 
 export default function MapNavigator({
@@ -29,7 +29,7 @@ export default function MapNavigator({
             variant="default"
             className="h-8 px-2 py-1"
             onClick={onComplete}
-            disabled={!hasPoints || hasPoints && hasPoints < 3}
+            disabled={!hasPoints || (typeof hasPoints === 'number' && hasPoints < 3)}
           >
             <Save className="h-3 w-3 mr-1" />
             <span className="text-xs">Complete</span>
