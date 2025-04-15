@@ -14,6 +14,7 @@ export interface AuthState {
 
 interface AuthContextType extends AuthState {
   signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +27,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     error: null,
     farmId: localStorage.getItem("farmId"),
   });
+  
+  // Function to refresh session - can be called manually
+  const refreshSession = async () => {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      
+      console.log("Session refresh:", data.session?.user?.id || "No session");
+      
+      setAuthState(prev => ({
+        ...prev,
+        user: data.session?.user || null,
+        session: data.session,
+        isLoading: false,
+      }));
+      
+      // Check user farm if authenticated
+      if (data.session?.user?.id) {
+        checkUserFarm(data.session.user.id);
+      }
+    } catch (error: any) {
+      console.error("Session refresh error:", error.message);
+    }
+  };
 
   useEffect(() => {
     console.log("AuthProvider: Setting up auth listener");
@@ -45,14 +70,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log("Auth success: User signed in", session?.user?.id);
           toast.success(`Logged in as ${session?.user?.email}`);
           
-          // Check if user has a farm
+          // Check if user has a farm (using setTimeout to avoid deadlocks)
           if (session?.user?.id) {
-            checkUserFarm(session.user.id);
+            setTimeout(() => {
+              checkUserFarm(session.user.id);
+            }, 0);
           }
         } else if (event === 'SIGNED_OUT') {
           console.log("Auth state: User signed out");
           toast.info("Logged out successfully");
           localStorage.removeItem("farmId");
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log("Auth state: Token refreshed");
+        } else if (event === 'USER_UPDATED') {
+          console.log("Auth state: User updated");
         }
       }
     );
@@ -81,8 +112,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             isLoading: false,
           }));
           
-          // Check if user has a farm
-          checkUserFarm(session.user.id);
+          // Check if user has a farm (using setTimeout to avoid deadlocks)
+          setTimeout(() => {
+            checkUserFarm(session.user.id);
+          }, 0);
         } else {
           console.log("No session found");
           setAuthState(prev => ({
@@ -100,7 +133,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
     
-    initializeAuth();
+    // Small delay to ensure context is fully set up
+    setTimeout(() => {
+      initializeAuth();
+    }, 0);
     
     return () => {
       console.log("Cleaning up auth subscription");
@@ -158,7 +194,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ ...authState, signOut }}>
+    <AuthContext.Provider value={{ ...authState, signOut, refreshSession }}>
       {children}
     </AuthContext.Provider>
   );

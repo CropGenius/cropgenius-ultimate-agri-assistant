@@ -4,13 +4,15 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import FarmOnboarding from "@/components/onboarding/FarmOnboarding";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, isLoading, farmId } = useAuth();
+  const { user, isLoading, farmId, refreshSession } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -37,6 +39,29 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
   
+  // Check if session expired or needs refresh
+  const sessionExpiryCheck = () => {
+    const sessionStr = localStorage.getItem('cropgenius-auth');
+    if (sessionStr) {
+      try {
+        const sessionData = JSON.parse(sessionStr);
+        if (sessionData.expiresAt) {
+          const expiresAt = new Date(sessionData.expiresAt).getTime();
+          const now = Date.now();
+          // If session expires in less than 5 minutes, show refresh button
+          if (expiresAt - now < 300000) {
+            return true;
+          }
+        }
+      } catch (e) {
+        console.error("Error checking session expiry:", e);
+      }
+    }
+    return false;
+  };
+  
+  const sessionNeedsRefresh = sessionExpiryCheck();
+  
   // If authenticated but no farm, show farm onboarding
   // Skip this check for paths that should be accessible without a farm
   const pathsAllowedWithoutFarm = ['/auth', '/auth/callback'];
@@ -50,7 +75,24 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      
+      {/* Session refresh banner */}
+      {sessionNeedsRefresh && (
+        <div className="fixed bottom-4 right-4 z-40 bg-amber-100 dark:bg-amber-900 border border-amber-200 dark:border-amber-800 p-3 rounded-lg shadow-lg">
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-amber-800 dark:text-amber-200">Your session is expiring soon</p>
+            <Button size="sm" variant="outline" onClick={refreshSession} className="h-8 gap-1">
+              <RefreshCw className="h-3 w-3" />
+              Refresh
+            </Button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 };
 
 export default ProtectedRoute;

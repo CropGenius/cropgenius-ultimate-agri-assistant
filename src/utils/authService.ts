@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { Database, Profile } from "@/types/supabase";
@@ -71,11 +70,19 @@ export const signUpWithEmail = async (email: string, password: string, fullName:
 // Sign in with Google
 export const signInWithGoogle = async (): Promise<any> => {
   try {
-    console.log("Starting Google sign in flow");
+    const baseUrl = window.location.origin;
+    const callbackUrl = `${baseUrl}/auth/callback`;
+    
+    console.log("Starting Google sign in flow with redirect to:", callbackUrl);
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       },
     });
     
@@ -95,7 +102,7 @@ export const signInWithGoogle = async (): Promise<any> => {
 export const signOut = async (): Promise<{ error: string | null }> => {
   try {
     console.log("Signing out");
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
     
     if (error) {
       console.error("Sign out error:", error.message);
@@ -250,5 +257,21 @@ export const updatePassword = async (newPassword: string): Promise<{ error: stri
   } catch (error: any) {
     console.error("Error updating password:", error.message);
     return { error: error.message };
+  }
+};
+
+// Debug function to check auth state and URLs
+export const debugAuthState = () => {
+  console.log("[Auth Debug] Current URL:", window.location.href);
+  console.log("[Auth Debug] Origin:", window.location.origin);
+  console.log("[Auth Debug] Has hash params:", window.location.hash.length > 0);
+  console.log("[Auth Debug] Has search params:", window.location.search.length > 0);
+  
+  // Check local storage
+  try {
+    const sbStorage = localStorage.getItem('cropgenius-auth');
+    console.log("[Auth Debug] Auth storage exists:", !!sbStorage);
+  } catch (e) {
+    console.log("[Auth Debug] Cannot access localStorage:", e);
   }
 };

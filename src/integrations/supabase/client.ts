@@ -13,6 +13,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    detectSessionInUrl: true, // Critical for OAuth redirects
+    storageKey: 'cropgenius-auth', // Consistent storage key
+    storage: localStorage, // Explicitly use localStorage
+    flowType: 'pkce', // Use PKCE for added security
   },
   realtime: {
     params: {
@@ -26,3 +30,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     fetch: fetch.bind(globalThis)
   },
 });
+
+// Debugging helper
+export const logAuthState = async () => {
+  const { data, error } = await supabase.auth.getSession();
+  console.log("[Auth Debug] Current session:", data.session?.user?.id || "None", error);
+  return { data, error };
+};
