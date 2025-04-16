@@ -4,9 +4,7 @@ project_id = "bapqlyvfwxsichlyjxpd"
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "storage"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
+schemas = ["public", "storage", "graphql_public"]
 
 [db]
 port = 54322
@@ -21,33 +19,48 @@ api_url = "http://localhost"
 [inbucket]
 enabled = true
 port = 54324
-smtp_port = 54325
-pop3_port = 54326
 
 [storage]
 enabled = true
-port = 54327
+file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-port = 54328
-# Additional auth configuration
-site_url = "http://localhost:5173"  # Update this in production
-additional_redirect_urls = ["http://localhost:5173/auth/callback"]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
-enable_signups = true
-autoconfirm = true  # For development - remove in production
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
 
 [realtime]
 enabled = true
-port = 54329
 
-[functions]
+[edge_functions]
 enabled = true
-port = 54330
 
-[functions.field-analysis]
-verify_jwt = true
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.crop-scan]
+verify_jwt = false
 
 [functions.field-ai-insights]
-verify_jwt = true
+verify_jwt = false
+
+[functions.field-analysis]
+verify_jwt = false
+
+[functions.whatsapp-notification]
+verify_jwt = false
+import_map = [
+  "https://deno.land/std@0.190.0/http/server.ts",
+  "https://esm.sh/@supabase/supabase-js@2"
+]
+
+[functions.check-ai-insights]
+verify_jwt = false
+import_map = [
+  "https://deno.land/std@0.190.0/http/server.ts",
+  "https://esm.sh/@supabase/supabase-js@2"
+]

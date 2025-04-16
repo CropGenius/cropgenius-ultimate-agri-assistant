@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +18,13 @@ export interface UserMemory {
   invitesSent: number;
   premiumTrialActivated: boolean;
   lastSyncedAt: string | null;
+  // New fields for AI Whisperer and Monetization
+  lastInsightShown: string | null;
+  lastProSuggestion: string | null;
+  whatsappOptIn: boolean;
+  featureUsageCount: number;
+  proTrialDaysRemaining: number;
+  proExpirationDate: string | null;
 }
 
 const DEFAULT_MEMORY: UserMemory = {
@@ -35,7 +41,14 @@ const DEFAULT_MEMORY: UserMemory = {
   firstTimeUser: true,
   invitesSent: 0,
   premiumTrialActivated: false,
-  lastSyncedAt: null
+  lastSyncedAt: null,
+  // New fields initialized
+  lastInsightShown: null,
+  lastProSuggestion: null,
+  whatsappOptIn: false,
+  featureUsageCount: 0,
+  proTrialDaysRemaining: 0,
+  proExpirationDate: null
 };
 
 /**
@@ -90,12 +103,18 @@ export const useMemoryStore = () => {
       // Save to localStorage as a fallback/cache
       saveToLocalStorage({ ...memory, ...updates, syncStatus: 'pending' });
       
+      // Track feature usage count - this helps with monetization triggers
+      let updatedMemory = { ...memory, ...updates };
+      if (updates.lastUsedFeature && updates.lastUsedFeature !== memory.lastUsedFeature) {
+        updatedMemory.featureUsageCount = (memory.featureUsageCount || 0) + 1;
+      }
+      
       // Update in Supabase
       const { error } = await supabase
         .from('user_memory')
         .upsert({ 
           user_id: user.id,
-          memory_data: { ...memory, ...updates },
+          memory_data: updatedMemory,
           updated_at: new Date().toISOString()
         });
       
@@ -104,15 +123,14 @@ export const useMemoryStore = () => {
       // Update local state with successful sync status
       setMemory(prev => ({ 
         ...prev, 
-        ...updates, 
+        ...updatedMemory, 
         syncStatus: 'synced',
         lastSyncedAt: new Date().toISOString() 
       }));
       
       // Update localStorage with successful sync
       saveToLocalStorage({ 
-        ...memory, 
-        ...updates, 
+        ...updatedMemory, 
         syncStatus: 'synced',
         lastSyncedAt: new Date().toISOString() 
       });
@@ -270,6 +288,75 @@ export const useMemoryStore = () => {
     }
   };
   
+  // New function: Track feature usage for monetization triggers
+  const trackFeatureUsage = async (featureName: string): Promise<void> => {
+    await updateMemory({
+      lastUsedFeature: featureName,
+      featureUsageCount: (memory.featureUsageCount || 0) + 1
+    });
+    
+    // Check if we should suggest Pro upgrade based on usage
+    if ((memory.featureUsageCount || 0) >= 5 && !memory.lastProSuggestion) {
+      // User has used features frequently - good time to suggest Pro
+      console.log("High feature usage detected - good time for Pro suggestion");
+    }
+  };
+  
+  // New function: Activate Pro trial
+  const activateProTrial = async (daysToAdd: number): Promise<boolean> => {
+    try {
+      const currentDays = memory.proTrialDaysRemaining || 0;
+      const newTotalDays = currentDays + daysToAdd;
+      
+      // Calculate expiration date
+      const expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + newTotalDays);
+      
+      const success = await updateMemory({
+        premiumTrialActivated: true,
+        proTrialDaysRemaining: newTotalDays,
+        proExpirationDate: expirationDate.toISOString()
+      });
+      
+      if (success) {
+        toast.success(`Pro features activated for ${newTotalDays} days!`, {
+          description: "Enjoy advanced AI farming insights"
+        });
+      }
+      
+      return success;
+    } catch (error) {
+      console.error("Failed to activate Pro trial:", error);
+      return false;
+    }
+  };
+  
+  // New function: Check Pro status
+  const checkProStatus = (): { isActive: boolean, daysRemaining: number } => {
+    if (!memory.premiumTrialActivated || !memory.proExpirationDate) {
+      return { isActive: false, daysRemaining: 0 };
+    }
+    
+    const now = new Date();
+    const expiration = new Date(memory.proExpirationDate);
+    
+    if (now > expiration) {
+      // Pro trial has expired
+      return { isActive: false, daysRemaining: 0 };
+    }
+    
+    // Calculate days remaining
+    const diffTime = Math.abs(expiration.getTime() - now.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return { isActive: true, daysRemaining: diffDays };
+  };
+  
+  // New function: Set WhatsApp preferences
+  const setWhatsAppPreference = async (optIn: boolean): Promise<boolean> => {
+    return await updateMemory({ whatsappOptIn: optIn });
+  };
+  
   // Initial setup - load memory when user is available
   useEffect(() => {
     if (isLoading) return;
@@ -295,7 +382,12 @@ export const useMemoryStore = () => {
     updateMemory,
     syncMemory,
     resetMemory,
-    isInitialized
+    isInitialized,
+    // New functions for AI Whisperer and Monetization
+    trackFeatureUsage,
+    activateProTrial,
+    checkProStatus,
+    setWhatsAppPreference
   };
 };
 
