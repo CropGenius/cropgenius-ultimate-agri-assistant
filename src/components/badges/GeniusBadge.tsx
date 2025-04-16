@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Share2, WhatsappIcon, Facebook } from 'lucide-react';
+import { Award, Share2, MessageCircle, Facebook } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -190,7 +190,7 @@ const GeniusBadge = ({ type, showShareOptions = true }: GeniusBadgeProps) => {
                     className="gap-2 bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
                     onClick={shareToWhatsApp}
                   >
-                    <WhatsappIcon className="h-5 w-5" />
+                    <MessageCircle className="h-5 w-5" />
                     Share to WhatsApp
                   </Button>
                   

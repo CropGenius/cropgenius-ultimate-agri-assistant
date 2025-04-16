@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Users } from 'lucide-react';
 import InviteModal from '@/components/referrals/InviteModal';
+import { Link } from 'react-router-dom';
 
 const WelcomeSection = () => {
   const { memory, isInitialized } = useMemoryStore();
@@ -46,9 +47,31 @@ const WelcomeSection = () => {
       <WelcomeBackCard />
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Show badge if user has completed actions */}
-        {memory.lastFieldCount > 0 && (
+        {/* Only show badge if user has completed actions */}
+        {memory.lastFieldCount > 0 ? (
           <GeniusBadge type="smart_farmer" />
+        ) : (
+          <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-900/50 rounded-lg p-4 relative overflow-hidden">
+            <div className="flex flex-col h-full justify-between">
+              <div>
+                <h3 className="font-medium text-amber-800 dark:text-amber-300">Map Your First Field</h3>
+                <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                  Start by mapping your field to get personalized AI recommendations
+                </p>
+              </div>
+              
+              <div className="mt-4">
+                <Link to="/fields/new">
+                  <Button 
+                    size="sm"
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    Map Field Now
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
         )}
         
         {/* Invite friends card */}
