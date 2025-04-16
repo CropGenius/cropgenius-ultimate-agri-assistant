@@ -1,5 +1,6 @@
 
 import { devMemoryOverride, UserMemory } from '@/hooks/useMemoryStore';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Developer utility to simulate different user memory scenarios
@@ -116,8 +117,8 @@ export const logCurrentMemory = async () => {
     return;
   }
   
-  const { user } = await supabase.auth.getUser();
-  if (!user) {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
     console.warn('User must be logged in to view memory');
     return null;
   }
@@ -125,7 +126,7 @@ export const logCurrentMemory = async () => {
   try {
     // Get from localStorage first
     let memory = null;
-    const localData = localStorage.getItem(`cropgenius-memory-${user.id}`);
+    const localData = localStorage.getItem(`cropgenius-memory-${data.user.id}`);
     
     if (localData) {
       try {
@@ -137,17 +138,17 @@ export const logCurrentMemory = async () => {
     }
     
     // Get from Supabase
-    const { data, error } = await supabase
+    const { data: memoryData, error: memoryError } = await supabase
       .from('user_memory')
       .select('memory_data')
-      .eq('user_id', user.id)
+      .eq('user_id', data.user.id)
       .single();
       
-    if (error) {
-      console.error('Failed to fetch server memory:', error);
+    if (memoryError) {
+      console.error('Failed to fetch server memory:', memoryError);
     } else {
-      console.log('💾 Memory from server:', data.memory_data);
-      memory = data.memory_data;
+      console.log('💾 Memory from server:', memoryData.memory_data);
+      memory = memoryData.memory_data;
     }
     
     return memory;

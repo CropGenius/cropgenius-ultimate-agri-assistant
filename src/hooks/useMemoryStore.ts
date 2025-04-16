@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -344,8 +345,8 @@ export const devMemoryOverride = async (overrides: Partial<UserMemory>) => {
     return;
   }
   
-  const { user } = await supabase.auth.getUser();
-  if (!user) {
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) {
     console.warn('User must be logged in to override memory');
     return;
   }
@@ -354,14 +355,14 @@ export const devMemoryOverride = async (overrides: Partial<UserMemory>) => {
   let currentMemory: UserMemory = DEFAULT_MEMORY;
   
   try {
-    const { data } = await supabase
+    const { data: memoryData } = await supabase
       .from('user_memory')
       .select('memory_data')
-      .eq('user_id', user.id)
+      .eq('user_id', data.user.id)
       .single();
       
-    if (data?.memory_data) {
-      currentMemory = data.memory_data as UserMemory;
+    if (memoryData?.memory_data) {
+      currentMemory = memoryData.memory_data as UserMemory;
     }
   } catch (error) {
     console.warn('Failed to get current memory, using defaults');
@@ -378,7 +379,7 @@ export const devMemoryOverride = async (overrides: Partial<UserMemory>) => {
     await supabase
       .from('user_memory')
       .upsert({
-        user_id: user.id,
+        user_id: data.user.id,
         memory_data: updatedMemory,
         updated_at: new Date().toISOString()
       });
@@ -387,7 +388,7 @@ export const devMemoryOverride = async (overrides: Partial<UserMemory>) => {
     
     // Also save to localStorage
     if (typeof window !== 'undefined') {
-      localStorage.setItem(`cropgenius-memory-${user.id}`, JSON.stringify(updatedMemory));
+      localStorage.setItem(`cropgenius-memory-${data.user.id}`, JSON.stringify(updatedMemory));
     }
     
     return true;

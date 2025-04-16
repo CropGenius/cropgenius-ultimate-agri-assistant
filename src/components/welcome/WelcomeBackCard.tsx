@@ -193,7 +193,8 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
       )}
       
       {/* Confetti animations */}
-      <style jsx>{`
+      <style>
+        {`
         .confetti-container {
           position: absolute;
           width: 100%;
@@ -219,7 +220,8 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
             transform: translateY(300px) rotate(720deg);
           }
         }
-      `}</style>
+        `}
+      </style>
     </Card>
   );
 };
