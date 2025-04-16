@@ -6,6 +6,7 @@ import Layout from "@/components/Layout";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
+import WelcomeSection from "@/components/home/WelcomeSection"; // Add this import
 import TodaysFarmPlan from "@/components/home/TodaysFarmPlan";
 import CropScannerPreview from "@/components/home/CropScannerPreview";
 import WeatherPreview from "@/components/home/WeatherPreview";
@@ -241,6 +242,9 @@ export default function Index() {
   return (
     <Layout>
       <div className="container py-4 md:py-6 px-4 md:px-6">
+        {/* WELCOME SECTION - Add this before other sections */}
+        <WelcomeSection />
+
         {/* SECTION 1: AI FARM INTELLIGENCE HEADER */}
         <section className="mb-6">
           {/* AI-Detected Location Banner */}

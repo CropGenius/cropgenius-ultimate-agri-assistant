@@ -37,3 +37,36 @@ export const logAuthState = async () => {
   console.log("[Auth Debug] Current session:", data.session?.user?.id || "None", error);
   return { data, error };
 };
+
+// Add function to refresh token proactively
+export const proactiveTokenRefresh = async () => {
+  try {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) {
+      console.error("[Auth] Token refresh failed:", error.message);
+      return false;
+    }
+    if (data.session) {
+      console.log("[Auth] Token refreshed successfully");
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error("[Auth] Error during token refresh:", err);
+    return false;
+  }
+};
+
+// Helper to extract user metadata from session
+export const getUserMetadata = async () => {
+  const { data, error } = await supabase.auth.getSession();
+  if (error || !data.session?.user) {
+    return null;
+  }
+  
+  return {
+    id: data.session.user.id,
+    email: data.session.user.email,
+    metadata: data.session.user.user_metadata
+  };
+};
