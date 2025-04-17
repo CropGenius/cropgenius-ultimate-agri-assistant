@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Farm } from "@/types/field";
+import { Farm, Field } from "@/types/field";
 import { useErrorLogging } from '@/hooks/use-error-logging';
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import { FieldFormProps } from "./types";
@@ -135,9 +135,9 @@ export default function AddFieldForm({
       
       console.log("💾 [AddFieldForm] Inserting field data:", fieldData);
       
-      const { data: field, error } = await supabase
+      const { data, error } = await supabase
         .from("fields")
-        .insert(fieldData)
+        .insert(fieldData as any)
         .select()
         .single();
       
@@ -146,15 +146,32 @@ export default function AddFieldForm({
         throw error;
       }
       
-      console.log("✅ [AddFieldForm] Field created successfully:", field);
-      logSuccess('field_created', { field_id: field.id });
+      console.log("✅ [AddFieldForm] Field created successfully:", data);
+      logSuccess('field_created', { field_id: data.id });
       
       toast.success("Field added successfully", {
         description: `${values.name} has been added to your farm`
       });
       
+      const createdField: Field = {
+        id: data.id,
+        user_id: data.user_id,
+        farm_id: data.farm_id,
+        name: data.name,
+        size: data.size,
+        size_unit: data.size_unit,
+        boundary: data.boundary,
+        location_description: data.location_description,
+        soil_type: data.soil_type,
+        irrigation_type: data.irrigation_type,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        is_shared: data.is_shared || false,
+        shared_with: data.shared_with || []
+      };
+      
       if (onSuccess) {
-        onSuccess(field);
+        onSuccess(createdField);
       } else {
         navigate("/fields");
       }

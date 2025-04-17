@@ -98,14 +98,31 @@ export default function YourFarmButton({
       const { data, error } = await supabase
         .from('fields')
         .select('*')
-        .eq('user_id', uid);
+        .eq('user_id', uid as any);
       
       if (error) throw error;
       
-      setFields(data || []);
-      setHasFields(data && data.length > 0);
+      const typedFields: Field[] = data ? data.map((item: any) => ({
+        id: item.id,
+        user_id: item.user_id,
+        farm_id: item.farm_id,
+        name: item.name,
+        size: item.size || 0,
+        size_unit: item.size_unit || 'hectares',
+        boundary: item.boundary,
+        location_description: item.location_description,
+        soil_type: item.soil_type,
+        irrigation_type: item.irrigation_type,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        is_shared: item.is_shared || false,
+        shared_with: item.shared_with || []
+      })) : [];
       
-      console.log(`✅ [YourFarmButton] Fields check: ${data?.length || 0} fields found`);
+      setFields(typedFields);
+      setHasFields(typedFields && typedFields.length > 0);
+      
+      console.log(`✅ [YourFarmButton] Fields check: ${typedFields?.length || 0} fields found`);
     } catch (err: any) {
       const errorMsg = err.message || "Field check failed";
       console.error('❌ [YourFarmButton] Field check failed:', errorMsg);

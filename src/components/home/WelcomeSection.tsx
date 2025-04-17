@@ -11,17 +11,21 @@ import InviteModal from '@/components/referrals/InviteModal';
 import { Link } from 'react-router-dom';
 import AIInsightAlert from '@/components/ai/AIInsightAlert';
 
+// Define the insight type based on the actual AIInsightAlert props
+interface Insight {
+  title: string;
+  description: string;
+  type: 'weather' | 'market' | 'pest' | 'fertilizer';
+  actionText: string;
+  actionPath: string;
+}
+
 const WelcomeSection = () => {
   const { memory, isInitialized, updateMemory } = useMemoryStore();
   const { user, isLoading } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [aiInsight, setAiInsight] = useState<{
-    message: string;
-    type: 'weather' | 'market' | 'pest' | 'fertilizer';
-    actionText: string;
-    actionPath: string;
-  } | null>(null);
+  const [aiInsight, setAiInsight] = useState<Insight | null>(null);
   
   useEffect(() => {
     // Show welcome if user is logged in and memory is initialized
@@ -58,7 +62,8 @@ const WelcomeSection = () => {
             const cropName = memory.recentCropsPlanted[0];
             
             setAiInsight({
-              message: `${memory.farmerName || 'Farmer'}, there's a market opportunity for ${cropName}. Prices are trending upward in your region.`,
+              title: "Market Opportunity",
+              description: `${memory.farmerName || 'Farmer'}, there's a market opportunity for ${cropName}. Prices are trending upward in your region.`,
               type: 'market',
               actionText: 'View Market Analysis',
               actionPath: '/market'
@@ -66,7 +71,8 @@ const WelcomeSection = () => {
           } else {
             // Default to weather insight
             setAiInsight({
-              message: `${memory.farmerName || 'Farmer'}, rainfall is expected in the next 48 hours. This is ideal for planting.`,
+              title: "Weather Alert",
+              description: `${memory.farmerName || 'Farmer'}, rainfall is expected in the next 48 hours. This is ideal for planting.`,
               type: 'weather',
               actionText: 'View Weather Forecast',
               actionPath: '/weather'
@@ -114,7 +120,8 @@ const WelcomeSection = () => {
       {/* AI Insight Alert - Only show if we have a real insight */}
       {aiInsight && (
         <AIInsightAlert 
-          message={aiInsight.message}
+          title={aiInsight.title}
+          description={aiInsight.description}
           type={aiInsight.type}
           actionText={aiInsight.actionText}
           actionPath={aiInsight.actionPath}

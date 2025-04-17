@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -51,7 +50,7 @@ export default function FarmOnboarding() {
         const { data: farms, error } = await supabase
           .from("farms")
           .select("id")
-          .eq("user_id", user.id)
+          .eq("user_id", user.id as any)
           .limit(1);
         
         if (error) {
@@ -85,23 +84,28 @@ export default function FarmOnboarding() {
       console.log("Creating farm with values:", values);
       setLoading(true);
       
-      const { data: farm, error } = await supabase.from("farms").insert({
+      const farmData = {
         name: values.name,
         location: values.location,
         total_size: values.size || null,
         size_unit: values.size_unit,
-        user_id: user.id,
-      }).select().single();
+        user_id: user.id
+      };
+      
+      const { data, error } = await supabase.from("farms")
+        .insert(farmData as any)
+        .select()
+        .single();
       
       if (error) {
         console.error("Error creating farm:", error);
         throw error;
       }
       
-      console.log("Farm created successfully:", farm.id);
+      console.log("Farm created successfully:", data);
       
       // Store farm ID in localStorage
-      localStorage.setItem("farmId", farm.id);
+      localStorage.setItem("farmId", data.id);
       
       toast.success("Farm registered successfully!", {
         description: `Your farm "${values.name}" is ready`,
@@ -109,7 +113,7 @@ export default function FarmOnboarding() {
       });
       
       setFarmCreated(true);
-      setCreatedFarmId(farm.id);
+      setCreatedFarmId(data.id);
       
       // Save onboarding state
       localStorage.setItem("farm_onboarding_completed", "true");

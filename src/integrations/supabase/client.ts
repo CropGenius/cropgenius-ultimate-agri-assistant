@@ -17,6 +17,7 @@ const getCallbackUrl = () => {
     'http://localhost:3000',            // Local development
     'http://localhost:54323',           // Supabase local development
     'https://cropgenius.netlify.app',   // Netlify preview
+    'https://*.cropgenius.com',         // Production domain with wildcard
   ];
   
   // Use current origin if it's a valid domain, otherwise default to Lovable domain
@@ -36,27 +37,29 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     detectSessionInUrl: true,       // Critical for OAuth redirects
     storageKey: 'cropgenius-auth',  // Consistent storage key
-    storage: localStorage,          // Explicitly use localStorage
+    storage: typeof window !== 'undefined' ? localStorage : undefined,  // Safe check for SSR
     flowType: 'pkce',               // Use PKCE for added security
     onAuthStateChange: (event, session) => {
       // Log authentication state changes for debugging
       console.log(`[Auth] State changed: ${event}`, session?.user?.id || 'No user');
       
       // Store authentication state timestamp
-      try {
-        localStorage.setItem('cropgenius-auth-timestamp', Date.now().toString());
-      } catch (e) {
-        console.error("[Auth] Error storing auth timestamp:", e);
-      }
-      
-      // Store expiry time
-      if (session?.expires_at) {
+      if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem('cropgenius-auth-expires', 
-            new Date(session.expires_at * 1000).toISOString()
-          );
+          localStorage.setItem('cropgenius-auth-timestamp', Date.now().toString());
         } catch (e) {
-          console.error("[Auth] Error storing expiry:", e);
+          console.error("[Auth] Error storing auth timestamp:", e);
+        }
+        
+        // Store expiry time
+        if (session?.expires_at) {
+          try {
+            localStorage.setItem('cropgenius-auth-expires', 
+              new Date(session.expires_at * 1000).toISOString()
+            );
+          } catch (e) {
+            console.error("[Auth] Error storing expiry:", e);
+          }
         }
       }
     },
@@ -70,7 +73,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     headers: {
       'x-application-name': 'CROPGenius',
     },
-    fetch: fetch.bind(globalThis)
   },
 });
 
@@ -85,6 +87,8 @@ export const logAuthState = async () => {
 export const proactiveTokenRefresh = async () => {
   try {
     // Check if token is close to expiry (within 10 minutes)
+    if (typeof window === 'undefined') return false; // Skip in SSR
+
     const expiryTime = localStorage.getItem('cropgenius-auth-expires');
     
     if (expiryTime) {

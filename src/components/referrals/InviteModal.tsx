@@ -23,6 +23,15 @@ interface InviteModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Define referral data structure based on Supabase schema
+interface ReferralData {
+  inviter_id: string;
+  invitee_contact: string;
+  contact_type: string;
+  status: string;
+  created_at: string;
+}
+
 const InviteModal = ({ open, onOpenChange }: InviteModalProps) => {
   const { user } = useAuth();
   const { memory, updateMemory } = useMemoryStore();
@@ -54,16 +63,19 @@ const InviteModal = ({ open, onOpenChange }: InviteModalProps) => {
 
     setIsLoading(true);
     try {
+      // Create referral data
+      const referralData: ReferralData = {
+        inviter_id: user.id,
+        invitee_contact: contactInfo,
+        contact_type: activeTab,
+        status: 'sent',
+        created_at: new Date().toISOString()
+      };
+
       // Store the invitation in Supabase
       const { error } = await supabase
         .from('referrals')
-        .insert({
-          inviter_id: user.id,
-          invitee_contact: contactInfo,
-          contact_type: activeTab,
-          status: 'sent',
-          created_at: new Date().toISOString()
-        });
+        .insert(referralData as any); // Type assertion to avoid TS errors
 
       if (error) {
         throw error;
