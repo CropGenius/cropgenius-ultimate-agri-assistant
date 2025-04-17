@@ -50,12 +50,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           full_name: 'Brian',
           role: 'founder'
         }
-      };
+      } as User; // Cast to User type to resolve type error
       
       // Set as auth state but don't persist to Supabase
       setAuthState(prev => ({
         ...prev,
-        user: devUser as User,
+        user: devUser,
         isDevPreview: true,
         isLoading: false
       }));
