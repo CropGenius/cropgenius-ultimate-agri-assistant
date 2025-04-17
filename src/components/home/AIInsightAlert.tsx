@@ -11,6 +11,7 @@ import {
   ArrowRight 
 } from 'lucide-react';
 import { AIInsightAlert as AIInsightAlertType } from '@/types/supabase';
+import { useMemoryStore } from '@/hooks/useMemoryStore';
 
 // Uses the AIInsightAlert type from types/supabase.ts
 export interface AIInsightAlertProps extends AIInsightAlertType {}
@@ -22,6 +23,7 @@ const AIInsightAlert = ({
   actionText, 
   actionPath 
 }: AIInsightAlertProps) => {
+  const { trackInsight } = useMemoryStore();
   
   // Determine icon based on insight type
   const renderIcon = () => {
@@ -55,6 +57,12 @@ const AIInsightAlert = ({
     }
   };
 
+  // Handle insight interaction
+  const handleInsightClick = () => {
+    // Track that the user viewed this insight
+    trackInsight(true);
+  };
+
   return (
     <Card className={`p-3 mb-4 ${getBgColor()} border`}>
       <div className="flex items-start gap-3">
@@ -75,7 +83,11 @@ const AIInsightAlert = ({
               size="sm" 
               className={`text-xs h-7 ${type === 'weather' ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30' : type === 'market' ? 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/30' : type === 'pest' ? 'text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30'}`}
             >
-              <Link to={actionPath} className="flex items-center">
+              <Link 
+                to={actionPath} 
+                className="flex items-center"
+                onClick={handleInsightClick}
+              >
                 {actionText}
                 <ArrowRight className="ml-1 h-3 w-3" />
               </Link>

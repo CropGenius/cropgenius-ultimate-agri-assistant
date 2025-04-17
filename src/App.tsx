@@ -104,10 +104,10 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <AuthProvider>
-            <Toaster />
-            <Sonner position="top-center" closeButton />
-            <BrowserRouter>
+          <BrowserRouter>
+            <AuthProvider>
+              <Toaster />
+              <Sonner position="top-center" closeButton />
               <ErrorBoundary>
                 <Routes>
                   <Route path="/" element={<Index />} />
@@ -141,8 +141,8 @@ const App = () => {
               <div className="fixed bottom-4 left-4 z-40">
                 <OfflineStatusIndicator />
               </div>
-            </BrowserRouter>
-          </AuthProvider>
+            </AuthProvider>
+          </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

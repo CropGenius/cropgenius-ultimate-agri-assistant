@@ -26,8 +26,16 @@ const defaultMemory = {
   proTrialUsed: false,
   proStatus: false,
   proExpirationDate: null,
-  whatsappOptIn: false, // Added whatsappOptIn property
-  syncStatus: 'pending' // Added syncStatus property
+  whatsappOptIn: false, 
+  whatsappNumber: null, // Added whatsappNumber property
+  syncStatus: 'pending',
+  lastSyncedAt: null,
+  timeSpentUsingAI: 0, // Track time spent using AI features
+  insightsViewed: 0, // Track number of insights viewed
+  insightsIgnored: 0, // Track number of insights ignored
+  sharesCount: 0, // Track number of shares
+  highValueActionsCount: 0, // Track high-value actions
+  lastProPromptTime: null, // Track when Pro was last prompted
 };
 
 export const useMemoryStore = () => {
@@ -238,8 +246,60 @@ export const useMemoryStore = () => {
   };
   
   // Add WhatsApp preference function
-  const setWhatsAppPreference = async (optIn: boolean) => {
-    return await updateMemory({ whatsappOptIn: optIn });
+  const setWhatsAppPreference = async (optIn: boolean, phoneNumber?: string) => {
+    return await updateMemory({ 
+      whatsappOptIn: optIn,
+      whatsappNumber: phoneNumber || memory.whatsappNumber
+    });
+  };
+
+  // Track AI feature usage
+  const trackAIUsage = async (durationSeconds: number, feature: string) => {
+    const newTimeSpent = (memory.timeSpentUsingAI || 0) + durationSeconds;
+    return await updateMemory({ 
+      timeSpentUsingAI: newTimeSpent,
+      lastUsedFeature: feature
+    });
+  };
+
+  // Track insight interaction
+  const trackInsight = async (viewed: boolean) => {
+    if (viewed) {
+      return await updateMemory({ 
+        insightsViewed: (memory.insightsViewed || 0) + 1 
+      });
+    } else {
+      return await updateMemory({ 
+        insightsIgnored: (memory.insightsIgnored || 0) + 1 
+      });
+    }
+  };
+
+  // Track sharing activity
+  const trackShare = async () => {
+    return await updateMemory({ 
+      sharesCount: (memory.sharesCount || 0) + 1 
+    });
+  };
+
+  // Track high value action
+  const trackHighValueAction = async () => {
+    return await updateMemory({ 
+      highValueActionsCount: (memory.highValueActionsCount || 0) + 1 
+    });
+  };
+
+  // Pro trial activation
+  const activateProTrial = async (durationDays: number) => {
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + durationDays);
+    
+    return await updateMemory({
+      proStatus: true,
+      proTrialUsed: true,
+      proTrialEligible: false,
+      proExpirationDate: expirationDate.toISOString()
+    });
   };
 
   // Function to sync memory
@@ -255,7 +315,8 @@ export const useMemoryStore = () => {
         .update({
           memory_data: {
             ...memory,
-            syncStatus: 'synced'
+            syncStatus: 'synced',
+            lastSyncedAt: new Date().toISOString()
           },
           updated_at: new Date().toISOString()
         })
@@ -264,13 +325,13 @@ export const useMemoryStore = () => {
       if (error) throw error;
       
       // Update local state
-      setMemory({ ...memory, syncStatus: 'synced' });
+      setMemory({ ...memory, syncStatus: 'synced', lastSyncedAt: new Date().toISOString() });
       setSyncDate(new Date());
       
       // Save to local storage
       localStorage.setItem('user_memory', JSON.stringify({
         id: memoryId,
-        memory_data: { ...memory, syncStatus: 'synced' },
+        memory_data: { ...memory, syncStatus: 'synced', lastSyncedAt: new Date().toISOString() },
         syncDate: new Date().toISOString()
       }));
       
@@ -282,6 +343,35 @@ export const useMemoryStore = () => {
       toast.error('Failed to sync memory');
       return { success: false, error: err.message };
     }
+  };
+  
+  // Check if user is eligible for Pro upgrade prompt
+  const shouldShowProUpgrade = (): boolean => {
+    // Don't show if already on Pro
+    if (memory.proStatus) return false;
+
+    // Check if we've shown a prompt recently (within last 24h)
+    if (memory.lastProPromptTime) {
+      const lastPrompt = new Date(memory.lastProPromptTime);
+      const now = new Date();
+      const hoursSinceLastPrompt = (now.getTime() - lastPrompt.getTime()) / (1000 * 60 * 60);
+      if (hoursSinceLastPrompt < 24) return false;
+    }
+
+    // Trigger conditions
+    const hasMultipleFields = memory.lastFieldCount >= 2;
+    const hasViewedMultipleInsights = (memory.insightsViewed || 0) >= 3;
+    const hasReferredFriend = (memory.invitesSent || 0) >= 1;
+    const hasHighEngagement = (memory.timeSpentUsingAI || 0) > 300; // 5 minutes
+
+    return hasMultipleFields || hasViewedMultipleInsights || hasReferredFriend || hasHighEngagement;
+  };
+
+  // Track that we showed a Pro prompt
+  const markProPromptShown = async () => {
+    return await updateMemory({
+      lastProPromptTime: new Date().toISOString()
+    });
   };
   
   // Function to reset memory
@@ -361,7 +451,14 @@ export const useMemoryStore = () => {
     loading,
     error,
     syncDate,
-    isOffline
+    isOffline,
+    trackAIUsage,
+    trackInsight,
+    trackShare,
+    trackHighValueAction,
+    activateProTrial,
+    shouldShowProUpgrade,
+    markProPromptShown
   };
 };
 

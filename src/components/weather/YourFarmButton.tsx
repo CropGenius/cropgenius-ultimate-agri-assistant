@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -30,7 +29,7 @@ const YourFarmButton = ({
   className = ''
 }: YourFarmButtonProps) => {
   const navigate = useNavigate();
-  const { user, farmId } = useAuth();
+  const { user } = useAuth();
   const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedField, setSelectedField] = useState<Field | null>(null);
@@ -38,13 +37,13 @@ const YourFarmButton = ({
   // Load fields from Supabase
   useEffect(() => {
     const loadFields = async () => {
-      if (!user || !farmId) return;
+      if (!user) return;
 
       try {
         setLoading(true);
         
         // Get all fields for this user
-        const { data, error } = await supabase
+        const { data: fieldData, error } = await supabase
           .from('fields')
           .select('*')
           .eq('user_id', user.id)
@@ -52,8 +51,8 @@ const YourFarmButton = ({
         
         if (error) throw error;
         
-        // Convert data to the Field type
-        const typedFields: Field[] = data ? data.map(field => ({
+        // Convert data to Field type
+        const typedFields: Field[] = fieldData ? fieldData.map(field => ({
           id: field.id,
           user_id: field.user_id,
           farm_id: field.farm_id,
@@ -96,7 +95,7 @@ const YourFarmButton = ({
     };
 
     loadFields();
-  }, [user, farmId, selectedFieldId]);
+  }, [user, selectedFieldId]);
 
   // Handle field selection
   const handleSelectField = (field: Field | null) => {

@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import { useMemoryStore } from '@/hooks/useMemoryStore';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Bot, Map, Sprout, AlertTriangle } from 'lucide-react'; // Changed Plant to Sprout
+import { ArrowRight, Bot, Map, Sprout, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AIInsightAlert from './AIInsightAlert';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +12,7 @@ import { AIInsightAlert as AIInsightAlertType } from '@/types/supabase';
 
 const WelcomeSection = () => {
   const { user } = useAuth();
-  const { memory, updateMemory } = useMemoryStore();
+  const { memory, updateMemory, trackAIUsage } = useMemoryStore();
   const [timeOfDay, setTimeOfDay] = useState<string>('');
   const [date, setDate] = useState<string>('');
   const [insights, setInsights] = useState<AIInsightAlertType[]>([]);
@@ -80,6 +80,9 @@ const WelcomeSection = () => {
         // In a real implementation, the insights would be fetched from Supabase edge function
         // based on actual field data, weather patterns, and market conditions
         setInsights(sampleInsights);
+
+        // Track this as AI usage
+        await trackAIUsage(30, 'insights');
       } catch (error) {
         console.error("Error fetching insights:", error);
       } finally {
@@ -156,7 +159,7 @@ const WelcomeSection = () => {
                   </Button>
                   <Button asChild variant="outline" size="sm" className="h-8">
                     <Link to="/scan">
-                      <Sprout className="mr-1.5 h-3.5 w-3.5" /> {/* Changed from Plant to Sprout */}
+                      <Sprout className="mr-1.5 h-3.5 w-3.5" />
                       Try Crop Scanner
                     </Link>
                   </Button>

@@ -1,223 +1,204 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Database } from '@/integrations/supabase/types';
+import { useMemoryStore } from '@/hooks/useMemoryStore';
 
-interface FarmFormData {
-  name: string;
+type FormValues = {
+  farmName: string;
   location: string;
-  total_size: number;
-  size_unit: string;
-}
+  size: string;
+  unit: string;
+};
 
 const FarmOnboarding = () => {
-  const { user, farmId } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FarmFormData>({
-    defaultValues: {
-      size_unit: 'hectares'
-    }
-  });
+  const { user, updateFarmId } = useAuth();
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>();
+  const { updateMemory } = useMemoryStore();
 
-  // Check if farm already exists
-  const checkFarm = async () => {
-    if (!user?.id) return;
-    
+  // Check if user already has a farm
+  const checkExistingFarm = async () => {
+    if (!user) return null;
+
     try {
-      setIsLoading(true);
       const { data, error } = await supabase
         .from('farms')
-        .select('*')
+        .select('id')
         .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      if (data) {
-        // Farm already exists, save to localStorage and redirect
-        localStorage.setItem('farmId', data.id);
-        navigate('/');
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
       }
-    } catch (error: any) {
-      console.error('Error checking farm:', error);
-      toast.error('Error checking farm data');
-    } finally {
-      setIsLoading(false);
+
+      return data;
+    } catch (error) {
+      console.error('Error checking existing farm:', error);
+      return null;
     }
   };
-  
-  // If we already have a farmId in context, redirect to home
-  if (farmId) {
-    navigate('/');
-    return null;
-  }
-  
-  const onSubmit = async (data: FarmFormData) => {
+
+  const onSubmit = async (data: FormValues) => {
     if (!user) {
       toast.error('You must be logged in to create a farm');
       return;
     }
-    
+
+    setLoading(true);
+
     try {
-      setIsLoading(true);
-      
-      // Create farm
+      // Check if user already has a farm
+      const existingFarm = await checkExistingFarm();
+
+      if (existingFarm) {
+        // User already has a farm
+        updateFarmId(existingFarm.id);
+        toast.info('Using your existing farm');
+        navigate('/fields?action=manage');
+        return;
+      }
+
+      // Create a new farm
       const farmData = {
-        name: data.name,
+        name: data.farmName,
         location: data.location,
-        total_size: data.total_size,
-        size_unit: data.size_unit,
+        total_size: parseFloat(data.size),
+        size_unit: data.unit,
         user_id: user.id
       };
-      
+
       const { data: newFarm, error } = await supabase
         .from('farms')
         .insert(farmData)
-        .select('*')
+        .select()
         .single();
-      
-      if (error) throw error;
-      
-      // Save farm ID to localStorage
-      if (newFarm) {
-        localStorage.setItem('farmId', newFarm.id);
-        
-        // Create default profile if it doesn't exist
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-        
-        if (profileError) {
-          console.error('Error checking profile:', profileError);
-        }
-        
-        if (!profile) {
-          // Create profile
-          await supabase
-            .from('profiles')
-            .insert({
-              id: user.id,
-              full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
-              farm_size: data.total_size,
-              farm_units: data.size_unit,
-              location: data.location
-            });
-        }
-        
-        toast.success('Farm created successfully!', {
-          description: "Now you can add fields and start using CROPGenius."
-        });
-        
-        // Redirect to fields page
-        navigate('/fields');
+
+      if (error) {
+        throw error;
       }
+
+      // Update auth context with new farm ID
+      updateFarmId(newFarm.id);
+
+      // Update user memory
+      await updateMemory({
+        lastFieldCount: 0,
+      });
+
+      toast.success('Farm created successfully', {
+        description: 'Now let\'s add your first field'
+      });
+
+      // Navigate to field creation
+      navigate('/fields?action=new');
+
     } catch (error: any) {
       console.error('Error creating farm:', error);
       toast.error('Failed to create farm', {
         description: error.message
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <Card className="max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Set Up Your Farm</CardTitle>
-        <CardDescription>
-          Tell us about your farm to get personalized recommendations
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form id="farm-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <div className="max-w-md mx-auto p-4 border rounded-lg shadow-sm bg-white">
+      <h2 className="text-xl font-bold mb-4">Welcome to CROPGenius</h2>
+      <p className="text-gray-600 mb-6">
+        Tell us about your farm to get personalized AI insights
+      </p>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="farmName" className="block text-sm font-medium">
+            Farm Name *
+          </label>
+          <input
+            id="farmName"
+            type="text"
+            className="w-full p-2 border rounded-md"
+            placeholder="My Farm"
+            {...register('farmName', { required: 'Farm name is required' })}
+          />
+          {errors.farmName && (
+            <p className="text-red-500 text-xs">{errors.farmName.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="location" className="block text-sm font-medium">
+            Location
+          </label>
+          <input
+            id="location"
+            type="text"
+            className="w-full p-2 border rounded-md"
+            placeholder="e.g. Nakuru, Kenya"
+            {...register('location')}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Farm Name</Label>
-            <Input
-              id="name"
-              placeholder="My Family Farm"
-              {...register('name', { required: 'Farm name is required' })}
+            <label htmlFor="size" className="block text-sm font-medium">
+              Total Size *
+            </label>
+            <input
+              id="size"
+              type="number"
+              step="0.01"
+              className="w-full p-2 border rounded-md"
+              placeholder="10"
+              {...register('size', {
+                required: 'Size is required',
+                min: {
+                  value: 0.01,
+                  message: 'Size must be greater than 0',
+                },
+              })}
             />
-            {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
+            {errors.size && (
+              <p className="text-red-500 text-xs">{errors.size.message}</p>
+            )}
           </div>
-          
+
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              placeholder="Village, District, County"
-              {...register('location', { required: 'Location is required' })}
-            />
-            {errors.location && <p className="text-sm text-red-500">{errors.location.message}</p>}
+            <label htmlFor="unit" className="block text-sm font-medium">
+              Unit
+            </label>
+            <select
+              id="unit"
+              className="w-full p-2 border rounded-md"
+              defaultValue="hectares"
+              {...register('unit')}
+            >
+              <option value="hectares">Hectares</option>
+              <option value="acres">Acres</option>
+              <option value="square_meters">Square Meters</option>
+            </select>
           </div>
-          
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-2">
-              <Label htmlFor="total_size">Total Farm Size</Label>
-              <Input
-                id="total_size"
-                type="number"
-                step="0.1"
-                placeholder="5"
-                {...register('total_size', { 
-                  required: 'Farm size is required',
-                  valueAsNumber: true,
-                  min: { value: 0.1, message: 'Size must be greater than 0.1' }
-                })}
-              />
-              {errors.total_size && <p className="text-sm text-red-500">{errors.total_size.message}</p>}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="size_unit">Unit</Label>
-              <Select 
-                defaultValue="hectares" 
-                onValueChange={(value) => setValue('size_unit', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hectares">Hectares</SelectItem>
-                  <SelectItem value="acres">Acres</SelectItem>
-                  <SelectItem value="square_meters">Square Meters</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </form>
-      </CardContent>
-      <CardFooter>
-        <Button 
-          form="farm-form" 
-          type="submit" 
-          className="w-full"
-          disabled={isLoading}
-        >
-          {isLoading ? (
+        </div>
+
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creating...
+              Creating Farm...
             </>
           ) : (
-            'Continue to CROPGenius'
+            'Continue to Add Fields'
           )}
         </Button>
-      </CardFooter>
-    </Card>
+      </form>
+    </div>
   );
 };
 
