@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +13,7 @@ import { toast } from "sonner";
 import { signInWithEmail, signUpWithEmail, signInWithGoogle, debugAuthState } from "@/utils/authService";
 import { useAuth } from "@/context/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, RefreshCw, Loader2 } from "lucide-react";
+import { AlertCircle, RefreshCw, Loader2, ChevronLeft } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -32,28 +33,49 @@ export default function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, refreshSession } = useAuth();
+  const { user, refreshSession, isDevPreview } = useAuth();
   
-  const from = (location.state as { from: string })?.from || "/";
+  // Get the redirect destination or default to dashboard
+  const searchParams = new URLSearchParams(location.search);
+  const redirectParam = searchParams.get('redirect');
+  const from = (location.state as { from: string })?.from || redirectParam || "/";
+  
+  // Check if this is a retry
+  const isRetryFlow = location.pathname.includes('/auth/retry');
   
   // Log auth debug info when component loads
   useEffect(() => {
     debugAuthState();
     console.log("Auth page loaded with redirect target:", from);
     
+    // If this is a retry flow, increment the counter
+    if (isRetryFlow && retryCount === 0) {
+      setRetryCount(1);
+    }
+    
     // Clear any previous auth errors
     setAuthError(null);
-  }, [from]);
+  }, [from, isRetryFlow]);
   
   // If user is already authenticated, redirect to intended destination
   useEffect(() => {
-    if (user) {
+    if (user || isDevPreview) {
       console.log("Auth page: User already authenticated, redirecting to:", from);
       navigate(from, { replace: true });
     }
-  }, [user, navigate, from]);
+  }, [user, navigate, from, isDevPreview]);
+  
+  // If we're in dev preview mode via URL, activate it and redirect
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('devPreview') === 'true') {
+      console.log("Dev preview mode detected in Auth page");
+      navigate('/?devPreview=true', { replace: true });
+    }
+  }, [navigate]);
   
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -88,7 +110,13 @@ export default function Auth() {
       }
       
       console.log("Login successful:", authData?.user?.id);
-      // No need to redirect here, AuthProvider will handle it
+      
+      // Save the return URL in localStorage to survive the redirect
+      if (from !== "/" && from !== "/auth") {
+        localStorage.setItem('auth_redirect', from);
+      }
+      
+      // Redirect happens via AuthProvider
     } catch (e: any) {
       console.error("Unexpected login error:", e.message);
       setAuthError(e.message);
@@ -125,7 +153,12 @@ export default function Auth() {
         });
       }
       
-      // No need to redirect here, AuthProvider will handle it if session exists
+      // Save the return URL in localStorage to survive the redirect
+      if (from !== "/" && from !== "/auth") {
+        localStorage.setItem('auth_redirect', from);
+      }
+      
+      // Redirect happens via AuthProvider
     } catch (e: any) {
       console.error("Unexpected signup error:", e.message);
       setAuthError(e.message);
@@ -139,6 +172,12 @@ export default function Auth() {
     try {
       setAuthError(null);
       console.log("Initiating Google sign in");
+      
+      // Save the return URL in localStorage to survive the redirect
+      if (from !== "/" && from !== "/auth") {
+        localStorage.setItem('auth_redirect', from);
+      }
+      
       await signInWithGoogle();
       // Redirect happens via callback
     } catch (e: any) {
@@ -154,12 +193,25 @@ export default function Auth() {
       await refreshSession();
       toast.info("Session refreshed");
       
+      // Increment retry count
+      setRetryCount(prev => prev + 1);
+      
       // Short timeout to let the session refresh before checking
       setTimeout(() => {
         if (user) {
-          navigate(from, { replace: true });
+          // Check if we have a saved redirect
+          const savedRedirect = localStorage.getItem('auth_redirect');
+          const targetPath = savedRedirect || from;
+          localStorage.removeItem('auth_redirect');
+          
+          navigate(targetPath, { replace: true });
         } else {
-          setAuthError("Still unable to authenticate. Please try logging in again.");
+          // If too many retries, show a more helpful error
+          if (retryCount >= 2) {
+            setAuthError("Authentication system is having issues. Please try again in a few minutes or contact support.");
+          } else {
+            setAuthError("Still unable to authenticate. Please try logging in again.");
+          }
         }
         setIsRetrying(false);
       }, 1500);
@@ -170,10 +222,30 @@ export default function Auth() {
     }
   };
 
+  const handleDevPreviewMode = () => {
+    navigate('/?devPreview=true', { replace: true });
+  };
+
+  const handleBackToHome = () => {
+    navigate('/', { replace: true });
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
+          <div className="flex justify-center mb-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleBackToHome}
+              className="flex items-center text-muted-foreground"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back to Home
+            </Button>
+          </div>
+          
           <CardTitle className="text-2xl">CROPGenius AI</CardTitle>
           <CardDescription>Enter your details to sign in to your account</CardDescription>
         </CardHeader>
@@ -334,6 +406,18 @@ export default function Auth() {
             </svg>
             {isSubmitting ? "Processing..." : "Google"}
           </Button>
+          
+          {/* Dev preview mode button - only shown in development */}
+          {import.meta.env.DEV && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full mt-2 text-xs text-muted-foreground"
+              onClick={handleDevPreviewMode}
+            >
+              Dev Preview Mode
+            </Button>
+          )}
         </CardContent>
         <CardFooter className="text-xs text-muted-foreground text-center">
           By continuing, you agree to CROPGenius Terms of Service and Privacy Policy

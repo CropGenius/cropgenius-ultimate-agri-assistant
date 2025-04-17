@@ -11,7 +11,7 @@ export default function AuthCallback() {
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(true);
-
+  
   useEffect(() => {
     console.log("Auth callback: Processing authentication");
     debugAuthState();
@@ -43,6 +43,10 @@ export default function AuthCallback() {
         
         console.log("Auth callback session check:", data.session?.user?.id || "No session found");
         
+        // Check for saved redirect URL
+        const savedRedirect = localStorage.getItem('auth_redirect');
+        localStorage.removeItem('auth_redirect'); // Clear it once used
+        
         if (data.session) {
           // Show success toast
           toast.success("Successfully signed in!", {
@@ -65,13 +69,10 @@ export default function AuthCallback() {
           if (farmData && farmData.length > 0) {
             // Store farm ID in localStorage
             localStorage.setItem("farmId", farmData[0].id);
-            // Redirect to home
-            navigate("/", { replace: true });
-          } else {
-            // No farm, redirect to home where they'll be shown the onboarding
-            console.log("No farm found, redirecting to onboarding flow");
-            navigate("/", { replace: true });
           }
+          
+          // Redirect to saved redirect URL or home
+          navigate(savedRedirect || "/", { replace: true });
         } else {
           // If no session found but we expect one, try checking again after a delay
           // This is necessary because sometimes sessions aren't immediately available after redirect
@@ -82,13 +83,13 @@ export default function AuthCallback() {
             
             if (retryData.session) {
               toast.success("Authentication successful!");
-              navigate("/", { replace: true });
+              navigate(savedRedirect || "/", { replace: true });
             } else {
-              // If still no session, redirect to login
+              // If still no session, redirect to login with a return path
               toast.error("Authentication failed", {
                 description: "Please try signing in again",
               });
-              navigate("/auth", { replace: true });
+              navigate(`/auth${savedRedirect ? `?redirect=${encodeURIComponent(savedRedirect)}` : ''}`, { replace: true });
             }
           }, 1500);
         }
@@ -100,9 +101,13 @@ export default function AuthCallback() {
           duration: 5000,
         });
         
-        // Redirect to login page after a delay
+        // Get saved redirect if any
+        const savedRedirect = localStorage.getItem('auth_redirect');
+        localStorage.removeItem('auth_redirect'); // Clear it
+        
+        // Redirect to login page after a delay with the saved redirect as a parameter
         setTimeout(() => {
-          navigate("/auth", { replace: true });
+          navigate(`/auth${savedRedirect ? `?redirect=${encodeURIComponent(savedRedirect)}` : ''}`, { replace: true });
         }, 3000);
       } finally {
         setIsProcessing(false);

@@ -1,8 +1,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, proactiveTokenRefresh } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
 
 export interface AuthState {
   user: User | null;
@@ -10,6 +11,7 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
   farmId: string | null;
+  isDevPreview: boolean;
 }
 
 interface AuthContextType extends AuthState {
@@ -26,39 +28,106 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     isLoading: true,
     error: null,
     farmId: localStorage.getItem("farmId"),
+    isDevPreview: false
   });
+  
+  const location = useLocation();
+  
+  // Check if we're in dev preview mode
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const isDevPreview = searchParams.get('devPreview') === 'true';
+    
+    if (isDevPreview && !authState.user) {
+      console.log("[Auth] Dev Preview mode detected, bypassing auth");
+      
+      // Create a dev preview user
+      const devUser = {
+        id: 'founder-dev',
+        email: 'brian@cropgenius.com',
+        user_metadata: { 
+          name: 'Brian',
+          full_name: 'Brian',
+          role: 'founder'
+        }
+      };
+      
+      // Set as auth state but don't persist to Supabase
+      setAuthState(prev => ({
+        ...prev,
+        user: devUser as User,
+        isDevPreview: true,
+        isLoading: false
+      }));
+      
+      // Store farm ID for dev preview
+      if (!localStorage.getItem("farmId")) {
+        const devFarmId = 'dev-farm-1';
+        localStorage.setItem("farmId", devFarmId);
+        setAuthState(prev => ({ ...prev, farmId: devFarmId }));
+      }
+    }
+  }, [location.search]);
   
   // Function to refresh session - can be called manually
   const refreshSession = async () => {
     try {
+      // Skip for dev preview mode
+      if (authState.isDevPreview) return;
+      
+      console.log("Manually refreshing session...");
       const { data, error } = await supabase.auth.getSession();
       if (error) throw error;
       
       console.log("Session refresh:", data.session?.user?.id || "No session");
       
+      // If we have a session, update state
+      if (data.session) {
+        setAuthState(prev => ({
+          ...prev,
+          user: data.session?.user || null,
+          session: data.session,
+          isLoading: false,
+        }));
+        
+        // Check user farm if authenticated
+        if (data.session?.user?.id) {
+          checkUserFarm(data.session.user.id);
+        }
+        
+        // Also proactively refresh token if it's close to expiry
+        proactiveTokenRefresh().catch(console.error);
+        
+        return;
+      }
+      
+      // If we don't have a session, check if we should retry
       setAuthState(prev => ({
         ...prev,
-        user: data.session?.user || null,
-        session: data.session,
         isLoading: false,
       }));
-      
-      // Check user farm if authenticated
-      if (data.session?.user?.id) {
-        checkUserFarm(data.session.user.id);
-      }
     } catch (error: any) {
       console.error("Session refresh error:", error.message);
+      setAuthState(prev => ({
+        ...prev,
+        error: error.message,
+        isLoading: false,
+      }));
     }
   };
 
   useEffect(() => {
     console.log("AuthProvider: Setting up auth listener");
     
+    // Skip for dev preview mode
+    if (authState.isDevPreview) return;
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log(`Auth state changed: ${event}`, session?.user?.id);
+        
+        // Update auth state
         setAuthState(prev => ({
           ...prev,
           user: session?.user || null,
@@ -142,7 +211,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
-  }, []);
+  }, [authState.isDevPreview]);
   
   // Check if user has a farm and store farmId
   const checkUserFarm = async (userId: string) => {
@@ -177,8 +246,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   
   const signOut = async () => {
     try {
+      // Skip for dev preview mode
+      if (authState.isDevPreview) {
+        // Clear dev preview state
+        setAuthState({
+          user: null,
+          session: null,
+          isLoading: false,
+          error: null,
+          farmId: null,
+          isDevPreview: false
+        });
+        localStorage.removeItem("farmId");
+        toast.info("Logged out of dev preview mode");
+        return;
+      }
+      
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
       localStorage.removeItem("farmId");
       setAuthState({
         user: null,
@@ -186,6 +272,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         isLoading: false,
         error: null,
         farmId: null,
+        isDevPreview: false
       });
     } catch (error: any) {
       console.error("Error signing out:", error.message);
