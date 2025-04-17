@@ -58,7 +58,7 @@ const MemoryDebugPanel = () => {
             <div className="flex items-center justify-between">
               <span className="font-medium">Current Memory State:</span>
               <Badge variant="outline" className="text-[10px]">
-                {memory.syncStatus}
+                {memory.syncStatus || 'unknown'}
               </Badge>
             </div>
             

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Field } from '@/types/supabase';
+import { Database } from '@/integrations/supabase/types';
 
 // Define form inputs type
 interface FormInputs {
@@ -58,7 +60,7 @@ const AddFieldForm = ({ boundary, onSuccess, onCancel, className = '' }: AddFiel
     setIsSubmitting(true);
 
     try {
-      // Prepare field data
+      // Prepare field data for Supabase
       const fieldData = {
         name: data.name,
         size: data.size,
@@ -75,7 +77,7 @@ const AddFieldForm = ({ boundary, onSuccess, onCancel, className = '' }: AddFiel
       const { data: newField, error } = await supabase
         .from('fields')
         .insert(fieldData)
-        .select()
+        .select('*')
         .single();
 
       if (error) {
@@ -88,7 +90,7 @@ const AddFieldForm = ({ boundary, onSuccess, onCancel, className = '' }: AddFiel
       });
 
       // Create a properly typed field object for the callback
-      const createdField: Field = {
+      const fieldWithTypedProperties: Field = {
         id: newField.id,
         user_id: newField.user_id,
         farm_id: newField.farm_id,
@@ -107,7 +109,7 @@ const AddFieldForm = ({ boundary, onSuccess, onCancel, className = '' }: AddFiel
 
       // Call onSuccess callback if provided
       if (onSuccess) {
-        onSuccess(createdField);
+        onSuccess(fieldWithTypedProperties);
       } else {
         // Otherwise navigate to fields page
         navigate('/fields');

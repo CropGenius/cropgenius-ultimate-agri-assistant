@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -25,6 +26,8 @@ const defaultMemory = {
   proTrialUsed: false,
   proStatus: false,
   proExpirationDate: null,
+  whatsappOptIn: false, // Added whatsappOptIn property
+  syncStatus: 'pending' // Added syncStatus property
 };
 
 export const useMemoryStore = () => {
@@ -233,6 +236,89 @@ export const useMemoryStore = () => {
       return memory;
     }
   };
+  
+  // Add WhatsApp preference function
+  const setWhatsAppPreference = async (optIn: boolean) => {
+    return await updateMemory({ whatsappOptIn: optIn });
+  };
+
+  // Function to sync memory
+  const syncMemory = async () => {
+    if (!user || !memoryId || isOffline) {
+      console.log("[Memory] Cannot sync - offline or no user/memory ID");
+      return { success: false };
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('user_memory')
+        .update({
+          memory_data: {
+            ...memory,
+            syncStatus: 'synced'
+          },
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', memoryId);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setMemory({ ...memory, syncStatus: 'synced' });
+      setSyncDate(new Date());
+      
+      // Save to local storage
+      localStorage.setItem('user_memory', JSON.stringify({
+        id: memoryId,
+        memory_data: { ...memory, syncStatus: 'synced' },
+        syncDate: new Date().toISOString()
+      }));
+      
+      toast.success('Memory synced successfully');
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error syncing memory:', err);
+      setMemory({ ...memory, syncStatus: 'failed' });
+      toast.error('Failed to sync memory');
+      return { success: false, error: err.message };
+    }
+  };
+  
+  // Function to reset memory
+  const resetMemory = async () => {
+    const confirmReset = window.confirm(
+      "Are you sure you want to reset all memory data? This cannot be undone."
+    );
+    
+    if (!confirmReset) return;
+    
+    try {
+      setMemory(defaultMemory);
+      
+      if (user && memoryId) {
+        // Reset on the server
+        const { error } = await supabase
+          .from('user_memory')
+          .update({
+            memory_data: defaultMemory,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', memoryId);
+          
+        if (error) throw error;
+      }
+      
+      // Clear local storage
+      localStorage.removeItem('user_memory');
+      setMemoryId(null);
+      setSyncDate(new Date());
+      
+      toast.success('Memory data has been reset');
+    } catch (err: any) {
+      console.error('Error resetting memory:', err);
+      toast.error('Failed to reset memory');
+    }
+  };
 
   // Sync memory from local to server when coming online
   useEffect(() => {
@@ -269,9 +355,61 @@ export const useMemoryStore = () => {
   return {
     memory,
     updateMemory,
+    setWhatsAppPreference,
+    syncMemory,
+    resetMemory,
     loading,
     error,
     syncDate,
     isOffline
   };
+};
+
+// For dev debug panel
+export const devMemoryOverride = async (memoryUpdates: any) => {
+  try {
+    const { data } = await supabase.auth.getUser();
+    if (!data?.user) {
+      console.warn('User must be logged in to override memory');
+      return false;
+    }
+    
+    const userId = data.user.id;
+    
+    // Get existing memory
+    const { data: memData } = await supabase
+      .from('user_memory')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+      
+    if (memData) {
+      // Update existing memory
+      const updatedMemory = {
+        ...memData.memory_data,
+        ...memoryUpdates
+      };
+      
+      await supabase
+        .from('user_memory')
+        .update({
+          memory_data: updatedMemory
+        })
+        .eq('id', memData.id);
+        
+      // Update local storage
+      localStorage.setItem('user_memory', JSON.stringify({
+        id: memData.id,
+        memory_data: updatedMemory,
+        syncDate: new Date().toISOString()
+      }));
+      
+      return updatedMemory;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error overriding memory:', error);
+    return false;
+  }
 };

@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import { useMemoryStore } from '@/hooks/useMemoryStore';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Bot, Map, Plant, AlertTriangle } from 'lucide-react';
+import { ArrowRight, Bot, Map, Sprout, AlertTriangle } from 'lucide-react'; // Changed Plant to Sprout
 import { Button } from '@/components/ui/button';
 import AIInsightAlert from './AIInsightAlert';
 import { supabase } from '@/integrations/supabase/client';
@@ -156,7 +156,7 @@ const WelcomeSection = () => {
                   </Button>
                   <Button asChild variant="outline" size="sm" className="h-8">
                     <Link to="/scan">
-                      <Plant className="mr-1.5 h-3.5 w-3.5" />
+                      <Sprout className="mr-1.5 h-3.5 w-3.5" /> {/* Changed from Plant to Sprout */}
                       Try Crop Scanner
                     </Link>
                   </Button>

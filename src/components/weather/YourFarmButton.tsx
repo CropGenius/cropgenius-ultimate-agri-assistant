@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -51,9 +52,25 @@ const YourFarmButton = ({
         
         if (error) throw error;
         
-        // Cast data to the Fields type
-        const typedFields = data as Field[];
-        setFields(typedFields || []);
+        // Convert data to the Field type
+        const typedFields: Field[] = data ? data.map(field => ({
+          id: field.id,
+          user_id: field.user_id,
+          farm_id: field.farm_id,
+          name: field.name,
+          size: field.size,
+          size_unit: field.size_unit,
+          boundary: field.boundary,
+          location_description: field.location_description,
+          soil_type: field.soil_type,
+          irrigation_type: field.irrigation_type,
+          is_shared: field.is_shared,
+          shared_with: field.shared_with,
+          created_at: field.created_at,
+          updated_at: field.updated_at
+        })) : [];
+
+        setFields(typedFields);
 
         // If selected ID is provided, find that field
         if (selectedFieldId) {
