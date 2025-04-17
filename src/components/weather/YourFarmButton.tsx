@@ -1,177 +1,304 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Tractor, Plus, Loader2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Map, ChevronDown, Plus, Loader2, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
-import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Field } from '@/types/supabase';
+import { Field } from '@/types/field';
+import AddFieldForm from '@/components/fields/AddFieldForm';
+import { FieldSelectCallback } from '@/components/fields/types';
+import { useErrorLogging } from '@/hooks/use-error-logging';
 
 interface YourFarmButtonProps {
-  onSelectField?: (field: Field) => void;
-  selectedFieldId?: string;
-  showAllOption?: boolean;
   className?: string;
+  size?: "default" | "sm" | "lg" | "icon";
+  variant?: "default" | "secondary" | "outline" | "ghost";
+  buttonText?: string;
+  onSelect: FieldSelectCallback;
 }
 
-const YourFarmButton = ({ 
-  onSelectField, 
-  selectedFieldId, 
-  showAllOption = false,
-  className = ''
-}: YourFarmButtonProps) => {
+export default function YourFarmButton({ 
+  className, 
+  size = "default",
+  variant = "default",
+  buttonText = "Your Farm",
+  onSelect
+}: YourFarmButtonProps) {
+  const { logError, logSuccess } = useErrorLogging('YourFarmButton', { 
+    showToasts: true, 
+    criticalComponent: true 
+  });
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [hasFields, setHasFields] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogType, setDialogType] = useState<'noFields' | 'fields' | 'addField'>('noFields');
   const [fields, setFields] = useState<Field[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedField, setSelectedField] = useState<Field | null>(null);
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load fields from Supabase
   useEffect(() => {
-    const loadFields = async () => {
-      if (!user) return;
-
+    console.log("🧩 [YourFarmButton] Component mounting");
+    // Check authentication status
+    const checkAuth = async () => {
       try {
-        setLoading(true);
+        setError(null);
+        const { data } = await supabase.auth.getSession();
+        const isAuthed = !!data.session;
+        setIsAuthenticated(isAuthed);
+        setUserId(data.session?.user.id || null);
         
-        // Get all fields for this user
-        const { data: fieldData, error } = await supabase
-          .from('fields')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+        console.log(`✅ [YourFarmButton] Auth check: ${isAuthed ? 'Authenticated' : 'Not authenticated'}`);
         
-        if (error) throw error;
-        
-        // Convert data to Field type
-        const typedFields: Field[] = fieldData ? fieldData.map(field => ({
-          id: field.id,
-          user_id: field.user_id,
-          farm_id: field.farm_id,
-          name: field.name,
-          size: field.size,
-          size_unit: field.size_unit,
-          boundary: field.boundary,
-          location_description: field.location_description,
-          soil_type: field.soil_type,
-          irrigation_type: field.irrigation_type,
-          is_shared: field.is_shared,
-          shared_with: field.shared_with,
-          created_at: field.created_at,
-          updated_at: field.updated_at
-        })) : [];
-
-        setFields(typedFields);
-
-        // If selected ID is provided, find that field
-        if (selectedFieldId) {
-          const field = typedFields.find(f => f.id === selectedFieldId);
-          if (field) {
-            setSelectedField(field);
-          }
+        if (isAuthed) {
+          checkFields(data.session?.user.id || null);
+        } else {
+          setLoading(false);
         }
-        // Otherwise, select the first field if any exist
-        else if (typedFields.length > 0 && !selectedField) {
-          setSelectedField(typedFields[0]);
-          if (onSelectField) onSelectField(typedFields[0]);
-        }
-        
-      } catch (error) {
-        console.error('Error loading fields:', error);
-        toast.error('Could not load your fields', {
-          description: 'Please try again later',
-        });
-      } finally {
+      } catch (err: any) {
+        const errorMsg = err.message || "Authentication check failed";
+        console.error('❌ [YourFarmButton] Auth check failed:', errorMsg);
+        setError(errorMsg);
+        setIsAuthenticated(false);
         setLoading(false);
       }
     };
+    
+    checkAuth();
+    
+    // Get user's current location for field mapping
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        console.log("📍 [YourFarmButton] Got user location:", position.coords.latitude, position.coords.longitude);
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+      },
+      (error) => {
+        console.error('❌ [YourFarmButton] Location error:', error.message);
+        // Don't set error state - this is non-critical
+      },
+      { enableHighAccuracy: true }
+    );
+  }, []);
 
-    loadFields();
-  }, [user, selectedFieldId]);
-
-  // Handle field selection
-  const handleSelectField = (field: Field | null) => {
-    setSelectedField(field);
-    if (onSelectField && field) onSelectField(field);
+  const checkFields = async (uid: string | null) => {
+    if (!uid) return;
+    
+    try {
+      setLoading(true);
+      console.log("🔍 [YourFarmButton] Checking fields for user:", uid);
+      
+      const { data, error } = await supabase
+        .from('fields')
+        .select('*')
+        .eq('user_id', uid);
+      
+      if (error) throw error;
+      
+      setFields(data || []);
+      setHasFields(data && data.length > 0);
+      
+      console.log(`✅ [YourFarmButton] Fields check: ${data?.length || 0} fields found`);
+    } catch (err: any) {
+      const errorMsg = err.message || "Field check failed";
+      console.error('❌ [YourFarmButton] Field check failed:', errorMsg);
+      setError(errorMsg);
+      setHasFields(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Navigate to add new field page
+  const handleClick = () => {
+    if (!isAuthenticated) {
+      console.log("🔄 [YourFarmButton] User not authenticated, navigating to auth page");
+      toast.info("Please sign in to access your farm");
+      navigate('/auth');
+      return;
+    }
+    
+    if (hasFields === null) {
+      // Still loading
+      console.log("⏳ [YourFarmButton] Still loading field data");
+      return;
+    }
+    
+    if (!hasFields) {
+      console.log("📝 [YourFarmButton] No fields, showing noFields dialog");
+      setDialogType('noFields');
+      setShowDialog(true);
+    } else {
+      console.log("🗺️ [YourFarmButton] Has fields, showing fields dialog");
+      setDialogType('fields');
+      setShowDialog(true);
+    }
+  };
+
   const handleAddField = () => {
-    navigate('/fields?action=new');
+    console.log("➕ [YourFarmButton] Showing add field dialog");
+    setDialogType('addField');
+  };
+
+  const handleFieldAdded = (field: Field) => {
+    try {
+      console.log("✅ [YourFarmButton] Field added:", field);
+      setFields(prev => [field, ...prev]);
+      setHasFields(true);
+      setShowDialog(false);
+      
+      toast.success("Field added", {
+        description: "Your field has been added successfully. Weather insights are now customized to your farm."
+      });
+      
+      // Handle field selection
+      if (onSelect) {
+        console.log("🔄 [YourFarmButton] Calling onSelect with field:", field.name);
+        onSelect(field);
+      }
+      
+      // Navigate to the field detail page
+      navigate(`/fields/${field.id}`);
+    } catch (error: any) {
+      logError(error, { context: 'handleFieldAdded' });
+    }
+  };
+
+  const handleSelectField = (field: Field) => {
+    try {
+      console.log("🎯 [YourFarmButton] Field selected:", field.name);
+      setSelectedFieldId(field.id);
+      setShowDialog(false);
+      
+      // Call the onSelect callback
+      onSelect(field);
+      
+      navigate(`/fields/${field.id}`);
+    } catch (error: any) {
+      logError(error, { context: 'handleSelectField' });
+    }
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="outline" 
-          className={`flex items-center gap-2 ${className}`}
-          disabled={loading}
-        >
-          {loading ? (
+    <>
+      <Button
+        className={cn("relative", className)}
+        size={size}
+        variant={variant}
+        onClick={handleClick}
+        disabled={loading}
+      >
+        {loading ? (
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        ) : error ? (
+          <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
+        ) : (
+          <Tractor className="h-4 w-4 mr-2" />
+        )}
+        {buttonText}
+      </Button>
+      
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          {dialogType === 'noFields' && (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Loading fields...</span>
-            </>
-          ) : (
-            <>
-              <Map className="h-4 w-4" />
-              <span className="truncate max-w-[120px]">
-                {selectedField ? selectedField.name : fields.length === 0 ? 'No fields' : 'Select field'}
-              </span>
-              <ChevronDown className="h-3 w-3 opacity-50" />
+              <DialogHeader>
+                <DialogTitle>Add Your First Field</DialogTitle>
+                <DialogDescription>
+                  To deliver precise weather insights tailored to your farm, we need your field location data.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <p className="mb-4 text-sm">
+                  Adding your field will enable CROPGenius to:
+                </p>
+                <ul className="space-y-2 mb-6">
+                  <li className="flex items-start gap-2 text-sm">
+                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
+                      <span className="text-xs text-primary font-medium">1</span>
+                    </div>
+                    <span>Provide hyperlocal weather forecasts specific to your field</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-sm">
+                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
+                      <span className="text-xs text-primary font-medium">2</span>
+                    </div>
+                    <span>Generate AI-powered farming recommendations</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-sm">
+                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
+                      <span className="text-xs text-primary font-medium">3</span>
+                    </div>
+                    <span>Alert you about weather risks that could affect your crops</span>
+                  </li>
+                </ul>
+                <Button onClick={handleAddField} className="w-full">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Field Now
+                </Button>
+              </div>
             </>
           )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56">
-        <DropdownMenuLabel>Your Fields</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        
-        {showAllOption && (
-          <DropdownMenuItem 
-            onSelect={() => handleSelectField(null)}
-            className={!selectedField ? 'bg-accent text-accent-foreground' : ''}
-          >
-            <Map className="h-4 w-4 mr-2" />
-            All Fields
-          </DropdownMenuItem>  
-        )}
-        
-        {fields.length > 0 ? (
-          fields.map(field => (
-            <DropdownMenuItem 
-              key={field.id}
-              onSelect={() => handleSelectField(field)}
-              className={selectedField?.id === field.id ? 'bg-accent text-accent-foreground' : ''}
-            >
-              <Map className="h-4 w-4 mr-2" />
-              {field.name}
-            </DropdownMenuItem>
-          ))
-        ) : (
-          <DropdownMenuItem className="text-muted-foreground gap-2" disabled>
-            <AlertCircle className="h-4 w-4" />
-            No fields added yet
-          </DropdownMenuItem>
-        )}
-        
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={handleAddField}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add New Field
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          
+          {dialogType === 'fields' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Your Fields</DialogTitle>
+                <DialogDescription>
+                  Select a field to view detailed weather insights or add a new field.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <div className="grid gap-2 mb-4">
+                  {fields.map(field => (
+                    <div 
+                      key={field.id}
+                      className="flex items-center cursor-pointer px-3 py-2 hover:bg-muted rounded-md"
+                      onClick={() => handleSelectField(field)}
+                    >
+                      <Tractor className="h-4 w-4 mr-2" />
+                      <div className="text-left">
+                        <div className="font-medium">{field.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {field.size} {field.size_unit}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button onClick={handleAddField} className="w-full" variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Another Field
+                </Button>
+              </div>
+            </>
+          )}
+          
+          {dialogType === 'addField' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Map Your Field</DialogTitle>
+                <DialogDescription>
+                  Use the map to locate and outline your field boundaries.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-2">
+                <AddFieldForm 
+                  onSuccess={handleFieldAdded}
+                  onCancel={() => setShowDialog(false)}
+                  defaultLocation={userLocation || undefined}
+                />
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
-};
-
-export default YourFarmButton;
+}

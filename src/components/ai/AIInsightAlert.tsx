@@ -1,203 +1,137 @@
 
-import React, { useState, useEffect } from 'react';
-import { AlertCircle, ArrowRight, MessageCircle as WhatsAppIcon, CheckCircle } from "lucide-react";
+import React, { useState } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { Link } from 'react-router-dom';
+import { CloudSun, BarChart4, AlertTriangle, Leaf, X } from 'lucide-react';
 import { toast } from "sonner";
-import { useAuth } from "@/context/AuthContext";
 
 interface AIInsightAlertProps {
-  className?: string;
-  onAction?: () => void;
-  insight?: {
-    message: string;
-    type: 'warning' | 'info' | 'success';
-    priority: 'high' | 'medium' | 'low';
-    action?: string;
-  };
+  message: string;
+  type: 'weather' | 'market' | 'pest' | 'fertilizer';
+  actionText: string;
+  actionPath: string;
 }
 
-export default function AIInsightAlert({ 
-  className, 
-  onAction,
-  insight 
-}: AIInsightAlertProps) {
-  const [isVisible, setIsVisible] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [phoneOptIn, setPhoneOptIn] = useState(false);
-  const { user } = useAuth();
+const AIInsightAlert = ({ 
+  message, 
+  type, 
+  actionText,
+  actionPath 
+}: AIInsightAlertProps) => {
+  const [dismissed, setDismissed] = useState(false);
   
-  // If no insight is provided, generate a default one based on time of day
-  const defaultInsight = React.useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 10) {
-      return {
-        message: "Good morning! Today is a good day to check your fields for moisture levels after the night.",
-        type: 'info' as const,
-        priority: 'medium' as const,
-        action: "View moisture map"
-      };
-    } else if (hour < 16) {
-      return {
-        message: "Based on current weather patterns, your maize fields would benefit from irrigation in the next 48 hours.",
-        type: 'warning' as const,
-        priority: 'high' as const,
-        action: "See irrigation plan"
-      };
-    } else {
-      return {
-        message: "Weather forecast shows rain tomorrow. Consider delaying any planned fertilizer application.",
-        type: 'warning' as const,
-        priority: 'medium' as const,
-        action: "Adjust farm plan"
-      };
+  if (dismissed) return null;
+  
+  const getTypeIcon = () => {
+    switch (type) {
+      case 'weather':
+        return <CloudSun className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
+      case 'market':
+        return <BarChart4 className="h-5 w-5 text-green-600 dark:text-green-400" />;
+      case 'pest':
+        return <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />;
+      case 'fertilizer':
+        return <Leaf className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />;
     }
-  }, []);
+  };
   
-  const currentInsight = insight || defaultInsight;
-  
-  useEffect(() => {
-    // Check if user has opted in for WhatsApp notifications
-    const checkOptIn = async () => {
-      if (!user) return;
-      
-      try {
-        // We would fetch this from Supabase in a real implementation
-        const hasOptedIn = localStorage.getItem(`whatsapp-optin-${user.id}`) === 'true';
-        setPhoneOptIn(hasOptedIn);
-      } catch (e) {
-        console.error("Error checking WhatsApp opt-in status:", e);
-      }
-    };
-    
-    checkOptIn();
-  }, [user]);
-  
-  const handleAction = () => {
-    if (onAction) {
-      onAction();
-    } else {
-      toast.info("Taking action based on AI insight", {
-        description: `Processing your request for: ${currentInsight.action || 'this insight'}`
-      });
+  const getTypeColor = () => {
+    switch (type) {
+      case 'weather':
+        return 'bg-blue-50 dark:bg-blue-900/30 border-blue-100 dark:border-blue-800';
+      case 'market':
+        return 'bg-green-50 dark:bg-green-900/30 border-green-100 dark:border-green-800';
+      case 'pest':
+        return 'bg-amber-50 dark:bg-amber-900/30 border-amber-100 dark:border-amber-800';
+      case 'fertilizer':
+        return 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-100 dark:border-emerald-800';
     }
-    setIsExpanded(false);
   };
   
-  const handleDismiss = () => {
-    setIsVisible(false);
-    toast.info("Insight dismissed", {
-      description: "You can view all insights in your farm history"
-    });
+  const getActionColor = () => {
+    switch (type) {
+      case 'weather':
+        return 'bg-blue-600 hover:bg-blue-700 text-white';
+      case 'market':
+        return 'bg-green-600 hover:bg-green-700 text-white';
+      case 'pest':
+        return 'bg-amber-600 hover:bg-amber-700 text-white';
+      case 'fertilizer':
+        return 'bg-emerald-600 hover:bg-emerald-700 text-white';
+    }
   };
   
-  const handleOptIn = () => {
-    if (!user) return;
-    
-    // In a real implementation, we would save this to Supabase
-    localStorage.setItem(`whatsapp-optin-${user.id}`, 'true');
-    setPhoneOptIn(true);
-    
-    toast.success("WhatsApp alerts enabled", {
-      description: "You'll now receive important farm insights via WhatsApp"
-    });
+  const handleWhatsAppShare = () => {
+    const shareText = encodeURIComponent(`${message} Check it out on CROPGenius!`);
+    window.open(`https://wa.me/?text=${shareText}`, '_blank');
+    toast.success("Opening WhatsApp to share insight");
   };
   
-  if (!isVisible) return null;
-
   return (
-    <Card className={cn(
-      "border-l-4 shadow-md overflow-hidden transition-all", 
-      currentInsight.type === 'warning' ? "border-l-amber-500" : 
-      currentInsight.type === 'success' ? "border-l-green-500" : 
-      "border-l-blue-500",
-      className
-    )}>
+    <Card className={`${getTypeColor()} border-l-4 ${
+      type === 'weather' ? 'border-l-blue-500' :
+      type === 'market' ? 'border-l-green-500' :
+      type === 'pest' ? 'border-l-amber-500' : 'border-l-emerald-500'
+    } animate-fade-in`}>
       <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex-shrink-0">
-            {currentInsight.type === 'warning' ? (
-              <AlertCircle className="h-5 w-5 text-amber-500" />
-            ) : currentInsight.type === 'success' ? (
-              <CheckCircle className="h-5 w-5 text-green-500" />
-            ) : (
-              <AlertCircle className="h-5 w-5 text-blue-500" />
-            )}
-          </div>
-          
-          <div className="flex-1 space-y-1">
-            <div className="flex items-center justify-between">
-              <div className="font-medium">AI Farm Insight</div>
-              <Badge variant={
-                currentInsight.priority === 'high' ? "destructive" : 
-                currentInsight.priority === 'medium' ? "default" : 
-                "outline"
-              }>
-                {currentInsight.priority === 'high' ? 'Urgent' : 
-                 currentInsight.priority === 'medium' ? 'Important' : 
-                 'FYI'}
-              </Badge>
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3">
+            <div className={`p-2 rounded-full ${
+              type === 'weather' ? 'bg-blue-100 dark:bg-blue-800' :
+              type === 'market' ? 'bg-green-100 dark:bg-green-800' :
+              type === 'pest' ? 'bg-amber-100 dark:bg-amber-800' : 
+              'bg-emerald-100 dark:bg-emerald-800'
+            }`}>
+              {getTypeIcon()}
             </div>
             
-            <p className="text-sm text-muted-foreground">
-              {currentInsight.message}
-            </p>
-            
-            {isExpanded && (
-              <div className="mt-3 pt-2 border-t text-xs text-muted-foreground">
-                <p>GeniusGrow AI analyzes your field data, local weather patterns, and crop conditions to provide personalized insights.</p>
-                {!phoneOptIn && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="mt-2 h-8 gap-1.5" 
-                    onClick={handleOptIn}
-                  >
-                    <WhatsAppIcon className="h-3.5 w-3.5" />
-                    Get alerts on WhatsApp
-                  </Button>
-                )}
-              </div>
-            )}
+            <div>
+              <h3 className={`font-medium ${
+                type === 'weather' ? 'text-blue-800 dark:text-blue-300' :
+                type === 'market' ? 'text-green-800 dark:text-green-300' :
+                type === 'pest' ? 'text-amber-800 dark:text-amber-300' : 
+                'text-emerald-800 dark:text-emerald-300'
+              }`}>
+                AI Insight
+              </h3>
+              <p className="text-gray-700 dark:text-gray-300 mt-1">{message}</p>
+            </div>
           </div>
-        </div>
-      </CardContent>
-      
-      <CardFooter className="bg-muted/50 px-4 py-2 flex justify-between">
-        <Button 
-          variant="ghost"
-          size="sm"
-          className="text-xs h-7"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          {isExpanded ? "Show less" : "Learn more"}
-        </Button>
-        
-        <div className="flex gap-2">
+          
           <Button 
-            variant="ghost"
-            size="sm"
-            className="text-xs h-7"
-            onClick={handleDismiss}
+            size="icon" 
+            variant="ghost" 
+            className="h-7 w-7 rounded-full"
+            onClick={() => setDismissed(true)}
           >
-            Dismiss
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="flex flex-wrap gap-2 mt-4 justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-gray-600 dark:text-gray-400"
+            onClick={handleWhatsAppShare}
+          >
+            <MessageCircle className="h-3 w-3 mr-1" />
+            Share via WhatsApp
           </Button>
           
-          {currentInsight.action && (
+          <Link to={actionPath}>
             <Button 
-              variant="default"
-              size="sm"
-              className="text-xs h-7 gap-1"
-              onClick={handleAction}
+              size="sm" 
+              className={getActionColor()}
             >
-              {currentInsight.action}
-              <ArrowRight className="h-3 w-3" />
+              {actionText}
             </Button>
-          )}
+          </Link>
         </div>
-      </CardFooter>
+      </CardContent>
     </Card>
   );
-}
+};
+
+export default AIInsightAlert;

@@ -1,259 +1,352 @@
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
+import MapboxFieldMap from "./MapboxFieldMap";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { Farm } from "@/types/field";
+import { useErrorLogging } from '@/hooks/use-error-logging';
+import ErrorBoundary from "@/components/error/ErrorBoundary";
+import { FieldFormProps } from "./types";
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { Field } from '@/types/supabase';
-import { useMemoryStore } from '@/hooks/useMemoryStore';
-import ProEligibilityCheck from '@/components/pro/ProEligibilityCheck';
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 
-interface AddFieldFormProps {
-  boundary: any;
-  onFieldAdded?: (field: Field) => void;
-}
+const formSchema = z.object({
+  name: z.string().min(2, "Field name must be at least 2 characters"),
+  size: z.coerce.number().positive("Size must be a positive number").optional(),
+  size_unit: z.string().default("hectares"),
+  location_description: z.string().optional(),
+  soil_type: z.string().optional(),
+  irrigation_type: z.string().optional(),
+  boundary: z.any().optional(),
+});
 
-type FormData = {
-  name: string;
-  size: string;
-  sizeUnit: string;
-  soilType: string;
-  irrigationType: string;
-  locationDescription: string;
-};
+type FormValues = z.infer<typeof formSchema>;
 
-const AddFieldForm = ({ boundary, onFieldAdded }: AddFieldFormProps) => {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
-  const [loading, setLoading] = useState(false);
+export default function AddFieldForm({ 
+  onSuccess, 
+  onCancel, 
+  defaultLocation,
+  farms 
+}: FieldFormProps) {
+  const { logError, logSuccess, trackOperation } = useErrorLogging('AddFieldForm');
   const navigate = useNavigate();
   const { user, farmId } = useAuth();
-  const { updateMemory, memory } = useMemoryStore();
-  const [showProModal, setShowProModal] = useState(false);
+  const [boundary, setBoundary] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldLocation, setFieldLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [searchedLocation, setSearchedLocation] = useState<string | null>(null);
+  
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      size: undefined,
+      size_unit: "hectares",
+      location_description: "",
+      soil_type: "",
+      irrigation_type: "",
+      boundary: undefined,
+    },
+  });
 
-  // Track if this will be the user's second field (Pro trigger)
-  const isSecondField = memory.lastFieldCount === 1;
+  useEffect(() => {
+    form.setValue("boundary", boundary);
+  }, [boundary, form]);
 
-  const onSubmit = async (data: FormData) => {
-    if (!user || !farmId) {
-      toast.error("You must be logged in to add a field");
-      return;
+  const handleLocationChange = (location: { lat: number; lng: number }) => {
+    setFieldLocation(location);
+    if (!form.getValues("name")) {
+      fetchLocationName(location.lng, location.lat);
     }
+  };
 
-    setLoading(true);
-
+  const fetchLocationName = trackOperation('fetchLocationName', async (lng: number, lat: number) => {
     try {
-      // Create the field record
+      console.log(`🔍 [AddFieldForm] Reverse geocoding location: ${lng}, ${lat}`);
+      
+      if (!MAPBOX_ACCESS_TOKEN) {
+        console.error("❌ [AddFieldForm] Missing Mapbox access token for reverse geocoding");
+        toast.error("Could not determine location name", { 
+          description: "Mapbox access token is missing"
+        });
+        return;
+      }
+      
+      const response = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_ACCESS_TOKEN}&types=place,locality,neighborhood,address`);
+      const data = await response.json();
+      
+      if (data.features && data.features.length > 0) {
+        const placeName = data.features[0].place_name?.split(',')[0] || 'Unknown location';
+        setSearchedLocation(placeName);
+        console.log(`✅ [AddFieldForm] Location name found: ${placeName}`);
+        
+        const suggestedName = `${placeName} Field`;
+        if (!form.getValues("name")) {
+          form.setValue("name", suggestedName);
+        }
+      }
+    } catch (error) {
+      logError(error as Error, { context: 'reverseGeocoding' });
+      toast.error("Could not determine location name", { 
+        description: "Check your internet connection"
+      });
+    }
+  });
+
+  const onSubmit = trackOperation('submitField', async (values: FormValues) => {
+    try {
+      console.log("📝 [AddFieldForm] Creating field with values:", values);
+      
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
+      
+      if (!farmId) {
+        throw new Error("No farm selected");
+      }
+      
+      if (!boundary) {
+        toast.warning("Please draw your field boundary on the map");
+        return;
+      }
+      
+      setIsSubmitting(true);
+      
       const fieldData = {
-        name: data.name,
-        size: parseFloat(data.size),
-        size_unit: data.sizeUnit,
-        location_description: data.locationDescription,
-        soil_type: data.soilType,
-        irrigation_type: data.irrigationType,
+        name: values.name,
+        size: values.size,
+        size_unit: values.size_unit,
+        location_description: values.location_description,
+        soil_type: values.soil_type,
+        irrigation_type: values.irrigation_type,
         boundary: boundary,
         user_id: user.id,
         farm_id: farmId
       };
-
-      const { data: newField, error } = await supabase
-        .from('fields')
+      
+      console.log("💾 [AddFieldForm] Inserting field data:", fieldData);
+      
+      const { data: field, error } = await supabase
+        .from("fields")
         .insert(fieldData)
-        .select('*')
+        .select()
         .single();
-
+      
       if (error) {
+        console.error("❌ [AddFieldForm] Error creating field:", error);
         throw error;
       }
-
-      if (!newField) {
-        throw new Error("Failed to create field");
-      }
-
-      // Format as Field type
-      const field: Field = {
-        id: newField.id,
-        user_id: newField.user_id,
-        farm_id: newField.farm_id,
-        name: newField.name,
-        size: newField.size,
-        size_unit: newField.size_unit,
-        boundary: newField.boundary,
-        location_description: newField.location_description,
-        soil_type: newField.soil_type,
-        irrigation_type: newField.irrigation_type,
-        created_at: newField.created_at,
-        updated_at: newField.updated_at,
-        is_shared: newField.is_shared,
-        shared_with: newField.shared_with,
-      };
-
-      // Update memory with new field count
-      await updateMemory({
-        lastFieldCount: (memory.lastFieldCount || 0) + 1
-      });
-
-      // Notify success
+      
+      console.log("✅ [AddFieldForm] Field created successfully:", field);
+      logSuccess('field_created', { field_id: field.id });
+      
       toast.success("Field added successfully", {
-        description: `${data.name} has been added to your farm.`
+        description: `${values.name} has been added to your farm`
       });
-
-      // Call onFieldAdded callback if provided
-      if (onFieldAdded) {
-        onFieldAdded(field);
-      }
-
-      // Show Pro modal if this is their second field
-      if (isSecondField) {
-        setShowProModal(true);
+      
+      if (onSuccess) {
+        onSuccess(field);
       } else {
-        // Navigate to the field detail page
-        navigate(`/fields/${newField.id}`);
+        navigate("/fields");
       }
     } catch (error: any) {
-      console.error("Error adding field:", error);
+      console.error("❌ [AddFieldForm] Error creating field:", error);
+      logError(error, { context: 'fieldCreation' });
       toast.error("Failed to add field", {
         description: error.message
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
-  };
+  });
 
   return (
-    <>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="name" className="block text-sm font-medium">
-            Field Name *
-          </label>
-          <input
-            id="name"
-            type="text"
-            className="w-full p-2 border rounded-md"
-            placeholder="East Maize Field"
-            {...register("name", { required: "Field name is required" })}
-          />
-          {errors.name && (
-            <p className="text-red-500 text-xs">{errors.name.message}</p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label htmlFor="size" className="block text-sm font-medium">
-              Size *
-            </label>
-            <input
-              id="size"
-              type="number"
-              step="0.01"
-              className="w-full p-2 border rounded-md"
-              placeholder="1.5"
-              {...register("size", {
-                required: "Size is required",
-                valueAsNumber: true,
-              })}
-            />
-            {errors.size && (
-              <p className="text-red-500 text-xs">{errors.size.message}</p>
-            )}
+    <ErrorBoundary>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="grid gap-6 md:gap-8">
+            <Card className="overflow-hidden">
+              <CardHeader className="bg-primary-50 dark:bg-primary-900/20 border-b">
+                <h3 className="text-lg font-medium">Field Map</h3>
+                <CardDescription>Search for your location and draw your field boundary</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="h-[350px] md:h-[450px] w-full">
+                  <MapboxFieldMap 
+                    onBoundaryChange={setBoundary}
+                    onLocationChange={handleLocationChange}
+                    defaultLocation={defaultLocation}
+                  />
+                </div>
+              </CardContent>
+              <CardContent className="pt-4">
+                <p className="text-xs text-muted-foreground">
+                  {searchedLocation ? (
+                    <span>Location: <strong>{searchedLocation}</strong></span>
+                  ) : (
+                    "Search for your village or location above, then draw your field boundaries"
+                  )}
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <h3 className="text-lg font-medium">Field Information</h3>
+                <CardDescription>Basic details about your field</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Field Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. North Field" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="size"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Size (optional)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="Field size" 
+                            {...field}
+                            value={field.value === undefined ? '' : field.value}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="size_unit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unit</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select unit" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="hectares">Hectares</SelectItem>
+                            <SelectItem value="acres">Acres</SelectItem>
+                            <SelectItem value="square_meters">Square Meters</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="location_description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location Description (optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Near the river" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="soil_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Soil Type (optional)</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select soil type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="clay">Clay</SelectItem>
+                            <SelectItem value="sandy">Sandy</SelectItem>
+                            <SelectItem value="loamy">Loamy</SelectItem>
+                            <SelectItem value="silty">Silty</SelectItem>
+                            <SelectItem value="peaty">Peaty</SelectItem>
+                            <SelectItem value="chalky">Chalky</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="irrigation_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Irrigation Type (optional)</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select irrigation type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="drip">Drip Irrigation</SelectItem>
+                            <SelectItem value="sprinkler">Sprinkler System</SelectItem>
+                            <SelectItem value="flood">Flood Irrigation</SelectItem>
+                            <SelectItem value="center_pivot">Center Pivot</SelectItem>
+                            <SelectItem value="rainfed">Rainfed (No Irrigation)</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <CardFooter className="px-0 pb-0 flex gap-3">
+              <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                {isSubmitting ? "Adding Field..." : "Add Field"}
+              </Button>
+              {onCancel && (
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancel
+                </Button>
+              )}
+            </CardFooter>
           </div>
-
-          <div className="space-y-2">
-            <label htmlFor="sizeUnit" className="block text-sm font-medium">
-              Unit
-            </label>
-            <select
-              id="sizeUnit"
-              className="w-full p-2 border rounded-md"
-              defaultValue="hectares"
-              {...register("sizeUnit")}
-            >
-              <option value="hectares">Hectares</option>
-              <option value="acres">Acres</option>
-              <option value="square_meters">Square Meters</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="locationDescription" className="block text-sm font-medium">
-            Location Description
-          </label>
-          <input
-            id="locationDescription"
-            type="text"
-            className="w-full p-2 border rounded-md"
-            placeholder="Near the river, south of village"
-            {...register("locationDescription")}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label htmlFor="soilType" className="block text-sm font-medium">
-              Soil Type
-            </label>
-            <select
-              id="soilType"
-              className="w-full p-2 border rounded-md"
-              {...register("soilType")}
-            >
-              <option value="">-- Select --</option>
-              <option value="clay">Clay</option>
-              <option value="sandy">Sandy</option>
-              <option value="loamy">Loamy</option>
-              <option value="silty">Silty</option>
-              <option value="peaty">Peaty</option>
-              <option value="chalky">Chalky</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="irrigationType" className="block text-sm font-medium">
-              Irrigation Type
-            </label>
-            <select
-              id="irrigationType"
-              className="w-full p-2 border rounded-md"
-              {...register("irrigationType")}
-            >
-              <option value="">-- Select --</option>
-              <option value="rainfed">Rainfed (No irrigation)</option>
-              <option value="drip">Drip Irrigation</option>
-              <option value="sprinkler">Sprinkler</option>
-              <option value="flood">Flood Irrigation</option>
-              <option value="furrow">Furrow</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="pt-2">
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Add Field"
-            )}
-          </Button>
-        </div>
-      </form>
-      
-      <ProEligibilityCheck forceShow={showProModal} triggerType="weather">
-        {/* Children */}
-      </ProEligibilityCheck>
-    </>
+        </form>
+      </Form>
+    </ErrorBoundary>
   );
-};
-
-export default AddFieldForm;
+}

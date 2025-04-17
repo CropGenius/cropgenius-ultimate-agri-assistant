@@ -14,7 +14,7 @@ interface WhatsAppOptInProps {
 const WhatsAppOptIn = ({ onClose }: WhatsAppOptInProps) => {
   const { memory, setWhatsAppPreference } = useMemoryStore();
   const [optIn, setOptIn] = useState(memory.whatsappOptIn || false);
-  const [phoneNumber, setPhoneNumber] = useState(memory.whatsappNumber || '');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,8 +28,9 @@ const WhatsAppOptIn = ({ onClose }: WhatsAppOptInProps) => {
     setIsSubmitting(true);
     
     try {
-      // Store the phone number in secure user memory
-      await setWhatsAppPreference(optIn, phoneNumber);
+      // In a real implementation, this would store the phone number in a secure location
+      // and register it with WhatsApp Business API or Twilio
+      await setWhatsAppPreference(optIn);
       
       if (optIn) {
         toast.success("AI WhatsApp alerts activated!", {

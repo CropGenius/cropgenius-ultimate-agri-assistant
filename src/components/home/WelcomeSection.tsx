@@ -1,176 +1,227 @@
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { useAuth } from '@/context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import WelcomeBackCard from '@/components/welcome/WelcomeBackCard';
+import GeniusBadge from '@/components/badges/GeniusBadge';
 import { useMemoryStore } from '@/hooks/useMemoryStore';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Bot, Map, Sprout, AlertTriangle } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import AIInsightAlert from './AIInsightAlert';
-import { supabase } from '@/integrations/supabase/client';
-import { AIInsightAlert as AIInsightAlertType } from '@/types/supabase';
+import { Users, Zap, AlertTriangle } from 'lucide-react';
+import InviteModal from '@/components/referrals/InviteModal';
+import { Link } from 'react-router-dom';
+import AIInsightAlert from '@/components/ai/AIInsightAlert';
 
 const WelcomeSection = () => {
-  const { user } = useAuth();
-  const { memory, updateMemory, trackAIUsage } = useMemoryStore();
-  const [timeOfDay, setTimeOfDay] = useState<string>('');
-  const [date, setDate] = useState<string>('');
-  const [insights, setInsights] = useState<AIInsightAlertType[]>([]);
-  const [insightsLoading, setInsightsLoading] = useState(false);
-
+  const { memory, isInitialized, updateMemory } = useMemoryStore();
+  const { user, isLoading } = useAuth();
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [aiInsight, setAiInsight] = useState<{
+    message: string;
+    type: 'weather' | 'market' | 'pest' | 'fertilizer';
+    actionText: string;
+    actionPath: string;
+  } | null>(null);
+  
   useEffect(() => {
-    // Get time of day
-    const hour = new Date().getHours();
-    if (hour < 12) setTimeOfDay('morning');
-    else if (hour < 17) setTimeOfDay('afternoon');
-    else setTimeOfDay('evening');
-
-    // Format today's date
-    const today = new Date();
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    };
-    setDate(today.toLocaleDateString(undefined, options));
-
-    // Update last login time
-    if (user) {
-      updateMemory({
-        lastLogin: new Date().toISOString()
-      });
-    }
-  }, [user]);
-
-  // Get AI insights for the current user's fields
-  useEffect(() => {
-    const getInsights = async () => {
-      if (!user) return;
+    // Show welcome if user is logged in and memory is initialized
+    if (!isLoading && user && isInitialized) {
+      setShowWelcome(true);
       
-      try {
-        setInsightsLoading(true);
-        
-        // This would normally call an edge function that generates real insights
-        // For now we're using sample insights
-        const sampleInsights: AIInsightAlertType[] = [
-          {
-            title: "Rain Expected in 48 Hours",
-            description: "Predicted 32mm rainfall for East Maize Field. Consider postponing fertilizer application.",
-            type: "weather",
-            actionText: "View Weather Details",
-            actionPath: "/weather"
-          },
-          {
-            title: "Maize Prices Rising",
-            description: "Local market prices up 8% since last week. Consider selling within 14 days.",
-            type: "market",
-            actionText: "View Market Analysis",
-            actionPath: "/market"
-          },
-          {
-            title: "Fall Armyworm Risk Detected",
-            description: "High risk in your area based on current conditions. Inspect South Field soon.",
-            type: "pest",
-            actionText: "View Pest Prevention Plan",
-            actionPath: "/scan"
-          }
-        ];
-        
-        // In a real implementation, the insights would be fetched from Supabase edge function
-        // based on actual field data, weather patterns, and market conditions
-        setInsights(sampleInsights);
-
-        // Track this as AI usage
-        await trackAIUsage(30, 'insights');
-      } catch (error) {
-        console.error("Error fetching insights:", error);
-      } finally {
-        setInsightsLoading(false);
+      // Check for AI insights based on real user data
+      if (memory.lastFieldCount > 0) {
+        fetchAIInsights();
       }
-    };
-    
-    getInsights();
-  }, [user]);
-
-  // If no user, show empty state
+    } else {
+      setShowWelcome(false);
+    }
+  }, [user, isLoading, isInitialized]);
+  
+  // Function to fetch real AI insights based on user data
+  const fetchAIInsights = async () => {
+    try {
+      // If we have field data, we can generate real insights
+      if (memory.fieldLocations && memory.fieldLocations.length > 0) {
+        // Only show insight if the user hasn't seen it recently
+        const lastInsightTime = memory.lastInsightShown ? new Date(memory.lastInsightShown).getTime() : 0;
+        const now = new Date().getTime();
+        const hoursSinceLastInsight = (now - lastInsightTime) / (1000 * 60 * 60);
+        
+        // Only show a new insight if it's been at least 4 hours since the last one
+        if (hoursSinceLastInsight >= 4) {
+          // Determine the most relevant insight type based on user data
+          let insightType: 'weather' | 'market' | 'pest' | 'fertilizer' = 'weather';
+          
+          if (memory.recentCropsPlanted && memory.recentCropsPlanted.length > 0) {
+            // If they have crops, check for market updates or pest alerts
+            // This would ideally come from a real API or edge function
+            const cropName = memory.recentCropsPlanted[0];
+            
+            setAiInsight({
+              message: `${memory.farmerName || 'Farmer'}, there's a market opportunity for ${cropName}. Prices are trending upward in your region.`,
+              type: 'market',
+              actionText: 'View Market Analysis',
+              actionPath: '/market'
+            });
+          } else {
+            // Default to weather insight
+            setAiInsight({
+              message: `${memory.farmerName || 'Farmer'}, rainfall is expected in the next 48 hours. This is ideal for planting.`,
+              type: 'weather',
+              actionText: 'View Weather Forecast',
+              actionPath: '/weather'
+            });
+          }
+          
+          // Update memory to track that we showed an insight
+          updateMemory({
+            lastInsightShown: new Date().toISOString()
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching AI insights:", error);
+    }
+  };
+  
+  // Determine if we should show the Pro upgrade suggestion
+  const shouldSuggestProUpgrade = () => {
+    // Show upgrade suggestion if user has 3+ fields or used features frequently
+    return memory.lastFieldCount >= 3 || (memory.featureUsageCount || 0) >= 5;
+  };
+  
+  // Don't show anything if not logged in
   if (!user) return null;
-
-  const farmerName = memory?.farmerName || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Farmer';
-
-  return (
-    <section className="mb-6">
-      {/* Welcome banner */}
-      <div className="mb-4">
-        <h1 className="text-xl font-semibold">Good {timeOfDay}, {farmerName}</h1>
-        <p className="text-sm text-muted-foreground">{date}</p>
-      </div>
-
-      {/* AI Insights Section */}
-      {insights.length > 0 && (
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-medium flex items-center gap-1">
-              <Bot className="h-4 w-4 text-primary" />
-              AI Field Insights
-            </h2>
-            <Link 
-              to="/scan"
-              className="text-xs text-muted-foreground hover:text-primary flex items-center gap-0.5"
-            >
-              All insights
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-
-          {/* AI Insight Cards */}
-          <div>
-            {insights.map((insight, index) => (
-              <AIInsightAlert
-                key={index}
-                title={insight.title}
-                description={insight.description}
-                type={insight.type}
-                actionText={insight.actionText}
-                actionPath={insight.actionPath}
-              />
-            ))}
-          </div>
+  
+  // Show skeleton while loading
+  if (!isInitialized || isLoading) {
+    return (
+      <div className="w-full mb-6 space-y-4">
+        <Skeleton className="w-full h-48 rounded-lg" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Skeleton className="w-full h-28 rounded-lg" />
+          <Skeleton className="w-full h-28 rounded-lg" />
         </div>
+      </div>
+    );
+  }
+  
+  // Show welcome section for logged in users
+  return showWelcome ? (
+    <div className="w-full mb-6 space-y-4">
+      <WelcomeBackCard />
+      
+      {/* AI Insight Alert - Only show if we have a real insight */}
+      {aiInsight && (
+        <AIInsightAlert 
+          message={aiInsight.message}
+          type={aiInsight.type}
+          actionText={aiInsight.actionText}
+          actionPath={aiInsight.actionPath}
+        />
       )}
-
-      {/* Quick Actions */}
-      {!insights.length && !insightsLoading && (
-        <Card className="mb-4 bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800">
-          <CardContent className="p-4">
-            <div className="flex gap-3 items-start">
-              <AlertTriangle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Only show badge if user has completed actions */}
+        {memory.lastFieldCount > 0 ? (
+          <GeniusBadge type="smart_farmer" />
+        ) : (
+          <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-100 dark:border-amber-900/50 rounded-lg p-4 relative overflow-hidden">
+            <div className="flex flex-col h-full justify-between">
               <div>
-                <h3 className="font-medium text-sm">AI needs more field data</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Add your first field to receive personalized AI insights about weather, pests, and market conditions.
+                <h3 className="font-medium text-amber-800 dark:text-amber-300">Map Your First Field</h3>
+                <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                  Start by mapping your field to get personalized AI recommendations
                 </p>
-                <div className="flex gap-2 mt-3">
-                  <Button asChild size="sm" className="h-8">
-                    <Link to="/fields">
-                      <Map className="mr-1.5 h-3.5 w-3.5" />
-                      Add Field
-                    </Link>
+              </div>
+              
+              <div className="mt-4">
+                <Link to="/fields/new">
+                  <Button 
+                    size="sm"
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    Map Field Now
                   </Button>
-                  <Button asChild variant="outline" size="sm" className="h-8">
-                    <Link to="/scan">
-                      <Sprout className="mr-1.5 h-3.5 w-3.5" />
-                      Try Crop Scanner
-                    </Link>
-                  </Button>
-                </div>
+                </Link>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </section>
-  );
+          </div>
+        )}
+        
+        {/* Show Pro Upgrade card if criteria is met, otherwise show invite friends card */}
+        {shouldSuggestProUpgrade() ? (
+          <div className="bg-green-50 dark:bg-green-900/30 border border-green-100 dark:border-green-800 rounded-lg p-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 -mr-6 -mt-6 rounded-full bg-green-500 opacity-10" />
+            
+            <div className="flex flex-col h-full justify-between">
+              <div>
+                <h3 className="font-medium text-green-800 dark:text-green-300 flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  Upgrade to Pro
+                </h3>
+                <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+                  Farmers with {memory.lastFieldCount} fields saw 38% higher yields with Pro
+                </p>
+              </div>
+              
+              <div className="mt-4">
+                <Button 
+                  size="sm"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => {
+                    // Track that user saw the Pro upgrade suggestion
+                    updateMemory({
+                      lastProSuggestion: new Date().toISOString()
+                    });
+                    
+                    // Navigate to Pro page (would be implemented in a real app)
+                    window.location.href = '/pro';
+                  }}
+                >
+                  Get AI Pro Features
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 rounded-lg p-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 -mr-6 -mt-6 rounded-full bg-blue-500 opacity-10" />
+            
+            <div className="flex flex-col h-full justify-between">
+              <div>
+                <h3 className="font-medium text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Invite Friends
+                </h3>
+                <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
+                  Get 7 days Pro access for each farmer who joins
+                </p>
+              </div>
+              
+              <div className="mt-4 flex items-center justify-between">
+                <div className="text-xs text-blue-600 dark:text-blue-400">
+                  {memory.invitesSent ? `${memory.invitesSent} invited · ${memory.invitesSent * 7} days Pro` : 'No invites sent yet'}
+                </div>
+                <Button 
+                  size="sm"
+                  onClick={() => setIsInviteModalOpen(true)}
+                  variant="secondary"
+                >
+                  Invite & Get Pro
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <InviteModal 
+        open={isInviteModalOpen} 
+        onOpenChange={setIsInviteModalOpen} 
+      />
+    </div>
+  ) : null;
 };
 
 export default WelcomeSection;

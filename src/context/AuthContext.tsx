@@ -1,186 +1,209 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { getAuthRedirectURL } from '@/utils/authRedirectUtils';
-import { useMemoryStore } from '@/hooks/useMemoryStore';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-// Define the shape of our auth context
-interface AuthContextType {
+export interface AuthState {
   user: User | null;
   session: Session | null;
-  farmId: string | null;
-  loading: boolean;
+  isLoading: boolean;
   error: string | null;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, metaData?: object) => Promise<{ error: string | null }>;
-  signOut: () => Promise<void>;
-  updateFarmId: (id: string | null) => void;
+  farmId: string | null;
 }
 
-// Create the context with default values
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  session: null,
-  farmId: null,
-  loading: true,
-  error: null,
-  signIn: async () => ({ error: null }),
-  signUp: async () => ({ error: null }),
-  signOut: async () => {},
-  updateFarmId: () => {},
-});
+interface AuthContextType extends AuthState {
+  signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
+}
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [farmId, setFarmId] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const location = useLocation();
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    session: null,
+    isLoading: true,
+    error: null,
+    farmId: localStorage.getItem("farmId"),
+  });
+  
+  // Function to refresh session - can be called manually
+  const refreshSession = async () => {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      
+      console.log("Session refresh:", data.session?.user?.id || "No session");
+      
+      setAuthState(prev => ({
+        ...prev,
+        user: data.session?.user || null,
+        session: data.session,
+        isLoading: false,
+      }));
+      
+      // Check user farm if authenticated
+      if (data.session?.user?.id) {
+        checkUserFarm(data.session.user.id);
+      }
+    } catch (error: any) {
+      console.error("Session refresh error:", error.message);
+    }
+  };
 
   useEffect(() => {
-    const getSession = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-
-        setSession(data.session);
-        setUser(data.session?.user || null);
-      } catch (err: any) {
-        console.error('Error getting auth session:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getSession();
-
-    // Set up auth state listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        console.log('Auth state changed:', event);
-        setSession(newSession);
-        setUser(newSession?.user || null);
+    console.log("AuthProvider: Setting up auth listener");
+    
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log(`Auth state changed: ${event}`, session?.user?.id);
+        setAuthState(prev => ({
+          ...prev,
+          user: session?.user || null,
+          session: session,
+          isLoading: false,
+        }));
         
-        // Handle auth events
         if (event === 'SIGNED_IN') {
-          toast.success("Welcome to CROPGenius");
+          console.log("Auth success: User signed in", session?.user?.id);
+          toast.success(`Logged in as ${session?.user?.email}`);
           
-          // Check if user was redirected from somewhere
-          const returnTo = location.state?.returnTo || '/';
-          navigate(returnTo, { replace: true });
+          // Check if user has a farm (using setTimeout to avoid deadlocks)
+          if (session?.user?.id) {
+            setTimeout(() => {
+              checkUserFarm(session.user.id);
+            }, 0);
+          }
         } else if (event === 'SIGNED_OUT') {
-          toast.info("You've been signed out");
-          navigate('/');
+          console.log("Auth state: User signed out");
+          toast.info("Logged out successfully");
+          localStorage.removeItem("farmId");
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log("Auth state: Token refreshed");
+        } else if (event === 'USER_UPDATED') {
+          console.log("Auth state: User updated");
         }
       }
     );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  // Load the user's farm ID
-  useEffect(() => {
-    const loadUserFarm = async () => {
-      if (!user) return;
-
+    
+    // THEN check for existing session
+    const initializeAuth = async () => {
       try {
-        const { data, error } = await supabase
-          .from('farms')
-          .select('id')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (error) throw error;
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (data) {
-          setFarmId(data.id);
+        if (error) {
+          console.error("Error getting session:", error.message);
+          setAuthState(prev => ({
+            ...prev,
+            error: error.message,
+            isLoading: false,
+          }));
+          return;
         }
-      } catch (err: any) {
-        console.error('Error loading user farm:', err);
+        
+        if (session) {
+          console.log("Existing session found:", session.user.id);
+          setAuthState(prev => ({
+            ...prev,
+            user: session.user,
+            session: session,
+            isLoading: false,
+          }));
+          
+          // Check if user has a farm (using setTimeout to avoid deadlocks)
+          setTimeout(() => {
+            checkUserFarm(session.user.id);
+          }, 0);
+        } else {
+          console.log("No session found");
+          setAuthState(prev => ({
+            ...prev,
+            isLoading: false,
+          }));
+        }
+      } catch (error: any) {
+        console.error("Unexpected auth error:", error.message);
+        setAuthState(prev => ({
+          ...prev,
+          error: error.message,
+          isLoading: false,
+        }));
       }
     };
-
-    if (user) {
-      loadUserFarm();
-    }
-  }, [user]);
-
-  const signIn = async (email: string, password: string) => {
+    
+    // Small delay to ensure context is fully set up
+    setTimeout(() => {
+      initializeAuth();
+    }, 0);
+    
+    return () => {
+      console.log("Cleaning up auth subscription");
+      subscription.unsubscribe();
+    };
+  }, []);
+  
+  // Check if user has a farm and store farmId
+  const checkUserFarm = async (userId: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      return { error: null };
-    } catch (err: any) {
-      console.error('Error signing in:', err);
-      return { error: err.message };
-    }
-  };
-
-  const signUp = async (email: string, password: string, metaData?: object) => {
-    try {
-      // Use the redirect URL that will work across environments
-      const redirectTo = getAuthRedirectURL();
+      console.log("Checking if user has a farm...");
+      const { data: farms, error } = await supabase
+        .from('farms')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1);
       
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectTo,
-          data: metaData,
-        },
-      });
-
-      if (error) throw error;
-
-      return { error: null };
-    } catch (err: any) {
-      console.error('Error signing up:', err);
-      return { error: err.message };
+      if (error) {
+        console.error("Error checking farm:", error.message);
+        return;
+      }
+      
+      if (farms && farms.length > 0) {
+        const farmId = farms[0].id;
+        console.log("Farm found:", farmId);
+        localStorage.setItem("farmId", farmId);
+        setAuthState(prev => ({ ...prev, farmId }));
+        toast.success("Farm data loaded", { description: "Your farm information is ready" });
+      } else {
+        console.log("No farm found for user");
+        localStorage.removeItem("farmId");
+        setAuthState(prev => ({ ...prev, farmId: null }));
+      }
+    } catch (error: any) {
+      console.error("Error checking farm:", error.message);
     }
   };
-
+  
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
-      // Navigate is handled by the auth listener
-    } catch (err: any) {
-      console.error('Error signing out:', err);
-      setError(err.message);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      localStorage.removeItem("farmId");
+      setAuthState({
+        user: null,
+        session: null,
+        isLoading: false,
+        error: null,
+        farmId: null,
+      });
+    } catch (error: any) {
+      console.error("Error signing out:", error.message);
+      toast.error("Error signing out", { description: error.message });
     }
   };
 
-  const updateFarmId = (id: string | null) => {
-    setFarmId(id);
-  };
-
-  const value = {
-    user,
-    session,
-    farmId,
-    loading,
-    error,
-    signIn,
-    signUp,
-    signOut,
-    updateFarmId,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ ...authState, signOut, refreshSession }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

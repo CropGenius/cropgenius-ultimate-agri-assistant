@@ -24,7 +24,6 @@ import ManageFields from "./pages/ManageFields";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import DevDebugPanel from "@/components/debug/DevDebugPanel";
 import { diagnostics } from "@/utils/diagnosticService";
-import OfflineStatusIndicator from "@/components/fields/OfflineStatusIndicator";
 
 // Configure React Query with better error handling
 const queryClient = new QueryClient({
@@ -104,16 +103,15 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <BrowserRouter>
-            <AuthProvider>
-              <Toaster />
-              <Sonner position="top-center" closeButton />
+          <AuthProvider>
+            <Toaster />
+            <Sonner position="top-center" closeButton />
+            <BrowserRouter>
               <ErrorBoundary>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
-                  <Route path="/auth/retry" element={<Auth />} />
                   
                   {/* Protected Routes */}
                   <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
@@ -137,12 +135,14 @@ const App = () => {
               
               {(isDev || localStorage.getItem('DEV_MODE') === 'true') && <DevDebugPanel />}
               
-              {/* Always show offline status indicator for better UX */}
-              <div className="fixed bottom-4 left-4 z-40">
-                <OfflineStatusIndicator />
-              </div>
-            </AuthProvider>
-          </BrowserRouter>
+              {!isOnline && (
+                <div className="fixed bottom-4 left-4 bg-yellow-500 text-white px-4 py-2 rounded-md text-sm shadow-lg z-50 flex items-center">
+                  <WifiOff className="h-4 w-4 mr-2" />
+                  You're offline. Some features may be unavailable.
+                </div>
+              )}
+            </BrowserRouter>
+          </AuthProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

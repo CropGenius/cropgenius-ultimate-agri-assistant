@@ -5,8 +5,6 @@ project_id = "bapqlyvfwxsichlyjxpd"
 enabled = true
 port = 54321
 schemas = ["public", "storage", "graphql_public"]
-extra_search_path = ["extensions"]
-max_rows = 1000
 
 [db]
 port = 54322
@@ -28,28 +26,12 @@ file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-site_url = "https://cropgenius.lovable.dev"
-additional_redirect_urls = [
-  "http://localhost:3000/auth/callback",
-  "http://localhost:54323/auth/callback",
-  "https://cropgenius.lovable.dev/auth/callback",
-  "https://cropgenius.netlify.app/auth/callback",
-  "https://*.cropgenius.com/auth/callback"
-]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
 enable_signup = true
-
-[auth.email]
-enable_confirmations = false
-
-[cors]
-enabled = true
-max_age = 86400 # 24 hours
-allowed_origins = ["*"]
-allowed_methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-allowed_headers = ["*"]
 
 [realtime]
 enabled = true

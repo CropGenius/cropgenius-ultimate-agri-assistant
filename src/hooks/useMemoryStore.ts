@@ -1,512 +1,491 @@
-
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { UserMemory } from '@/types/supabase';
 
-// Default memory structure
-const defaultMemory = {
+export interface UserMemory {
+  farmerName: string | null;
+  lastLogin: string | null;
+  lastFieldCount: number;
+  lastUsedFeature: string | null;
+  recentCropsPlanted: string[] | null;
+  fieldLocations: any[] | null;
+  lastFertilizerPlan: any | null;
+  referrerId: string | null;
+  preferredLanguage: string | null;
+  syncStatus: 'synced' | 'pending' | 'failed';
+  firstTimeUser: boolean;
+  invitesSent: number;
+  premiumTrialActivated: boolean;
+  lastSyncedAt: string | null;
+  // New fields for AI Whisperer and Monetization
+  lastInsightShown: string | null;
+  lastProSuggestion: string | null;
+  whatsappOptIn: boolean;
+  featureUsageCount: number;
+  proTrialDaysRemaining: number;
+  proExpirationDate: string | null;
+}
+
+const DEFAULT_MEMORY: UserMemory = {
   farmerName: null,
   lastLogin: null,
   lastFieldCount: 0,
   lastUsedFeature: null,
-  recentCropsPlanted: [],
-  preferredCrops: [],
-  commonIssues: [],
-  aiInteractions: 0,
-  scanCount: 0,
-  weatherChecks: 0,
-  marketChecks: 0,
-  taskCompletionRate: 0,
-  geniusScore: 0,
-  invitesSent: 0,
-  offlineSessions: 0,
-  proTrialEligible: true,
-  proTrialUsed: false,
-  proStatus: false,
-  proExpirationDate: null,
-  whatsappOptIn: false, 
-  whatsappNumber: null, // Added whatsappNumber property
+  recentCropsPlanted: null,
+  fieldLocations: null,
+  lastFertilizerPlan: null,
+  referrerId: null,
+  preferredLanguage: 'en',
   syncStatus: 'pending',
+  firstTimeUser: true,
+  invitesSent: 0,
+  premiumTrialActivated: false,
   lastSyncedAt: null,
-  timeSpentUsingAI: 0, // Track time spent using AI features
-  insightsViewed: 0, // Track number of insights viewed
-  insightsIgnored: 0, // Track number of insights ignored
-  sharesCount: 0, // Track number of shares
-  highValueActionsCount: 0, // Track high-value actions
-  lastProPromptTime: null, // Track when Pro was last prompted
+  // New fields initialized
+  lastInsightShown: null,
+  lastProSuggestion: null,
+  whatsappOptIn: false,
+  featureUsageCount: 0,
+  proTrialDaysRemaining: 0,
+  proExpirationDate: null
 };
 
+/**
+ * Extracts referrerId from URL search params
+ */
+const extractReferrerId = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('ref');
+};
+
+/**
+ * Hook for handling user memory across sessions
+ */
 export const useMemoryStore = () => {
-  const { user } = useAuth();
-  const [memory, setMemory] = useState<typeof defaultMemory>(defaultMemory);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [memoryId, setMemoryId] = useState<string | null>(null);
-  const [syncDate, setSyncDate] = useState<Date | null>(null);
-  const [isOffline, setIsOffline] = useState<boolean>(!navigator.onLine);
+  const { user, isLoading } = useAuth();
+  const [memory, setMemory] = useState<UserMemory>(DEFAULT_MEMORY);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
-  // Track online status 
-  useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+  // Helper function to save memory to localStorage
+  const saveToLocalStorage = (data: UserMemory) => {
+    if (typeof window !== 'undefined' && user) {
+      localStorage.setItem(`cropgenius-memory-${user.id}`, JSON.stringify(data));
+    }
+  };
 
-  // Load memory from local storage on init
-  useEffect(() => {
-    const loadLocalMemory = () => {
-      try {
-        const localMemory = localStorage.getItem('user_memory');
-        if (localMemory) {
-          const parsedMemory = JSON.parse(localMemory);
-          setMemory(parsedMemory.memory_data || defaultMemory);
-          setMemoryId(parsedMemory.id || null);
-          setSyncDate(parsedMemory.syncDate ? new Date(parsedMemory.syncDate) : null);
-        }
-      } catch (e) {
-        console.error('Error loading memory from localStorage:', e);
-      }
-    };
-    
-    loadLocalMemory();
-  }, []);
-
-  // Load or create user memory when user is available
-  useEffect(() => {
-    if (!user) return;
-    
-    const fetchMemory = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Try to get existing memory
-        const { data, error } = await supabase
-          .from('user_memory')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
-          
-        if (error) throw error;
-        
-        // If memory exists, use it
-        if (data) {
-          // Make sure memory_data exists and is valid
-          const memoryData = data.memory_data || defaultMemory;
-          
-          setMemory(memoryData);
-          setMemoryId(data.id);
-          
-          // Save to local storage
-          localStorage.setItem('user_memory', JSON.stringify({
-            id: data.id,
-            memory_data: memoryData,
-            syncDate: new Date().toISOString()
-          }));
-          
-          setSyncDate(new Date());
-          return;
-        }
-        
-        // If no memory, create new
-        if (!data) {
-          const newMemory = {
-            user_id: user.id,
-            memory_data: {
-              ...defaultMemory,
-              farmerName: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
-              lastLogin: new Date().toISOString()
-            },
-            updated_at: new Date().toISOString()
-          };
-          
-          const { data: createdData, error: createError } = await supabase
-            .from('user_memory')
-            .insert(newMemory)
-            .select();
-            
-          if (createError) throw createError;
-          
-          if (createdData && createdData[0]) {
-            setMemory(createdData[0].memory_data);
-            setMemoryId(createdData[0].id);
-            
-            // Save to local storage
-            localStorage.setItem('user_memory', JSON.stringify({
-              id: createdData[0].id,
-              memory_data: createdData[0].memory_data,
-              syncDate: new Date().toISOString()
-            }));
-            
-            setSyncDate(new Date());
-          }
-        }
-      } catch (err: any) {
-        console.error('Error fetching memory:', err);
-        setError(err.message);
-        
-        // Try to load from local storage as fallback
+  // Helper function to load memory from localStorage
+  const loadFromLocalStorage = (): UserMemory | null => {
+    if (typeof window !== 'undefined' && user) {
+      const stored = localStorage.getItem(`cropgenius-memory-${user.id}`);
+      if (stored) {
         try {
-          const localMemory = localStorage.getItem('user_memory');
-          if (localMemory) {
-            const parsedMemory = JSON.parse(localMemory);
-            setMemory(parsedMemory.memory_data || defaultMemory);
-            setMemoryId(parsedMemory.id || null);
-            setSyncDate(parsedMemory.syncDate ? new Date(parsedMemory.syncDate) : null);
-          }
+          return JSON.parse(stored);
         } catch (e) {
-          console.error('Error loading memory from localStorage as fallback:', e);
+          console.error("Error parsing stored memory:", e);
+          return null;
         }
-      } finally {
-        setLoading(false);
       }
-    };
-    
-    fetchMemory();
-  }, [user]);
+    }
+    return null;
+  };
 
-  // Update memory in Supabase and local storage
-  const updateMemory = async (updates: Partial<typeof defaultMemory>) => {
+  // Update a specific memory property
+  const updateMemory = async (updates: Partial<UserMemory>): Promise<boolean> => {
     try {
-      // Update local state first for immediate feedback
-      const updatedMemory = { ...memory, ...updates };
-      setMemory(updatedMemory);
+      if (!user) return false;
       
-      // Save to local storage
-      const localData = {
-        id: memoryId,
-        memory_data: updatedMemory,
-        syncDate: new Date().toISOString()
-      };
-      localStorage.setItem('user_memory', JSON.stringify(localData));
-      setSyncDate(new Date());
+      // Update local state immediately for responsive UI
+      setMemory(prev => ({ ...prev, ...updates, syncStatus: 'pending' }));
       
-      // If offline, just keep in localStorage until back online
-      if (isOffline || !user) {
-        return updatedMemory;
+      // Save to localStorage as a fallback/cache
+      saveToLocalStorage({ ...memory, ...updates, syncStatus: 'pending' });
+      
+      // Track feature usage count - this helps with monetization triggers
+      let updatedMemory = { ...memory, ...updates };
+      if (updates.lastUsedFeature && updates.lastUsedFeature !== memory.lastUsedFeature) {
+        updatedMemory.featureUsageCount = (memory.featureUsageCount || 0) + 1;
       }
       
-      // If online, update Supabase
-      if (memoryId) {
-        // Update existing memory
-        const { error } = await supabase
-          .from('user_memory')
-          .update({
-            memory_data: updatedMemory,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', memoryId);
-          
-        if (error) throw error;
-      } else if (user) {
-        // Create new memory if we have user but no memoryId
-        const newMemory = {
+      // Update in Supabase
+      const { error } = await supabase
+        .from('user_memory')
+        .upsert({ 
           user_id: user.id,
           memory_data: updatedMemory,
           updated_at: new Date().toISOString()
-        };
-        
-        const { data, error } = await supabase
-          .from('user_memory')
-          .insert(newMemory)
-          .select();
-          
-        if (error) throw error;
-        
-        if (data && data[0]) {
-          setMemoryId(data[0].id);
-          localStorage.setItem('user_memory', JSON.stringify({
-            id: data[0].id,
-            memory_data: updatedMemory,
-            syncDate: new Date().toISOString()
-          }));
-        }
-      }
-      
-      return updatedMemory;
-    } catch (err: any) {
-      console.error('Error updating memory:', err);
-      // Toast only for server-side errors, not offline mode
-      if (!isOffline) {
-        toast.error('Failed to sync memory', {
-          description: 'Your data will be saved locally until reconnected.'
         });
-      }
-      return memory;
-    }
-  };
-  
-  // Add WhatsApp preference function
-  const setWhatsAppPreference = async (optIn: boolean, phoneNumber?: string) => {
-    return await updateMemory({ 
-      whatsappOptIn: optIn,
-      whatsappNumber: phoneNumber || memory.whatsappNumber
-    });
-  };
-
-  // Track AI feature usage
-  const trackAIUsage = async (durationSeconds: number, feature: string) => {
-    const newTimeSpent = (memory.timeSpentUsingAI || 0) + durationSeconds;
-    return await updateMemory({ 
-      timeSpentUsingAI: newTimeSpent,
-      lastUsedFeature: feature
-    });
-  };
-
-  // Track insight interaction
-  const trackInsight = async (viewed: boolean) => {
-    if (viewed) {
-      return await updateMemory({ 
-        insightsViewed: (memory.insightsViewed || 0) + 1 
-      });
-    } else {
-      return await updateMemory({ 
-        insightsIgnored: (memory.insightsIgnored || 0) + 1 
-      });
-    }
-  };
-
-  // Track sharing activity
-  const trackShare = async () => {
-    return await updateMemory({ 
-      sharesCount: (memory.sharesCount || 0) + 1 
-    });
-  };
-
-  // Track high value action
-  const trackHighValueAction = async () => {
-    return await updateMemory({ 
-      highValueActionsCount: (memory.highValueActionsCount || 0) + 1 
-    });
-  };
-
-  // Pro trial activation
-  const activateProTrial = async (durationDays: number) => {
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + durationDays);
-    
-    return await updateMemory({
-      proStatus: true,
-      proTrialUsed: true,
-      proTrialEligible: false,
-      proExpirationDate: expirationDate.toISOString()
-    });
-  };
-
-  // Function to sync memory
-  const syncMemory = async () => {
-    if (!user || !memoryId || isOffline) {
-      console.log("[Memory] Cannot sync - offline or no user/memory ID");
-      return { success: false };
-    }
-    
-    try {
-      const { error } = await supabase
-        .from('user_memory')
-        .update({
-          memory_data: {
-            ...memory,
-            syncStatus: 'synced',
-            lastSyncedAt: new Date().toISOString()
-          },
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', memoryId);
-        
+      
       if (error) throw error;
       
-      // Update local state
-      setMemory({ ...memory, syncStatus: 'synced', lastSyncedAt: new Date().toISOString() });
-      setSyncDate(new Date());
-      
-      // Save to local storage
-      localStorage.setItem('user_memory', JSON.stringify({
-        id: memoryId,
-        memory_data: { ...memory, syncStatus: 'synced', lastSyncedAt: new Date().toISOString() },
-        syncDate: new Date().toISOString()
+      // Update local state with successful sync status
+      setMemory(prev => ({ 
+        ...prev, 
+        ...updatedMemory, 
+        syncStatus: 'synced',
+        lastSyncedAt: new Date().toISOString() 
       }));
       
-      toast.success('Memory synced successfully');
-      return { success: true };
-    } catch (err: any) {
-      console.error('Error syncing memory:', err);
-      setMemory({ ...memory, syncStatus: 'failed' });
-      toast.error('Failed to sync memory');
-      return { success: false, error: err.message };
-    }
-  };
-  
-  // Check if user is eligible for Pro upgrade prompt
-  const shouldShowProUpgrade = (): boolean => {
-    // Don't show if already on Pro
-    if (memory.proStatus) return false;
-
-    // Check if we've shown a prompt recently (within last 24h)
-    if (memory.lastProPromptTime) {
-      const lastPrompt = new Date(memory.lastProPromptTime);
-      const now = new Date();
-      const hoursSinceLastPrompt = (now.getTime() - lastPrompt.getTime()) / (1000 * 60 * 60);
-      if (hoursSinceLastPrompt < 24) return false;
-    }
-
-    // Trigger conditions
-    const hasMultipleFields = memory.lastFieldCount >= 2;
-    const hasViewedMultipleInsights = (memory.insightsViewed || 0) >= 3;
-    const hasReferredFriend = (memory.invitesSent || 0) >= 1;
-    const hasHighEngagement = (memory.timeSpentUsingAI || 0) > 300; // 5 minutes
-
-    return hasMultipleFields || hasViewedMultipleInsights || hasReferredFriend || hasHighEngagement;
-  };
-
-  // Track that we showed a Pro prompt
-  const markProPromptShown = async () => {
-    return await updateMemory({
-      lastProPromptTime: new Date().toISOString()
-    });
-  };
-  
-  // Function to reset memory
-  const resetMemory = async () => {
-    const confirmReset = window.confirm(
-      "Are you sure you want to reset all memory data? This cannot be undone."
-    );
-    
-    if (!confirmReset) return;
-    
-    try {
-      setMemory(defaultMemory);
+      // Update localStorage with successful sync
+      saveToLocalStorage({ 
+        ...updatedMemory, 
+        syncStatus: 'synced',
+        lastSyncedAt: new Date().toISOString() 
+      });
       
-      if (user && memoryId) {
-        // Reset on the server
-        const { error } = await supabase
-          .from('user_memory')
-          .update({
-            memory_data: defaultMemory,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', memoryId);
-          
-        if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Failed to update memory:", error);
+      
+      // Mark as failed in local state
+      setMemory(prev => ({ ...prev, syncStatus: 'failed' }));
+      saveToLocalStorage({ ...memory, ...updates, syncStatus: 'failed' });
+      
+      toast.error("Failed to sync your farm data", {
+        description: "We'll try again automatically"
+      });
+      
+      return false;
+    }
+  };
+  
+  // Perform a full memory sync with the server
+  const syncMemory = async (): Promise<boolean> => {
+    try {
+      if (!user) return false;
+      
+      // First update local copy with any URL params (like referrerId)
+      const referrerId = extractReferrerId();
+      if (referrerId && !memory.referrerId) {
+        setMemory(prev => ({ ...prev, referrerId }));
       }
       
-      // Clear local storage
-      localStorage.removeItem('user_memory');
-      setMemoryId(null);
-      setSyncDate(new Date());
+      // Get memory from Supabase
+      const { data, error } = await supabase
+        .from('user_memory')
+        .select('memory_data')
+        .eq('user_id', user.id)
+        .single();
       
-      toast.success('Memory data has been reset');
-    } catch (err: any) {
-      console.error('Error resetting memory:', err);
-      toast.error('Failed to reset memory');
+      if (error && error.code !== 'PGRST116') { // Not found is not a real error
+        throw error;
+      }
+      
+      // If we have server data, use it as the source of truth
+      if (data?.memory_data) {
+        const serverMemory = data.memory_data as UserMemory;
+        
+        // If we have a referrerId from URL but not in server memory, keep it
+        if (referrerId && !serverMemory.referrerId) {
+          serverMemory.referrerId = referrerId;
+        }
+        
+        // Update local state with server data + sync status
+        setMemory({ 
+          ...serverMemory,
+          syncStatus: 'synced',
+          lastSyncedAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString() // Always update last login
+        });
+        
+        // Save to localStorage
+        saveToLocalStorage({ 
+          ...serverMemory,
+          syncStatus: 'synced',
+          lastSyncedAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        });
+        
+        // Save the lastLogin update back to server
+        await supabase
+          .from('user_memory')
+          .update({ 
+            memory_data: { 
+              ...serverMemory,
+              lastLogin: new Date().toISOString() 
+            },
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+          
+        return true;
+      } 
+      else {
+        // No server record yet - create one from local or default
+        const localMemory = loadFromLocalStorage() || { ...DEFAULT_MEMORY };
+        
+        // Add referrer from URL if available
+        if (referrerId) {
+          localMemory.referrerId = referrerId;
+        }
+        
+        // Get user profile for farmer name
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+          
+        if (profileData?.full_name) {
+          localMemory.farmerName = profileData.full_name;
+        }
+        
+        // Update last login
+        localMemory.lastLogin = new Date().toISOString();
+        
+        // Create server record
+        await supabase
+          .from('user_memory')
+          .insert({
+            user_id: user.id,
+            memory_data: localMemory,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+        // Update local state
+        setMemory({ 
+          ...localMemory,
+          syncStatus: 'synced',
+          lastSyncedAt: new Date().toISOString() 
+        });
+        
+        // Save to localStorage
+        saveToLocalStorage({ 
+          ...localMemory,
+          syncStatus: 'synced',
+          lastSyncedAt: new Date().toISOString() 
+        });
+        
+        return true;
+      }
+    } catch (error) {
+      console.error("Failed to sync memory:", error);
+      
+      // Try to load from localStorage as fallback
+      const localMemory = loadFromLocalStorage();
+      if (localMemory) {
+        setMemory({ ...localMemory, syncStatus: 'failed' });
+      }
+      
+      toast.error("Failed to sync your farm data", {
+        description: "Please check your connection"
+      });
+      
+      return false;
+    } finally {
+      setIsInitialized(true);
     }
   };
 
-  // Sync memory from local to server when coming online
-  useEffect(() => {
-    if (!isOffline && user && memoryId) {
-      const syncOfflineChanges = async () => {
-        try {
-          const localMemory = localStorage.getItem('user_memory');
-          if (!localMemory) return;
-          
-          const parsedMemory = JSON.parse(localMemory);
-          
-          // Update server with local changes
-          await supabase
-            .from('user_memory')
-            .update({
-              memory_data: parsedMemory.memory_data,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', memoryId);
-            
-          setSyncDate(new Date());
-          toast.success('Memory synchronized', {
-            description: 'Your data has been saved to the server.'
-          });
-        } catch (err) {
-          console.error('Error syncing memory:', err);
-        }
-      };
-      
-      syncOfflineChanges();
+  // Reset memory to defaults (for logout or testing)
+  const resetMemory = () => {
+    setMemory(DEFAULT_MEMORY);
+    if (typeof window !== 'undefined' && user) {
+      localStorage.removeItem(`cropgenius-memory-${user.id}`);
     }
-  }, [isOffline, user, memoryId]);
+  };
+  
+  // New function: Track feature usage for monetization triggers
+  const trackFeatureUsage = async (featureName: string): Promise<void> => {
+    await updateMemory({
+      lastUsedFeature: featureName,
+      featureUsageCount: (memory.featureUsageCount || 0) + 1
+    });
+    
+    // Check if we should suggest Pro upgrade based on usage
+    if ((memory.featureUsageCount || 0) >= 5 && !memory.lastProSuggestion) {
+      // User has used features frequently - good time to suggest Pro
+      console.log("High feature usage detected - good time for Pro suggestion");
+    }
+  };
+  
+  // New function: Activate Pro trial
+  const activateProTrial = async (daysToAdd: number): Promise<boolean> => {
+    try {
+      const currentDays = memory.proTrialDaysRemaining || 0;
+      const newTotalDays = currentDays + daysToAdd;
+      
+      // Calculate expiration date
+      const expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + newTotalDays);
+      
+      const success = await updateMemory({
+        premiumTrialActivated: true,
+        proTrialDaysRemaining: newTotalDays,
+        proExpirationDate: expirationDate.toISOString()
+      });
+      
+      if (success) {
+        toast.success(`Pro features activated for ${newTotalDays} days!`, {
+          description: "Enjoy advanced AI farming insights"
+        });
+      }
+      
+      return success;
+    } catch (error) {
+      console.error("Failed to activate Pro trial:", error);
+      return false;
+    }
+  };
+  
+  // New function: Check Pro status
+  const checkProStatus = (): { isActive: boolean, daysRemaining: number } => {
+    if (!memory.premiumTrialActivated || !memory.proExpirationDate) {
+      return { isActive: false, daysRemaining: 0 };
+    }
+    
+    const now = new Date();
+    const expiration = new Date(memory.proExpirationDate);
+    
+    if (now > expiration) {
+      // Pro trial has expired
+      return { isActive: false, daysRemaining: 0 };
+    }
+    
+    // Calculate days remaining
+    const diffTime = Math.abs(expiration.getTime() - now.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return { isActive: true, daysRemaining: diffDays };
+  };
+  
+  // New function: Set WhatsApp preferences
+  const setWhatsAppPreference = async (optIn: boolean): Promise<boolean> => {
+    return await updateMemory({ whatsappOptIn: optIn });
+  };
+  
+  // Initial setup - load memory when user is available
+  useEffect(() => {
+    if (isLoading) return;
+    
+    if (user) {
+      // Try to load from localStorage first for immediate UI response
+      const localMemory = loadFromLocalStorage();
+      if (localMemory) {
+        setMemory({ ...localMemory, syncStatus: 'pending' });
+      }
+      
+      // Then sync with server
+      syncMemory();
+    } else {
+      // Reset if no user
+      resetMemory();
+      setIsInitialized(true);
+    }
+  }, [user, isLoading]);
 
   return {
     memory,
     updateMemory,
-    setWhatsAppPreference,
     syncMemory,
     resetMemory,
-    loading,
-    error,
-    syncDate,
-    isOffline,
-    trackAIUsage,
-    trackInsight,
-    trackShare,
-    trackHighValueAction,
+    isInitialized,
+    // New functions for AI Whisperer and Monetization
+    trackFeatureUsage,
     activateProTrial,
-    shouldShowProUpgrade,
-    markProPromptShown
+    checkProStatus,
+    setWhatsAppPreference
   };
 };
 
-// For dev debug panel
-export const devMemoryOverride = async (memoryUpdates: any) => {
+/**
+ * Hook for automatic memory synchronization
+ */
+export const useAutoMemorySync = () => {
+  const { memory, syncMemory, isInitialized } = useMemoryStore();
+  const { user, isLoading } = useAuth();
+  const [isSyncing, setIsSyncing] = useState(false);
+  
+  // Auto-sync on app load or network recovery
+  useEffect(() => {
+    if (!isLoading && user && !isSyncing && navigator.onLine) {
+      setIsSyncing(true);
+      syncMemory().finally(() => setIsSyncing(false));
+    }
+  }, [user, isLoading, navigator.onLine]);
+  
+  // Listen for online/offline events
+  useEffect(() => {
+    const handleOnline = () => {
+      if (user && !isSyncing) {
+        setIsSyncing(true);
+        syncMemory().finally(() => setIsSyncing(false));
+      }
+    };
+    
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [user, isSyncing]);
+  
+  return {
+    memory,
+    syncMemory,
+    isSyncing,
+    isInitialized
+  };
+};
+
+/**
+ * Development utility to override memory for testing
+ */
+export const devMemoryOverride = async (overrides: Partial<UserMemory>) => {
+  if (import.meta.env.MODE !== 'development') {
+    console.warn('devMemoryOverride is only available in development mode');
+    return;
+  }
+  
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) {
+    console.warn('User must be logged in to override memory');
+    return;
+  }
+  
+  // Get current memory
+  let currentMemory: UserMemory = DEFAULT_MEMORY;
+  
   try {
-    const { data } = await supabase.auth.getUser();
-    if (!data?.user) {
-      console.warn('User must be logged in to override memory');
-      return false;
-    }
-    
-    const userId = data.user.id;
-    
-    // Get existing memory
-    const { data: memData } = await supabase
+    const { data: memoryData } = await supabase
       .from('user_memory')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
+      .select('memory_data')
+      .eq('user_id', data.user.id)
+      .single();
       
-    if (memData) {
-      // Update existing memory
-      const updatedMemory = {
-        ...memData.memory_data,
-        ...memoryUpdates
-      };
-      
-      await supabase
-        .from('user_memory')
-        .update({
-          memory_data: updatedMemory
-        })
-        .eq('id', memData.id);
-        
-      // Update local storage
-      localStorage.setItem('user_memory', JSON.stringify({
-        id: memData.id,
+    if (memoryData?.memory_data) {
+      currentMemory = memoryData.memory_data as UserMemory;
+    }
+  } catch (error) {
+    console.warn('Failed to get current memory, using defaults');
+  }
+  
+  // Apply overrides
+  const updatedMemory = {
+    ...currentMemory,
+    ...overrides
+  };
+  
+  // Save to Supabase
+  try {
+    await supabase
+      .from('user_memory')
+      .upsert({
+        user_id: data.user.id,
         memory_data: updatedMemory,
-        syncDate: new Date().toISOString()
-      }));
+        updated_at: new Date().toISOString()
+      });
       
-      return updatedMemory;
+    console.log('Memory override applied:', updatedMemory);
+    
+    // Also save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`cropgenius-memory-${data.user.id}`, JSON.stringify(updatedMemory));
     }
     
-    return false;
+    return true;
   } catch (error) {
-    console.error('Error overriding memory:', error);
+    console.error('Failed to apply memory override:', error);
     return false;
   }
 };

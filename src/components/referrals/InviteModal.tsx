@@ -54,19 +54,16 @@ const InviteModal = ({ open, onOpenChange }: InviteModalProps) => {
 
     setIsLoading(true);
     try {
-      // Create referral data
-      const referralData: any = {
-        inviter_id: user.id,
-        invitee_contact: contactInfo,
-        contact_type: activeTab,
-        status: 'sent',
-        created_at: new Date().toISOString()
-      };
-
       // Store the invitation in Supabase
       const { error } = await supabase
         .from('referrals')
-        .insert(referralData);
+        .insert({
+          inviter_id: user.id,
+          invitee_contact: contactInfo,
+          contact_type: activeTab,
+          status: 'sent',
+          created_at: new Date().toISOString()
+        });
 
       if (error) {
         throw error;

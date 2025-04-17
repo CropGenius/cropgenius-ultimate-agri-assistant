@@ -1,94 +1,52 @@
-
-export interface Field {
+export type Profile = {
   id: string;
-  user_id: string;
-  farm_id: string;
-  name: string;
-  size: number;
-  size_unit: string;
-  boundary: any;
-  location_description: string | null;
-  soil_type: string | null;
-  irrigation_type: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-  is_shared: boolean;
-  shared_with: any[] | null;
-}
-
-export interface Farm {
-  id: string;
-  user_id: string;
-  name: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  phone_number: string | null;
   location: string | null;
-  total_size: number | null;
-  size_unit: string;
-  created_at: string | null;
-  updated_at: string | null;
-}
-
-export interface UserMemory {
-  id: string;
-  user_id: string;
-  memory_data: {
-    farmerName: string | null;
-    lastLogin: string | null;
-    lastFieldCount: number;
-    lastUsedFeature: string | null;
-    recentCropsPlanted: string[];
-    preferredCrops: string[];
-    commonIssues: string[];
-    aiInteractions: number;
-    scanCount: number;
-    weatherChecks: number;
-    marketChecks: number;
-    taskCompletionRate: number;
-    geniusScore: number;
-    invitesSent: number;
-    offlineSessions: number;
-    proTrialEligible: boolean;
-    proTrialUsed: boolean;
-    proStatus: boolean;
-    proExpirationDate: string | null;
-    whatsappOptIn: boolean;
-    whatsappNumber: string | null;
-    syncStatus: 'pending' | 'synced' | 'failed';
-    lastSyncedAt: string | null;
-    timeSpentUsingAI: number;
-    insightsViewed: number;
-    insightsIgnored: number;
-    sharesCount: number;
-    highValueActionsCount: number;
-    lastProPromptTime: string | null;
-  };
+  farm_size: number | null;
+  farm_units: string;
+  preferred_language: string;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface AIInsightAlert {
-  title: string;
-  description: string;
-  type: 'weather' | 'market' | 'pest' | 'fertilizer';
-  actionText: string;
-  actionPath: string;
-}
-
-export interface Referral {
-  id: string;
-  inviter_id: string;
-  invitee_contact: string;
-  contact_type: 'email' | 'phone';
-  status: 'sent' | 'accepted' | 'declined';
-  created_at: string;
-  accepted_at: string | null;
-}
-
-export interface WhatsAppMessage {
+export type WeatherData = {
   id: string;
   user_id: string;
-  phone_number: string;
-  message_type: string;
-  message_content: string;
-  sent_at: string;
-  status: string;
+  location: { lat: number; lng: number };
+  location_name: string | null;
+  temperature: number | null;
+  humidity: number | null;
+  precipitation: number | null;
+  wind_speed: number | null;
+  wind_direction: string | null;
+  uv_index: number | null;
+  forecast: {
+    condition: string;
+    rain_chance: number;
+    soil_moisture: number;
+    next_rain_hours: number;
+    icon: string;
+    alert: string | null;
+  } | null;
+  recorded_at: string;
+};
+
+// Define the Database interface matching our Supabase schema
+export interface Database {
+  public: {
+    Tables: {
+      profiles: {
+        Row: Profile;
+        Insert: Omit<Profile, 'created_at' | 'updated_at'>;
+        Update: Partial<Profile>;
+      };
+      weather_data: {
+        Row: WeatherData;
+        Insert: Omit<WeatherData, 'id' | 'recorded_at'>;
+        Update: Partial<WeatherData>;
+      };
+    };
+  };
 }

@@ -271,33 +271,7 @@ export const debugAuthState = () => {
   try {
     const sbStorage = localStorage.getItem('cropgenius-auth');
     console.log("[Auth Debug] Auth storage exists:", !!sbStorage);
-    
-    if (sbStorage) {
-      try {
-        const parsed = JSON.parse(sbStorage);
-        console.log("[Auth Debug] Session expires at:", parsed.expiresAt || 'Unknown');
-        
-        if (parsed.expiresAt) {
-          const expiresAt = new Date(parsed.expiresAt).getTime();
-          const now = Date.now();
-          const timeLeft = Math.floor((expiresAt - now) / 1000 / 60);
-          console.log(`[Auth Debug] Session expires in ${timeLeft} minutes`);
-        }
-      } catch (e) {
-        console.log("[Auth Debug] Cannot parse auth storage");
-      }
-    }
-    
-    // Check redirect URL
-    const redirectUrl = localStorage.getItem('auth_redirect');
-    console.log("[Auth Debug] Saved redirect URL:", redirectUrl || 'None');
-    
   } catch (e) {
     console.log("[Auth Debug] Cannot access localStorage:", e);
   }
-  
-  // Check for dev preview mode
-  const urlParams = new URLSearchParams(window.location.search);
-  const isDevPreview = urlParams.get('devPreview') === 'true';
-  console.log("[Auth Debug] Dev preview mode:", isDevPreview);
 };
