@@ -10,6 +10,7 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
   farmId: string | null;
+  isDevPreview?: boolean;
 }
 
 interface AuthContextType extends AuthState {
@@ -26,6 +27,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     isLoading: true,
     error: null,
     farmId: localStorage.getItem("farmId"),
+    isDevPreview: process.env.NODE_ENV === 'development',
   });
   
   // Function to refresh session - can be called manually
@@ -194,7 +196,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ ...authState, signOut, refreshSession }}>
+    <AuthContext.Provider value={{ 
+      ...authState, 
+      signOut, 
+      refreshSession,
+    }}>
       {children}
     </AuthContext.Provider>
   );

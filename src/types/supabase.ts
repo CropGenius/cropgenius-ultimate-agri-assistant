@@ -1,3 +1,4 @@
+
 export type Profile = {
   id: string;
   full_name: string | null;
@@ -33,7 +34,7 @@ export type WeatherData = {
   recorded_at: string;
 };
 
-// Define the Database interface matching our Supabase schema
+// Enhanced database types to match Supabase schema
 export interface Database {
   public: {
     Tables: {
@@ -46,6 +47,64 @@ export interface Database {
         Row: WeatherData;
         Insert: Omit<WeatherData, 'id' | 'recorded_at'>;
         Update: Partial<WeatherData>;
+      };
+      fields: {
+        Row: {
+          id: string;
+          user_id: string;
+          farm_id: string | null;
+          name: string;
+          size: number | null;
+          size_unit: string | null;
+          boundary: any | null;
+          created_at: string | null;
+          updated_at: string | null;
+          is_shared: boolean | null;
+          shared_with: string[] | null;
+          location_description: string | null;
+          soil_type: string | null;
+          irrigation_type: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          farm_id?: string | null;
+          name: string;
+          size?: number | null;
+          size_unit?: string | null;
+          boundary?: any | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          is_shared?: boolean | null;
+          shared_with?: string[] | null;
+          location_description?: string | null;
+          soil_type?: string | null;
+          irrigation_type?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["fields"]["Insert"]>;
+      };
+      farms: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          location: string | null;
+          total_size: number | null;
+          size_unit: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          location?: string | null;
+          total_size?: number | null;
+          size_unit?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["farms"]["Insert"]>;
       };
     };
   };

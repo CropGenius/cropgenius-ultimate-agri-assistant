@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,10 +13,11 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Farm } from "@/types/field";
+import { Field } from "@/types/field";
 import { useErrorLogging } from '@/hooks/use-error-logging';
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import { FieldFormProps } from "./types";
+import { Database } from "@/types/supabase";
 
 const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 
@@ -121,7 +123,7 @@ export default function AddFieldForm({
       
       setIsSubmitting(true);
       
-      const fieldData = {
+      const fieldData: Database["public"]["Tables"]["fields"]["Insert"] = {
         name: values.name,
         size: values.size,
         size_unit: values.size_unit,
@@ -135,7 +137,7 @@ export default function AddFieldForm({
       
       console.log("💾 [AddFieldForm] Inserting field data:", fieldData);
       
-      const { data: field, error } = await supabase
+      const { data, error } = await supabase
         .from("fields")
         .insert(fieldData)
         .select()
@@ -146,15 +148,35 @@ export default function AddFieldForm({
         throw error;
       }
       
-      console.log("✅ [AddFieldForm] Field created successfully:", field);
-      logSuccess('field_created', { field_id: field.id });
+      console.log("✅ [AddFieldForm] Field created successfully:", data);
+      logSuccess('field_created', { field_id: data.id });
       
       toast.success("Field added successfully", {
         description: `${values.name} has been added to your farm`
       });
       
-      if (onSuccess) {
-        onSuccess(field);
+      if (onSuccess && data) {
+        // Convert to Field type for compatibility with onSuccess callback
+        const fieldResult: Field = {
+          id: data.id,
+          user_id: data.user_id,
+          farm_id: data.farm_id || "",
+          name: data.name,
+          size: data.size || 0,
+          size_unit: data.size_unit || "hectares",
+          boundary: data.boundary,
+          location_description: data.location_description || "",
+          soil_type: data.soil_type || "",
+          irrigation_type: data.irrigation_type || "",
+          created_at: data.created_at || new Date().toISOString(),
+          updated_at: data.updated_at || new Date().toISOString(),
+          is_shared: data.is_shared || false,
+          shared_with: data.shared_with || [],
+          offline_id: data.id,
+          is_synced: true
+        };
+        
+        onSuccess(fieldResult);
       } else {
         navigate("/fields");
       }
