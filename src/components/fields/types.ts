@@ -57,3 +57,6 @@ export interface ProEligibilityCheckProps {
 export interface GeniusGrowProps {
   fieldId: string;
 }
+
+// Add the missing FieldSelectCallback type
+export type FieldSelectCallback = (field: Field) => void;
