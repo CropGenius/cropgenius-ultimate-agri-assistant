@@ -21,6 +21,24 @@ export interface AuthResponse {
 
 // Sign in with email and password
 export const signInWithEmail = async (email: string, password: string): Promise<AuthResponse> => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock sign in for:", email);
+  return { 
+    data: { 
+      user: {
+        id: "dev-user-id-123456",
+        email: email,
+        app_metadata: {},
+        user_metadata: { full_name: "DEV User" },
+        aud: "authenticated",
+        created_at: ""
+      } as User, 
+      session: {} as Session 
+    }, 
+    error: null 
+  };
+  
+  /* Original implementation
   try {
     console.log("Signing in with email:", email);
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -39,10 +57,29 @@ export const signInWithEmail = async (email: string, password: string): Promise<
     console.error("Error signing in:", error.message);
     return { data: null, error: error.message };
   }
+  */
 };
 
 // Sign up with email and password
 export const signUpWithEmail = async (email: string, password: string, fullName: string): Promise<AuthResponse> => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock sign up for:", email);
+  return { 
+    data: { 
+      user: {
+        id: "dev-user-id-123456",
+        email: email,
+        app_metadata: {},
+        user_metadata: { full_name: fullName },
+        aud: "authenticated",
+        created_at: ""
+      } as User, 
+      session: {} as Session 
+    }, 
+    error: null 
+  };
+  
+  /* Original implementation
   try {
     console.log("Signing up with email:", email);
     const { data, error } = await supabase.auth.signUp({
@@ -66,10 +103,19 @@ export const signUpWithEmail = async (email: string, password: string, fullName:
     console.error("Error signing up:", error.message);
     return { data: null, error: error.message };
   }
+  */
 };
 
 // Sign in with Google
 export const signInWithGoogle = async (): Promise<any> => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock Google sign in");
+  return { 
+    data: {}, 
+    error: null 
+  };
+  
+  /* Original implementation
   try {
     const baseUrl = window.location.origin;
     const callbackUrl = `${baseUrl}/auth/callback`;
@@ -97,10 +143,16 @@ export const signInWithGoogle = async (): Promise<any> => {
     console.error("Error signing in with Google:", error.message);
     return { data: null, error: error.message };
   }
+  */
 };
 
 // Sign out
 export const signOut = async (): Promise<{ error: string | null }> => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock sign out");
+  return { error: null };
+  
+  /* Original implementation
   try {
     console.log("Signing out");
     const { error } = await supabase.auth.signOut({ scope: 'local' });
@@ -116,10 +168,32 @@ export const signOut = async (): Promise<{ error: string | null }> => {
     console.error("Error signing out:", error.message);
     return { error: error.message };
   }
+  */
 };
 
 // Get user profile data
 export const getUserProfile = async (userId: string): Promise<{ data: Profile | null; error: string | null }> => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock get user profile for:", userId);
+  return { 
+    data: {
+      id: userId,
+      full_name: "DEV User",
+      avatar_url: null,
+      mobile_phone: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      farm_region: null,
+      last_login: new Date().toISOString(),
+      user_language: "en",
+      farm_size_hectares: null,
+      onboarding_completed: true,
+      whatsapp_notifications: false
+    }, 
+    error: null 
+  };
+  
+  /* Original implementation
   try {
     console.log("Fetching user profile for:", userId);
     const { data, error } = await supabase
@@ -139,10 +213,32 @@ export const getUserProfile = async (userId: string): Promise<{ data: Profile | 
     console.error("Error fetching user profile:", error.message);
     return { data: null, error: error.message };
   }
+  */
 };
 
 // Update user profile
 export const updateUserProfile = async (userId: string, updates: Partial<Profile>): Promise<{ data: Profile | null; error: string | null }> => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock update user profile for:", userId, updates);
+  return { 
+    data: {
+      id: userId,
+      full_name: updates.full_name || "DEV User",
+      avatar_url: updates.avatar_url || null,
+      mobile_phone: updates.mobile_phone || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      farm_region: updates.farm_region || null,
+      last_login: new Date().toISOString(),
+      user_language: updates.user_language || "en",
+      farm_size_hectares: updates.farm_size_hectares || null,
+      onboarding_completed: updates.onboarding_completed || true,
+      whatsapp_notifications: updates.whatsapp_notifications || false
+    }, 
+    error: null 
+  };
+  
+  /* Original implementation
   try {
     console.log("Updating profile for:", userId, updates);
     const { data, error } = await supabase
@@ -162,10 +258,16 @@ export const updateUserProfile = async (userId: string, updates: Partial<Profile
     console.error("Error updating user profile:", error.message);
     return { data: null, error: error.message };
   }
+  */
 };
 
 // Check if user is authenticated
 export const isAuthenticated = async (): Promise<boolean> => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock auth check: always returns true");
+  return true;
+  
+  /* Original implementation
   try {
     console.log("Checking authentication status");
     const { data } = await supabase.auth.getSession();
@@ -176,10 +278,26 @@ export const isAuthenticated = async (): Promise<boolean> => {
     console.error("Auth check error:", error);
     return false;
   }
+  */
 };
 
 // Get current user
 export const getCurrentUser = async (): Promise<{ user: User | null; error: string | null }> => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock get current user");
+  return { 
+    user: {
+      id: "dev-user-id-123456",
+      email: "dev@cropgenius.ai",
+      app_metadata: {},
+      user_metadata: { full_name: "DEV User" },
+      aud: "authenticated",
+      created_at: ""
+    } as User, 
+    error: null 
+  };
+  
+  /* Original implementation
   try {
     console.log("Getting current user");
     const { data, error } = await supabase.auth.getUser();
@@ -195,10 +313,28 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error: stri
     console.error("Error getting current user:", error.message);
     return { user: null, error: error.message };
   }
+  */
 };
 
 // Get user farms
 export const getUserFarms = async (userId: string): Promise<{ data: any[] | null; error: string | null }> => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock get farms for user:", userId);
+  return { 
+    data: [{
+      id: "dev-farm-id-123456",
+      name: "DEV Test Farm",
+      location: "Test Location",
+      size_hectares: 25,
+      user_id: userId,
+      created_at: new Date().toISOString(),
+      farm_type: "Mixed",
+      region: "West Africa"
+    }], 
+    error: null 
+  };
+  
+  /* Original implementation
   try {
     console.log("Getting farms for user:", userId);
     const { data, error } = await supabase
@@ -217,10 +353,16 @@ export const getUserFarms = async (userId: string): Promise<{ data: any[] | null
     console.error("Error getting user farms:", error.message);
     return { data: null, error: error.message };
   }
+  */
 };
 
 // Reset password
 export const resetPassword = async (email: string): Promise<{ error: string | null }> => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock password reset for:", email);
+  return { error: null };
+  
+  /* Original implementation
   try {
     console.log("Sending password reset for:", email);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -238,10 +380,16 @@ export const resetPassword = async (email: string): Promise<{ error: string | nu
     console.error("Error resetting password:", error.message);
     return { error: error.message };
   }
+  */
 };
 
 // Update password
 export const updatePassword = async (newPassword: string): Promise<{ error: string | null }> => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock password update");
+  return { error: null };
+  
+  /* Original implementation
   try {
     console.log("Updating password");
     const { error } = await supabase.auth.updateUser({
@@ -259,26 +407,35 @@ export const updatePassword = async (newPassword: string): Promise<{ error: stri
     console.error("Error updating password:", error.message);
     return { error: error.message };
   }
+  */
 };
 
 // Debug function to check auth state and URLs
 export const debugAuthState = () => {
+  console.log("[DEV] Auth Debug: Development mode enabled");
   console.log("[Auth Debug] Current URL:", window.location.href);
   console.log("[Auth Debug] Origin:", window.location.origin);
   console.log("[Auth Debug] Has hash params:", window.location.hash.length > 0);
   console.log("[Auth Debug] Has search params:", window.location.search.length > 0);
-  
-  // Check local storage
-  try {
-    const sbStorage = localStorage.getItem('cropgenius-auth');
-    console.log("[Auth Debug] Auth storage exists:", !!sbStorage);
-  } catch (e) {
-    console.log("[Auth Debug] Cannot access localStorage:", e);
-  }
 };
 
 // Function to exchange OAuth code for session
 export const exchangeCodeForSession = async () => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock exchange code for session");
+  return { 
+    data: {
+      session: {
+        user: {
+          id: "dev-user-id-123456",
+          email: "dev@cropgenius.ai"
+        }
+      }
+    }, 
+    error: null 
+  };
+  
+  /* Original implementation
   try {
     console.log("[Auth] Exchanging code for session");
     const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
@@ -294,10 +451,26 @@ export const exchangeCodeForSession = async () => {
     console.error("[Auth] Error exchanging code for session:", error.message);
     return { data: null, error: error.message };
   }
+  */
 };
 
 // Function to refresh session
 export const refreshSession = async () => {
+  // TODO: re-enable auth
+  console.log("[DEV] Mock refresh session");
+  return { 
+    data: {
+      session: {
+        user: {
+          id: "dev-user-id-123456",
+          email: "dev@cropgenius.ai"
+        }
+      }
+    }, 
+    error: null 
+  };
+  
+  /* Original implementation
   try {
     console.log("[Auth] Refreshing session");
     const { data, error } = await supabase.auth.refreshSession();
@@ -313,4 +486,5 @@ export const refreshSession = async () => {
     console.error("[Auth] Error refreshing session:", error.message);
     return { data: null, error: error.message };
   }
+  */
 };

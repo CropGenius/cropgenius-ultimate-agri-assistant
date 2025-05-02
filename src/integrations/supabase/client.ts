@@ -33,13 +33,31 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 
 // Debugging helper
 export const logAuthState = async () => {
+  // TODO: re-enable auth
+  console.log("[DEV] Auth Debug: Using development mock user");
+  return { 
+    data: { 
+      session: { 
+        user: { id: "dev-user-id-123456" }
+      } 
+    }, 
+    error: null 
+  };
+  
+  /* Original implementation
   const { data, error } = await supabase.auth.getSession();
   console.log("[Auth Debug] Current session:", data.session?.user?.id || "None", error);
   return { data, error };
+  */
 };
 
 // Add function to refresh token proactively
 export const proactiveTokenRefresh = async () => {
+  // TODO: re-enable auth
+  console.log("[DEV] Token refresh bypassed for development");
+  return true;
+  
+  /* Original implementation
   try {
     const { data, error } = await supabase.auth.refreshSession();
     if (error) {
@@ -55,10 +73,20 @@ export const proactiveTokenRefresh = async () => {
     console.error("[Auth] Error during token refresh:", err);
     return false;
   }
+  */
 };
 
 // Helper to extract user metadata from session
 export const getUserMetadata = async () => {
+  // TODO: re-enable auth
+  console.log("[DEV] Using mock user metadata");
+  return {
+    id: "dev-user-id-123456",
+    email: "dev@cropgenius.ai",
+    metadata: { full_name: "CropGenius Dev" }
+  };
+  
+  /* Original implementation
   const { data, error } = await supabase.auth.getSession();
   if (error || !data.session?.user) {
     return null;
@@ -69,10 +97,16 @@ export const getUserMetadata = async () => {
     email: data.session.user.email,
     metadata: data.session.user.user_metadata
   };
+  */
 };
 
 // Check session expiry and refresh if needed
 export const checkAndRefreshSession = async () => {
+  // TODO: re-enable auth
+  console.log("[DEV] Session check bypassed for development");
+  return true;
+  
+  /* Original implementation
   try {
     // Get current session
     const { data: sessionData } = await supabase.auth.getSession();
@@ -100,4 +134,5 @@ export const checkAndRefreshSession = async () => {
     console.error("[Auth] Error checking session:", err);
     return false;
   }
+  */
 };

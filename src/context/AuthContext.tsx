@@ -20,42 +20,49 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Development mock values
+const DEV_USER_ID = "dev-user-id-123456";
+const DEV_FARM_ID = "dev-farm-id-123456";
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  // TODO: re-enable auth
+  // Original auth state
   const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    session: null,
-    isLoading: true,
+    // Development bypass: provide mock user and session
+    user: {
+      id: DEV_USER_ID,
+      email: "dev@cropgenius.ai",
+      app_metadata: {},
+      user_metadata: { full_name: "CropGenius Dev" },
+      aud: "authenticated",
+      created_at: "",
+    } as User,
+    session: { user: {} as User } as Session, // Mock session
+    isLoading: false, // Set to false immediately
     error: null,
-    farmId: localStorage.getItem("farmId"),
-    isDevPreview: process.env.NODE_ENV === 'development',
+    farmId: DEV_FARM_ID, // Mock farm ID
+    isDevPreview: true,
   });
   
-  // Function to refresh session - can be called manually
+  // Mock session refresh function
   const refreshSession = async () => {
-    try {
-      console.log("[AuthContext] Manually refreshing session");
-      const { data, error } = await supabase.auth.refreshSession();
-      if (error) throw error;
-      
-      console.log("Session refresh:", data.session?.user?.id || "No session");
-      
-      setAuthState(prev => ({
-        ...prev,
-        user: data.session?.user || null,
-        session: data.session,
-        isLoading: false,
-      }));
-      
-      // Check user farm if authenticated
-      if (data.session?.user?.id) {
-        checkUserFarm(data.session.user.id);
-      }
-    } catch (error: any) {
-      console.error("Session refresh error:", error.message);
-    }
+    console.log("[DEV] Mocked session refresh");
+    return Promise.resolve();
   };
 
+  // Mock sign out function
+  const signOut = async () => {
+    console.log("[DEV] Mocked sign out");
+    toast.info("Sign out mocked in dev mode");
+    return Promise.resolve();
+  };
+
+  // Original useEffect is commented out to bypass auth checks
   useEffect(() => {
+    console.log("[DEV] Authentication bypassed for development");
+    
+    // TODO: re-enable auth
+    /*
     console.log("AuthProvider: Setting up auth listener");
     
     // Set up auth state listener FIRST
@@ -152,10 +159,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
+    */
   }, []);
   
-  // Check if user has a farm and store farmId
+  // Check if user has a farm and store farmId - mocked for development
   const checkUserFarm = async (userId: string) => {
+    // TODO: re-enable auth
+    /*
     try {
       console.log("Checking if user has a farm...");
       const { data: farms, error } = await supabase
@@ -183,24 +193,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error: any) {
       console.error("Error checking farm:", error.message);
     }
-  };
-  
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      localStorage.removeItem("farmId");
-      setAuthState({
-        user: null,
-        session: null,
-        isLoading: false,
-        error: null,
-        farmId: null,
-      });
-    } catch (error: any) {
-      console.error("Error signing out:", error.message);
-      toast.error("Error signing out", { description: error.message });
-    }
+    */
+    console.log("[DEV] Mock farm check for:", userId);
   };
 
   return (
