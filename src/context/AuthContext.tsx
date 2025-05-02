@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, checkAndRefreshSession } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export interface AuthState {
@@ -33,7 +33,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Function to refresh session - can be called manually
   const refreshSession = async () => {
     try {
-      const { data, error } = await supabase.auth.getSession();
+      console.log("[AuthContext] Manually refreshing session");
+      const { data, error } = await supabase.auth.refreshSession();
       if (error) throw error;
       
       console.log("Session refresh:", data.session?.user?.id || "No session");
@@ -118,6 +119,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setTimeout(() => {
             checkUserFarm(session.user.id);
           }, 0);
+          
+          // Set up session refresh timer
+          const refreshTimer = setInterval(() => {
+            checkAndRefreshSession();
+          }, 10 * 60 * 1000); // Check every 10 minutes
+          
+          return () => clearInterval(refreshTimer);
         } else {
           console.log("No session found");
           setAuthState(prev => ({

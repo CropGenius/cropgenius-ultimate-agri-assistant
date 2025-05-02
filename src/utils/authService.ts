@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { Database, Profile } from "@/types/supabase";
@@ -273,5 +274,43 @@ export const debugAuthState = () => {
     console.log("[Auth Debug] Auth storage exists:", !!sbStorage);
   } catch (e) {
     console.log("[Auth Debug] Cannot access localStorage:", e);
+  }
+};
+
+// Function to exchange OAuth code for session
+export const exchangeCodeForSession = async () => {
+  try {
+    console.log("[Auth] Exchanging code for session");
+    const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+    
+    if (error) {
+      console.error("[Auth] Exchange code error:", error.message);
+      return { data: null, error: error.message };
+    }
+    
+    console.log("[Auth] Session obtained successfully:", data.session?.user?.id);
+    return { data, error: null };
+  } catch (error: any) {
+    console.error("[Auth] Error exchanging code for session:", error.message);
+    return { data: null, error: error.message };
+  }
+};
+
+// Function to refresh session
+export const refreshSession = async () => {
+  try {
+    console.log("[Auth] Refreshing session");
+    const { data, error } = await supabase.auth.refreshSession();
+    
+    if (error) {
+      console.error("[Auth] Session refresh error:", error.message);
+      return { data: null, error: error.message };
+    }
+    
+    console.log("[Auth] Session refreshed successfully:", data.session?.user?.id);
+    return { data, error: null };
+  } catch (error: any) {
+    console.error("[Auth] Error refreshing session:", error.message);
+    return { data: null, error: error.message };
   }
 };

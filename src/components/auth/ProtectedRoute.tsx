@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import FarmOnboarding from "@/components/onboarding/FarmOnboarding";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
+import { checkAndRefreshSession } from "@/integrations/supabase/client";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -21,6 +22,9 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         description: "Please sign in to access this feature",
         duration: 3000
       });
+    } else if (user) {
+      // Proactively check and refresh session if needed
+      checkAndRefreshSession();
     }
   }, [isLoading, user]);
 
@@ -36,6 +40,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!user) {
+    // Save current path for redirect after login
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
   

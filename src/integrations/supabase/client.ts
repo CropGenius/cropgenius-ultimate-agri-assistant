@@ -70,3 +70,34 @@ export const getUserMetadata = async () => {
     metadata: data.session.user.user_metadata
   };
 };
+
+// Check session expiry and refresh if needed
+export const checkAndRefreshSession = async () => {
+  try {
+    // Get current session
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    
+    if (!session) {
+      console.log("[Auth] No session to refresh");
+      return false;
+    }
+    
+    // Calculate time until expiry
+    const expiresAt = session.expires_at ? new Date(session.expires_at * 1000) : null;
+    if (expiresAt) {
+      const timeUntilExpiry = expiresAt.getTime() - Date.now();
+      console.log(`[Auth] Session expires in ${Math.round(timeUntilExpiry / 60000)} minutes`);
+      
+      // If expires in less than 10 minutes, refresh
+      if (timeUntilExpiry < 600000) { // 10 minutes
+        return await proactiveTokenRefresh();
+      }
+    }
+    
+    return true;
+  } catch (err) {
+    console.error("[Auth] Error checking session:", err);
+    return false;
+  }
+};

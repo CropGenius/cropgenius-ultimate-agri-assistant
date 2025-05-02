@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase, logAuthState } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { debugAuthState } from "@/utils/authService";
+import { debugAuthState, exchangeCodeForSession } from "@/utils/authService";
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -33,7 +33,50 @@ export default function AuthCallback() {
           throw new Error(errorDescription || errorParam);
         }
         
-        // Force a session check - critical for social auth flows
+        // Exchange code for session if present in URL
+        if (searchParams.has('code') || hash.includes('access_token')) {
+          console.log("Auth code or token found in URL, exchanging for session");
+          const { data, error } = await exchangeCodeForSession();
+          
+          if (error) {
+            console.error("Code exchange error:", error);
+            throw new Error(error);
+          }
+          
+          if (data?.session) {
+            // Show success toast
+            toast.success("Successfully signed in!", {
+              duration: 3000,
+            });
+            
+            // Check if user has a farm
+            const { data: farmData, error: farmError } = await supabase
+              .from('farms')
+              .select('id')
+              .eq('user_id', data.session.user.id)
+              .limit(1);
+            
+            if (farmError) {
+              console.error("Farm check error:", farmError);
+            }
+            
+            console.log("Farm check result:", farmData);
+            
+            if (farmData && farmData.length > 0) {
+              // Store farm ID in localStorage
+              localStorage.setItem("farmId", farmData[0].id);
+              // Redirect to home
+              navigate("/", { replace: true });
+            } else {
+              // No farm, redirect to home where they'll be shown the onboarding
+              console.log("No farm found, redirecting to onboarding flow");
+              navigate("/", { replace: true });
+            }
+            return;
+          }
+        }
+        
+        // If no code exchange was done, try a regular session check
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
