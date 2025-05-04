@@ -1,4 +1,3 @@
-
 export type Profile = {
   id: string;
   full_name: string | null;
@@ -10,6 +9,14 @@ export type Profile = {
   preferred_language: string;
   created_at: string;
   updated_at: string;
+  
+  // Add these new fields
+  mobile_phone: string | null;
+  farm_region: string | null;
+  user_language: string;
+  farm_size_hectares: number | null;
+  onboarding_completed: boolean;
+  whatsapp_notifications: boolean;
 };
 
 export type WeatherData = {
