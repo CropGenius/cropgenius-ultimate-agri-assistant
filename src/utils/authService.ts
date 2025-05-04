@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { Database, Profile } from "@/types/supabase";
@@ -180,11 +181,15 @@ export const getUserProfile = async (userId: string): Promise<{ data: Profile | 
       id: userId,
       full_name: "DEV User",
       avatar_url: null,
-      mobile_phone: null,
+      phone_number: null,
+      location: null,
+      farm_size: null,
+      farm_units: "hectares",
+      preferred_language: "en",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      mobile_phone: null,
       farm_region: null,
-      last_login: new Date().toISOString(),
       user_language: "en",
       farm_size_hectares: null,
       onboarding_completed: true,
@@ -225,11 +230,15 @@ export const updateUserProfile = async (userId: string, updates: Partial<Profile
       id: userId,
       full_name: updates.full_name || "DEV User",
       avatar_url: updates.avatar_url || null,
-      mobile_phone: updates.mobile_phone || null,
+      phone_number: updates.phone_number || null,
+      location: updates.location || null,
+      farm_size: updates.farm_size || null,
+      farm_units: updates.farm_units || "hectares",
+      preferred_language: updates.preferred_language || "en",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      mobile_phone: updates.mobile_phone || null,
       farm_region: updates.farm_region || null,
-      last_login: new Date().toISOString(),
       user_language: updates.user_language || "en",
       farm_size_hectares: updates.farm_size_hectares || null,
       onboarding_completed: updates.onboarding_completed || true,
@@ -511,7 +520,13 @@ export const createDemoProfile = async (): Promise<Profile | null> => {
       farm_units: "hectares",
       preferred_language: "en",
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      mobile_phone: null,
+      farm_region: "Central",
+      user_language: "en",
+      farm_size_hectares: 5.5,
+      onboarding_completed: false,
+      whatsapp_notifications: false
     };
     
     // Insert the new profile
@@ -549,7 +564,13 @@ export const updateProfile = async (updates: Partial<Profile>): Promise<Profile 
       location: updates.location,
       farm_size: updates.farm_size,
       farm_units: updates.farm_units,
-      preferred_language: updates.preferred_language
+      preferred_language: updates.preferred_language,
+      mobile_phone: updates.mobile_phone,
+      farm_region: updates.farm_region,
+      user_language: updates.user_language,
+      farm_size_hectares: updates.farm_size_hectares,
+      onboarding_completed: updates.onboarding_completed,
+      whatsapp_notifications: updates.whatsapp_notifications
     };
     
     // Filter out undefined values
