@@ -76,7 +76,7 @@ export default function CropScannerPreview() {
   const startScan = () => {
     setScanning(true);
     
-    // Simulate camera opening and scanning process
+    // Navigate to the scan page
     setTimeout(() => {
       navigate("/scan");
     }, 800);
