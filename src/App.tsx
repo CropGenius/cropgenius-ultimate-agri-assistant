@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from 'next-themes';
-import { ErrorBoundary } from './components/error/ErrorBoundary';
+import ErrorBoundary from './components/error/ErrorBoundary';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { FieldBrainProvider } from './components/fieldbrain/FieldBrainProvider';
