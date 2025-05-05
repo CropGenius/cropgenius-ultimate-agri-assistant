@@ -4,13 +4,11 @@ import { WeatherData } from "@/types/supabase";
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 // Types for our agent
-export type FieldInsightType = "observation" | "suggestion" | "alert" | "summary";
-
 export interface FieldInsight {
   id: string;
   fieldId: string;
   timestamp: number;
-  type: FieldInsightType;
+  type: 'observation' | 'suggestion' | 'alert' | 'summary';
   content: string;
   confidence: number;
   source: 'agent' | 'weather' | 'scan' | 'user' | 'system';
@@ -20,8 +18,6 @@ export interface FieldInsight {
 }
 
 export interface AgentMemory {
-  id: string;
-  fieldId: string;
   insights: FieldInsight[];
   lastSync: number;
   fieldContext: Record<string, any>;
@@ -191,7 +187,7 @@ class FieldBrainAgent {
       id: `welcome-${Date.now()}`,
       fieldId: field.id,
       timestamp: Date.now(),
-      type: "observation",
+      type: 'observation',
       content: `Welcome to your new field "${field.name}"! I'll help you manage this ${field.size} ${field.size_unit} farm land. Let me know what you're planning to grow here.`,
       confidence: 1,
       source: 'agent',
@@ -232,7 +228,7 @@ class FieldBrainAgent {
       id: `soil-${Date.now()}`,
       fieldId: field.id,
       timestamp: Date.now(),
-      type: "observation",
+      type: 'observation',
       content: soilAdvice,
       confidence: 0.9,
       source: 'agent',
@@ -259,7 +255,7 @@ class FieldBrainAgent {
       id: `irrigation-${Date.now()}`,
       fieldId: field.id,
       timestamp: Date.now(),
-      type: "observation",
+      type: 'observation',
       content: irrigationAdvice,
       confidence: 0.85,
       source: 'agent',
@@ -364,9 +360,9 @@ class FieldBrainAgent {
     
     // Add insights summary
     if (recentInsights.length > 0) {
-      const alerts = recentInsights.filter(i => i.type === "alert").length;
-      const suggestions = recentInsights.filter(i => i.type === "suggestion").length;
-      const observations = recentInsights.filter(i => i.type === "observation").length;
+      const alerts = recentInsights.filter(i => i.type === 'alert').length;
+      const suggestions = recentInsights.filter(i => i.type === 'suggestion').length;
+      const observations = recentInsights.filter(i => i.type === 'observation').length;
       
       summaryContent += `This week: ${alerts} alerts, ${suggestions} suggestions, and ${observations} observations.\n\n`;
       
@@ -387,7 +383,7 @@ class FieldBrainAgent {
       id: `summary-${Date.now()}`,
       fieldId,
       timestamp: Date.now(),
-      type: "summary",
+      type: 'summary',
       content: summaryContent,
       confidence: 0.95,
       source: 'agent',
@@ -426,7 +422,7 @@ class FieldBrainAgent {
       
       // Filter by type if specified
       if (type) {
-        insights = insights.filter(i => i.type === type as FieldInsightType);
+        insights = insights.filter(i => i.type === type);
       }
       
       // Sort by timestamp descending (newest first)
@@ -467,7 +463,7 @@ class FieldBrainAgent {
         id: `suggestion-${Date.now()}-1`,
         fieldId: field.id,
         timestamp: Date.now(),
-        type: "suggestion" as FieldInsightType,
+        type: 'suggestion',
         content: "Rain expected tomorrow. Consider delaying any planned spraying until drier weather.",
         confidence: 0.87,
         source: 'agent',
@@ -478,7 +474,7 @@ class FieldBrainAgent {
         id: `suggestion-${Date.now()}-2`,
         fieldId: field.id,
         timestamp: Date.now(),
-        type: "suggestion" as FieldInsightType,
+        type: 'suggestion',
         content: "Your soil looks dry based on recent weather. Consider irrigation in the next 48 hours.",
         confidence: 0.82,
         source: 'agent',
@@ -489,7 +485,7 @@ class FieldBrainAgent {
         id: `suggestion-${Date.now()}-3`,
         fieldId: field.id,
         timestamp: Date.now(),
-        type: "suggestion" as FieldInsightType,
+        type: 'suggestion',
         content: "Perfect planting conditions this week! The soil temperature and moisture are ideal.",
         confidence: 0.91,
         source: 'agent',
@@ -500,7 +496,7 @@ class FieldBrainAgent {
         id: `suggestion-${Date.now()}-4`,
         fieldId: field.id,
         timestamp: Date.now(),
-        type: "alert" as FieldInsightType,
+        type: 'alert',
         content: "Disease risk is high due to recent humidity. Check crops for early signs of fungal infection.",
         confidence: 0.79,
         source: 'agent',
@@ -511,7 +507,7 @@ class FieldBrainAgent {
         id: `suggestion-${Date.now()}-5`,
         fieldId: field.id,
         timestamp: Date.now(),
-        type: "observation" as FieldInsightType,
+        type: 'observation',
         content: "Market prices for your crops are trending upward. Consider timing your harvest to maximize profits.",
         confidence: 0.85,
         source: 'agent',
@@ -621,7 +617,7 @@ class FieldBrainAgent {
       id: `qa-${Date.now()}`,
       fieldId,
       timestamp: Date.now(),
-      type: "observation" as FieldInsightType,
+      type: 'observation',
       content: response,
       confidence: 0.9,
       source: 'agent',
