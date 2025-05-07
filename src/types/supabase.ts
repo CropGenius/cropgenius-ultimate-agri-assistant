@@ -34,6 +34,36 @@ export type WeatherData = {
   recorded_at: string;
 };
 
+export type FieldInsightSourceType = "agent" | "weather" | "scan" | "user" | "system";
+export type FieldInsightType = "observation" | "suggestion" | "alert" | "summary";
+
+export interface FieldInsight {
+  id: string;
+  fieldId: string;
+  timestamp: number;
+  type: FieldInsightType;
+  content: string;
+  confidence: number;
+  source: FieldInsightSourceType;
+  actionRequired: boolean;
+  relatedData: {
+    weatherForecast?: string;
+    soilMoisture?: string;
+    soilConditions?: string;
+    diseaseRisk?: string;
+    marketTrend?: string;
+  };
+}
+
+export interface AgentMemory {
+  id: string;
+  fieldId: string;
+  timestamp: number;
+  content: string;
+  source: FieldInsightSourceType;
+  tags?: string[];
+}
+
 // Enhanced database types to match Supabase schema
 export interface Database {
   public: {
@@ -105,6 +135,24 @@ export interface Database {
           updated_at?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["farms"]["Insert"]>;
+      };
+      field_insights: {
+        Row: FieldInsight & {
+          created_at: string;
+        };
+        Insert: Omit<FieldInsight, 'id'> & {
+          created_at?: string;
+        };
+        Update: Partial<Omit<FieldInsight, 'id'>>;
+      };
+      agent_memory: {
+        Row: AgentMemory & {
+          created_at: string;
+        };
+        Insert: Omit<AgentMemory, 'id'> & {
+          created_at?: string;
+        };
+        Update: Partial<Omit<AgentMemory, 'id'>>;
       };
     };
   };

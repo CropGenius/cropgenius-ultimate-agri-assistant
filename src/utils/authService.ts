@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { Database, Profile } from "@/types/supabase";
+import { toast } from "sonner";
 
 // Types
 export interface AuthState {
@@ -179,15 +180,13 @@ export const getUserProfile = async (userId: string): Promise<{ data: Profile | 
       id: userId,
       full_name: "DEV User",
       avatar_url: null,
-      mobile_phone: null,
+      phone_number: null,
+      location: null,
+      farm_size: null,
+      farm_units: "hectares",
+      preferred_language: "en",
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      farm_region: null,
-      last_login: new Date().toISOString(),
-      user_language: "en",
-      farm_size_hectares: null,
-      onboarding_completed: true,
-      whatsapp_notifications: false
+      updated_at: new Date().toISOString()
     }, 
     error: null 
   };
@@ -224,15 +223,13 @@ export const updateUserProfile = async (userId: string, updates: Partial<Profile
       id: userId,
       full_name: updates.full_name || "DEV User",
       avatar_url: updates.avatar_url || null,
-      mobile_phone: updates.mobile_phone || null,
+      phone_number: updates.phone_number || null,
+      location: updates.location || null,
+      farm_size: updates.farm_size || null,
+      farm_units: updates.farm_units || "hectares",
+      preferred_language: updates.preferred_language || "en",
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      farm_region: updates.farm_region || null,
-      last_login: new Date().toISOString(),
-      user_language: updates.user_language || "en",
-      farm_size_hectares: updates.farm_size_hectares || null,
-      onboarding_completed: updates.onboarding_completed || true,
-      whatsapp_notifications: updates.whatsapp_notifications || false
+      updated_at: new Date().toISOString()
     }, 
     error: null 
   };
@@ -505,8 +502,8 @@ export const createDemoProfile = async (): Promise<Profile | null> => {
       full_name: "Demo Farmer",
       avatar_url: null,
       phone_number: null,
-      location: "Central Province",
-      farm_size: 5.5,
+      location: null,
+      farm_size: null,
       farm_units: "hectares",
       preferred_language: "en",
       created_at: new Date().toISOString(),
