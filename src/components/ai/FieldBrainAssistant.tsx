@@ -56,31 +56,34 @@ const FieldBrainAssistant = ({ fieldId, compact = false, className }: FieldBrain
   
   // Initialize speech recognition
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+    if (typeof window !== 'undefined') {
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-      speechRecognitionRef.current = new SpeechRecognitionAPI();
       
-      if (speechRecognitionRef.current) {
-        speechRecognitionRef.current.continuous = false;
-        speechRecognitionRef.current.interimResults = false;
+      if (SpeechRecognitionAPI) {
+        speechRecognitionRef.current = new SpeechRecognitionAPI();
         
-        speechRecognitionRef.current.onresult = (event) => {
-          const transcript = event.results[0][0].transcript;
-          setQuestion(transcript);
-          setIsListening(false);
-        };
-        
-        speechRecognitionRef.current.onerror = (event) => {
-          console.error('Speech recognition error:', event.error);
-          setIsListening(false);
-          toast.error('Voice input failed', {
-            description: 'Please try again or type your question.'
-          });
-        };
-        
-        speechRecognitionRef.current.onend = () => {
-          setIsListening(false);
-        };
+        if (speechRecognitionRef.current) {
+          speechRecognitionRef.current.continuous = false;
+          speechRecognitionRef.current.interimResults = false;
+          
+          speechRecognitionRef.current.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            setQuestion(transcript);
+            setIsListening(false);
+          };
+          
+          speechRecognitionRef.current.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            setIsListening(false);
+            toast.error('Voice input failed', {
+              description: 'Please try again or type your question.'
+            });
+          };
+          
+          speechRecognitionRef.current.onend = () => {
+            setIsListening(false);
+          };
+        }
       }
     }
     

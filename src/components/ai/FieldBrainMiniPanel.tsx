@@ -1,4 +1,5 @@
 
+import React, { useEffect } from 'react';
 import { useFieldBrain } from '@/hooks/useFieldBrain';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ const FieldBrainMiniPanel = ({ fieldId, className }: FieldBrainMiniPanelProps) =
   const navigate = useNavigate();
   
   // Set field context when fieldId changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (isInitialized && fieldId) {
       setFieldContext(fieldId);
     }
