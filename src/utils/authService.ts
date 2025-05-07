@@ -1,7 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { Database, Profile } from "@/types/supabase";
+import { toast } from "sonner";
 
 // Types
 export interface AuthState {
@@ -487,4 +487,89 @@ export const refreshSession = async () => {
     return { data: null, error: error.message };
   }
   */
+};
+
+// Create a demo profile for testing purposes
+export const createDemoProfile = async (): Promise<Profile | null> => {
+  try {
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.error("No user found to create profile for");
+      return null;
+    }
+    
+    // Create a mock profile for demo purposes
+    const newProfile: Profile = {
+      id: user.id,
+      full_name: "Demo Farmer",
+      avatar_url: null,
+      phone_number: null,
+      location: "Central Province",
+      farm_size: 5.5,
+      farm_units: "hectares",
+      preferred_language: "en",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    // Insert the new profile
+    const { data, error } = await supabase
+      .from('profiles')
+      .upsert(newProfile)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error("Error creating demo profile:", error);
+      throw error;
+    }
+    
+    console.log("Demo profile created:", data);
+    return data;
+  } catch (error: any) {
+    console.error("Error in createDemoProfile:", error.message);
+    return null;
+  }
+};
+
+// Update the user's profile
+export const updateProfile = async (updates: Partial<Profile>): Promise<Profile | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) throw new Error('No user found for profile update');
+    
+    // Ensure updates only include fields from the Profile type
+    const sanitizedUpdates: Partial<Profile> = {
+      full_name: updates.full_name,
+      avatar_url: updates.avatar_url,
+      phone_number: updates.phone_number,
+      location: updates.location,
+      farm_size: updates.farm_size,
+      farm_units: updates.farm_units,
+      preferred_language: updates.preferred_language
+    };
+    
+    // Filter out undefined values
+    const filteredUpdates = Object.fromEntries(
+      Object.entries(sanitizedUpdates).filter(([_, v]) => v !== undefined)
+    ) as Partial<Profile>;
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(filteredUpdates)
+      .eq('id', user.id)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    toast.error('Failed to update profile', {
+      description: error.message
+    });
+    return null;
+  }
 };
