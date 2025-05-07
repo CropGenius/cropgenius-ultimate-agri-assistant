@@ -1,7 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { Database, Profile } from "@/types/supabase";
-import { toast } from "sonner";
 
 // Types
 export interface AuthState {
