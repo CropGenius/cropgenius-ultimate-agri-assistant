@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { useFieldBrain } from '@/hooks/useFieldBrain';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, AlertTriangle, CheckCircle } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
@@ -31,13 +31,13 @@ const FieldBrainMiniPanel = ({ fieldId, className }: FieldBrainMiniPanelProps) =
   const getUrgencyColor = (urgency: 'low' | 'medium' | 'high') => {
     switch (urgency) {
       case 'high':
-        return 'text-red-500 bg-red-50 border-red-200';
+        return 'text-red-500 bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-900/50';
       case 'medium':
-        return 'text-amber-500 bg-amber-50 border-amber-200';
+        return 'text-amber-500 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-900/50';
       case 'low':
-        return 'text-green-600 bg-green-50 border-green-200';
+        return 'text-green-600 bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-900/50';
       default:
-        return 'text-blue-500 bg-blue-50 border-blue-200';
+        return 'text-blue-500 bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-900/50';
     }
   };
   
@@ -50,13 +50,13 @@ const FieldBrainMiniPanel = ({ fieldId, className }: FieldBrainMiniPanelProps) =
   
   // Determine health color
   const getHealthColor = (score: number) => {
-    if (score > 80) return 'text-green-500';
-    if (score > 60) return 'text-amber-500';
-    return 'text-red-500';
+    if (score > 80) return 'text-green-500 dark:text-green-400';
+    if (score > 60) return 'text-amber-500 dark:text-amber-400';
+    return 'text-red-500 dark:text-red-400';
   };
   
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn("overflow-hidden shadow-md hover:shadow-lg transition-all", className)}>
       <CardContent className="p-0">
         {/* Field Health Indicator */}
         <div className="p-3 bg-muted/30 border-b flex items-center justify-between">
@@ -82,10 +82,11 @@ const FieldBrainMiniPanel = ({ fieldId, className }: FieldBrainMiniPanelProps) =
         <div className="p-3 bg-muted/20">
           <Button 
             variant="outline" 
-            className="w-full text-sm h-8"
+            className="w-full text-sm h-8 flex items-center justify-center gap-1 hover:bg-primary/10 hover:text-primary"
             onClick={() => navigate('/chat')}
           >
             Ask FieldBrain AI
+            <ExternalLink className="h-3.5 w-3.5 ml-1" />
           </Button>
         </div>
       </CardContent>

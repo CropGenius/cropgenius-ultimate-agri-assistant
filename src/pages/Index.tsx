@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,13 +5,13 @@ import Layout from "@/components/Layout";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
-import WelcomeSection from "@/components/home/WelcomeSection"; // Add this import
+import WelcomeSection from "@/components/home/WelcomeSection";
 import TodaysFarmPlan from "@/components/home/TodaysFarmPlan";
 import CropScannerPreview from "@/components/home/CropScannerPreview";
 import WeatherPreview from "@/components/home/WeatherPreview";
 import MarketPreview from "@/components/home/MarketPreview";
 import AIChatPreview from "@/components/home/AIChatPreview";
-import FeatureLink from "@/components/home/FeatureLink";
+import SmartFarmTools from "@/components/home/SmartFarmTools";
 import FarmScoreCard from "@/components/weather/FarmScoreCard";
 import { 
   Leaf, 
@@ -242,7 +241,7 @@ export default function Index() {
   return (
     <Layout>
       <div className="container py-4 md:py-6 px-4 md:px-6">
-        {/* WELCOME SECTION - Add this before other sections */}
+        {/* WELCOME SECTION */}
         <WelcomeSection />
 
         {/* SECTION 1: AI FARM INTELLIGENCE HEADER */}
@@ -378,28 +377,9 @@ export default function Index() {
           </div>
         </section>
 
-        {/* SECTION 3: MAIN FEATURES GRID - MOBILE OPTIMIZED */}
+        {/* SECTION 3: SMART FARM TOOLS - REPLACE OLD FEATURE GRID */}
         <section className="mb-6">
-          <h2 className="text-lg font-bold mb-3">AI Farm Tools</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {mainFeatures.map((feature, index) => (
-              <div 
-                key={index} 
-                className="relative group" 
-                onClick={(e) => !user && handlePremiumFeatureClick(e, feature.to)}
-              >
-                <FeatureLink {...feature} />
-                {!user && (
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg">
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs px-2 h-8 flex items-center gap-1">
-                      <Zap className="h-3 w-3" />
-                      Try Now
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <SmartFarmTools />
         </section>
 
         {/* SECTION 4: AI CROP SCANNER - EMPHASIZED */}

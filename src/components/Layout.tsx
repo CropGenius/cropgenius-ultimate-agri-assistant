@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, Leaf, Cloud, ShoppingCart, MessageCircle, HelpCircle, Bot, Zap, User } from "lucide-react";
+import { Home, Leaf, Cloud, ShoppingCart, MessageCircle, HelpCircle, Bot, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
@@ -23,57 +23,10 @@ const Layout = ({ children }: LayoutProps) => {
     return location.pathname === path;
   };
   
-  const handleAIAction = () => {
-    // Simulate AI generating a personalized insight
-    if (!user) {
-      toast.info("Sign in to use AI features", {
-        description: "Create an account to access AI farming insights",
-        action: {
-          label: "Sign In",
-          onClick: () => navigate('/auth')
-        }
-      });
-      return;
-    }
-    
-    if (!farmId) {
-      toast.info("Complete farm setup first", {
-        description: "Register your farm to access AI farming insights",
-      });
-      return;
-    }
-    
-    toast.success("AI Farm Insight", {
-      description: "AI has detected an optimal time to plant maize in your region.",
-      action: {
-        label: "View Details",
-        onClick: () => console.log("Viewing AI insight details")
-      }
-    });
-  };
-  
   return (
     <div className="min-h-screen bg-background">
       {/* Add LayoutMenu at the top of the layout */}
       <LayoutMenu />
-      
-      {/* Floating AI Assistant Button */}
-      <div className="fixed bottom-24 right-4 z-50 flex flex-col gap-2">
-        <Button 
-          size="icon" 
-          className="w-12 h-12 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-colors"
-          onClick={handleAIAction}
-        >
-          <Zap className="h-5 w-5" />
-        </Button>
-        
-        <Link 
-          to={user ? "/chat" : "/auth"} 
-          className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/90 text-white shadow-lg hover:bg-primary/80 transition-colors"
-        >
-          <Bot className="h-5 w-5" />
-        </Link>
-      </div>
       
       {/* Bottom Navigation Bar - Optimized for Mobile */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-gray-800 py-2 px-2 flex justify-around items-center z-40 shadow-lg">
