@@ -20,15 +20,16 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Development mock values
-const DEV_USER_ID = "dev-user-id-123456";
-const DEV_FARM_ID = "dev-farm-id-123456";
+// Development mock values with valid UUID format for development environment
+// Use proper UUID format for development to avoid database type errors
+const DEV_USER_ID = "00000000-0000-0000-0000-000000000000"; // Valid UUID format
+const DEV_FARM_ID = "00000000-0000-0000-0000-000000000001"; // Valid UUID format
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // TODO: re-enable auth
   // Original auth state
   const [authState, setAuthState] = useState<AuthState>({
-    // Development bypass: provide mock user and session
+    // Development bypass: provide mock user and session with proper UUID format
     user: {
       id: DEV_USER_ID,
       email: "dev@cropgenius.ai",
@@ -40,7 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session: { user: {} as User } as Session, // Mock session
     isLoading: false, // Set to false immediately
     error: null,
-    farmId: DEV_FARM_ID, // Mock farm ID
+    farmId: DEV_FARM_ID, // Valid UUID format for farm ID
     isDevPreview: true,
   });
   
@@ -60,6 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Original useEffect is commented out to bypass auth checks
   useEffect(() => {
     console.log("[DEV] Authentication bypassed for development");
+    console.log("[DEV] Using mock farmId:", DEV_FARM_ID);
     
     // TODO: re-enable auth
     /*
