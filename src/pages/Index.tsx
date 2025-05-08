@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import MarketPreview from "@/components/home/MarketPreview";
 import AIChatPreview from "@/components/home/AIChatPreview";
 import SmartFarmTools from "@/components/home/SmartFarmTools";
 import FarmScoreCard from "@/components/weather/FarmScoreCard";
+import FeatureLink from "@/components/home/FeatureLink";
 import { 
   Leaf, 
   CloudSun, 
