@@ -1,30 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import AddFieldForm from "@/components/fields/AddFieldForm";
+import { PlusCircle, MapPin } from "lucide-react";
 import { Field } from "@/types/field";
-import { toast } from "sonner";
-import { useErrorLogging } from '@/hooks/use-error-logging';
 import { Link } from 'react-router-dom';
+import { useErrorLogging } from '@/hooks/use-error-logging';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
-import { FieldSelectCallback } from '@/components/fields/types';
+import { motion } from 'framer-motion';
+import AddFieldWizardButton from "@/components/fields/AddFieldWizardButton";
 
 const Fields = () => {
   const { logError, logSuccess } = useErrorLogging('FieldsPage');
   const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState(true);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [farms, setFarms] = useState<any[]>([]);
 
   useEffect(() => {
     loadFields();
-    loadFarms();
     console.log("✅ [FieldsPage] loaded successfully");
   }, []);
 
@@ -58,29 +53,10 @@ const Fields = () => {
     }
   };
 
-  const loadFarms = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      
-      const { data, error } = await supabase
-        .from('farms')
-        .select('*')
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      setFarms(data || []);
-    } catch (error: any) {
-      console.error("❌ [FieldsPage] Failed to load farms:", error.message);
-    }
-  };
-
   const handleFieldAdded = (field: Field) => {
     try {
       console.log("✅ [FieldsPage] Field added:", field.name);
       setFields(prev => [field, ...prev]);
-      setAddDialogOpen(false);
       toast.success("Field added successfully", {
         description: `${field.name} has been added to your farm.`
       });
@@ -90,63 +66,118 @@ const Fields = () => {
     }
   };
 
+  // Animation variants for list items
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+  
+  const item = {
+    hidden: { y: 20, opacity: 0 },
+    show: { y: 0, opacity: 1 }
+  };
+
   return (
     <Layout>
       <div className="container py-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Your Fields</h1>
-          <Button onClick={() => setAddDialogOpen(true)}>
+          <AddFieldWizardButton 
+            onFieldAdded={handleFieldAdded}
+            className="relative"
+          >
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Field
-          </Button>
+          </AddFieldWizardButton>
         </div>
 
-        {/* Fields list will go here */}
+        {/* Fields list with animations */}
         <ErrorBoundary>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {fields.map(field => (
-              <Card key={field.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle>{field.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>Size: {field.size} {field.size_unit}</p>
-                  {field.soil_type && <p>Soil: {field.soil_type}</p>}
-                  <div className="mt-4">
-                    <Link to={`/fields/${field.id}`}>
-                      <Button variant="outline" size="sm">View Details</Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map(i => (
+                <Card key={i} className="opacity-40">
+                  <CardHeader>
+                    <div className="h-7 w-2/3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-5 w-1/2 bg-gray-200 dark:bg-gray-700 rounded mb-3 animate-pulse"></div>
+                    <div className="h-9 w-1/3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <motion.div 
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              variants={container}
+              initial="hidden"
+              animate="show"
+            >
+              {fields.map(field => (
+                <motion.div
+                  key={field.id}
+                  variants={item}
+                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                >
+                  <Card className="hover:shadow-md transition-all hover:-translate-y-1 duration-300 border">
+                    <CardHeader>
+                      <CardTitle className="flex items-start gap-2">
+                        <MapPin className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
+                        <span>{field.name}</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="mb-3 text-muted-foreground">
+                        <p>Size: {field.size} {field.size_unit}</p>
+                        {field.soil_type && <p>Soil: {field.soil_type}</p>}
+                      </div>
+                      <div>
+                        <Link to={`/fields/${field.id}`}>
+                          <Button variant="outline" size="sm" className="w-full">View Details</Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
         </ErrorBoundary>
         
         {fields.length === 0 && !loading && (
-          <div className="text-center py-10">
-            <p className="text-muted-foreground mb-4">You haven't added any fields yet.</p>
-            <Button onClick={() => setAddDialogOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Your First Field
-            </Button>
-          </div>
-        )}
-
-        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Add New Field</DialogTitle>
-            </DialogHeader>
-            <ErrorBoundary>
-              <AddFieldForm 
-                farms={farms}
-                onSuccess={handleFieldAdded} 
-                onCancel={() => setAddDialogOpen(false)} 
+          <motion.div
+            className="text-center py-10"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="mx-auto w-16 h-16 mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+              <MapPin className="h-8 w-8 text-primary" />
+            </div>
+            <p className="text-muted-foreground mb-6">You haven't added any fields yet.</p>
+            <motion.div 
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ 
+                repeat: 3,
+                repeatType: "reverse",
+                duration: 0.8 
+              }}
+            >
+              <AddFieldWizardButton
+                onFieldAdded={handleFieldAdded}
+                buttonText="Add Your First Field"
+                icon={<PlusCircle className="mr-2 h-4 w-4" />}
               />
-            </ErrorBoundary>
-          </DialogContent>
-        </Dialog>
+            </motion.div>
+          </motion.div>
+        )}
       </div>
     </Layout>
   );

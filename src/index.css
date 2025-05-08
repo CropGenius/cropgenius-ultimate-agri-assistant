@@ -87,15 +87,79 @@
   100% { transform: translateX(-50%); }
 }
 
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); }
+  70% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.5s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out forwards;
+}
+
+.animate-pulse-once {
+  animation: pulse 0.6s ease-in-out;
 }
 
 .animate-scroll-slow {
   animation: scroll 20s linear infinite;
 }
 
+/* Shimmer effect for loading states */
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0)
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
 /* Gradient mask for scrolling ticker */
 .mask-gradient-right {
   mask-image: linear-gradient(to right, black 80%, transparent 100%);
 }
+
+/* Custom field wizard styles */
+.field-wizard-container {
+  @apply relative overflow-hidden;
+}
+
+.field-wizard-step {
+  @apply absolute inset-0 transition-all duration-300 ease-in-out;
+}
+
+/* Mobile-optimized input styles */
+.mobile-input {
+  @apply text-lg py-4 rounded-xl;
+}
+
+.hover-card-effect {
+  @apply transition-all duration-300 hover:shadow-md hover:-translate-y-1;
+}
+

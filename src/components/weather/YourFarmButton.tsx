@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -7,16 +8,17 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { Field } from '@/types/field';
-import AddFieldForm from '@/components/fields/AddFieldForm';
-import { FieldSelectCallback } from '@/components/fields/types';
 import { useErrorLogging } from '@/hooks/use-error-logging';
+import { motion } from 'framer-motion';
+import AddFieldWizard from '@/components/fields/wizard/AddFieldWizard';
+import ErrorBoundary from '@/components/error/ErrorBoundary';
 
 interface YourFarmButtonProps {
   className?: string;
   size?: "default" | "sm" | "lg" | "icon";
-  variant?: "default" | "secondary" | "outline" | "ghost";
+  variant?: "default" | "secondary" | "outline" | "ghost" | "link";
   buttonText?: string;
-  onSelect: FieldSelectCallback;
+  onSelect: (field: Field) => void;
 }
 
 export default function YourFarmButton({ 
@@ -205,97 +207,114 @@ export default function YourFarmButton({
       </Button>
       
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
           {dialogType === 'noFields' && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Add Your First Field</DialogTitle>
+            <div className="p-6">
+              <DialogHeader className="mb-4">
+                <DialogTitle className="text-2xl">Add Your First Field</DialogTitle>
                 <DialogDescription>
                   To deliver precise weather insights tailored to your farm, we need your field location data.
                 </DialogDescription>
               </DialogHeader>
-              <div className="py-4">
-                <p className="mb-4 text-sm">
-                  Adding your field will enable CROPGenius to:
-                </p>
-                <ul className="space-y-2 mb-6">
-                  <li className="flex items-start gap-2 text-sm">
-                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
-                      <span className="text-xs text-primary font-medium">1</span>
-                    </div>
-                    <span>Provide hyperlocal weather forecasts specific to your field</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
-                      <span className="text-xs text-primary font-medium">2</span>
-                    </div>
-                    <span>Generate AI-powered farming recommendations</span>
-                  </li>
-                  <li className="flex items-start gap-2 text-sm">
-                    <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">
-                      <span className="text-xs text-primary font-medium">3</span>
-                    </div>
-                    <span>Alert you about weather risks that could affect your crops</span>
-                  </li>
-                </ul>
+              
+              <div className="space-y-6">
+                <motion.div className="space-y-4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                  <h3 className="font-medium">Adding your field will enable CROPGenius to:</h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center mt-0.5 flex-shrink-0">
+                        <span className="text-xs text-primary font-medium">1</span>
+                      </div>
+                      <span>Provide hyperlocal weather forecasts specific to your field</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center mt-0.5 flex-shrink-0">
+                        <span className="text-xs text-primary font-medium">2</span>
+                      </div>
+                      <span>Generate AI-powered farming recommendations</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center mt-0.5 flex-shrink-0">
+                        <span className="text-xs text-primary font-medium">3</span>
+                      </div>
+                      <span>Alert you about weather risks that could affect your crops</span>
+                    </li>
+                  </ul>
+                </motion.div>
+                
                 <Button onClick={handleAddField} className="w-full">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Field Now
                 </Button>
               </div>
-            </>
+            </div>
           )}
           
           {dialogType === 'fields' && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Your Fields</DialogTitle>
+            <div className="p-6">
+              <DialogHeader className="mb-4">
+                <DialogTitle className="text-2xl">Your Fields</DialogTitle>
                 <DialogDescription>
                   Select a field to view detailed weather insights or add a new field.
                 </DialogDescription>
               </DialogHeader>
-              <div className="py-4">
+              
+              <motion.div
+                className="space-y-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ staggerChildren: 0.1 }}
+              >
                 <div className="grid gap-2 mb-4">
-                  {fields.map(field => (
-                    <div 
+                  {fields.map((field, index) => (
+                    <motion.div 
                       key={field.id}
-                      className="flex items-center cursor-pointer px-3 py-2 hover:bg-muted rounded-md"
+                      className={cn(
+                        "flex items-center cursor-pointer px-3 py-3 hover:bg-muted rounded-md border",
+                        selectedFieldId === field.id && "bg-primary/5 border-primary"
+                      )}
                       onClick={() => handleSelectField(field)}
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: index * 0.05 }}
                     >
-                      <Tractor className="h-4 w-4 mr-2" />
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">
+                        <Tractor className="h-4 w-4 text-primary" />
+                      </div>
                       <div className="text-left">
                         <div className="font-medium">{field.name}</div>
                         <div className="text-xs text-muted-foreground">
                           {field.size} {field.size_unit}
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
                 <Button onClick={handleAddField} className="w-full" variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Another Field
                 </Button>
-              </div>
-            </>
+              </motion.div>
+            </div>
           )}
           
           {dialogType === 'addField' && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Map Your Field</DialogTitle>
+            <div className="p-6">
+              <DialogHeader className="mb-4">
+                <DialogTitle className="text-2xl">Add New Field</DialogTitle>
                 <DialogDescription>
-                  Use the map to locate and outline your field boundaries.
+                  Let's set up a new field for your farm.
                 </DialogDescription>
               </DialogHeader>
-              <div className="py-2">
-                <AddFieldForm 
+              
+              <ErrorBoundary>
+                <AddFieldWizard 
                   onSuccess={handleFieldAdded}
                   onCancel={() => setShowDialog(false)}
                   defaultLocation={userLocation || undefined}
                 />
-              </div>
-            </>
+              </ErrorBoundary>
+            </div>
           )}
         </DialogContent>
       </Dialog>
