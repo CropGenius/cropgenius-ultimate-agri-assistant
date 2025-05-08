@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 // Helper function to get time-appropriate greeting
 const getGreeting = () => {
@@ -47,14 +48,34 @@ interface ToolCardProps {
 
 const ToolCard = ({ title, description, icon, link, actionText, color, delay }: ToolCardProps) => {
   const [isVisible, setIsVisible] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 100 + delay);
     return () => clearTimeout(timer);
   }, [delay]);
   
+  const handleClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      toast.info("AI Farm Intelligence Ready", {
+        description: "Create your free account to access personalized AI insights",
+        action: {
+          label: "Start Now",
+          onClick: () => navigate("/auth")
+        },
+        icon: <Zap className="h-5 w-5 text-amber-500" />,
+        duration: 5000
+      });
+      
+      // After showing toast, give user option to continue or sign up
+      navigate("/auth", { state: { returnTo: link } });
+    }
+  };
+  
   return (
-    <Link to={link}>
+    <Link to={link} onClick={handleClick}>
       <Card className={cn(
         "mb-3 overflow-hidden border shadow-md hover:shadow-lg transition-all duration-300",
         "transform hover:-translate-y-1",
@@ -178,9 +199,9 @@ const SmartFarmTools = () => {
   ];
   
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       {/* Personalized Banner */}
-      <div className="bg-gradient-to-r from-primary/80 to-primary rounded-xl p-4 text-white shadow-md mb-4 animate-fade-in">
+      <div className="bg-gradient-to-r from-primary/80 to-primary rounded-xl p-4 text-white shadow-md mb-4">
         <h2 className="text-xl font-bold">
           {greeting}, {userName}.
         </h2>
@@ -207,11 +228,20 @@ const SmartFarmTools = () => {
         <h3 className="text-sm font-medium text-muted-foreground mb-2">
           REAL-TIME FARM UPDATES
         </h3>
-        <div className="overflow-x-auto pb-3">
-          <div className="flex">
+        <div className="overflow-x-auto pb-3 mask-gradient-right">
+          <div className="flex animate-scroll-slow py-1">
             {alerts.map((alert, index) => (
               <AlertTickerItem
                 key={index}
+                message={alert.message}
+                type={alert.type}
+                icon={alert.icon}
+              />
+            ))}
+            {/* Duplicate alerts for continuous scrolling effect */}
+            {alerts.map((alert, index) => (
+              <AlertTickerItem
+                key={`dup-${index}`}
                 message={alert.message}
                 type={alert.type}
                 icon={alert.icon}

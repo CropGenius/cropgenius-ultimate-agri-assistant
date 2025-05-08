@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -393,7 +392,6 @@ export default function Index() {
         <section className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <WeatherPreview />
-
             <MarketPreview />
           </div>
         </section>
