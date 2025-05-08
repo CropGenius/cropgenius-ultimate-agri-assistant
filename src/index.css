@@ -108,6 +108,11 @@
   100% { background-position: 200% 0; }
 }
 
+@keyframes confetti {
+  0% { transform: translateY(0) rotate(0); opacity: 1; }
+  100% { transform: translateY(100px) rotate(720deg); opacity: 0; }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
 }
@@ -163,3 +168,11 @@
   @apply transition-all duration-300 hover:shadow-md hover:-translate-y-1;
 }
 
+/* Confetti animation for celebrations */
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  opacity: 0;
+  animation: confetti 1.5s ease-out forwards;
+}

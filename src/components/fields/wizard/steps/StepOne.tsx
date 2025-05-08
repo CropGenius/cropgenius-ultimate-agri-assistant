@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin } from 'lucide-react';
+import { MapPin, LucidePlant } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -32,7 +32,7 @@ export default function StepOne({ fieldName, onFieldNameChange, onNext }: StepOn
             .eq('user_id', user.id)
             .limit(5);
             
-          // Common field names in Africa
+          // Common field names in Africa with regional variations
           const commonNames = [
             "Maize Field", 
             "Mama's Shamba", 

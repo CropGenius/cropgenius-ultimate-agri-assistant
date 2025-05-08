@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Tractor, MapPin, ArrowRight, Circle, CheckCircle } from 'lucide-react';
+import { Tractor, MapPin, ArrowRight, Circle, CheckCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,7 +55,7 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
       
       // Play a subtle success sound
       try {
-        const audio = new Audio('data:audio/wav;base64,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');
+        const audio = new Audio('data:audio/wav;base64,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');
         audio.volume = 0.2;
         audio.play().catch(e => console.log('Audio play prevented by browser'));
       } catch (error) {
@@ -141,13 +141,44 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
       console.log("✅ [AddFieldWizard] Field created successfully:", data);
       logSuccess('field_created', { field_id: data.id });
       
+      // Create confetti effect elements
+      const createConfetti = () => {
+        const container = document.querySelector('.dialog-content');
+        if (!container) return;
+        
+        const colors = ['#26de81', '#fd9644', '#a55eea', '#778ca3', '#2e86de'];
+        
+        for (let i = 0; i < 50; i++) {
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti';
+          confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          confetti.style.left = `${Math.random() * 100}%`;
+          confetti.style.top = `${Math.random() * 30}%`;
+          confetti.style.width = `${Math.random() * 10 + 5}px`;
+          confetti.style.height = `${Math.random() * 10 + 5}px`;
+          confetti.style.animationDuration = `${Math.random() * 2 + 1}s`;
+          confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+          container.appendChild(confetti);
+          
+          // Remove confetti after animation completes
+          setTimeout(() => {
+            if (confetti.parentNode) {
+              confetti.parentNode.removeChild(confetti);
+            }
+          }, 3000);
+        }
+      };
+      
       // Show success animation and message
       setCurrentStep(totalSteps + 1); // Show success step
       
       setTimeout(() => {
+        createConfetti();
+        
         toast.success("Field added successfully!", {
           description: `${fieldData.name || 'Your new field'} has been added to your farm`,
           duration: 5000,
+          icon: <Sparkles className="h-5 w-5 text-yellow-500" />,
         });
         
         if (onSuccess && data) {
@@ -175,7 +206,7 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
         } else {
           navigate("/fields");
         }
-      }, 2000); // Give time to see success animation
+      }, 1000); // Give time to see success animation
       
     } catch (error: any) {
       console.error("❌ [AddFieldWizard] Error creating field:", error);
@@ -209,6 +240,11 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
               transition={{ duration: 0.3 }}
             />
           ))}
+        </div>
+        
+        {/* Current step indicator text */}
+        <div className="text-center text-sm text-muted-foreground">
+          <span className="font-medium">Step {currentStep}</span> of {totalSteps}
         </div>
         
         {/* Step content */}
