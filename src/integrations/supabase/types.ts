@@ -199,7 +199,7 @@ export type Database = {
         Row: {
           boundary: Json | null
           created_at: string | null
-          farm_id: string | null
+          farm_id: string
           id: string
           irrigation_type: string | null
           is_shared: boolean | null
@@ -215,7 +215,7 @@ export type Database = {
         Insert: {
           boundary?: Json | null
           created_at?: string | null
-          farm_id?: string | null
+          farm_id: string
           id?: string
           irrigation_type?: string | null
           is_shared?: boolean | null
@@ -231,7 +231,7 @@ export type Database = {
         Update: {
           boundary?: Json | null
           created_at?: string | null
-          farm_id?: string | null
+          farm_id?: string
           id?: string
           irrigation_type?: string | null
           is_shared?: boolean | null
