@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -119,53 +118,6 @@ const verifyFarmOwnership = async (farmId: string, userId: string): Promise<bool
   } catch (error) {
     console.error("Error verifying farm ownership:", error);
     return false;
-  }
-};
-
-// New implementation of verifyOrCreateFarm as requested 
-export const verifyOrCreateFarm = async (userId: string): Promise<string> => {
-  if (!userId) {
-    console.error("Cannot verify farm: No user ID provided");
-    // Return a temporary ID that can be used locally
-    return `local-${uuidv4()}`;
-  }
-  
-  try {
-    // Try to find an existing farm for this user
-    const { data, error } = await supabase
-      .from('farms')
-      .select('id')
-      .eq('user_id', userId)
-      .limit(1)
-      .maybeSingle();
-
-    // If farm exists, return its ID
-    if (data?.id) return data.id;
-    
-    // No farm found, create a new one
-    const { data: newFarm, error: createError } = await supabase
-      .from('farms')
-      .insert({
-        name: 'My Farm',
-        user_id: userId,
-        size_unit: 'hectares'
-      })
-      .select()
-      .single();
-    
-    if (createError || !newFarm?.id) {
-      console.error('Failed to auto-create fallback farm:', createError?.message);
-      
-      // Create a temporary local ID instead of throwing
-      return `local-${uuidv4()}`;
-    }
-    
-    return newFarm.id;
-  } catch (error) {
-    console.error('Error in verifyOrCreateFarm:', error);
-    
-    // Never throw - return a local ID as fallback
-    return `local-${uuidv4()}`;
   }
 };
 

@@ -17,7 +17,6 @@ import StepFive from './steps/StepFive';
 import { sanitizeFieldData } from '@/utils/fieldSanitizer';
 import { Database } from '@/types/supabase';
 import { v4 as uuidv4 } from 'uuid';
-import { verifyOrCreateFarm } from '@/services/fieldService';
 
 // Helper function to check online status
 const isOnline = () => navigator.onLine;
@@ -181,61 +180,33 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
       const userId = user?.id;
       let targetFarmId = farmId || (farmContext?.id);
       
-      // If we're offline, save locally and queue for later
-      if (!isOnline()) {
-        toast.info("You're offline", {
-          description: "We'll save and sync your field once you're back online."
-        });
-        
-        // Create offline field
-        const offlineField = {
-          id: uuidv4(),
-          user_id: userId || "guest",
-          farm_id: targetFarmId || "local-farm",
-          name: fieldData.name || "Untitled Field",
-          size: fieldData.size || 1,
-          size_unit: fieldData.size_unit,
-          boundary: fieldData.boundary,
-          location_description: fieldData.location_description || "",
-          soil_type: fieldData.soil_type || "",
-          irrigation_type: fieldData.irrigation_type || "",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          is_shared: false,
-          shared_with: [],
-          offline_id: uuidv4(),
-          is_synced: false
-        };
-        
-        // Save to offline storage
-        const OFFLINE_FIELDS_KEY = "cropgenius_offline_fields";
-        const offlineFields = JSON.parse(localStorage.getItem(OFFLINE_FIELDS_KEY) || '[]');
-        offlineFields.push(offlineField);
-        localStorage.setItem(OFFLINE_FIELDS_KEY, JSON.stringify(offlineFields));
-        
-        // Show success animation
-        setCurrentStep(totalSteps + 1);
-        
-        setTimeout(() => {
-          createConfetti();
-          
-          if (onSuccess) {
-            onSuccess(offlineField);
-          } else {
-            navigate("/fields");
-          }
-        }, 1000);
-        
-        return;
-      }
-      
-      // Double safety: if no farm context is available, create one using the new verifyOrCreateFarm function
+      // Double safety: if no farm context is available, create one
       if (!targetFarmId && userId) {
         try {
-          targetFarmId = await verifyOrCreateFarm(userId);
-          console.log("✅ [AddFieldWizard] Verified/created farm:", targetFarmId);
+          const { data: existingFarms } = await supabase
+            .from('farms')
+            .select('id')
+            .eq('user_id', userId);
+            
+          if (existingFarms && existingFarms.length > 0) {
+            targetFarmId = existingFarms[0].id;
+          } else {
+            const { data: newFarm } = await supabase
+              .from('farms')
+              .insert({
+                name: 'My Farm',
+                user_id: userId
+              })
+              .select()
+              .single();
+              
+            if (newFarm) {
+              targetFarmId = newFarm.id;
+              console.log("✅ [AddFieldWizard] Created emergency farm:", newFarm.id);
+            }
+          }
         } catch (err) {
-          console.error("❌ [AddFieldWizard] Error in farm verification:", err);
+          console.error("❌ [AddFieldWizard] Error in emergency farm creation:", err);
           // Continue anyway - service layer will handle fallbacks
         }
       }
@@ -277,17 +248,6 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
           
           if (error) {
             console.warn("⚠️ [AddFieldWizard] Supabase insert error:", error);
-            
-            // Log the error for analysis
-            if (userId) {
-              await logFieldError(
-                supabase,
-                userId,
-                "insert_error",
-                supabaseFieldData,
-                { error: error.message }
-              );
-            }
             
             // Try one more time with basic data only
             const { data: retryData, error: retryError } = await supabase
@@ -334,10 +294,9 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
           };
           
           // Save to offline storage
-          const OFFLINE_FIELDS_KEY = "cropgenius_offline_fields";
-          const offlineFields = JSON.parse(localStorage.getItem(OFFLINE_FIELDS_KEY) || '[]');
+          const offlineFields = JSON.parse(localStorage.getItem('cropgenius_offline_fields') || '[]');
           offlineFields.push(fieldResult);
-          localStorage.setItem(OFFLINE_FIELDS_KEY, JSON.stringify(offlineFields));
+          localStorage.setItem('cropgenius_offline_fields', JSON.stringify(offlineFields));
           
           toast.warning("Saved locally", {
             description: "Your field was saved offline and will sync when possible",
@@ -365,10 +324,9 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
         };
         
         // Save to offline storage
-        const OFFLINE_FIELDS_KEY = "cropgenius_offline_fields";
-        const offlineFields = JSON.parse(localStorage.getItem(OFFLINE_FIELDS_KEY) || '[]');
+        const offlineFields = JSON.parse(localStorage.getItem('cropgenius_offline_fields') || '[]');
         offlineFields.push(fieldResult);
-        localStorage.setItem(OFFLINE_FIELDS_KEY, JSON.stringify(offlineFields));
+        localStorage.setItem('cropgenius_offline_fields', JSON.stringify(offlineFields));
         
         toast.info("Saved locally", {
           description: "Your field was saved offline",
@@ -393,17 +351,15 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
             if (cropError) {
               console.warn("⚠️ [AddFieldWizard] Error creating crop record:", cropError);
               // Store locally as fallback
-              const OFFLINE_CROPS_KEY = "cropgenius_offline_crops";
-              const offlineCrops = JSON.parse(localStorage.getItem(OFFLINE_CROPS_KEY) || '[]');
+              const offlineCrops = JSON.parse(localStorage.getItem('cropgenius_offline_crops') || '[]');
               offlineCrops.push({...cropData, id: uuidv4()});
-              localStorage.setItem(OFFLINE_CROPS_KEY, JSON.stringify(offlineCrops));
+              localStorage.setItem('cropgenius_offline_crops', JSON.stringify(offlineCrops));
             }
           } else {
             // Store locally
-            const OFFLINE_CROPS_KEY = "cropgenius_offline_crops";
-            const offlineCrops = JSON.parse(localStorage.getItem(OFFLINE_CROPS_KEY) || '[]');
+            const offlineCrops = JSON.parse(localStorage.getItem('cropgenius_offline_crops') || '[]');
             offlineCrops.push({...cropData, id: uuidv4()});
-            localStorage.setItem(OFFLINE_CROPS_KEY, JSON.stringify(offlineCrops));
+            localStorage.setItem('cropgenius_offline_crops', JSON.stringify(offlineCrops));
           }
         } catch (error) {
           console.warn("⚠️ [AddFieldWizard] Error with crop data:", error);
@@ -466,10 +422,9 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
       };
       
       // Save to offline storage
-      const OFFLINE_FIELDS_KEY = "cropgenius_offline_fields";
-      const offlineFields = JSON.parse(localStorage.getItem(OFFLINE_FIELDS_KEY) || '[]');
+      const offlineFields = JSON.parse(localStorage.getItem('cropgenius_offline_fields') || '[]');
       offlineFields.push(minimalField);
-      localStorage.setItem(OFFLINE_FIELDS_KEY, JSON.stringify(offlineFields));
+      localStorage.setItem('cropgenius_offline_fields', JSON.stringify(offlineFields));
       
       setTimeout(() => {
         if (onSuccess) {
@@ -616,3 +571,37 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
               <StepFive
                 plantingDate={fieldData.planting_date}
                 onPlantingDateChange={(planting_date) => updateFieldData({ planting_date })}
+                onBack={handleBack}
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+                onSkip={() => handleSubmit()}
+              />
+            )}
+            
+            {currentStep === totalSteps + 1 && (
+              <motion.div 
+                className="text-center py-8"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", duration: 0.6 }}
+              >
+                <motion.div 
+                  className="mx-auto w-16 h-16 mb-4 bg-primary/20 rounded-full flex items-center justify-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring" }}
+                >
+                  <CheckCircle className="h-10 w-10 text-primary" />
+                </motion.div>
+                <h2 className="text-2xl font-bold mb-2">Success!</h2>
+                <p className="text-muted-foreground">
+                  Your field has been added successfully.
+                </p>
+              </motion.div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </ErrorBoundary>
+  );
+}
