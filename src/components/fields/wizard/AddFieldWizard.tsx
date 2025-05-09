@@ -16,6 +16,10 @@ import StepFour from './steps/StepFour';
 import StepFive from './steps/StepFive';
 import { sanitizeFieldData } from '@/utils/fieldSanitizer';
 import { Database } from '@/types/supabase';
+import { v4 as uuidv4 } from 'uuid';
+
+// Helper function to check online status
+const isOnline = () => navigator.onLine;
 
 interface AddFieldWizardProps {
   onSuccess?: (field: Field) => void;

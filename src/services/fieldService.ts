@@ -91,13 +91,13 @@ const verifyFarmOwnership = async (farmId: string, userId: string): Promise<bool
     if (data.user_id !== userId) {
       console.warn(`⚠️ User ${userId} attempted to access farm ${farmId} owned by ${data.user_id}`);
       
-      // Log ownership mismatch for analytics
+      // Log ownership mismatch for analytics - fixed by removing .catch()
       await supabase.from("ownership_mismatches").insert([{ 
         attempted_user: userId, 
         farm_id: farmId,
         owner_id: data.user_id,
         created_at: new Date().toISOString()
-      }]).catch(err => console.error("Error logging ownership mismatch:", err));
+      }]);
       
       // Get a farm that the user does own
       const { data: userFarm } = await supabase
@@ -655,19 +655,30 @@ export const initOfflineSync = (userId: string) => {
   );
 };
 
-// Enhancement: Add error tracking function
+// Enhancement: Fix the trackFieldErrors function that had the group() error
 export const trackFieldErrors = async (userId: string) => {
   if (!isOnline() || !userId) return;
   
   try {
-    const { data } = await supabase
+    // Modified query to avoid using .group() which is unsupported
+    const { data: errorTypes } = await supabase
       .from('field_errors')
-      .select('error_type, count(*)')
-      .eq('user_id', userId)
-      .group('error_type');
+      .select('error_type, id')
+      .eq('user_id', userId);
       
-    console.log("Field error statistics:", data);
-    // Here you could implement auto-fix routines based on common errors
+    if (errorTypes) {
+      // Process the data manually instead of using group()
+      const errorCounts: Record<string, number> = {};
+      errorTypes.forEach(error => {
+        const type = error.error_type;
+        if (type) {
+          errorCounts[type] = (errorCounts[type] || 0) + 1;
+        }
+      });
+      
+      console.log("Field error statistics:", errorCounts);
+      // Here you could implement auto-fix routines based on common errors
+    }
   } catch (error) {
     console.error("Error tracking field errors:", error);
   }
