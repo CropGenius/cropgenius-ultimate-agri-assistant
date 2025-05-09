@@ -40,6 +40,54 @@ interface FieldWithDeleteFlag extends Field {
   deleted?: boolean;
 }
 
+// Verify farm ownership before any field operation
+const verifyFarmOwnership = async (farmId: string, userId: string): Promise<boolean> => {
+  try {
+    if (!farmId || !userId) return false;
+    
+    const { data, error } = await supabase
+      .from('farms')
+      .select('id')
+      .eq('id', farmId)
+      .eq('user_id', userId)
+      .single();
+      
+    if (error) {
+      console.error("Farm ownership verification error:", error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error("Error verifying farm ownership:", error);
+    return false;
+  }
+};
+
+// Verify field can be accessed by the current user
+export const verifyFieldAccess = async (fieldId: string, userId: string): Promise<boolean> => {
+  try {
+    if (!isOnline() || !fieldId || !userId) return false;
+    
+    const { data, error } = await supabase
+      .from('fields')
+      .select('id, farm_id')
+      .eq('id', fieldId)
+      .single();
+      
+    if (error || !data) {
+      console.error("Field access verification error:", error);
+      return false;
+    }
+    
+    // Now verify that the farm belongs to the user
+    return await verifyFarmOwnership(data.farm_id, userId);
+  } catch (error) {
+    console.error("Error verifying field access:", error);
+    return false;
+  }
+};
+
 // Field CRUD operations with offline support
 export const createField = async (field: Omit<Field, "id" | "created_at" | "updated_at">): Promise<{data: Field | null, error: string | null}> => {
   // Generate a temporary ID for offline use
@@ -52,6 +100,20 @@ export const createField = async (field: Omit<Field, "id" | "created_at" | "upda
     offline_id: offlineId,
     is_synced: false
   };
+
+  // Verify farm ownership before proceeding (when online)
+  if (isOnline() && field.user_id && field.farm_id) {
+    const ownershipVerified = await verifyFarmOwnership(field.farm_id, field.user_id);
+    if (!ownershipVerified) {
+      toast.error("Authorization error", {
+        description: "You don't have permission to add fields to this farm."
+      });
+      return { 
+        data: null, 
+        error: "Farm ownership verification failed. You don't have permission to add fields to this farm." 
+      };
+    }
+  }
 
   // If online, try to save directly to Supabase
   if (isOnline()) {
@@ -83,6 +145,14 @@ export const createField = async (field: Omit<Field, "id" | "created_at" | "upda
       return { data, error: null };
     } catch (error: any) {
       console.error("Error creating field:", error);
+      
+      // Special error handling for RLS violations
+      if (error.message.includes("farm you do not own") || error.message.includes("row-level security")) {
+        toast.error("Permission denied", {
+          description: "You don't have permission to add fields to this farm."
+        });
+        return { data: null, error: error.message };
+      }
       
       // If we get an error (like network failure during transmission),
       // fall back to offline storage

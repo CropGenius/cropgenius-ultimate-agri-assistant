@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Leaf, Loader2 } from 'lucide-react';
+import { MapPin, Leaf, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -19,116 +19,229 @@ export default function StepOne({ fieldName, onFieldNameChange, onNext }: StepOn
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const { user } = useAuth();
+  const [showValidationError, setShowValidationError] = useState(false);
+  const { user, farmId } = useAuth();
   
   // Generate intelligent field name suggestions
   useEffect(() => {
     const generateSuggestions = async () => {
       setIsLoading(true);
       try {
-        // Get user's existing field names for context
-        if (user?.id) {
-          const { data } = await supabase
-            .from('fields')
-            .select('name')
-            .eq('user_id', user.id)
-            .limit(5);
-            
-          // Common field names in Africa with regional variations
-          const commonNames = [
-            "Maize Field", 
-            "Mama's Shamba", 
-            "Main Field", 
-            "Home Garden", 
-            "River Plot", 
-            "Northern Field",
-            "Southern Field",
-            "Eastern Plot",
-            "Western Field"
-          ];
-          
-          // Add any existing field names with suffixes if they exist
-          const existingNames = data?.map(f => f.name) || [];
-          const allSuggestions = [...commonNames];
-          
-          if (existingNames.length > 0) {
-            // If user has existing fields, create numbered versions
-            existingNames.forEach(name => {
-              const baseName = name.replace(/\s+\d+$/, ''); // Remove any numbers at the end
-              const number = existingNames.filter(n => n.startsWith(baseName)).length + 1;
-              allSuggestions.push(`${baseName} ${number}`);
-            });
-            
-            // Add region-specific suggestions based on farm location
-            const farmRegionSuggestions = ["Upper Field", "Lower Field", "Riverside Plot", "Hill Field"];
-            allSuggestions.push(...farmRegionSuggestions);
-          }
-          
-          // Shuffle and take first 6
-          const shuffled = allSuggestions
-            .filter((name, index, self) => self.indexOf(name) === index) // Remove duplicates
-            .sort(() => Math.random() - 0.5)
-            .slice(0, 6);
-            
-          setSuggestions(shuffled);
+        // Validate authentication and farm selection
+        if (!user?.id || !farmId) {
+          throw new Error(
+            !user?.id 
+              ? "Authentication required to generate suggestions" 
+              : "No farm selected for suggestions"
+          );
         }
+        
+        // First get farm information for context
+        const { data: farmData, error: farmError } = await supabase
+          .from('farms')
+          .select('name, location')
+          .eq('id', farmId)
+          .eq('user_id', user.id)
+          .single();
+          
+        if (farmError) {
+          console.warn("⚠️ [StepOne] Could not fetch farm data:", farmError);
+        }
+
+        // Get user's existing field names for context
+        const { data: fieldData, error: fieldError } = await supabase
+          .from('fields')
+          .select('name')
+          .eq('user_id', user.id)
+          .eq('farm_id', farmId)
+          .order('created_at', { ascending: false })
+          .limit(10);
+            
+        if (fieldError) {
+          console.warn("⚠️ [StepOne] Could not fetch field data:", fieldError);
+        }
+          
+        // Common field names across Africa with regional variations
+        const commonNames = [
+          "Main Field", 
+          "Home Garden", 
+          "River Plot", 
+          "Shamba Kubwa", // Swahili for "big farm"
+          "Northern Field",
+          "Eneo la Jua", // Sunny Area in Swahili
+          "Valley Field",
+          "Hillside Plot",
+          "Maize Field",
+          "Market Garden",
+          "Family Plot"
+        ];
+          
+        // Use farm name for some suggestions
+        const farmBasedNames: string[] = [];
+        if (farmData?.name) {
+          farmBasedNames.push(
+            `${farmData.name} Primary`,
+            `${farmData.name} North`,
+            `${farmData.name} South`
+          );
+        }
+          
+        // Add any existing field names with suffixes if they exist
+        const existingNames = fieldData?.map(f => f.name) || [];
+        const existingBasedNames: string[] = [];
+          
+        if (existingNames.length > 0) {
+          // If user has existing fields, create numbered versions
+          existingNames.forEach(name => {
+            const baseName = name.replace(/\s+\d+$/, ''); // Remove any numbers at the end
+            const number = existingNames.filter(n => n.startsWith(baseName)).length + 1;
+            existingBasedNames.push(`${baseName} ${number}`);
+          });
+            
+          // Add region-specific suggestions based on farm location
+          if (farmData?.location) {
+            existingBasedNames.push(
+              `${farmData.location} Field`, 
+              `New ${farmData.location} Plot`
+            );
+          }
+        }
+          
+        // Combine all suggestion sources and filter out duplicates
+        const allSuggestions = [
+          ...farmBasedNames, 
+          ...existingBasedNames,
+          ...commonNames
+        ].filter((value, index, self) => 
+          self.indexOf(value) === index
+        );
+          
+        // Shuffle and take top suggestions
+        const shuffled = allSuggestions
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 6);
+            
+        setSuggestions(shuffled);
       } catch (error) {
         console.error("Error generating field name suggestions:", error);
-        setSuggestions(["Maize Field", "Main Field", "Home Garden", "New Field"]);
+        setSuggestions([
+          "Maize Field", 
+          "Main Field", 
+          "Home Garden", 
+          "River Plot",
+          "Northern Field",
+          "Southern Field"
+        ]);
       } finally {
         setIsLoading(false);
       }
     };
     
     generateSuggestions();
-  }, [user]);
+  }, [user, farmId]);
   
   const handleSuggestionClick = (suggestion: string) => {
     onFieldNameChange(suggestion);
+    setShowValidationError(false);
     
     // Add a small delay for animation effect
     setTimeout(() => onNext(), 300);
   };
   
+  // Generate AI field name based on location, farm data, and crop patterns
   const generateAISuggestion = async () => {
     setIsGenerating(true);
     try {
-      // Here we simulate AI generating a name based on location, crops, etc
-      // In production, this would call an AI service
+      // Validate authentication and farm selection
+      if (!user?.id || !farmId) {
+        throw new Error(
+          !user?.id 
+            ? "Please sign in to use AI suggestions" 
+            : "No farm selected for AI to use as context"
+        );
+      }
       
-      const crops = ["Maize", "Tomato", "Cabbage", "Beans", "Rice", "Cassava", "Sorghum"];
-      const adjectives = ["Fertile", "Sunny", "Green", "Growing", "Bountiful"];
-      const locations = ["Eastern", "Northern", "Western", "Southern", "River", "Hill"];
-      
-      const randomCrop = crops[Math.floor(Math.random() * crops.length)];
-      const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-      const randomLocation = locations[Math.floor(Math.random() * locations.length)];
-      
-      // Generate name patterns
-      const namePatterns = [
-        `${randomAdjective} ${randomCrop} Field`,
-        `${randomLocation} ${randomCrop} Plot`,
-        `${randomAdjective} ${randomLocation} Field`,
-        `${randomCrop} ${randomLocation}`,
-        `Main ${randomCrop} Field`
-      ];
-      
-      const aiSuggestion = namePatterns[Math.floor(Math.random() * namePatterns.length)];
+      // Get farm information for context
+      const { data: farmData, error: farmError } = await supabase
+        .from('farms')
+        .select('name, location')
+        .eq('id', farmId)
+        .eq('user_id', user.id)
+        .single();
+          
+      if (farmError) {
+        console.warn("⚠️ [StepOne] Could not fetch farm data for AI:", farmError);
+      }
       
       // In a real implementation, we'd fetch this from an AI service
+      // For now we'll create intelligent suggestions based on farm context
+      
+      // Eastern/Western Africa crops
+      const crops = ["Maize", "Cassava", "Sorghum", "Millet", "Rice", "Coffee", "Tea", 
+                     "Banana", "Plantain", "Yam", "Sweet Potato", "Groundnut", "Cotton"];
+      
+      // Positive descriptive adjectives
+      const adjectives = ["Fertile", "Productive", "Abundant", "Green", "Growing", "Bountiful", 
+                         "Prime", "Rich", "Prosperous", "Thriving", "Flourishing"];
+      
+      // Location descriptors
+      const locations = ["Upper", "Lower", "Northern", "Eastern", "Western", "Southern", 
+                         "River", "Hill", "Valley", "Mountain", "Lake"];
+      
+      // Base the suggestion on the farm data if available
+      let aiSuggestion: string;
+      
+      if (farmData) {
+        const randomCrop = crops[Math.floor(Math.random() * crops.length)];
+        const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+        
+        if (farmData.location) {
+          // Use farm location in the name
+          aiSuggestion = `${farmData.location} ${randomCrop} Field`;
+        } else if (farmData.name) {
+          // Use farm name in the field name
+          const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+          aiSuggestion = `${farmData.name} ${randomLocation} ${randomCrop}`;
+        } else {
+          // Generate a completely new suggestion
+          const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+          aiSuggestion = `${randomAdjective} ${randomLocation} ${randomCrop}`;
+        }
+      } else {
+        // Fallback if no farm data
+        const randomCrop = crops[Math.floor(Math.random() * crops.length)];
+        const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+        
+        // Generate name patterns
+        const namePatterns = [
+          `${randomAdjective} ${randomCrop} Field`,
+          `${randomLocation} ${randomCrop} Plot`,
+          `${randomAdjective} ${randomLocation} Field`,
+          `${randomCrop} ${randomLocation}`,
+          `Main ${randomCrop} Field`
+        ];
+        
+        aiSuggestion = namePatterns[Math.floor(Math.random() * namePatterns.length)];
+      }
+      
+      // Simulate AI completion time
       setTimeout(() => {
         onFieldNameChange(aiSuggestion);
+        setShowValidationError(false);
+        
         toast.success("AI suggestion generated", {
-          description: `Based on your region and common crops: "${aiSuggestion}"`
+          description: `Smart field name created: "${aiSuggestion}"`,
+          icon: <Sparkles className="h-5 w-5 text-yellow-500" />
         });
         setIsGenerating(false);
       }, 1200);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating AI field name suggestion:", error);
       setIsGenerating(false);
       toast.error("Couldn't generate AI suggestion", {
-        description: "Please try a suggestion below or enter a custom name"
+        description: error.message || "Please try a suggestion below or enter a custom name"
       });
     }
   };
@@ -138,12 +251,14 @@ export default function StepOne({ fieldName, onFieldNameChange, onNext }: StepOn
     const trimmedName = fieldName.trim();
     
     if (!trimmedName || trimmedName.length < 2) {
+      setShowValidationError(true);
       toast.warning("Please enter a valid field name", {
         description: "Field name must be at least 2 characters"
       });
       return;
     }
     
+    setShowValidationError(false);
     onNext();
   };
   
@@ -166,12 +281,28 @@ export default function StepOne({ fieldName, onFieldNameChange, onNext }: StepOn
         transition={{ duration: 0.4, delay: 0.1 }}
         className="max-w-md mx-auto space-y-4"
       >
-        <Input
-          placeholder="Enter field name..."
-          value={fieldName}
-          onChange={(e) => onFieldNameChange(e.target.value)}
-          className="text-lg py-6 border-2 focus:border-primary"
-        />
+        <div className="space-y-1">
+          <Input
+            placeholder="Enter field name..."
+            value={fieldName}
+            onChange={(e) => {
+              onFieldNameChange(e.target.value);
+              if (e.target.value.trim().length >= 2) {
+                setShowValidationError(false);
+              }
+            }}
+            className={`text-lg py-6 border-2 ${
+              showValidationError 
+                ? 'border-red-500 focus:border-red-500' 
+                : 'focus:border-primary'
+            }`}
+          />
+          {showValidationError && (
+            <p className="text-sm text-red-500 pl-1">
+              Field name must be at least 2 characters
+            </p>
+          )}
+        </div>
         
         <Button 
           onClick={generateAISuggestion}
@@ -186,7 +317,7 @@ export default function StepOne({ fieldName, onFieldNameChange, onNext }: StepOn
             </>
           ) : (
             <>
-              <Leaf className="h-4 w-4 mr-1" />
+              <Sparkles className="h-4 w-4 mr-1" />
               Generate AI field name
             </>
           )}
