@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -14,6 +15,7 @@ import StepTwo from './steps/StepTwo';
 import StepThree from './steps/StepThree';
 import StepFour from './steps/StepFour';
 import StepFive from './steps/StepFive';
+import FieldMapperStep from './steps/FieldMapperStep';
 import { sanitizeFieldData, isOnline } from '@/utils/fieldSanitizer';
 import { Database } from '@/types/supabase';
 import { v4 as uuidv4 } from 'uuid';
@@ -46,7 +48,7 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
   });
   
   // Progress steps
-  const totalSteps = 5;
+  const totalSteps = 6; // Increased to 6 to include field mapper step
   
   // Get farm context - but NEVER block the flow
   useEffect(() => {
@@ -531,6 +533,24 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
             )}
             
             {currentStep === 2 && (
+              <FieldMapperStep 
+                defaultLocation={fieldData.location || undefined}
+                initialBoundary={fieldData.boundary}
+                initialName={fieldData.name}
+                onNext={(data) => {
+                  updateFieldData({ 
+                    boundary: data.boundary,
+                    location: data.location,
+                    name: data.name || fieldData.name
+                  });
+                  handleNext();
+                }}
+                onBack={handleBack}
+                onSkip={handleSkip}
+              />
+            )}
+            
+            {currentStep === 3 && (
               <StepTwo
                 location={fieldData.location}
                 boundary={fieldData.boundary}
@@ -542,7 +562,7 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
               />
             )}
             
-            {currentStep === 3 && (
+            {currentStep === 4 && (
               <StepThree 
                 cropType={fieldData.crop_type}
                 onCropTypeChange={(crop_type) => updateFieldData({ crop_type })}
@@ -552,7 +572,7 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
               />
             )}
             
-            {currentStep === 4 && (
+            {currentStep === 5 && (
               <StepFour
                 size={fieldData.size}
                 sizeUnit={fieldData.size_unit}
@@ -564,7 +584,7 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
               />
             )}
             
-            {currentStep === 5 && (
+            {currentStep === 6 && (
               <StepFive
                 plantingDate={fieldData.planting_date}
                 onPlantingDateChange={(planting_date) => updateFieldData({ planting_date })}
