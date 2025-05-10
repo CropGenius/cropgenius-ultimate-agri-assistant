@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -91,7 +92,7 @@ const verifyFarmOwnership = async (farmId: string, userId: string): Promise<bool
     if (data.user_id !== userId) {
       console.warn(`⚠️ User ${userId} attempted to access farm ${farmId} owned by ${data.user_id}`);
       
-      // Log ownership mismatch for analytics - fixed by removing .catch()
+      // Log ownership mismatch for analytics
       await supabase.from("ownership_mismatches").insert([{ 
         attempted_user: userId, 
         farm_id: farmId,
