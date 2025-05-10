@@ -68,7 +68,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
         // Update memory with last sync attempt
         await updateMemory({
           lastSyncedAt: new Date().toISOString(),
-          lastSyncStatus: 'offline',
+          syncStatus: 'offline',
           lastUsedFeature: 'ai-sync'
         });
         
@@ -95,7 +95,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
         
         await updateMemory({
           lastSyncedAt: new Date().toISOString(),
-          lastSyncStatus: 'partial',
+          syncStatus: 'partial',
           lastUsedFeature: 'ai-sync'
         });
       } else {
@@ -107,7 +107,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
         
         await updateMemory({
           lastSyncedAt: new Date().toISOString(),
-          lastSyncStatus: 'success',
+          syncStatus: 'success',
           lastUsedFeature: 'ai-sync'
         });
       }
@@ -127,7 +127,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
       // Still update memory
       await updateMemory({
         lastSyncedAt: new Date().toISOString(),
-        lastSyncStatus: 'error',
+        syncStatus: 'error',
         lastUsedFeature: 'ai-sync'
       });
       
@@ -218,8 +218,8 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
               <AlertTriangle className="h-3 w-3 text-amber-500" />
             ) : null}
             Last synced {new Date(memory.lastSyncedAt).toLocaleString()}
-            {memory.lastSyncStatus === 'offline' && " (offline)"}
-            {memory.lastSyncStatus === 'partial' && " (partial)"}
+            {memory.syncStatus === 'offline' && " (offline)"}
+            {memory.syncStatus === 'partial' && " (partial)"}
           </div>
         )}
       </CardContent>
