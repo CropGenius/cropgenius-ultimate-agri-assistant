@@ -68,7 +68,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
         // Update memory with last sync attempt
         await updateMemory({
           lastSyncedAt: new Date().toISOString(),
-          syncStatus: 'offline',
+          syncStatus: 'pending', // Changed from 'offline' to 'pending'
           lastUsedFeature: 'ai-sync'
         });
         
@@ -95,7 +95,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
         
         await updateMemory({
           lastSyncedAt: new Date().toISOString(),
-          syncStatus: 'partial',
+          syncStatus: 'pending', // Changed from 'partial' to 'pending'
           lastUsedFeature: 'ai-sync'
         });
       } else {
@@ -107,7 +107,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
         
         await updateMemory({
           lastSyncedAt: new Date().toISOString(),
-          syncStatus: 'success',
+          syncStatus: 'synced', // Changed from 'success' to 'synced'
           lastUsedFeature: 'ai-sync'
         });
       }
@@ -127,7 +127,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
       // Still update memory
       await updateMemory({
         lastSyncedAt: new Date().toISOString(),
-        syncStatus: 'error',
+        syncStatus: 'failed', // Changed from 'error' to 'failed'
         lastUsedFeature: 'ai-sync'
       });
       
@@ -140,6 +140,19 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
       setTimeout(() => {
         setIsSyncing(false);
       }, 1000);
+    }
+  };
+
+  // Helper function to get status text based on syncStatus
+  const getSyncStatusText = () => {
+    // Map the UI syncStatus to the memory syncStatus values
+    switch (memory.syncStatus) {
+      case 'pending':
+        return "(offline)";
+      case 'failed':
+        return "(partial)";
+      default:
+        return "";
     }
   };
 
@@ -218,8 +231,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
               <AlertTriangle className="h-3 w-3 text-amber-500" />
             ) : null}
             Last synced {new Date(memory.lastSyncedAt).toLocaleString()}
-            {memory.syncStatus === 'offline' && " (offline)"}
-            {memory.syncStatus === 'partial' && " (partial)"}
+            {getSyncStatusText()}
           </div>
         )}
       </CardContent>
