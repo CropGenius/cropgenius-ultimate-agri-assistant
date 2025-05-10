@@ -1,75 +1,40 @@
+import React, { useEffect, useState } from 'react';
+import { Wifi, WifiOff } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { isOnline } from '@/utils/fieldSanitizer';
 
-import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-
-interface OfflineStatusIndicatorProps {
-  className?: string;
-}
-
-export default function OfflineStatusIndicator({ className }: OfflineStatusIndicatorProps) {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncQueueCount, setSyncQueueCount] = useState(0);
+export function OfflineStatusIndicator() {
+  const [offline, setOffline] = useState(!isOnline());
+  const [showAlert, setShowAlert] = useState(false);
 
   useEffect(() => {
-    // Check offline queue size
-    const checkQueueSize = () => {
-      try {
-        // Check various offline storage queues
-        const fields = JSON.parse(localStorage.getItem('cropgenius_offline_fields') || '[]');
-        const crops = JSON.parse(localStorage.getItem('cropgenius_offline_crops') || '[]');
-        const history = JSON.parse(localStorage.getItem('cropgenius_offline_history') || '[]');
-        
-        const unsyncedFields = fields.filter((f: any) => !f.is_synced);
-        const unsyncedCrops = crops.filter((c: any) => !c.is_synced);
-        const unsyncedHistory = history.filter((h: any) => !h.is_synced);
-        
-        const total = unsyncedFields.length + unsyncedCrops.length + unsyncedHistory.length;
-        setSyncQueueCount(total);
-      } catch (e) {
-        setSyncQueueCount(0);
-      }
-    };
+    // Set initial state
+    setOffline(!isOnline());
     
+    // Show alert only if offline at initialization
+    if (!isOnline()) {
+      setShowAlert(true);
+      // Auto-hide the alert after 5 seconds
+      const timer = setTimeout(() => setShowAlert(false), 5000);
+      return () => clearTimeout(timer);
+    }
+    
+    // Add event listeners for connection changes
     const handleOnline = () => {
-      setIsOnline(true);
-      setIsSyncing(true);
-      
-      checkQueueSize();
-      if (syncQueueCount > 0) {
-        toast.info("Connection restored", {
-          description: `Syncing ${syncQueueCount} items...`
-        });
-        
-        // Simulate sync process
-        setTimeout(() => {
-          setIsSyncing(false);
-          setSyncQueueCount(0);
-          toast.success("Data synchronized", {
-            description: "All your changes have been saved to the cloud"
-          });
-        }, 2000);
-      } else {
-        setIsSyncing(false);
-      }
+      setOffline(false);
+      setShowAlert(true);
+      // Auto-hide the alert after 5 seconds
+      setTimeout(() => setShowAlert(false), 5000);
     };
     
     const handleOffline = () => {
-      setIsOnline(false);
-      setIsSyncing(false);
-      
-      toast.warning("You are offline", {
-        description: "Changes will be saved locally and synced when you reconnect"
-      });
+      setOffline(true);
+      setShowAlert(true);
+      // Keep alert visible while offline
     };
     
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    
-    // Initial check
-    checkQueueSize();
     
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -77,30 +42,34 @@ export default function OfflineStatusIndicator({ className }: OfflineStatusIndic
     };
   }, []);
 
+  // If online, either show nothing or a brief success message
+  if (!offline && !showAlert) return null;
+  
   return (
-    <div className={cn("flex items-center gap-1.5", className)}>
-      {isOnline ? (
-        <>
-          <Wifi className="h-4 w-4 text-green-500" />
-          <span className="text-xs text-muted-foreground">Online</span>
-          {isSyncing && (
-            <>
-              <RefreshCw className="h-3 w-3 animate-spin ml-1" />
-              <span className="text-xs text-muted-foreground">Syncing...</span>
-            </>
-          )}
-        </>
+    <div className="fixed bottom-4 right-4 z-50 max-w-sm transition-all duration-300 ease-in-out" 
+         style={{ 
+           transform: showAlert ? 'translateY(0)' : 'translateY(150%)',
+           opacity: showAlert ? 1 : 0
+         }}>
+      {offline ? (
+        <Alert variant="destructive" className="border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:text-amber-100">
+          <WifiOff className="h-4 w-4 mr-2" />
+          <AlertTitle>You are offline</AlertTitle>
+          <AlertDescription>
+            Don't worry, your changes will be saved locally and synced when you reconnect.
+          </AlertDescription>
+        </Alert>
       ) : (
-        <>
-          <WifiOff className="h-4 w-4 text-amber-500" />
-          <span className="text-xs text-amber-500 font-medium">Offline Mode</span>
-          {syncQueueCount > 0 && (
-            <span className="text-xs bg-amber-500/20 text-amber-600 px-1.5 py-0.5 rounded-full">
-              {syncQueueCount}
-            </span>
-          )}
-        </>
+        <Alert variant="default" className="border-green-500 bg-green-50 text-green-900 dark:bg-green-900/20 dark:text-green-100">
+          <Wifi className="h-4 w-4 mr-2" />
+          <AlertTitle>You are back online</AlertTitle>
+          <AlertDescription>
+            Syncing your offline changes...
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );
 }
+
+export default OfflineStatusIndicator;
