@@ -12,8 +12,8 @@ interface MoneyZoneProps {
 }
 
 export default function MoneyZone({ onUpgrade }: MoneyZoneProps) {
-  const { memory } = useMemoryStore();
-  const isProUser = memory?.isPro;
+  const { memory, checkProStatus } = useMemoryStore();
+  const { isActive: isProUser } = checkProStatus();
   const navigate = useNavigate();
   
   if (isProUser) {
@@ -35,15 +35,15 @@ export default function MoneyZone({ onUpgrade }: MoneyZoneProps) {
         <div className="absolute -top-10 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl"></div>
         <div className="absolute -bottom-8 left-0 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
         
-        <CardContent className="p-4 relative">
+        <CardContent className="p-4 relative group cursor-pointer hover:shadow-lg transition-all duration-300" onClick={handleUpgrade}>
           <div className="flex items-start">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="h-5 w-5 text-yellow-300" />
-                <Badge className="bg-white/20 hover:bg-white/30">7-day free trial</Badge>
+                <Sparkles className="h-5 w-5 text-yellow-300 animate-pulse" />
+                <Badge className="bg-white/20 hover:bg-white/30 group-hover:bg-white/40 transition-all">7-day free trial</Badge>
               </div>
               
-              <h3 className="text-lg font-semibold mb-1">
+              <h3 className="text-lg font-semibold mb-1 group-hover:translate-x-0.5 transition-transform">
                 Unlock Smart Forecasts + AI Support
               </h3>
               
@@ -52,12 +52,12 @@ export default function MoneyZone({ onUpgrade }: MoneyZoneProps) {
               </p>
               
               <Button 
-                className="bg-white text-green-700 hover:bg-white/90 flex items-center gap-2"
+                className="bg-white text-green-700 hover:bg-white/90 flex items-center gap-2 group-hover:shadow-md transition-all"
                 onClick={handleUpgrade}
               >
                 <Zap className="h-4 w-4" />
                 Go Pro
-                <ArrowRight className="h-4 w-4 ml-1" />
+                <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
               </Button>
             </div>
           </div>

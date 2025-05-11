@@ -5,7 +5,7 @@ import { User, CloudSun, CloudRain, Sun, CloudLightning, Snowflake, Circle } fro
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
-import { isOnline } from '@/utils/isOnline';
+import { isOnline, addOnlineStatusListener } from '@/utils/isOnline';
 
 interface PowerHeaderProps {
   location?: string;

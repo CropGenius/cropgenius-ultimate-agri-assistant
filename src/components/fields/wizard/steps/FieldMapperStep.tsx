@@ -37,11 +37,15 @@ export default function FieldMapperStep({
   const [isOnlineStatus, setIsOnlineStatus] = useState(isOnline());
 
   useEffect(() => {
-    const cleanup = window.addEventListener('online', () => setIsOnlineStatus(true));
-    window.addEventListener('offline', () => setIsOnlineStatus(false));
+    const handleOnline = () => setIsOnlineStatus(true);
+    const handleOffline = () => setIsOnlineStatus(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
     return () => {
-      window.removeEventListener('online', () => setIsOnlineStatus(true));
-      window.removeEventListener('offline', () => setIsOnlineStatus(false));
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
@@ -54,34 +58,42 @@ export default function FieldMapperStep({
     setIsDrawing(false);
   }, []);
 
-  const handleContinue = trackOperation('continueWithField', () => {
-    if (!boundary || boundary.coordinates.length < 3) {
-      toast.warning("Complete your field boundary", { 
-        description: "Draw at least 3 points to create a field" 
+  const handleContinue = async () => {
+    try {
+      if (!boundary || boundary.coordinates.length < 3) {
+        toast.warning("Complete your field boundary", { 
+          description: "Draw at least 3 points to create a field" 
+        });
+        return;
+      }
+
+      if (!location) {
+        toast.warning("Missing location", { 
+          description: "Please locate your field on the map first" 
+        });
+        return;
+      }
+
+      // Auto-generate field name if not provided
+      let processedName = fieldName.trim();
+      if (!processedName) {
+        processedName = `Field ${new Date().toLocaleDateString()}`;
+      }
+
+      // Proceed to next step with data
+      onNext({
+        boundary,
+        location,
+        name: processedName
       });
-      return;
+    } catch (error) {
+      logError('handleContinue', error);
+      toast.error("Something went wrong");
     }
+  };
 
-    if (!location) {
-      toast.warning("Missing location", { 
-        description: "Please locate your field on the map first" 
-      });
-      return;
-    }
-
-    // Auto-generate field name if not provided
-    let processedName = fieldName.trim();
-    if (!processedName) {
-      processedName = `Field ${new Date().toLocaleDateString()}`;
-    }
-
-    // Proceed to next step with data
-    onNext({
-      boundary,
-      location,
-      name: processedName
-    });
-  });
+  // Create a wrapped version for trackOperation
+  const trackedHandleContinue = trackOperation('continueWithField', handleContinue);
 
   return (
     <ErrorBoundary>
@@ -133,7 +145,7 @@ export default function FieldMapperStep({
             <Button variant="outline" onClick={onSkip} type="button">
               Skip
             </Button>
-            <Button onClick={handleContinue} type="button">
+            <Button onClick={trackedHandleContinue} type="button">
               {boundary?.coordinates.length >= 3 ? 'Continue' : 'Draw Field'} 
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
