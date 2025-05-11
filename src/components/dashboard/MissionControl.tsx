@@ -6,9 +6,9 @@ import {
   Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 import { useNavigate } from 'react-router-dom';
 
 interface ActionItem {
@@ -208,7 +208,7 @@ export default function MissionControl({ actions = [], loading = false }: Missio
                     "border-l-4 transition-all duration-300 overflow-hidden animate-fade-in",
                     action.completed ? "opacity-60 border-l-green-500 bg-muted/30" : 
                     getUrgencyColor(action.urgency),
-                    index < 3 ? "animate-in zoom-in-95" : ""
+                    {"animate-in zoom-in-95": index < 3},
                   )}
                   style={{animationDelay: `${index * 100}ms`}}
                 >
@@ -235,7 +235,7 @@ export default function MissionControl({ actions = [], loading = false }: Missio
                           {action.description}
                         </p>
                         <div className="text-xs font-medium text-green-600 dark:text-green-400 ml-2 whitespace-nowrap">
-                          ₦{action.potential_gain ? action.potential_gain.toLocaleString() : '0'}
+                          ₦{action.potential_gain.toLocaleString()}
                         </div>
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
@@ -268,7 +268,7 @@ export default function MissionControl({ actions = [], loading = false }: Missio
             <div className="bg-muted/50 rounded-lg p-3">
               <div className="flex items-center justify-between text-sm mb-1">
                 <span>{completedCount} of {localActions.length} Genius Actions complete</span>
-                <span className="text-green-600 font-medium">₦{potentialValue ? potentialValue.toLocaleString() : '0'} value</span>
+                <span className="text-green-600 font-medium">₦{potentialValue.toLocaleString()} value</span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div 

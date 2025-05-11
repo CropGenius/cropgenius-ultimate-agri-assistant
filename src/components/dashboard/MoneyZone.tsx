@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { useMemoryStore } from '@/hooks/useMemoryStore';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 
 interface MoneyZoneProps {
   onUpgrade?: () => void;
