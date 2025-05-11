@@ -1,3 +1,4 @@
+
 /**
  * Checks if the user is currently online
  * 

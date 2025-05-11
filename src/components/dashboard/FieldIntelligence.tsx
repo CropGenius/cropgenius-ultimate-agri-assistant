@@ -4,7 +4,7 @@ import { MapPin, Plus, Leaf, CloudRain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/utils/cn';
+import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
