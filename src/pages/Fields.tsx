@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { PlusCircle, MapPin } from "lucide-react";
 import { Field } from "@/types/field";
 import { Link } from 'react-router-dom';
@@ -28,15 +28,13 @@ const Fields = () => {
       setLoading(true);
       console.log("📊 [FieldsPage] Loading fields");
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
+      // Use a default user ID since we don't have authentication
+      const userId = 'default-user';
       
       const { data, error } = await supabase
         .from('fields')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -138,8 +136,15 @@ const Fields = () => {
                         {field.soil_type && <p>Soil: {field.soil_type}</p>}
                       </div>
                       <div>
-                        <Link to={`/fields/${field.id}`}>
-                          <Button variant="outline" size="sm" className="w-full">View Details</Button>
+                        <Link 
+                          to={`/fields/${field.id}`}
+                          className={buttonVariants({
+                            variant: "secondary",
+                            size: "sm",
+                            className: "w-full"
+                          })}
+                        >
+                          View Details
                         </Link>
                       </div>
                     </CardContent>

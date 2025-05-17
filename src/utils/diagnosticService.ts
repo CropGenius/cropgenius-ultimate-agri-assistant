@@ -181,7 +181,7 @@ class DiagnosticService {
     const report = {
       timestamp: new Date().toISOString(),
       session: {
-        active: !!localStorage.getItem('sb-supabase-auth-token'),
+        active: true, // Always active since we don't have authentication
         userAgent: navigator.userAgent,
       },
       storage: {

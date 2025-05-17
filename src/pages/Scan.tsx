@@ -1,27 +1,15 @@
 
-import React, { useState } from "react";
+import React from "react";
 import Layout from "@/components/Layout";
 import CropScanner from "@/components/scanner/CropScanner";
 import FieldBrainAssistant from "@/components/ai/FieldBrainAssistant";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getCurrentUser } from "@/utils/authService";
 import { FieldBrainProvider } from "@/hooks/useFieldBrain";
 
 const ScanPage = () => {
-  const [userId, setUserId] = useState<string | null>(null);
-  
-  // Get the current user ID
-  React.useEffect(() => {
-    const fetchUserId = async () => {
-      const { user } = await getCurrentUser();
-      if (user) {
-        setUserId(user.id);
-      }
-    };
-    
-    fetchUserId();
-  }, []);
+  // Use a default user ID since we don't have authentication
+  const userId = 'default-user';
   
   return (
     <Layout>

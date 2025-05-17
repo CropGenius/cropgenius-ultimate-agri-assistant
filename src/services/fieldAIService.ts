@@ -17,7 +17,10 @@ export const analyzeField = async (fieldId: string): Promise<FieldAnalysisResult
   try {
     // First try the new field-ai-insights function
     const { data: aiData, error: aiError } = await supabase.functions.invoke("field-ai-insights", {
-      body: { field_id: fieldId, user_id: (await supabase.auth.getUser()).data.user?.id },
+      body: { 
+        field_id: fieldId, 
+        user_id: 'default-user' // Default user ID since we don't have authentication
+      },
     });
     
     if (!aiError && aiData) {

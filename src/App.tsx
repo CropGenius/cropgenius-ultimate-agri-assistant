@@ -1,11 +1,10 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
-import { AuthProvider } from "@/context/AuthContext";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import { WifiOff } from "lucide-react";
 import Index from "./pages/Index";
@@ -16,12 +15,9 @@ import YieldPredictor from "./pages/YieldPredictor";
 import Market from "./pages/Market";
 import Weather from "./pages/Weather";
 import Chat from "./pages/Chat";
-import Auth from "./pages/Auth";
-import AuthCallback from "./pages/AuthCallback";
 import Fields from "./pages/Fields";
 import FieldDetail from "./pages/FieldDetail";
 import ManageFields from "./pages/ManageFields";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import DevDebugPanel from "@/components/debug/DevDebugPanel";
 import { diagnostics } from "@/utils/diagnosticService";
 
@@ -69,7 +65,6 @@ if (typeof window !== 'undefined') {
 }
 
 const App = () => {
-  // Development environment detection
   const isDev = import.meta.env.MODE === "development";
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
@@ -103,46 +98,40 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <AuthProvider>
-            <Toaster />
-            <Sonner position="top-center" closeButton />
-            <BrowserRouter>
-              <ErrorBoundary>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/auth/callback" element={<AuthCallback />} />
-                  
-                  {/* Protected Routes */}
-                  <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
-                  <Route path="/farm-plan" element={<ProtectedRoute><FarmPlan /></ProtectedRoute>} />
-                  <Route path="/predictions" element={<ProtectedRoute><YieldPredictor /></ProtectedRoute>} />
-                  <Route path="/market" element={<ProtectedRoute><Market /></ProtectedRoute>} />
-                  <Route path="/weather" element={<ProtectedRoute><Weather /></ProtectedRoute>} />
-                  <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-                  <Route path="/ai-assistant" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-                  <Route path="/fields" element={<ProtectedRoute><Fields /></ProtectedRoute>} />
-                  <Route path="/fields/:id" element={<ProtectedRoute><FieldDetail /></ProtectedRoute>} />
-                  <Route path="/manage-fields" element={<ProtectedRoute><ManageFields /></ProtectedRoute>} />
-                  <Route path="/alerts" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
-                  <Route path="/referrals" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
-                  <Route path="/community" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
-                  <Route path="/challenges" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
-                  <Route path="/farm-clans" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </ErrorBoundary>
-              
-              {(isDev || localStorage.getItem('DEV_MODE') === 'true') && <DevDebugPanel />}
-              
-              {!isOnline && (
-                <div className="fixed bottom-4 left-4 bg-yellow-500 text-white px-4 py-2 rounded-md text-sm shadow-lg z-50 flex items-center">
-                  <WifiOff className="h-4 w-4 mr-2" />
-                  You're offline. Some features may be unavailable.
-                </div>
-              )}
-            </BrowserRouter>
-          </AuthProvider>
+          <Toaster />
+          <Sonner position="top-center" closeButton />
+          <BrowserRouter>
+            <ErrorBoundary>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/scan" element={<Scan />} />
+                <Route path="/farm-plan" element={<FarmPlan />} />
+                <Route path="/predictions" element={<YieldPredictor />} />
+                <Route path="/market" element={<Market />} />
+                <Route path="/weather" element={<Weather />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/ai-assistant" element={<Chat />} />
+                <Route path="/fields" element={<Fields />} />
+                <Route path="/fields/:id" element={<FieldDetail />} />
+                <Route path="/manage-fields" element={<ManageFields />} />
+                <Route path="/alerts" element={<NotFound />} />
+                <Route path="/referrals" element={<NotFound />} />
+                <Route path="/community" element={<NotFound />} />
+                <Route path="/challenges" element={<NotFound />} />
+                <Route path="/farm-clans" element={<NotFound />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ErrorBoundary>
+            
+            {(isDev || localStorage.getItem('DEV_MODE') === 'true') && <DevDebugPanel />}
+            
+            {!isOnline && (
+              <div className="fixed bottom-4 left-4 bg-yellow-500 text-white px-4 py-2 rounded-md text-sm shadow-lg z-50 flex items-center">
+                <WifiOff className="h-4 w-4 mr-2" />
+                You're offline. Some features may be unavailable.
+              </div>
+            )}
+          </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

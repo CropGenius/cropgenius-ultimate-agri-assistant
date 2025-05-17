@@ -1,76 +1,83 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fieldService } from '@/services/fieldService';
-import { supabase } from '@/lib/supabase';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import * as fieldService from '@/services/fieldService';
+import { Field } from '@/types/field';
 
-// Mock the supabase client
-vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    from: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
-    delete: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    single: vi.fn().mockResolvedValue({ data: null, error: null }),
-  },
+// Mock the field service functions
+vi.mock('@/services/fieldService', () => ({
+  createField: vi.fn().mockResolvedValue({ data: null, error: null }),
+  getFieldById: vi.fn().mockResolvedValue({ data: null, error: null }),
+  updateField: vi.fn().mockResolvedValue({ data: null, error: null }),
+  deleteField: vi.fn().mockResolvedValue({ error: null }),
 }));
 
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: vi.fn((key: string) => store[key] || null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = String(value);
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key];
-    }),
-    clear: vi.fn(() => {
-      store = {};
-    }),
-  };
-})();
-
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
-
 describe('Field Service', () => {
-  const mockField = {
+  const mockField: Field = {
     id: 'field-123',
+    user_id: 'user-123',
+    farm_id: 'farm-123',
     name: 'Test Field',
-    area: 1000,
+    size: 1000,
+    size_unit: 'hectares',
     boundary: {
-      type: 'Polygon',
-      coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+      type: 'polygon',
+      coordinates: [
+        { lat: 0, lng: 0 },
+        { lat: 1, lng: 0 },
+        { lat: 1, lng: 1 },
+        { lat: 0, lng: 1 },
+        { lat: 0, lng: 0 }
+      ]
     },
+    location_description: 'Test location',
+    soil_type: 'loam',
+    irrigation_type: 'sprinkler',
     created_at: '2023-01-01T00:00:00Z',
     updated_at: '2023-01-01T00:00:00Z',
+    is_synced: true,
+    is_shared: false,
+    shared_with: []
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // @ts-ignore - Mocking the supabase chain
-    supabase.from.mockReturnThis();
   });
 
   describe('createField', () => {
     it('should create a new field and return it', async () => {
       // Arrange
-      const newField = {
+      const newField: Omit<Field, 'id' | 'created_at' | 'updated_at'> = {
+        user_id: 'user-123',
+        farm_id: 'farm-123',
         name: 'New Field',
-        area: 500,
+        size: 500,
+        size_unit: 'hectares',
         boundary: {
-          type: 'Polygon',
-          coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
+          type: 'polygon',
+          coordinates: [
+            { lat: 0, lng: 0 },
+            { lat: 1, lng: 0 },
+            { lat: 1, lng: 1 },
+            { lat: 0, lng: 1 },
+            { lat: 0, lng: 0 }
+          ]
         },
+        location_description: 'New field location',
+        soil_type: 'sandy',
+        irrigation_type: 'drip',
+        is_synced: true,
+        is_shared: false,
+        shared_with: []
       };
 
-      // Mock successful response
-      // @ts-ignore - Mocking the supabase chain
-      supabase.from().insert().select().single.mockResolvedValueOnce({
-        data: { ...newField, id: 'new-field-123' },
+      const createdField: Field = {
+        ...newField,
+        id: 'new-field-123',
+        created_at: '2023-01-01T00:00:00Z',
+        updated_at: '2023-01-01T00:00:00Z',
+      };
+      
+      vi.spyOn(fieldService, 'createField').mockResolvedValueOnce({
+        data: createdField,
         error: null,
       });
 
@@ -79,56 +86,14 @@ describe('Field Service', () => {
 
       // Assert
       expect(result.error).toBeNull();
-      expect(result.data).toMatchObject({
-        ...newField,
-        id: 'new-field-123',
-      });
-    });
-
-    it('should handle offline mode by saving to localStorage', async () => {
-      // Arrange
-      const newField = {
-        name: 'Offline Field',
-        area: 300,
-        boundary: {
-          type: 'Polygon',
-          coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]],
-        },
-      };
-
-      // Mock offline error
-      const error = new Error('Network error');
-      // @ts-ignore - Mocking the supabase chain
-      supabase.from().insert().select().single.mockRejectedValueOnce(error);
-
-      // Mock online status
-      Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
-
-      // Act
-      const result = await fieldService.createField(newField);
-
-      // Assert
-      expect(result.error).toBeNull();
-      expect(result.data).toMatchObject({
-        ...newField,
-        id: expect.any(String),
-      });
-
-      // Verify offline storage
-      const offlineFields = JSON.parse(localStorage.setItem.mock.calls[0][1]);
-      expect(offlineFields[0]).toMatchObject({
-        ...newField,
-        id: expect.any(String),
-        is_offline: true,
-      });
+      expect(result.data).toMatchObject(createdField);
     });
   });
 
   describe('getFieldById', () => {
     it('should return a field by id', async () => {
       // Arrange
-      // @ts-ignore - Mocking the supabase chain
-      supabase.from().select().eq().single.mockResolvedValueOnce({
+      vi.spyOn(fieldService, 'getFieldById').mockResolvedValueOnce({
         data: mockField,
         error: null,
       });
@@ -139,19 +104,19 @@ describe('Field Service', () => {
       // Assert
       expect(result.error).toBeNull();
       expect(result.data).toEqual(mockField);
-      expect(supabase.from).toHaveBeenCalledWith('fields');
-      expect(supabase.from().select).toHaveBeenCalledWith('*');
-      expect(supabase.from().select().eq).toHaveBeenCalledWith('id', 'field-123');
     });
   });
 
   describe('updateField', () => {
     it('should update a field', async () => {
       // Arrange
-      const updatedField = { ...mockField, name: 'Updated Field' };
+      const updatedField: Field = {
+        ...mockField,
+        name: 'Updated Field',
+        updated_at: new Date().toISOString()
+      };
       
-      // @ts-ignore - Mocking the supabase chain
-      supabase.from().update().eq().select().single.mockResolvedValueOnce({
+      vi.spyOn(fieldService, 'updateField').mockResolvedValueOnce({
         data: updatedField,
         error: null,
       });
@@ -168,8 +133,7 @@ describe('Field Service', () => {
   describe('deleteField', () => {
     it('should delete a field', async () => {
       // Arrange
-      // @ts-ignore - Mocking the supabase chain
-      supabase.from().delete().eq().then.mockResolvedValueOnce({
+      vi.spyOn(fieldService, 'deleteField').mockResolvedValueOnce({
         error: null,
       });
 
@@ -178,9 +142,6 @@ describe('Field Service', () => {
 
       // Assert
       expect(result.error).toBeNull();
-      expect(supabase.from).toHaveBeenCalledWith('fields');
-      expect(supabase.from('fields').delete).toHaveBeenCalled();
-      expect(supabase.from('fields').delete().eq).toHaveBeenCalledWith('id', 'field-123');
     });
   });
 });

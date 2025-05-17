@@ -2,13 +2,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMemoryStore } from '@/hooks/useMemoryStore';
 import { toast } from "sonner";
-import { useAuth } from "@/context/AuthContext";
-import { isOnline, addOnlineStatusListener } from "@/utils/isOnline";
+import { isOnline } from "@/utils/isOnline";
 
 // Import our new components
 import PowerHeader from "@/components/dashboard/PowerHeader";
@@ -18,7 +16,8 @@ import MoneyZone from "@/components/dashboard/MoneyZone";
 
 export default function Index() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  // Use a default user ID since we don't have authentication
+  const userId = 'default-user';
   const { memory } = useMemoryStore();
   const [loading, setLoading] = useState(true);
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -67,16 +66,14 @@ export default function Index() {
           simulateLocationAndWeather(null, null);
         }
         
-        if (user) {
-          // Load user's fields
-          await loadUserFields();
-          
-          // Load genius actions
-          await loadGeniusActions();
-          
-          // Load farm score data
-          await loadFarmScore();
-        }
+        // Load user's fields
+        await loadUserFields();
+        
+        // Load genius actions
+        await loadGeniusActions();
+        
+        // Load farm score data
+        await loadFarmScore();
       } catch (err) {
         console.error("Error loading data:", err);
       } finally {
@@ -90,15 +87,13 @@ export default function Index() {
     return () => {
       // Any cleanup needed
     };
-  }, [user]);
+  }, []);
   
   // Load user's fields from Supabase or localStorage
   const loadUserFields = async () => {
     setFieldsLoading(true);
     
     try {
-      if (!user) return;
-      
       let fieldsData = [];
       
       if (isOnline()) {
@@ -106,7 +101,7 @@ export default function Index() {
         const { data, error } = await supabase
           .from('fields')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
           
         if (error) throw error;
         fieldsData = data || [];

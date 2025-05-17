@@ -52,12 +52,5 @@ window.scrollTo = vi.fn();
 
 // Mock Supabase client
 vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn(),
-      onAuthStateChange: vi.fn(),
-      signInWithOAuth: vi.fn(),
-      signOut: vi.fn(),
-    },
-  },
+  supabase: {}
 }));

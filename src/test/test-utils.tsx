@@ -2,7 +2,6 @@ import { render, RenderOptions, RenderResult } from '@testing-library/react';
 import { ReactElement, ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
-import { AuthProvider } from '@/context/AuthContext';
 import userEvent, { UserEvent } from '@testing-library/user-event';
 
 type CustomRenderOptions = Omit<RenderOptions, 'wrapper'> & {
@@ -30,7 +29,7 @@ const customRender = (
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[route]}>
-        <AuthProvider>{children}</AuthProvider>
+        {children}
       </MemoryRouter>
     </QueryClientProvider>
   );
@@ -65,7 +64,7 @@ export const createWrapper = () => {
     return (
       <QueryClientProvider client={testQueryClient}>
         <MemoryRouter>
-          <AuthProvider>{children}</AuthProvider>
+          {children}
         </MemoryRouter>
       </QueryClientProvider>
     );

@@ -18,14 +18,6 @@ export const getSupabaseClient = () => {
       env.VITE_SUPABASE_URL,
       env.VITE_SUPABASE_ANON_KEY,
       {
-        auth: {
-          autoRefreshToken: true,
-          persistSession: true,
-          detectSessionInUrl: true,
-          storageKey: 'cropgenius-auth',
-          storage: window.localStorage,
-          flowType: 'pkce',
-        },
         global: {
           headers: {
             'x-application-name': 'CropGenius',
@@ -34,14 +26,6 @@ export const getSupabaseClient = () => {
         },
       }
     );
-
-    // Add real-time presence for online status
-    supabaseInstance.realtime.setAuth(env.VITE_SUPABASE_ANON_KEY);
-
-    // Log auth state changes for debugging
-    supabaseInstance.auth.onAuthStateChange((event, session) => {
-      console.log(`[Auth] State changed: ${event}`, session?.user?.id);
-    });
 
     return supabaseInstance;
   } catch (error) {
@@ -54,54 +38,16 @@ export const getSupabaseClient = () => {
 export const supabase = getSupabaseClient();
 
 /**
- * Get the current session with auto-refresh
+ * Mock user ID for development
  */
-export const getCurrentSession = async () => {
-  try {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    
-    if (error) {
-      console.error('[Auth] Error getting session:', error);
-      throw error;
-    }
-    
-    // If no session, return null
-    if (!session) return null;
-    
-    // Check if session is expired
-    const now = Math.floor(Date.now() / 1000);
-    if (session.expires_at && session.expires_at < now) {
-      console.log('[Auth] Session expired, attempting refresh...');
-      const { data, error: refreshError } = await supabase.auth.refreshSession();
-      
-      if (refreshError) {
-        console.error('[Auth] Error refreshing session:', refreshError);
-        await supabase.auth.signOut();
-        return null;
-      }
-      
-      return data.session;
-    }
-    
-    return session;
-  } catch (error) {
-    console.error('[Auth] Unexpected error in getCurrentSession:', error);
-    return null;
-  }
-};
+const MOCK_USER_ID = '00000000-0000-0000-0000-000000000000';
 
 /**
- * Ensure user is authenticated
- * @throws {Error} If user is not authenticated
+ * Get the current user ID (mocked for now)
  */
-export const requireAuth = async () => {
-  const session = await getCurrentSession();
-  if (!session) {
-    throw new Error('Authentication required');
-  }
-  return session;
+export const getCurrentUserId = () => {
+  return MOCK_USER_ID;
 };
 
 // Types
-export type { Session, User } from '@supabase/supabase-js';
 export type { Database } from '@/types/supabase';

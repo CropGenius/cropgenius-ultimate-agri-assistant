@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Field } from '@/types/field';
 import { isOnline } from './isOnline';
 import { toast } from 'sonner';
+import { getCurrentUserId } from '@/lib/supabase';
 
 /**
  * Syncs offline-saved fields to Supabase
@@ -20,13 +21,8 @@ export const syncOfflineFields = async (): Promise<{
     return { success: false, synced: 0, failed: 0, remaining: 0 };
   }
   
-  // Check for auth session
-  const { data: { session }} = await supabase.auth.getSession();
-  
-  if (!session?.user) {
-    console.warn('Cannot sync offline fields: User not authenticated');
-    return { success: false, synced: 0, failed: 0, remaining: 0 };
-  }
+  // Get the current user ID (mocked for now)
+  const userId = getCurrentUserId();
   
   // Get offline fields
   const offlineFields = JSON.parse(localStorage.getItem('cropgenius_offline_fields') || '[]') as Field[];
@@ -53,7 +49,7 @@ export const syncOfflineFields = async (): Promise<{
       // Ensure field has user_id set to current user
       const fieldToSync = {
         ...field,
-        user_id: session.user.id,
+        user_id: userId,
         // Use existing ID if it's not an offline ID (UUID format check)
         id: field.id?.length === 36 ? undefined : field.id
       };
@@ -63,39 +59,19 @@ export const syncOfflineFields = async (): Promise<{
       
       // Check if field has a valid farm ID
       if (!cleanField.farm_id || cleanField.farm_id === 'local-farm') {
-        // Get the user's first farm or create one
-        const { data: farms } = await supabase
-          .from('farms')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .limit(1);
-          
-        if (farms && farms.length > 0) {
-          cleanField.farm_id = farms[0].id;
-        } else {
-          // Create a new farm
-          const { data: newFarm } = await supabase
-            .from('farms')
-            .insert({
-              user_id: session.user.id,
-              name: 'My Farm'
-            })
-            .select()
-            .single();
-            
-          if (newFarm) {
-            cleanField.farm_id = newFarm.id;
-          }
-        }
+        // For now, use a default farm ID since we don't have authentication
+        cleanField.farm_id = 'default-farm';
+        // The farm name will be handled by the UI if needed
       }
       
-      // Insert the field
-      const { data, error } = await supabase
+      // Update the field in the database
+      const { error } = await supabase
         .from('fields')
-        .insert(cleanField)
-        .select()
-        .single();
-        
+        .upsert({
+          ...cleanField,
+          user_id: userId
+        });
+
       if (error) {
         console.error('❌ [syncOfflineFields] Failed to sync field:', error);
         failedCount++;
@@ -103,7 +79,7 @@ export const syncOfflineFields = async (): Promise<{
         continue;
       }
       
-      console.log('✅ [syncOfflineFields] Field synced successfully:', data);
+      console.log('✅ [syncOfflineFields] Field synced successfully');
       syncedCount++;
       
       // If there are associated crops, sync them too
@@ -115,7 +91,7 @@ export const syncOfflineFields = async (): Promise<{
           // Update to use the new field ID
           const cropToSync = {
             ...crop,
-            field_id: data.id
+            field_id: cleanField.id
           };
           
           // Remove metadata fields

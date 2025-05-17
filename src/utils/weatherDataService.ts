@@ -10,21 +10,16 @@ import { WeatherData as DbWeatherData } from "@/types/supabase";
  */
 export const fetchUserWeatherData = async (userId: string, location: LocationData): Promise<AppWeatherData | null> => {
   try {
-    console.log("Fetching weather data for user:", userId, "at location:", location);
+    console.log("Fetching weather data for location:", location);
     
-    if (!userId) {
-      console.error("User ID is required to fetch weather data");
-      toast.error("Authentication error", {
-        description: "Please sign in to access weather data."
-      });
-      return null;
-    }
+    // Use a default user ID since we don't have authentication
+    const effectiveUserId = userId || 'default-user';
     
     // Using the improved index on location_name for better performance
     const { data, error } = await supabase
       .from('weather_data')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', effectiveUserId)
       .eq('location_name', location.name)
       .order('recorded_at', { ascending: false })
       .limit(1);

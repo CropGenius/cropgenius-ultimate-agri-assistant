@@ -39,15 +39,13 @@ const ManageFields = () => {
       setLoading(true);
       console.log("📊 [ManageFieldsPage] Loading fields");
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
+      // Use a default user ID since we don't have authentication
+      const userId = 'default-user';
       
       const { data, error } = await supabase
         .from('fields')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
       
       if (error) {

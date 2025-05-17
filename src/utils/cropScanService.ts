@@ -31,9 +31,8 @@ export const analyzeCropImage = async (
     // Convert image to base64 for API processing
     const base64Image = await fileToBase64(imageFile);
     
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id;
+    // Use a default user ID since we don't have authentication
+    const userId = 'default-user';
 
     // Call the Supabase Edge Function for analysis
     console.log("Calling crop-scan edge function");

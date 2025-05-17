@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUserId } from "@/lib/supabase";
 
 export type ChatCategory = "all" | "crops" | "diseases" | "machinery" | "market";
 
@@ -20,9 +21,8 @@ export const fetchAIResponse = async (
   try {
     console.log(`Sending message to AI in category: ${category}, language: ${language}`);
     
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id;
+    // Get current user ID (mocked for now)
+    const userId = getCurrentUserId();
     
     // Try to call the Supabase Edge Function
     const { data, error } = await supabase.functions.invoke('ai-chat', {
@@ -36,34 +36,30 @@ export const fetchAIResponse = async (
     
     console.log("AI Response:", data);
     
-    // Save chat to history if user is logged in
-    if (userId) {
-      try {
-        // We'll comment out this database operation for now until the tables are properly created
-        // and TypeScript types are updated
-        /*
-        await supabase.from('chat_history').insert({
-          user_id: userId,
-          category: category,
-          user_message: message,
-          ai_response: data.response,
-          language: language,
-          ai_model: data.usingFallback ? 'fallback' : 'gemini-pro'
-        });
-        */
-        console.log("Chat would be saved to history:", {
-          user_id: userId,
-          category,
-          message,
-          response: data.response
-        });
-      } catch (dbError) {
-        console.error("Error saving chat to history:", dbError);
-        // Non-blocking - continue even if saving to DB fails
-      }
+    // Save chat to history (commented out for now)
+    try {
+      /*
+      await supabase.from('chat_history').insert({
+        user_id: userId,
+        category: category,
+        user_message: message,
+        ai_response: data.response,
+        language: language,
+        ai_model: data.usingFallback ? 'fallback' : 'gemini-pro'
+      });
+      */
+      console.log("Chat would be saved to history:", {
+        user_id: userId,
+        category,
+        message,
+        response: data.response
+      });
+    } catch (dbError) {
+      console.error("Error saving chat to history:", dbError);
+      // Non-blocking - continue even if saving to DB fails
     }
     
-    if (data && data.response) {
+    if (data?.response) {
       return data.response;
     }
     

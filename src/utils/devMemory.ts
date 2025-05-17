@@ -117,16 +117,13 @@ export const logCurrentMemory = async () => {
     return;
   }
   
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) {
-    console.warn('User must be logged in to view memory');
-    return null;
-  }
+  // Use a default user ID since we don't have authentication
+  const userId = 'default-user';
   
   try {
-    // Get from localStorage first
+    // Get from localStorage only
     let memory = null;
-    const localData = localStorage.getItem(`cropgenius-memory-${data.user.id}`);
+    const localData = localStorage.getItem(`cropgenius-memory-${userId}`);
     
     if (localData) {
       try {
@@ -137,19 +134,8 @@ export const logCurrentMemory = async () => {
       }
     }
     
-    // Get from Supabase
-    const { data: memoryData, error: memoryError } = await supabase
-      .from('user_memory')
-      .select('memory_data')
-      .eq('user_id', data.user.id)
-      .single();
-      
-    if (memoryError) {
-      console.error('Failed to fetch server memory:', memoryError);
-    } else {
-      console.log('💾 Memory from server:', memoryData.memory_data);
-      memory = memoryData.memory_data;
-    }
+    // No server-side memory without authentication
+    console.log('💾 Server memory not available without authentication');
     
     return memory;
   } catch (error) {

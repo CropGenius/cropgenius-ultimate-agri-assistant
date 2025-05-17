@@ -112,5 +112,10 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    async () => {
+      const plugin = await import('tailwindcss-animate');
+      return plugin.default;
+    }
+  ],
 } satisfies Config;
