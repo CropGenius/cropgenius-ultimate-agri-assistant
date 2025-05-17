@@ -12,10 +12,13 @@
     "preview": "vite preview"
   },
   "overrides": {
+    "@types/react": "^18.2.43",
     "@testing-library/react-hooks": {
       "@types/react": "$@types/react"
     },
-    "@types/react": "^18.2.43"
+    "@testing-library/react-hooks@8.0.1": { 
+      "@types/react": "$@types/react"
+    }
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
