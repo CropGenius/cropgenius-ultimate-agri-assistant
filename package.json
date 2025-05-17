@@ -11,6 +11,12 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "overrides": {
+    "@testing-library/react-hooks": {
+      "@types/react": "$@types/react"
+    },
+    "@types/react": "^18.2.43"
+  },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
