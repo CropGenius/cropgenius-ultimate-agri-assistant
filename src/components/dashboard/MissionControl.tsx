@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Droplet, AlertTriangle, TrendingUp, Check, 
-  ArrowRight, Bot, Loader2, Sparkles, Mic, MessageCircle,
-  Zap
+  ArrowRight, Bot, Loader2, Mic, MessageCircle,
+  Zap, Star, Scissors
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { cn } from '@/utils/cn';
 import { useNavigate } from 'react-router-dom';
@@ -15,12 +16,18 @@ interface ActionItem {
   id: string;
   title: string;
   description: string;
-  icon: React.ReactNode;
+  icon?: string | React.ReactNode | null;
   type: 'water' | 'harvest' | 'market' | 'other';
-  urgency: 'critical' | 'recommended' | 'optional';
-  potential_gain: number;
-  deadline: string;
+  urgency?: 'critical' | 'recommended' | 'optional';
+  potential_gain?: number;
+  deadline?: string;
+  urgent?: boolean;
   completed?: boolean;
+  priority?: 'high' | 'medium' | 'low';
+  ai_generated?: boolean;
+  completed_date?: string;
+  estimated_time?: number | string;
+  field?: string;
 }
 
 interface MissionControlProps {
@@ -30,21 +37,29 @@ interface MissionControlProps {
 
 export default function MissionControl({ actions = [], loading = false }: MissionControlProps) {
   const navigate = useNavigate();
-  const [localActions, setLocalActions] = useState<ActionItem[]>(actions);
+  const [localActions, setLocalActions] = useState<ActionItem[]>([]);
   const [completedCount, setCompletedCount] = useState(0);
   const [potentialValue, setPotentialValue] = useState(0);
   const [streak, setStreak] = useState(3);
   
   useEffect(() => {
     if (actions.length > 0) {
-      setLocalActions(actions);
+      // Enhance received actions with default values
+      const enhancedActions = actions.map(action => ({
+        ...action,
+        urgency: action.urgent ? 'critical' as const : 'recommended' as const,
+        deadline: action.deadline || '24h remaining',
+        potential_gain: action.potential_gain || 0
+      }));
+      
+      setLocalActions(enhancedActions);
       
       // Calculate completed count and potential value
-      const completed = actions.filter(a => a.completed).length;
+      const completed = enhancedActions.filter(a => a.completed).length;
       setCompletedCount(completed);
       
-      const value = actions.reduce((sum, action) => {
-        return action.completed ? sum : sum + action.potential_gain;
+      const value = enhancedActions.reduce((sum, action) => {
+        return action.completed ? sum : sum + (action.potential_gain || 0);
       }, 0);
       setPotentialValue(value);
     } else {
@@ -123,8 +138,34 @@ export default function MissionControl({ actions = [], loading = false }: Missio
   
   // Function to get icon based on action type and urgency
   const getActionIcon = (action: ActionItem) => {
+    // If the icon is a string, convert it to the corresponding lucide icon
+    if (typeof action.icon === 'string') {
+      const iconName = action.icon.toLowerCase();
+      switch(iconName) {
+        case 'droplet':
+          return <Droplet className="h-5 w-5 text-blue-500" />;
+        case 'alert-triangle':
+        case 'alerttriangle':
+          return <AlertTriangle className="h-5 w-5 text-amber-500" />;
+        case 'trending-up':
+        case 'trendingup':
+          return <TrendingUp className="h-5 w-5 text-green-500" />;
+        case 'scissors':
+          return <Scissors className="h-5 w-5 text-red-500" />;
+        case 'zap':
+          return <Zap className="h-5 w-5 text-purple-500" />;
+        case 'star':
+          return <Star className="h-5 w-5 text-amber-500" />;
+        default:
+          // For any other string icon, default to Zap
+          return <Zap className="h-5 w-5 text-primary" />;
+      }
+    }
+    
+    // If it's a React node, return it directly
     if (action.icon) return action.icon;
     
+    // Fallback to type-based icon if no icon property exists
     switch(action.type) {
       case 'water':
         return <Droplet className={cn(
@@ -134,52 +175,52 @@ export default function MissionControl({ actions = [], loading = false }: Missio
           "text-blue-300"
         )} />;
       case 'harvest':
-        return <AlertTriangle className={cn(
+        return <Scissors className={cn(
           "h-5 w-5", 
           action.urgency === 'critical' ? "text-red-500" : 
           action.urgency === 'recommended' ? "text-amber-500" : 
-          "text-amber-400"
+          "text-yellow-400"
         )} />;
       case 'market':
         return <TrendingUp className={cn(
           "h-5 w-5", 
-          action.urgency === 'critical' ? "text-green-500" : 
-          action.urgency === 'recommended' ? "text-green-400" : 
-          "text-green-300"
+          action.urgency === 'critical' ? "text-green-600" : 
+          action.urgency === 'recommended' ? "text-green-500" : 
+          "text-green-400"
         )} />;
       default:
-        return <Zap className="h-5 w-5 text-purple-400" />;
+        return <Zap className="h-5 w-5 text-primary" />;
     }
   };
   
   // Function to get urgency color
-  const getUrgencyColor = (urgency: string) => {
+  const getUrgencyColor = (urgency: 'critical' | 'recommended' | 'optional' | string) => {
     switch(urgency) {
       case 'critical':
         return "border-l-red-500";
       case 'recommended':
-        return "border-l-amber-500";
+        return "border-l-orange-500";
       case 'optional':
-        return "border-l-blue-500";
+        return "border-l-green-500";
       default:
-        return "border-l-primary/50";
+        return "border-l-slate-500";
     }
   };
 
   return (
-    <div className="px-4">
+    <div className="px-4 mt-6 pb-2 container-safe">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold">Today's Genius Actions</h2>
-        {localActions.length > 0 && (
-          <span className="text-xs text-muted-foreground">
+        {completedCount > 0 && (
+          <Badge className="bg-primary/20 text-primary text-xs">
             {completedCount}/{localActions.length} complete
-          </span>
+          </Badge>
         )}
       </div>
       
       {loading ? (
-        <div className="flex items-center justify-center py-6">
-          <Loader2 className="h-6 w-6 animate-spin text-primary/70" />
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-6 w-6 text-primary animate-spin" />
         </div>
       ) : localActions.length === 0 ? (
         <Card className="bg-muted/30 border-dashed mb-4">
@@ -189,7 +230,7 @@ export default function MissionControl({ actions = [], loading = false }: Missio
         </Card>
       ) : (
         <>
-          <div className="space-y-3">
+          <div className="space-y-3 mb-4 overflow-visible">
             {localActions
               .sort((a, b) => {
                 // Sort by urgency first, then by completion status
@@ -202,64 +243,88 @@ export default function MissionControl({ actions = [], loading = false }: Missio
                 return urgencyA - urgencyB;
               })
               .map((action, index) => (
-                <Card 
-                  key={action.id}
-                  className={cn(
-                    "border-l-4 transition-all duration-300 overflow-hidden animate-fade-in",
-                    action.completed ? "opacity-60 border-l-green-500 bg-muted/30" : 
-                    getUrgencyColor(action.urgency),
-                    {"animate-in zoom-in-95": index < 3},
-                  )}
-                  style={{animationDelay: `${index * 100}ms`}}
-                >
-                  <div className="p-3 flex items-center gap-3">
-                    <div className={cn(
-                      "p-2 rounded-full", 
-                      action.completed ? "bg-green-100 dark:bg-green-900/30" : 
-                      action.urgency === 'critical' ? "bg-red-100 dark:bg-red-900/30" :
-                      action.urgency === 'recommended' ? "bg-amber-100 dark:bg-amber-900/30" :
-                      "bg-blue-100 dark:bg-blue-900/30"
-                    )}>
-                      {action.completed ? 
-                        <Check className="h-4 w-4 text-green-600 dark:text-green-400" /> : 
-                        getActionIcon(action)
-                      }
-                    </div>
-                    
-                    <div className="flex-1">
-                      <h3 className="font-medium leading-none mb-1">
-                        {action.title}
-                      </h3>
-                      <div className="flex justify-between">
-                        <p className="text-xs text-muted-foreground">
-                          {action.description}
-                        </p>
-                        <div className="text-xs font-medium text-green-600 dark:text-green-400 ml-2 whitespace-nowrap">
-                          ₦{action.potential_gain.toLocaleString()}
+                <div key={action.id} className="mb-3 last:mb-0 group">
+                  <Card className="border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-sm hover:shadow">
+                    <CardContent className="p-3 flex items-start">
+                      {/* Left - Icon */}
+                      <div className="mr-3 mt-0.5">
+                        <div className={`p-2 rounded-full ${action.completed ? 'bg-green-100 dark:bg-green-900/20' : 'bg-blue-100 dark:bg-blue-900/20'}`}>
+                          {action.icon === 'droplet' && <Droplet className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
+                          {action.icon === 'alert' && <AlertTriangle className="h-5 w-5 text-orange-500" />}
+                          {action.icon === 'trend' && <TrendingUp className="h-5 w-5 text-emerald-500" />}
+                          {action.icon === 'check' && <Check className="h-5 w-5 text-emerald-500" />}
+                          {action.icon === 'bot' && <Bot className="h-5 w-5 text-violet-500" />}
+                          {action.icon === 'mic' && <Mic className="h-5 w-5 text-blue-500" />}
+                          {action.icon === 'message' && <MessageCircle className="h-5 w-5 text-slate-500" />}
+                          {action.icon === 'zap' && <Zap className="h-5 w-5 text-amber-500" />}
+                          {action.icon === 'star' && <Star className="h-5 w-5 text-amber-500" />}
+                          {action.icon === 'scissors' && <Scissors className="h-5 w-5 text-slate-500" />}
                         </div>
                       </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        {action.deadline}
+                      
+                      {/* Center - Action Info */}
+                      <div className="flex-grow min-w-0">
+                        <div className="flex items-center">
+                          <h3 className="font-medium text-sm text-slate-700 dark:text-slate-200 line-clamp-1">
+                            {action.title}
+                          </h3>
+                          
+                          {/* Show badge if high priority */}
+                          {action.priority === 'high' && (
+                            <Badge variant="warning" className="ml-2 py-0 px-1.5">Priority</Badge>
+                          )}
+                          
+                          {/* Show expert badge if AI generated */}
+                          {action.ai_generated && (
+                            <Badge variant="secondary" className="ml-2 py-0 px-1.5">AI</Badge>
+                          )}
+                        </div>
+                        
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                          {action.description}
+                        </p>
+                        
+                        {action.completed ? (
+                          <div className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center">
+                            <Check className="h-3.5 w-3.5 mr-1" />
+                            Completed {action.completed_date}
+                          </div>
+                        ) : (
+                          <div className="mt-2 flex items-center">
+                            <div className="text-xs font-medium text-green-600 dark:text-green-400 whitespace-nowrap">
+                              {action.potential_gain ? `₦${action.potential_gain.toLocaleString()}` : '₦0'}
+                            </div>
+                            
+                            <div className="text-xs text-slate-400 dark:text-slate-500 ml-3">
+                              {action.estimated_time ? `~${action.estimated_time} min` : ''}
+                            </div>
+                            
+                            {/* Field link if present */}
+                            {action.field && (
+                              <span className="text-xs ml-3 text-blue-500 dark:text-blue-400 underline-offset-2 hover:underline">
+                                {action.field}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className={cn(
-                        "h-8 w-8 p-0 rounded-full",
-                        !action.completed && "hover:bg-green-100 hover:text-green-600 dark:hover:bg-green-900/30"
-                      )}
-                      disabled={action.completed}
-                      onClick={() => handleComplete(action.id)}
-                    >
-                      {action.completed ? 
-                        <Check className="h-4 w-4 text-green-600" /> : 
-                        <ArrowRight className="h-4 w-4" />
-                      }
-                    </Button>
-                  </div>
-                </Card>
+                      
+                      {/* Right - Action Buttons */}
+                      <div className="ml-3 flex flex-col items-end">
+                        <Button 
+                          variant="ghost" 
+                          className="p-1.5 h-auto" 
+                          onClick={() => handleComplete(action.id)}
+                        >
+                          {action.completed ? 
+                            <Check className="h-4 w-4 text-emerald-500" /> : 
+                            <ArrowRight className="h-4 w-4" />
+                          }
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               ))}
           </div>
           
@@ -280,7 +345,7 @@ export default function MissionControl({ actions = [], loading = false }: Missio
             
             <div className="flex items-center gap-2">
               <div className="bg-primary/10 rounded-lg p-2 flex items-center gap-2 flex-1">
-                <Sparkles className="h-4 w-4 text-amber-500" />
+                <Star className="h-4 w-4 text-amber-500" />
                 <span className="text-xs font-medium">{streak}-Day Action Streak</span>
                 <span className="text-xs text-primary ml-auto">+Pro Bonus</span>
               </div>

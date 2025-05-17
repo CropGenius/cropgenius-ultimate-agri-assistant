@@ -1,4 +1,5 @@
 import React, { createContext, useContext, ReactNode } from 'react';
+import { FALLBACK_USER_ID } from '../utils/fallbackUser';
 
 // Define the shape of our auth context
 type AuthContextType = {
@@ -22,7 +23,7 @@ type AuthContextType = {
 // Create the context with default values
 const AuthContext = createContext<AuthContextType>({
   user: {
-    id: 'default-user',
+    id: FALLBACK_USER_ID,
     email: 'user@example.com',
     user_metadata: {
       full_name: 'Guest User',
@@ -42,7 +43,7 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Default user with a consistent ID
   const defaultUser = {
-    id: 'default-user',
+    id: FALLBACK_USER_ID,
     email: 'user@example.com',
     user_metadata: {
       full_name: 'Guest User',

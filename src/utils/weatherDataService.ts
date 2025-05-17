@@ -1,5 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import { getFallbackUserId } from './fallbackUser';
 import { toast } from "sonner";
 import { WeatherData as AppWeatherData, LocationData } from "./weatherService";
 import { WeatherData as DbWeatherData } from "@/types/supabase";
@@ -13,7 +13,8 @@ export const fetchUserWeatherData = async (userId: string, location: LocationDat
     console.log("Fetching weather data for location:", location);
     
     // Use a default user ID since we don't have authentication
-    const effectiveUserId = userId || 'default-user';
+    // Use a valid fallback UUID for dev
+    const effectiveUserId = getFallbackUserId(userId);
     
     // Using the improved index on location_name for better performance
     const { data, error } = await supabase

@@ -82,6 +82,16 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @keyframes scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
@@ -225,12 +235,16 @@
 }
 
 /* Remove scrollbar but keep functionality */
-.no-scrollbar {
+.no-scrollbar,
+.hide-scrollbar,
+.scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
 
-.no-scrollbar::-webkit-scrollbar {
+.no-scrollbar::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
 }
 
@@ -310,4 +324,17 @@
   opacity: 0;
   transform: translateX(-30px);
   transition: opacity 300ms, transform 300ms;
+}
+
+/* Layout stabilization classes */
+.content-stable {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fix for elements that sometimes appear outside container bounds */
+.container-safe {
+  overflow-x: hidden;
+  width: 100%;
 }

@@ -3,6 +3,17 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
+// Add global type declaration for our error suppression flag and debug object
+declare global {
+  interface Window {
+    __SUPPRESS_ERROR_TOASTS?: boolean;
+    CropGeniusDebug?: {
+      logError: (error: any) => void;
+      [key: string]: any;
+    };
+  }
+}
+
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
@@ -77,49 +88,50 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   render(): ReactNode {
-    if (this.state.hasError) {
-      // If a custom fallback is provided, use it
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
+    // Always render children even if there's an error
+    // Just trigger a toast notification if an error occurs
+    if (this.state.hasError && !window.__SUPPRESS_ERROR_TOASTS) {
+      // Show a small non-blocking error indicator in the corner
+      setTimeout(() => {
+        // Log to console first
+        console.error("[ErrorBoundary]", this.state.error);
+        console.error("[Component Stack]", this.state.errorInfo?.componentStack);
+        
+        // Add error to debug panel if available
+        if (window.CropGeniusDebug && typeof window.CropGeniusDebug.logError === 'function') {
+          try {
+            window.CropGeniusDebug.logError({
+              type: 'react-error',
+              message: this.state.error?.message || 'Unknown error',
+              stack: this.state.error?.stack,
+              componentStack: this.state.errorInfo?.componentStack,
+              timestamp: new Date().toISOString()
+            });
+          } catch (e) {
+            console.error("Failed to log to debug panel", e);
+          }
+        }
+        
+        // Show non-blocking notification
+        toast.error(this.state.error?.message || "Non-critical error detected", {
+          description: "Error logged to console and debug panel",
+          action: {
+            label: "Details",
+            onClick: () => {
+              console.group("Error Details");
+              console.error(this.state.error);
+              console.error(this.state.errorInfo?.componentStack);
+              console.groupEnd();
+            }
+          },
+          duration: 5000
+        });
+      }, 0);
       
-      // Otherwise render the default error UI
-      return (
-        <div className="flex items-center justify-center min-h-[400px] p-6 bg-gray-50 rounded-lg border">
-          <div className="text-center max-w-md">
-            <AlertTriangle className="h-16 w-16 text-amber-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Something went wrong</h2>
-            <p className="text-gray-600 mb-6">
-              We've encountered an unexpected error. Our team has been notified and is working on a fix.
-            </p>
-            
-            <div className="space-y-4">
-              <Button onClick={() => window.location.reload()} className="w-full">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Reload page
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={this.handleReset} 
-                className="w-full"
-              >
-                Try again
-              </Button>
-              
-              <details className="text-left mt-4 text-sm border rounded-md p-2">
-                <summary className="cursor-pointer text-gray-700 font-medium">Technical details</summary>
-                <div className="mt-2 p-2 bg-gray-100 rounded-md overflow-auto max-h-[200px]">
-                  <p className="font-mono text-xs whitespace-pre-wrap">
-                    {this.state.error?.toString()}
-                    {this.state.errorInfo?.componentStack}
-                  </p>
-                </div>
-              </details>
-            </div>
-          </div>
-        </div>
-      );
+      // After logging the error, reset the error state so the app can try again
+      setTimeout(() => {
+        this.handleReset();
+      }, 1000);
     }
 
     return this.props.children;

@@ -1,5 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import { FALLBACK_USER_ID } from './fallbackUser';
+import { fileToBase64 } from './fileUtils';
 
 export interface ScanResult {
   diseaseDetected: string;
@@ -32,7 +33,7 @@ export const analyzeCropImage = async (
     const base64Image = await fileToBase64(imageFile);
     
     // Use a default user ID since we don't have authentication
-    const userId = 'default-user';
+    const userId = FALLBACK_USER_ID;
 
     // Call the Supabase Edge Function for analysis
     console.log("Calling crop-scan edge function");

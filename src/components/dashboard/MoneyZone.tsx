@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
-import { Sparkles, Zap, ArrowRight, Calendar, TrendingUp, Smartphone } from 'lucide-react';
+import { Star, Zap, ArrowRight, Calendar, TrendingUp, Smartphone } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useMemoryStore } from '@/hooks/useMemoryStore';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 
 interface MoneyZoneProps {
   onUpgrade?: () => void;
@@ -64,11 +63,11 @@ export default function MoneyZone({ onUpgrade }: MoneyZoneProps) {
         <div className="absolute -top-10 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl"></div>
         <div className="absolute -bottom-8 left-0 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
         
-        <CardContent className="p-4 relative group" onClick={handleUpgrade}>
+        <CardContent className="p-4 relative" onClick={handleUpgrade}>
           <div className="mb-2 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-yellow-300 animate-pulse" />
-              <Badge className="bg-white/20 hover:bg-white/30 group-hover:bg-white/40 transition-all">7-day free trial</Badge>
+              <Star className="h-5 w-5 text-yellow-300" />
+              <Badge className="bg-white/20 hover:bg-white/30">7-day free trial</Badge>
             </div>
             
             <Badge variant="outline" className="bg-black/20 text-white text-xs border-white/40 font-mono">
@@ -76,7 +75,7 @@ export default function MoneyZone({ onUpgrade }: MoneyZoneProps) {
             </Badge>
           </div>
               
-          <h3 className="text-lg font-bold mb-1 group-hover:translate-x-0.5 transition-transform">
+          <h3 className="text-lg font-bold mb-1">
             CropGenius Pro = Bigger Yields, Smarter Sales
           </h3>
           
@@ -96,12 +95,8 @@ export default function MoneyZone({ onUpgrade }: MoneyZoneProps) {
             ))}
           </div>
           
-          <motion.div
+          <div
             key={currentSlide}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
             className="flex items-center gap-2 mb-3"
           >
             <div className="p-2 rounded-full bg-white/20">
@@ -111,7 +106,7 @@ export default function MoneyZone({ onUpgrade }: MoneyZoneProps) {
               <p className="font-semibold">{slides[currentSlide].title}</p>
               <p className="text-sm text-white/80">{slides[currentSlide].description}</p>
             </div>
-          </motion.div>
+          </div>
           
           {/* Testimonial */}
           <div className="bg-white/10 p-2 rounded-md text-sm mb-4 border border-white/10">
@@ -120,12 +115,12 @@ export default function MoneyZone({ onUpgrade }: MoneyZoneProps) {
           </div>
               
           <Button 
-            className="w-full bg-white text-violet-700 hover:bg-white/90 flex items-center justify-center gap-2 group-hover:shadow-lg transition-all"
+            className="w-full bg-white text-violet-700 hover:bg-white/90 flex items-center justify-center gap-2"
             onClick={handleUpgrade}
           >
             <Zap className="h-4 w-4" />
             Start My Free Trial Now
-            <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
+            <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </CardContent>
       </Card>

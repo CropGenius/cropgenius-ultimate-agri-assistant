@@ -128,7 +128,18 @@ const regionYields = [
 const YieldPredictor = () => {
   const [predictionData, setPredictionData] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [optimizationOptions, setOptimizationOptions] = useState<any[]>([]);
+  interface OptimizationOption {
+  id: string;
+  title: string;
+  description: string;
+  impact: 'high' | 'medium' | 'low';
+  yieldIncrease: string;
+  costImpact: string;
+  implementation: string;
+  timeRequired: string;
+  applied: boolean;
+}
+const [optimizationOptions, setOptimizationOptions] = useState<OptimizationOption[]>([]);
   const [showOptimizations, setShowOptimizations] = useState(false);
   
   const form = useForm({

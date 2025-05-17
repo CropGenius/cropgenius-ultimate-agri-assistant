@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Target, Map as MapIcon, ArrowLeft } from 'lucide-react';
@@ -10,22 +9,26 @@ import { toast } from 'sonner';
 
 interface StepTwoProps {
   location: Coordinates | null;
+  defaultLocation?: Coordinates;
   boundary: Boundary | null;
-  onLocationChange: (location: Coordinates) => void;
+  onChange: (location: Coordinates) => void;
   onBoundaryChange: (boundary: Boundary) => void;
   onNext: () => void;
   onBack: () => void;
   onSkip: () => void;
+  error?: string;
 }
 
 export default function StepTwo({ 
   location, 
+  defaultLocation, 
   boundary, 
-  onLocationChange, 
+  onChange, 
   onBoundaryChange,
   onNext,
   onBack,
-  onSkip
+  onSkip,
+  error
 }: StepTwoProps) {
   const [searchedLocation, setSearchedLocation] = useState<string | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -42,11 +45,16 @@ export default function StepTwo({
       console.error("Error loading recent locations:", error);
     }
     
-    // If no initial location, try to get user's current location
+    // If no initial location, try to get user's current location or use defaultLocation
     if (!location && !boundary) {
-      getCurrentLocation();
+      if (defaultLocation) {
+        onChange(defaultLocation);
+        // Optionally fetch name for defaultLocation here if desired
+      } else {
+        getCurrentLocation();
+      }
     }
-  }, [location, boundary]);
+  }, [location, boundary, defaultLocation, onChange]);
 
   const getCurrentLocation = () => {
     setIsGettingLocation(true);
@@ -58,7 +66,7 @@ export default function StepTwo({
           lng: position.coords.longitude
         };
         
-        onLocationChange(newLocation);
+        onChange(newLocation);
         
         // Get location name
         fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${newLocation.lng},${newLocation.lat}.json?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`)
@@ -83,25 +91,25 @@ export default function StepTwo({
   };
 
   const handleUseRecentLocation = (recent: {name: string, coordinates: Coordinates}) => {
-    onLocationChange(recent.coordinates);
+    onChange(recent.coordinates);
     setSearchedLocation(recent.name);
     toast.info(`Using location: ${recent.name}`);
   };
 
-  const handleLocationChange = (location: Coordinates) => {
-    onLocationChange(location);
+  const handleLocationChange = (currentLocation: Coordinates) => {
+    onChange(currentLocation);
     
     // Get location name when location changes
-    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${location.lng},${location.lat}.json?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`)
+    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${currentLocation.lng},${currentLocation.lat}.json?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`)
       .then(res => res.json())
       .then(data => {
         if (data.features && data.features.length > 0) {
           setSearchedLocation(data.features[0].place_name);
           
           // Save to recent locations
-          const newLocation = {
+          const newLocationToSave = {
             name: data.features[0].place_name,
-            coordinates: location
+            coordinates: currentLocation
           };
           
           try {
@@ -110,9 +118,9 @@ export default function StepTwo({
             
             // Add to beginning, avoid duplicates
             locations = [
-              newLocation,
+              newLocationToSave,
               ...locations.filter(loc => 
-                loc.coordinates.lat !== location.lat || loc.coordinates.lng !== location.lng
+                loc.coordinates.lat !== currentLocation.lat || loc.coordinates.lng !== currentLocation.lng
               )
             ].slice(0, 5); // Keep only 5 most recent
             
@@ -127,7 +135,7 @@ export default function StepTwo({
 
   const handleNextStep = () => {
     if (!location && !boundary) {
-      toast.warning("Please select a location or draw your field boundary");
+      toast.warning(error || "Please select a location or draw your field boundary");
       return;
     }
     
@@ -158,7 +166,7 @@ export default function StepTwo({
               <MapboxFieldMap
                 onBoundaryChange={onBoundaryChange}
                 onLocationChange={handleLocationChange}
-                defaultLocation={location || undefined}
+                defaultLocation={location || defaultLocation || undefined}
                 initialBoundary={boundary}
               />
             </div>

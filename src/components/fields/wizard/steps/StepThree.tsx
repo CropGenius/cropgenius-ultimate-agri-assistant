@@ -11,8 +11,13 @@ import { toast } from 'sonner';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
 
 interface StepThreeProps {
+  name?: string;
+  size?: number | null;
+  sizeUnit?: string;
   cropType: string;
-  onCropTypeChange: (cropType: string) => void;
+  onChange: (key: string, value: any) => void;
+  onBulkChange?: (changes: Partial<any>) => void;
+  errors?: Partial<Record<string, string>>;
   onNext: () => void;
   onBack: () => void;
   onSkip: () => void;
@@ -98,10 +103,15 @@ const cropCategoryIcons = {
 
 export default function StepThree({
   cropType,
-  onCropTypeChange,
+  onChange,
   onNext,
   onBack,
-  onSkip
+  onSkip,
+  name,
+  size,
+  sizeUnit,
+  onBulkChange,
+  errors 
 }: StepThreeProps) {
   const [searchValue, setSearchValue] = useState('');
   const [filteredCrops, setFilteredCrops] = useState(commonCrops);
@@ -150,8 +160,10 @@ export default function StepThree({
   }, []);
 
   const handleCropSelect = (cropName: string) => {
-    onCropTypeChange(cropName);
+    if (isListening) return; // Prevent selection while listening
     
+    onChange('crop_type', cropName);
+
     // Save to user preferences
     try {
       const savedFields = localStorage.getItem('userCropPreferences');
@@ -170,7 +182,7 @@ export default function StepThree({
     
     // Play a soft click sound
     try {
-      const audio = new Audio('data:audio/wav;base64,UklGRoQFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YWAFAACAgICAgICAgICAgICAgICAgICAgICAgICAf3hxeIF/gICAf4B+gICAgH+AgICAgICAgICAeHBye4KCgX+Af3+BgoKAgH+AgYKDgH+Af4CBgn98eHR5foKDgoB/gIGDg4J/f4CBg4SCgH+AgYODgH16eXyBhISDgH+AgoSEgn+AgIKEg4F/f4CCg4J+e3p8gIOEg4B/gIKEhIF/f4CCg4OCf3+AgYKAfXt7foGDg4OAf4CCg4OCf4CAgoODgn9/gIGCgH57fH6Bg4SDgH+BgoODgn+AgIKDg4F/f4CBgoF+fHx+gYOEg4F/gYKDg4F/gICCg4KBf3+AgYGAfnx9f4GDhIOBf4GCg4OBf4CAgoOCgX9/gIGBgH58fX+ChIODgX+BgoOCgX+AgIKDgoF/f4CBgYB+fH2AgoSEg4F/gYKDgoF/gICCg4KBf3+AgYGAfnx+gIKEhIOBgIGCg4KBf4CAgoOCgX9/gIGBgH59foCChIODgYCBgoOCgX+AgIKDgoF/f4CBgYB+fX6AgoSDg4GAgYKDgoF/gICCg4KBf3+AgYGAfn1+gIKEg4OBgIGCg4KBf4CAgoOCgX9/gIGBgH59foCChIODgYCBgoOCgX+AgIKDgoJ/f4CBgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEhIOBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gYODg4GAgoODgoGAgIGCgoJ/gICCgYB+fn6Bg4ODgYCCg4OCgYCAgYKCgn+AgIKBgH5+foGDg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+foGDg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+');
+      const audio = new Audio('data:audio/wav;base64,UklGRoQFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YWAFAACAgICAgICAgICAgICAgICAgICAgICAgICAf3hxeIF/gICAf4B+gICAgH+AgICAgICAgICAeHBye4KCgX+Af3+BgoKAgH+AgYKDgH+Af4CBgn98eHR5foKDgoB/gIGDg4J/f4CBg4SCgH+AgYODgH16eXyBhISDgH+AgoSEgn+AgIKEg4F/f4CCg4J+e3p8gIOEg4B/gIKEhIF/f4CCg4OCf3+AgYKAfXt7foGDg4OAf4CCg4OCf4CAgoODgn9/gIGCgH57fH6Bg4SDgH+BgoODgn+AgIKDg4F/f4CBgoF+fHx+gYOEg4F/gYKDg4F/gICCg4KBf3+AgYGAfnx9f4GDhIOBf4GCg4OBf4CAgoOCgX9/gIGBgH58fX+ChIODgX+BgoOCgX+AgIKDgoF/f4CBgYB+fH2AgoSEg4F/gYKDgoF/gICCg4KBf3+AgYGAfnx+gIKEhIOBgIGCg4KBf4CAgoOCgX9/gIGBgH59foCChIODgYCBgoOCgX+AgIKDgoF/f4CBgYB+fX6AgoSDg4GAgYKDgoF/gICCg4KBf3+AgYGAfn1+gIKEg4OBgIGCg4KBf4CAgoOCgX9/gIGBgH59foCChIODgYCBgoOCgX+AgIKDgoJ/f4CBgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEhIOBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gYODg4GAgoODgoGAgIGCgoJ/gICCgYB+fn6Bg4ODgYCCg4OCgYCAgYKCgn+AgIKBgH5+foGDg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+foGDg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+');
       audio.volume = 0.2;
       audio.play().catch(e => console.log('Audio play prevented by browser'));
     } catch (error) {
@@ -230,38 +242,12 @@ export default function StepThree({
   
   const handleSuggestNewCrop = () => {
     if (!newCropName.trim()) {
-      toast.warning('Please enter a crop name');
+      toast.error("Please enter a name for the new crop.");
       return;
     }
-    
-    // Check if crop already exists
-    if (commonCrops.some(crop => crop.name.toLowerCase() === newCropName.toLowerCase())) {
-      toast.info('This crop already exists', {
-        description: 'Try searching for it in the crop list'
-      });
-      setShowSuggestionModal(false);
-      return;
-    }
-    
-    // Add the crop to user preferences
-    try {
-      const savedFields = localStorage.getItem('userCropPreferences');
-      let preferences = savedFields ? JSON.parse(savedFields) : [];
-      preferences = [newCropName, ...preferences].slice(0, 10);
-      localStorage.setItem('userCropPreferences', JSON.stringify(preferences));
-    } catch (error) {
-      console.error("Error saving crop suggestion:", error);
-    }
-    
-    // Select the new crop
-    onCropTypeChange(newCropName);
-    
-    toast.success('New crop added!', {
-      description: `${newCropName} has been added to your crops`
-    });
-    
+    onChange('crop_type', newCropName.trim());
+    setNewCropName('');
     setShowSuggestionModal(false);
-    setTimeout(() => onNext(), 500);
   };
   
   const renderCropIcon = (crop: { name: string; category: string; icon: string }) => {
@@ -511,7 +497,7 @@ export default function StepThree({
           <div className="space-y-2 flex-1">
             <Button 
               onClick={onNext}
-              disabled={!cropType && filteredCrops.length > 0}
+              disabled={!cropType && filteredCrops.length > 0 && !errors?.crop_type}
               className="w-full"
             >
               {cropType ? "Continue" : "Select a crop"}

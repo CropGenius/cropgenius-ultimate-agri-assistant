@@ -1,9 +1,10 @@
-
+import React from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import "@/styles/debug-panel.css";
 import { useState, useEffect } from "react";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import { WifiOff } from "lucide-react";
@@ -20,6 +21,7 @@ import FieldDetail from "./pages/FieldDetail";
 import ManageFields from "./pages/ManageFields";
 import DevDebugPanel from "@/components/debug/DevDebugPanel";
 import { diagnostics } from "@/utils/diagnosticService";
+import { DebugPanel, logError } from "@/utils/debugPanel";
 
 // Configure React Query with better error handling
 const queryClient = new QueryClient({
@@ -53,6 +55,22 @@ if (typeof window !== 'undefined') {
       event.error || new Error(event.message), 
       { source: 'window.error', lineno: event.lineno, colno: event.colno }
     );
+    
+    // Log to our surgical debug panel with full details
+    logError({
+      type: 'global-error',
+      severity: 'error',
+      message: event.error?.message || event.message || 'Unknown Error',
+      details: `File: ${event.filename}\nLine: ${event.lineno}\nColumn: ${event.colno}`,
+      stack: event.error?.stack,
+      origin: event.filename,
+      context: {
+        lineno: event.lineno,
+        colno: event.colno,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent
+      }
+    });
   });
 
   window.addEventListener('unhandledrejection', (event) => {
@@ -61,6 +79,20 @@ if (typeof window !== 'undefined') {
       event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
       { source: 'unhandledrejection' }
     );
+    
+    // Log to our surgical debug panel with full details
+    logError({
+      type: 'promise-error',
+      severity: event.reason?.name === 'SyntaxError' ? 'critical' : 'error',
+      message: event.reason?.message || String(event.reason) || 'Unknown Promise Rejection',
+      stack: event.reason?.stack,
+      details: typeof event.reason === 'object' ? JSON.stringify(event.reason, null, 2) : String(event.reason),
+      context: {
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        url: window.location.href
+      }
+    });
   });
 }
 
@@ -102,35 +134,45 @@ const App = () => {
           <Sonner position="top-center" closeButton />
           <BrowserRouter>
             <ErrorBoundary>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/scan" element={<Scan />} />
-                <Route path="/farm-plan" element={<FarmPlan />} />
-                <Route path="/predictions" element={<YieldPredictor />} />
-                <Route path="/market" element={<Market />} />
-                <Route path="/weather" element={<Weather />} />
-                <Route path="/chat" element={<Chat />} />
-                <Route path="/ai-assistant" element={<Chat />} />
-                <Route path="/fields" element={<Fields />} />
-                <Route path="/fields/:id" element={<FieldDetail />} />
-                <Route path="/manage-fields" element={<ManageFields />} />
-                <Route path="/alerts" element={<NotFound />} />
-                <Route path="/referrals" element={<NotFound />} />
-                <Route path="/community" element={<NotFound />} />
-                <Route path="/challenges" element={<NotFound />} />
-                <Route path="/farm-clans" element={<NotFound />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <div className="content-stable">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/scan" element={<Scan />} />
+                  <Route path="/farm-plan" element={<FarmPlan />} />
+                  <Route path="/predictions" element={<YieldPredictor />} />
+                  <Route path="/market" element={<Market />} />
+                  <Route path="/weather" element={<Weather />} />
+                  <Route path="/chat" element={<Chat />} />
+                  <Route path="/ai-assistant" element={<Chat />} />
+                  <Route path="/fields" element={<Fields />} />
+                  <Route path="/fields/:id" element={<FieldDetail />} />
+                  <Route path="/manage-fields" element={<ManageFields />} />
+                  <Route path="/alerts" element={<NotFound />} />
+                  <Route path="/referrals" element={<NotFound />} />
+                  <Route path="/community" element={<NotFound />} />
+                  <Route path="/challenges" element={<NotFound />} />
+                  <Route path="/farm-clans" element={<NotFound />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                
+                {/* Offline indicator */}
+                {!isOnline && (
+                  <div className="fixed bottom-20 left-4 bg-yellow-500 text-white px-4 py-2 rounded-md text-sm shadow-lg z-40 flex items-center">
+                    <WifiOff className="h-4 w-4 mr-2" />
+                    You're offline. Some features may be unavailable.
+                  </div>
+                )}
+              </div>
             </ErrorBoundary>
             
-            {(isDev || localStorage.getItem('DEV_MODE') === 'true') && <DevDebugPanel />}
-            
-            {!isOnline && (
-              <div className="fixed bottom-4 left-4 bg-yellow-500 text-white px-4 py-2 rounded-md text-sm shadow-lg z-50 flex items-center">
-                <WifiOff className="h-4 w-4 mr-2" />
-                You're offline. Some features may be unavailable.
-              </div>
-            )}
+            {/* Debug panels in their own layer to prevent UI interference */}
+            <div className="debug-layer fixed">
+              {/* Hidden by default - activated with Ctrl+Shift+D shortcut */}
+              <DebugPanel />
+              
+              {/* Development mode debug panel */}
+              {(isDev || localStorage.getItem('DEV_MODE') === 'true') && <DevDebugPanel />}
+            </div>
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>

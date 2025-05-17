@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -13,26 +12,28 @@ import { isOnline } from '@/utils/isOnline';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
 
 interface FieldMapperStepProps {
-  defaultLocation?: Coordinates;
-  onNext: (data: { boundary: Boundary; location: Coordinates; name?: string }) => void;
-  onBack: () => void;
-  onSkip: () => void;
+  centerCoordinates?: Coordinates | null;
   initialBoundary?: Boundary | null;
   initialName?: string;
+  onChange: (data: { boundary: Boundary; location: Coordinates; name?: string }) => void;
+  onBack: () => void;
+  onSkip: () => void;
+  error?: string;
 }
 
 export default function FieldMapperStep({
-  defaultLocation,
-  onNext,
+  centerCoordinates,
+  initialBoundary = null,
+  initialName = '',
+  onChange,
   onBack,
   onSkip,
-  initialBoundary = null,
-  initialName = ''
+  error
 }: FieldMapperStepProps) {
   const { logError, trackOperation } = useErrorLogging('FieldMapperStep');
   const [fieldName, setFieldName] = useState(initialName);
   const [boundary, setBoundary] = useState<Boundary | null>(initialBoundary);
-  const [location, setLocation] = useState<Coordinates | null>(defaultLocation || null);
+  const [location, setLocation] = useState<Coordinates | null>(centerCoordinates || null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isOnlineStatus, setIsOnlineStatus] = useState(isOnline());
 
@@ -81,7 +82,7 @@ export default function FieldMapperStep({
       }
 
       // Proceed to next step with data
-      onNext({
+      onChange({
         boundary,
         location,
         name: processedName
@@ -110,7 +111,7 @@ export default function FieldMapperStep({
                 onBoundaryChange={handleBoundaryChange}
                 onLocationChange={handleMapLocation}
                 initialBoundary={boundary}
-                defaultLocation={location || undefined}
+                defaultLocation={location || centerCoordinates || undefined}
                 readOnly={false}
               />
               
@@ -152,6 +153,10 @@ export default function FieldMapperStep({
           </div>
         </div>
         
+        {error && (
+          <p className="text-sm text-red-500 text-center">{error}</p>
+        )}
+
         {boundary && boundary.coordinates.length >= 3 && (
           <div className="text-center text-xs text-muted-foreground mt-2">
             <MapPin className="inline-block h-3 w-3 mr-1" />

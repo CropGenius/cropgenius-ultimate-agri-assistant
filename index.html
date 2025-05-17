@@ -2,17 +2,245 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>cropgenius</title>
-    <meta name="description" content="Smart farming simplified" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#10b981" />
+    <meta name="description" content="CropGenius - Your smart farming assistant for better crop management and agricultural insights" />
     <meta name="author" content="kimathi" />
+    <meta name="keywords" content="farming, agriculture, crop management, smart farming, precision agriculture" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://cropgenius.app/" />
+    <meta property="og:title" content="CropGenius - Smart Farming Assistant" />
+    <meta property="og:description" content="Smart farming simplified with real-time insights and crop management" />
     <meta property="og:image" content="/og-image.png" />
-  </head>
 
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://cropgenius.app/" />
+    <meta name="twitter:title" content="CropGenius - Smart Farming Assistant" />
+    <meta name="twitter:description" content="Smart farming simplified with real-time insights and crop management" />
+    <meta name="twitter:image" content="/og-image.png" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    
+    <title>CropGenius - Smart Farming Assistant</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <style>
+      /* Critical CSS */
+      :root {
+        --primary: #10b981;
+        --primary-dark: #059669;
+        --background: #ffffff;
+        --text: #1f2937;
+      }
+      
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: var(--background);
+        color: var(--text);
+        line-height: 1.5;
+      }
+      
+      #root, #loading {
+        height: 100vh;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      
+      #loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        background: var(--background);
+        z-index: 9999;
+        flex-direction: column;
+        gap: 1.5rem;
+        transition: opacity 0.3s ease-out;
+      }
+      
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid rgba(16, 185, 129, 0.1);
+        border-top: 5px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      /* Error styles removed - errors now only go to console and debug panel */
+      
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        font-size: 1rem;
+      }
+      
+      .btn-primary {
+        background-color: var(--primary);
+        color: white;
+      }
+      
+      .btn-primary:hover {
+        background-color: var(--primary-dark);
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --background: #0f172a;
+          --text: #f8fafc;
+        }
+        
+        #loading {
+          background: var(--background);
+        }
+        /* Dark mode error styles removed */
+      }
+    </style>
+  </head>
   <body>
+    <!-- Error handling moved to CropGenius Debug Panel - No blocking UI -->
+    
+    <!-- Loading Screen -->
+    <div id="loading">
+      <div class="spinner"></div>
+      <div>Loading CropGenius...</div>
+    </div>
+    
+    <!-- Main App Mount Point -->
     <div id="root"></div>
-    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
-    <script type="module" src="/src/main.tsx"></script>
+    
+    <script>
+      // Initialize debug error handling system
+      window.CropGeniusDebug = window.CropGeniusDebug || {};
+      window.CropGeniusDebug.errors = [];
+      window.CropGeniusDebug.logError = function(error) {
+        console.error('[CropGenius Debug]', error);
+        if (window.CropGeniusDebug.errors) {
+          window.CropGeniusDebug.errors.push({
+            ...error,
+            timestamp: new Date().toISOString()
+          });
+          // Keep only latest 50 errors
+          if (window.CropGeniusDebug.errors.length > 50) {
+            window.CropGeniusDebug.errors.shift();
+          }
+        }
+        // No UI blocking, just log to console
+      };
+      
+      // Global error handler - log to console only, no UI blocking
+      window.addEventListener('error', function(event) {
+        console.error('Global error caught:', event.error);
+        window.CropGeniusDebug.logError({
+          type: 'global-error',
+          message: event.error?.message || 'Unknown error',
+          stack: event.error?.stack,
+          source: event.filename,
+          line: event.lineno,
+          column: event.colno
+        });
+        // Prevent default to avoid browser's error UI
+        event.preventDefault();
+      });
+      
+      // Unhandled promise rejections - log only, no UI blocking
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('Unhandled rejection:', event.reason);
+        window.CropGeniusDebug.logError({
+          type: 'promise-rejection',
+          message: event.reason?.message || 'Unknown promise error',
+          stack: event.reason?.stack
+        });
+        // Prevent default to avoid browser's error UI
+        event.preventDefault();
+      });
+      
+      // Load the app after DOM is ready
+      document.addEventListener('DOMContentLoaded', function() {
+        try {
+          // Check for ES modules support
+          if (!('noModule' in HTMLScriptElement.prototype)) {
+            throw new Error('Your browser does not support ES Modules. Please update your browser.');
+          }
+          
+          // Create and append the main script
+          const script = document.createElement('script');
+          script.type = 'module';
+          script.src = '/src/main.tsx';
+          
+          script.onload = function() {
+            // Hide loading screen after app is mounted
+            setTimeout(() => {
+              const loading = document.getElementById('loading');
+              if (loading) {
+                loading.style.opacity = '0';
+                setTimeout(() => {
+                  loading.style.display = 'none';
+                }, 300);
+              }
+            }, 500);
+          };
+          
+          script.onerror = function() {
+            console.error('Failed to load application script');
+            window.CropGeniusDebug.logError({
+              type: 'script-load-error',
+              message: 'Failed to load the application script',
+              source: script.src
+            });
+          };
+          
+          document.body.appendChild(script);
+          
+        } catch (error) {
+          console.error('Initialization error:', error);
+          window.CropGeniusDebug.logError({
+            type: 'init-error',
+            message: 'Failed to initialize: ' + error.message,
+            stack: error.stack
+          });
+        }
+      });
+      
+      // Handle service worker registration for PWA
+      if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+              console.log('ServiceWorker registration successful');
+            })
+            .catch(err => {
+              console.warn('ServiceWorker registration failed: ', err);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { 
   User, CloudSun, CloudRain, Sun, CloudLightning, Snowflake, Circle, 
-  TrendingUp, TrendingDown, ArrowUp, ArrowDown 
+  TrendingUp, TrendingDown, ArrowUp, ArrowDown, Star
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -38,7 +38,7 @@ export default function PowerHeader({
   const [isAiTipVisible, setIsAiTipVisible] = useState(false);
   
   useEffect(() => {
-    // Set greeting based on time of day
+    // Set fixed greeting to prevent flashing
     const hour = new Date().getHours();
     if (hour < 12) {
       setGreeting('Good morning');
@@ -70,14 +70,12 @@ export default function PowerHeader({
     // Listen for online/offline status changes
     const cleanup = addOnlineStatusListener(setIsOnlineStatus);
     
-    // Show AI tip with delay for dramatic effect
-    const tipTimer = setTimeout(() => {
-      setIsAiTipVisible(true);
-    }, 1200);
+    // Show AI tip immediately (no delay)
+    setIsAiTipVisible(true);
     
     return () => {
       cleanup();
-      clearTimeout(tipTimer);
+      // No more timer to clear
     };
   }, [user]);
   
@@ -136,12 +134,12 @@ export default function PowerHeader({
               <span className="text-primary font-bold animate-fade-in">{userName}.</span>
             </h1>
             
-            <p className="text-sm text-muted-foreground mt-1 animate-fade-in opacity-0" style={{animationDelay: "0.2s", animationFillMode: "forwards"}}>
+            <p className="text-sm text-muted-foreground mt-1">
               Let's grow your wealth today.
             </p>
             
             <div className="flex items-center mt-3 gap-3">
-              <div className="flex flex-col animate-fade-in opacity-0" style={{animationDelay: "0.4s", animationFillMode: "forwards"}}>
+              <div className="flex flex-col">
                 <div className="flex items-center">
                   <span className="text-lg font-bold">₦{farmValue.value.toLocaleString()}</span>
                   <span className={`ml-1 text-xs flex items-center ${farmValue.change >= 0 ? "text-green-500" : "text-red-500"}`}>
@@ -167,9 +165,9 @@ export default function PowerHeader({
             
             {/* AI Chat Tip */}
             {isAiTipVisible && (
-              <div className="mt-3 bg-primary/10 p-2 rounded-lg border border-primary/20 flex items-start gap-2 animate-fade-in opacity-0" style={{animationDelay: "0.6s", animationFillMode: "forwards"}}>
+              <div className="mt-3 bg-primary/10 p-2 rounded-lg border border-primary/20 flex items-start gap-2">
                 <div className="bg-primary/20 rounded-full p-1 mt-0.5">
-                  <Sparkles className="h-3 w-3 text-primary" />
+                  <Star className="h-3 w-3 text-primary" />
                 </div>
                 <div>
                   <p className="text-xs font-medium">CropGenius Tip:</p>
@@ -178,7 +176,7 @@ export default function PowerHeader({
               </div>
             )}
             
-            <div className="flex items-center mt-3 gap-2 animate-fade-in opacity-0" style={{animationDelay: "0.8s", animationFillMode: "forwards"}}>
+            <div className="flex items-center mt-3 gap-2">
               <div className="flex items-center text-sm text-muted-foreground">
                 {getWeatherIcon()}
                 <span className="ml-1">

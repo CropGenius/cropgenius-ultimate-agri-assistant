@@ -1,6 +1,7 @@
-
-import React from "react";
-import Layout from "@/components/Layout";
+import React, { useContext } from 'react';
+import { getFallbackUserId } from '../utils/fallbackUser';
+import AuthContext from '../context/AuthContext';
+import Layout from '../components/Layout';
 import CropScanner from "@/components/scanner/CropScanner";
 import FieldBrainAssistant from "@/components/ai/FieldBrainAssistant";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FieldBrainProvider } from "@/hooks/useFieldBrain";
 
 const ScanPage = () => {
+  const { user } = useContext(AuthContext);
   // Use a default user ID since we don't have authentication
-  const userId = 'default-user';
+  const userId = getFallbackUserId(user?.id);
   
   return (
     <Layout>

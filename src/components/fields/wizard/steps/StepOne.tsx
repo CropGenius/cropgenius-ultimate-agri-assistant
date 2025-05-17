@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Leaf, Loader2, Sparkles } from 'lucide-react';
@@ -11,11 +10,12 @@ import { toast } from 'sonner';
 
 interface StepOneProps {
   fieldName: string;
-  onFieldNameChange: (name: string) => void;
+  onChange: (name: string) => void;
   onNext: () => void;
+  error?: string;
 }
 
-export default function StepOne({ fieldName, onFieldNameChange, onNext }: StepOneProps) {
+export default function StepOne({ fieldName, onChange, onNext, error }: StepOneProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -151,7 +151,7 @@ export default function StepOne({ fieldName, onFieldNameChange, onNext }: StepOn
   }, [user, farmId]);
   
   const handleSuggestionClick = (suggestion: string) => {
-    onFieldNameChange(suggestion);
+    onChange(suggestion);
     setShowValidationError(false);
     
     // Add a small delay for animation effect
@@ -239,7 +239,7 @@ export default function StepOne({ fieldName, onFieldNameChange, onNext }: StepOn
       setTimeout(() => {
         // Sanitize the suggestion to remove any problematic characters
         const sanitized = aiSuggestion.replace(/[^a-zA-Z0-9\s'-]/g, "").trim();
-        onFieldNameChange(sanitized || "AI Generated Field");
+        onChange(sanitized || "AI Generated Field");
         setShowValidationError(false);
         
         toast.success("AI suggestion generated", {
@@ -254,7 +254,7 @@ export default function StepOne({ fieldName, onFieldNameChange, onNext }: StepOn
       // Never fail - provide a fallback name
       
       const fallbackName = "AI Generated Field " + Math.floor(Math.random() * 1000);
-      onFieldNameChange(fallbackName);
+      onChange(fallbackName);
       
       setTimeout(() => {
         setIsGenerating(false);
@@ -274,7 +274,7 @@ export default function StepOne({ fieldName, onFieldNameChange, onNext }: StepOn
       // Auto-correct: use "Unnamed Field" + timestamp if empty
       const timestamp = new Date().toLocaleTimeString().replace(/:/g, '');
       finalName = `Unnamed Field ${timestamp}`;
-      onFieldNameChange(finalName);
+      onChange(finalName);
       
       toast.info("Default name applied", {
         description: `Using "${finalName}" for your field`
@@ -309,7 +309,7 @@ export default function StepOne({ fieldName, onFieldNameChange, onNext }: StepOn
             placeholder="Enter field name..."
             value={fieldName}
             onChange={(e) => {
-              onFieldNameChange(e.target.value);
+              onChange(e.target.value);
               if (e.target.value.trim().length >= 2) {
                 setShowValidationError(false);
               }
@@ -322,7 +322,7 @@ export default function StepOne({ fieldName, onFieldNameChange, onNext }: StepOn
           />
           {showValidationError && (
             <p className="text-sm text-amber-500 pl-1">
-              A name will be auto-generated if left blank
+              {error || "A name will be auto-generated if left blank"}
             </p>
           )}
         </div>

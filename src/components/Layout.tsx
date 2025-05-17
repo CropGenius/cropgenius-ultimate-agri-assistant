@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Leaf, Cloud, ShoppingCart, MessageCircle, HelpCircle, Bot, User } from "lucide-react";
@@ -24,7 +23,7 @@ const Layout = ({ children }: LayoutProps) => {
   };
   
   return (
-    <div className="min-h-screen bg-background">
+    <div className="container-safe bg-background flex flex-col min-h-0">
       {/* Add LayoutMenu at the top of the layout */}
       <LayoutMenu />
       
@@ -97,7 +96,10 @@ const Layout = ({ children }: LayoutProps) => {
       </nav>
       
       {/* Main Content Area with proper padding for mobile */}
-      <main className="pb-20 min-h-screen">
+      <main 
+        className="pb-20 flex-1 overflow-x-hidden container-safe" 
+        style={{ paddingTop: '120px !important' }} // Aggressive padding for diagnosis
+      >
         {children}
       </main>
     </div>

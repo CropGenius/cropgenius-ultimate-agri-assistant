@@ -1,12 +1,11 @@
 
 import React from 'react';
-import { MapPin, Plus, Leaf, CloudRain } from 'lucide-react';
+import { MapPin, Plus, Leaf, CloudRain, Sun, Cloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/utils/cn';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 
 interface FieldIntelligenceProps {
   fields: Array<{
@@ -45,11 +44,16 @@ export default function FieldIntelligence({ fields = [], loading = false }: Fiel
   const getWeatherIcon = (status?: string) => {
     if (!status) return null;
     
-    if (status.toLowerCase().includes('rain')) {
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes('rain')) {
       return <CloudRain className="h-4 w-4 text-blue-400" />;
+    } else if (statusLower.includes('cloud')) {
+      return <Cloud className="h-4 w-4 text-gray-400" />;
+    } else if (statusLower.includes('sun') || statusLower.includes('clear')) {
+      return <Sun className="h-4 w-4 text-amber-400" />;
     }
     
-    return null;
+    return <Cloud className="h-4 w-4 text-gray-400" />;
   };
   
   return (
@@ -58,15 +62,16 @@ export default function FieldIntelligence({ fields = [], loading = false }: Fiel
         <h2 className="text-lg font-semibold">My Fields {fields.length > 0 && <span className="text-sm font-normal text-muted-foreground">({fields.length})</span>}</h2>
       </div>
       
-      <div className="pb-1 overflow-x-auto -mx-1 px-1 flex gap-3 snap-x scrollbar-hide">
+      <div className="pb-1 overflow-x-auto -mx-1 px-1 flex gap-3 snap-x hide-scrollbar">
         {fields.map((field, index) => (
-          <motion.div
+          <div
             key={field.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 0.3 }}
-            whileHover={{ scale: 1.03, y: -2 }}
             className="min-w-[220px] max-w-[250px] flex-shrink-0 cursor-pointer snap-start"
+            style={{
+              opacity: 1,
+              transform: 'translateY(0px)',
+              transition: 'transform 0.2s ease-out'
+            }}
           >
             <Card
               className="border hover:border-primary/50 transition-all overflow-hidden"
@@ -88,7 +93,7 @@ export default function FieldIntelligence({ fields = [], loading = false }: Fiel
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 pt-10">
                   <div className="flex items-center text-white">
                     <MapPin className="h-3.5 w-3.5 mr-1 text-white/90" />
-                    <span className="text-sm font-medium">{field.name}</span>
+                    <span className="text-sm font-medium truncate">{field.name}</span>
                   </div>
                 </div>
               </div>
@@ -105,7 +110,7 @@ export default function FieldIntelligence({ fields = [], loading = false }: Fiel
                   )}
                 </div>
                 
-                {field.value && (
+                {field.value !== undefined ? (
                   <div className="bg-green-50 dark:bg-green-900/20 p-1.5 rounded-md mb-2 text-center">
                     <span className="text-green-700 dark:text-green-400 text-sm font-semibold">
                       ₦{field.value.toLocaleString()}
@@ -114,32 +119,51 @@ export default function FieldIntelligence({ fields = [], loading = false }: Fiel
                       est. this week
                     </span>
                   </div>
+                ) : (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-1.5 rounded-md mb-2 text-center">
+                    <span className="text-blue-700 dark:text-blue-400 text-sm font-semibold">
+                      New field
+                    </span>
+                    <span className="text-xs text-blue-600/70 dark:text-blue-500/70 block">
+                      Set up crop type
+                    </span>
+                  </div>
                 )}
                 
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div>
-                    {field.healthPercent && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-12">Health:</span>
+                  <div className="w-full">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-12">Health:</span>
+                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden w-20">
+                        <div 
+                          className={cn(
+                            "h-full",
+                            field.health === 'good' ? "bg-green-500" :
+                            field.health === 'warning' ? "bg-amber-500" :
+                            "bg-red-500"
+                          )}
+                          style={{ width: `${field.healthPercent || 75}%` }}
+                        ></div>
+                      </div>
+                      <span>{field.healthPercent || 75}%</span>
+                    </div>
+                    {field.moistureLevel !== undefined && (
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="w-12">Water:</span>
                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden w-20">
                           <div 
-                            className={cn(
-                              "h-full",
-                              field.health === 'good' ? "bg-green-500" :
-                              field.health === 'warning' ? "bg-amber-500" :
-                              "bg-red-500"
-                            )}
-                            style={{ width: `${field.healthPercent}%` }}
+                            className="h-full bg-blue-500"
+                            style={{ width: `${field.moistureLevel}%` }}
                           ></div>
                         </div>
-                        <span>{field.healthPercent}%</span>
+                        <span>{field.moistureLevel}%</span>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
             </Card>
-          </motion.div>
+          </div>
         ))}
         
         <Button 

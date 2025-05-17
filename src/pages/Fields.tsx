@@ -1,5 +1,6 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { getFallbackUserId } from '../utils/fallbackUser';
+import AuthContext from '../context/AuthContext';
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
@@ -14,6 +15,7 @@ import { motion } from 'framer-motion';
 import AddFieldWizardButton from "@/components/fields/AddFieldWizardButton";
 
 const Fields = () => {
+  const { user } = useContext(AuthContext);
   const { logError, logSuccess } = useErrorLogging('FieldsPage');
   const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ const Fields = () => {
       console.log("📊 [FieldsPage] Loading fields");
       
       // Use a default user ID since we don't have authentication
-      const userId = 'default-user';
+      const userId = getFallbackUserId(user?.id);
       
       const { data, error } = await supabase
         .from('fields')

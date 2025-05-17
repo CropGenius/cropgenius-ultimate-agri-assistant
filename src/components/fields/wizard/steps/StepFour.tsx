@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
@@ -22,6 +21,7 @@ interface StepFourProps {
   onNext: () => void;
   onBack: () => void;
   onSkip: () => void;
+  error?: string;
 }
 
 // Common field sizes in hectares
@@ -34,7 +34,8 @@ export default function StepFour({
   onSizeUnitChange,
   onNext,
   onBack,
-  onSkip
+  onSkip,
+  error
 }: StepFourProps) {
   const handleSizeSelect = (selectedSize: number) => {
     onSizeChange(selectedSize);
@@ -78,6 +79,9 @@ export default function StepFour({
         <p className="text-center text-muted-foreground mb-6">
           Select the approximate size or enter a custom value
         </p>
+        {error && (
+          <p className="text-sm text-red-500 text-center mb-4">{error}</p>
+        )}
       </motion.div>
 
       <motion.div

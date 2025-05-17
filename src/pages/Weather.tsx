@@ -1,5 +1,5 @@
-
-import { useEffect, useState } from "react";
+import React from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -35,21 +35,33 @@ export default function Weather() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [location, setLocation] = useState({ lat: -0.42, lng: 36.95, name: "Nyeri, Kenya" });
-  const [user, setUser] = useState<any>(null);
-  const [farmData, setFarmData] = useState<any>(null);
+  interface FarmUser {
+  id: string;
+  email?: string;
+  [key: string]: unknown;
+}
+interface FarmData {
+  crops: string[];
+  size: number;
+  soilType: string;
+  irrigationSystem: string;
+}
+const [user, setUser] = useState<FarmUser | null>(null);
+  const [farmData, setFarmData] = useState<FarmData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    checkUser();
-    getLocation();
-    setTimeout(() => setLoading(false), 1500);
-  }, []);
-
-  const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      setUser(user);
-      // In a real app, we would fetch the user's farm data from Supabase
+  // Define checkUser and getLocation before useEffect
+  const checkUser = useCallback(async () => {
+    const { data: { user: supabaseUser } } = await supabase.auth.getUser(); // Renamed to supabaseUser to avoid confusion
+    if (supabaseUser) {
+      const { id, email, ...rest } = supabaseUser;
+      const farmUserInstance: FarmUser = {
+        id,
+        email: email ?? undefined, // Ensure email is explicitly string | undefined
+        ...rest, // Spread remaining properties, compatible with [key: string]: unknown
+      };
+      setUser(farmUserInstance);
+      
       setFarmData({
         crops: ["Maize", "Beans", "Coffee"],
         size: 2.5,
@@ -57,27 +69,35 @@ export default function Weather() {
         irrigationSystem: "Drip",
       });
     }
-  };
+  }, []); // setUser and setFarmData are stable
 
-  const getLocation = () => {
+  const getLocation = useCallback(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
-            name: "Your Farm",
+            name: "Current Location",
           });
         },
-        () => {
+        (error) => {
+          console.error("Error getting location:", error);
           toast({
+            title: "Location Error",
+            description: "Could not retrieve your location. Using default.",
             variant: "destructive",
-            description: "Unable to access location. Using default location.",
           });
         }
       );
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    checkUser();
+    getLocation();
+    setTimeout(() => setLoading(false), 1500);
+  }, [checkUser, getLocation]);
 
   const refreshData = () => {
     setRefreshing(true);

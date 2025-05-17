@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
@@ -24,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const ManageFields = () => {
+  const { user } = useContext(AuthContext);
   const { logError, logSuccess, trackOperation } = useErrorLogging('ManageFieldsPage');
   const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +40,7 @@ const ManageFields = () => {
       console.log("📊 [ManageFieldsPage] Loading fields");
       
       // Use a default user ID since we don't have authentication
-      const userId = 'default-user';
+      const userId = getFallbackUserId(user?.id);
       
       const { data, error } = await supabase
         .from('fields')

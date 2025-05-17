@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, RenderOptions, RenderResult } from '@testing-library/react';
 import { ReactElement, ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -13,7 +14,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: false,
-      gcTime: 0, // Using gcTime instead of cacheTime in newer versions
+      cacheTime: 1000 * 60 * 5, // Use cacheTime for v4 (5 minutes)
     },
   },
 });
@@ -41,6 +42,7 @@ const customRender = (
 };
 
 // Re-export everything from @testing-library/react
+// eslint-disable-next-line react-refresh/only-export-components
 export * from '@testing-library/react';
 
 // Override the render method with our custom implementation
@@ -51,7 +53,7 @@ export const createTestQueryClient = () => {
     defaultOptions: {
       queries: {
         retry: false,
-        gcTime: 0,
+        cacheTime: 1000 * 60 * 5, // Use cacheTime for v4 (5 minutes)
       },
     },
   });

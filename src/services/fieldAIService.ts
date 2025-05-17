@@ -19,7 +19,7 @@ export const analyzeField = async (fieldId: string): Promise<FieldAnalysisResult
     const { data: aiData, error: aiError } = await supabase.functions.invoke("field-ai-insights", {
       body: { 
         field_id: fieldId, 
-        user_id: 'default-user' // Default user ID since we don't have authentication
+        user_id: require('../utils/fallbackUser').FALLBACK_USER_ID // Valid fallback UUID for dev
       },
     });
     

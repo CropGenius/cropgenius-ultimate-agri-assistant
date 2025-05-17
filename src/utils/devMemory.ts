@@ -1,5 +1,5 @@
-
 import { devMemoryOverride, UserMemory } from '@/hooks/useMemoryStore';
+import { FALLBACK_USER_ID } from './fallbackUser';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -118,7 +118,7 @@ export const logCurrentMemory = async () => {
   }
   
   // Use a default user ID since we don't have authentication
-  const userId = 'default-user';
+  const userId = FALLBACK_USER_ID;
   
   try {
     // Get from localStorage only
