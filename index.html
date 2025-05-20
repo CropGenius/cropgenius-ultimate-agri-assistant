@@ -190,34 +190,40 @@
             throw new Error('Your browser does not support ES Modules. Please update your browser.');
           }
           
-          // Create and append the main script
+          // Load appropriate script based on environment
+          // Create and append the main script dynamically
           const script = document.createElement('script');
           script.type = 'module';
-          script.src = '/src/main.tsx';
           
-          script.onload = function() {
-            // Hide loading screen after app is mounted
-            setTimeout(() => {
-              const loading = document.getElementById('loading');
-              if (loading) {
-                loading.style.opacity = '0';
-                setTimeout(() => {
-                  loading.style.display = 'none';
-                }, 300);
-              }
-            }, 500);
-          };
+          // Check if running in development or production mode
+          const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
           
-          script.onerror = function() {
-            console.error('Failed to load application script');
-            window.CropGeniusDebug.logError({
-              type: 'script-load-error',
-              message: 'Failed to load the application script',
-              source: script.src
-            });
-          };
+          // In development, load from source directly
+          // In production, load the emergency UI script
+          script.src = isDev ? '/src/main.tsx' : './assets/index.js';
           
-          document.body.appendChild(script);
+          document.head.appendChild(script);
+          
+          // Fallback in case the dynamic script loading fails
+          if (!isDev) {
+            // Add a direct link to the emergency UI script for production
+            console.log('[CropGenius] Adding fallback script link');
+            const fallbackScript = document.createElement('script');
+            fallbackScript.src = './assets/index.js';
+            fallbackScript.defer = true;
+            document.head.appendChild(fallbackScript);
+          }
+
+          // Hide loading screen after app is mounted
+          setTimeout(() => {
+            const loading = document.getElementById('loading');
+            if (loading) {
+              loading.style.opacity = '0';
+              setTimeout(() => {
+                loading.style.display = 'none';
+              }, 300);
+            }
+          }, 1000);
           
         } catch (error) {
           console.error('Initialization error:', error);

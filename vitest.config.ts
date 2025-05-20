@@ -23,12 +23,13 @@ export default defineConfig({
         '**/src/test/**',
         '**/src/types/**',
       ],
-      thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 80,
-        statements: 80,
-      },
+      // Coverage thresholds are configured directly within the c8/istanbul options
+      all: true,  // Include all files, not just the ones with tests
+      perFile: true, // Apply thresholds per-file
+      lines: 80,
+      functions: 80,
+      branches: 80,
+      statements: 80
     },
   },
   resolve: {

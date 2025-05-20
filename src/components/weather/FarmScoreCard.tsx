@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BarChart3, Tractor, TrendingUp, Info } from "lucide-react";

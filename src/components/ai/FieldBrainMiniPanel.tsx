@@ -91,7 +91,7 @@ const FieldBrainMiniPanel = ({ fieldId, className }: FieldBrainMiniPanelProps) =
         </div>
       </CardContent>
     </Card>
-  );
+  )
 };
 
 export default FieldBrainMiniPanel;

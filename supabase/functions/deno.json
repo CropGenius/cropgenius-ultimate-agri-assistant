@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"],
+    "strict": true
+  },
+  "imports": {
+    "std/http/server": "https://deno.land/std@0.177.0/http/server.ts",
+    "postgres": "https://deno.land/x/postgres@v0.17.0/mod.ts"
+  }
+}

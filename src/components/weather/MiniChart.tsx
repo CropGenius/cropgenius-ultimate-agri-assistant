@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { LucideProps } from "lucide-react";
 
 interface MiniChartProps {

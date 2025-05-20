@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Bug, ChevronUp, ChevronDown, Wifi, WifiOff, RefreshCw, AlertTriangle, Database } from "lucide-react";

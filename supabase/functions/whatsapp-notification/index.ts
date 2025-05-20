@@ -1,4 +1,6 @@
 
+/// <reference path="../deno.d.ts" />
+
 // WhatsApp notification edge function
 // This is a skeleton implementation that would be connected to WhatsApp Business API or Twilio
 // in a production environment

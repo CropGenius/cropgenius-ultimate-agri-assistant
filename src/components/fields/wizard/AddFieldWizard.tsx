@@ -492,7 +492,7 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
     if (isSuccess) {
       setSubmissionProgress(100);
       const mockSubmittedField: Field = {
-        ...sanitizeFieldData(fieldData, farmId || 'default-farm', user?.id || 'default-user'),
+        ...sanitizeFieldData(fieldData),
         id: uuidv4(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

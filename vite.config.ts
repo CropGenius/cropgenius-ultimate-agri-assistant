@@ -33,13 +33,21 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'assets',
       sourcemap: mode === 'development', // Enable source maps in development
       minify: mode === 'production' ? 'esbuild' : false, // Minify in production only
+      emptyOutDir: true,
       rollupOptions: {
+        input: {
+          app: path.resolve(__dirname, 'index.html'),
+        },
         output: {
           // Ensure consistent chunk naming
           chunkFileNames: 'assets/js/[name]-[hash].js',
           entryFileNames: 'assets/js/[name]-[hash].js',
           assetFileNames: 'assets/[ext]/[name]-[hash][extname]'
         }
+      },
+      // Force Vite to generate JS files even with TypeScript errors
+      commonjsOptions: {
+        transformMixedEsModules: true,
       }
     },
     

@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { useState, useEffect, useCallback, useContext, createContext, ReactNode } from 'react';
 import FieldBrainAgent from '@/agents/FieldBrainAgent';
 import { useToast } from '@/hooks/use-toast';

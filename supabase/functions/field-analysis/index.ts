@@ -1,6 +1,40 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import * as postgres from "https://deno.land/x/postgres@v0.14.2/mod.ts";
+// Use import types for TypeScript type checking
+// @ts-ignore
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+// @ts-ignore
+import * as postgres from "https://deno.land/x/postgres@v0.17.0/mod.ts";
+
+// Type definitions
+interface Field {
+  id: string;
+  soil_type?: string;
+  soil_properties?: {
+    ph_level?: number;
+    [key: string]: any;
+  };
+  boundary?: {
+    coordinates?: { lat: number; lng: number }[];
+    [key: string]: any;
+  };
+  irrigation_type?: string;
+  [key: string]: any;
+}
+
+interface WeatherData {
+  temperature?: number;
+  humidity?: number;
+  precipitation?: number;
+  location?: { lat: number; lng: number };
+  recorded_at?: string;
+  [key: string]: any;
+}
+
+interface NearbyCrop {
+  crop_name: string;
+  count: number;
+  [key: string]: any;
+}
 
 // Define CORS headers
 const corsHeaders = {
@@ -144,11 +178,11 @@ function getCenterPoint(coordinates: { lat: number, lng: number }[]) {
 
 // Generate insights based on available data
 function generateInsights(
-  field: any, 
-  weatherData: any, 
-  nearbyCrops: any[]
-) {
-  const insights = [];
+  field: Field, 
+  weatherData: WeatherData | null, 
+  nearbyCrops: NearbyCrop[]
+): string[] {
+  const insights: string[] = [];
   
   // Soil insights
   if (field.soil_type) {
@@ -182,9 +216,9 @@ function generateInsights(
   
   // Weather insights
   if (weatherData) {
-    const temp = weatherData.temperature;
-    const humidity = weatherData.humidity;
-    const precip = weatherData.precipitation;
+    const temp = weatherData.temperature ?? 0;
+    const humidity = weatherData.humidity ?? 0;
+    const precip = weatherData.precipitation ?? 0;
     
     if (temp > 30) {
       insights.push(`High temperatures detected (${temp}°C). Consider drought-resistant varieties and increased irrigation.`);

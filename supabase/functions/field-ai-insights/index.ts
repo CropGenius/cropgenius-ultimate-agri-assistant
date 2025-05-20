@@ -1,11 +1,12 @@
+/// <reference path="./deno.d.ts" />
 
 // Edge Function: field-ai-insights
 // This function generates AI-powered insights for fields including crop rotation suggestions,
 // pest/disease risks, soil health, and task recommendations based on field data
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "std/http/server";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.29.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -85,7 +86,7 @@ const soilHealthRecommendations = {
 
 // Task generation based on crop type and growth stage
 function generateTasks(crop: string, plantingDate: string): string[] {
-  const tasks = [];
+  const tasks: string[] = [];
   const now = new Date();
   const plantDate = new Date(plantingDate);
   const daysSincePlanting = Math.floor((now.getTime() - plantDate.getTime()) / (1000 * 3600 * 24));
@@ -114,20 +115,14 @@ function generateTasks(crop: string, plantingDate: string): string[] {
   }
   
   // Add crop-specific tasks
-  switch (crop.toLowerCase()) {
-    case 'maize':
-      if (daysSincePlanting > 40 && daysSincePlanting < 70) {
-        tasks.push('Check for Fall Armyworm damage');
-        tasks.push('Ensure adequate soil moisture during tasseling');
-      }
-      break;
-    case 'tomatoes':
-      if (daysSincePlanting > 30) {
-        tasks.push('Consider staking or trellising plants');
-        tasks.push('Monitor for blossom end rot symptoms');
-      }
-      break;
-    // Add more crop-specific logic as needed
+  if (crop === 'maize' && daysSincePlanting > 30 && daysSincePlanting < 70) {
+    tasks.push('Check for Fall Armyworm damage');
+    tasks.push('Ensure adequate soil moisture during tasseling');
+  }
+  
+  if (crop === 'tomatoes' && daysSincePlanting > 25) {
+    tasks.push('Consider staking or trellising plants');
+    tasks.push('Monitor for blossom end rot symptoms');
   }
   
   return tasks;
@@ -135,44 +130,49 @@ function generateTasks(crop: string, plantingDate: string): string[] {
 
 // Calculate disease risk based on weather conditions
 function calculateDiseaseRisk(crop: string, weather: any): { disease: string; risk: number; }[] {
-  const risks = [];
+  const risks: { disease: string; risk: number; }[] = [];
   
-  // Default to unknown if crop not in our database
-  if (!diseaseRiskRules[crop]) {
-    return [{ disease: 'Unknown', risk: 0 }];
-  }
+  if (!diseaseRiskRules[crop]) return risks;
   
-  // Check temperature and humidity conditions
+  // Check high temperature and humidity conditions
   if (weather.temperature > 28 && weather.humidity > 70) {
-    const diseases = diseaseRiskRules[crop].high_temp_high_humidity || [];
-    diseases.forEach(disease => {
-      risks.push({ disease, risk: 0.8 });
-    });
+    const diseases = diseaseRiskRules[crop].high_temp_high_humidity;
+    if (diseases) {
+      diseases.forEach((disease: string) => {
+        risks.push({ disease, risk: 0.8 });
+      });
+    }
   }
   
-  // Check rainfall conditions
-  if (weather.rainfall > 20) { // 20mm is significant rainfall
-    const diseases = diseaseRiskRules[crop].high_rainfall || [];
-    diseases.forEach(disease => {
-      risks.push({ disease, risk: 0.7 });
-    });
+  // Check high rainfall conditions
+  if (weather.rainfall > 20) {
+    const diseases = diseaseRiskRules[crop].high_rainfall;
+    if (diseases) {
+      diseases.forEach((disease: string) => {
+        risks.push({ disease, risk: 0.7 });
+      });
+    }
   }
-  
   return risks.length > 0 ? risks : [{ disease: 'Low risk currently', risk: 0.1 }];
 }
 
 // Generate crop rotation suggestions based on previous crops
 function generateCropRotations(prevCrops: string[]): string[] {
-  // If no previous crops, suggest common starter crops
-  if (!prevCrops || prevCrops.length === 0) {
-    return ['maize', 'beans', 'groundnuts', 'sweet potatoes', 'cowpeas'];
+  const suggestions: string[] = [];
+  
+  if (prevCrops.length === 0) {
+    return ['maize', 'beans', 'tomatoes', 'cassava'].slice(0, 3); // Default suggestions
   }
   
-  const lastCrop = prevCrops[prevCrops.length - 1].toLowerCase();
+  const lastCrop = prevCrops[0].toLowerCase();
   
-  // Get suggestions based on last crop
-  const suggestions = cropRotationRules[lastCrop] || ['maize', 'beans', 'cowpeas'];
-  
+  // Get rotation suggestions based on last crop
+  if (cropRotationRules[lastCrop]) {
+    suggestions.push(...cropRotationRules[lastCrop]);
+  } else {
+    // Default suggestions
+    suggestions.push('maize', 'beans', 'groundnuts');
+  }
   // Filter out crops that have been grown in the last 2 cycles to avoid consecutive planting
   return suggestions.filter(crop => 
     !prevCrops.slice(-2).map(c => c.toLowerCase()).includes(crop)
@@ -257,8 +257,9 @@ serve(async (req) => {
     const diseaseRisks = calculateDiseaseRisk(currentOrLastCrop, weather);
     
     // 3. Soil health recommendations
-    const soilRecommendations = soilHealthRecommendations[fieldData.soil_type?.toLowerCase()] || 
-      soilHealthRecommendations.loam; // Default to loam if unknown
+    const soilType = fieldData.soil_type?.toLowerCase() as keyof typeof soilHealthRecommendations;
+    const soilRecommendations = soilType && soilHealthRecommendations[soilType] ? 
+      soilHealthRecommendations[soilType] : soilHealthRecommendations.loam; // Default to loam if unknown
     
     // 4. Task recommendations
     const lastPlantingDate = fieldData.crop_history && fieldData.crop_history.length > 0 
@@ -277,8 +278,8 @@ serve(async (req) => {
         ['cassava', 'sweet_potatoes'].includes(currentOrLastCrop)) yieldPotential += 0.05;
     
     // Adjust based on weather
-    if (weather.rainfall > 10 && weather.rainfall < 30) yieldPotential += 0.05;
-    if (weather.temperature > 30 || weather.temperature < 15) yieldPotential -= 0.1;
+    if (weather.rainfall && weather.rainfall > 10 && weather.rainfall < 30) yieldPotential += 0.05;
+    if (weather.temperature && (weather.temperature > 30 || weather.temperature < 15)) yieldPotential -= 0.1;
     
     // Construct response
     const insights = {
@@ -304,7 +305,7 @@ serve(async (req) => {
         estimate: yieldPotential,
         factors: [
           { factor: 'soil_type', impact: fieldData.soil_type === 'loam' ? 'positive' : 'neutral' },
-          { factor: 'weather', impact: weather.rainfall > 30 ? 'negative' : 'positive' }
+          { factor: 'weather', impact: weather.rainfall && weather.rainfall > 30 ? 'negative' : 'positive' }
         ]
       }
     };
