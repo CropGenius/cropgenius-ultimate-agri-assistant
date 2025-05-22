@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 import { FALLBACK_USER_ID } from './fallbackUser';
-import { fileToBase64 } from './fileUtils';
 
 export interface ScanResult {
   diseaseDetected: string;

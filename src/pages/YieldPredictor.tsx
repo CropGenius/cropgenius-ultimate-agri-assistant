@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import Layout from "@/components/Layout";
 import { 
@@ -129,17 +128,17 @@ const YieldPredictor = () => {
   const [predictionData, setPredictionData] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   interface OptimizationOption {
-  id: string;
-  title: string;
-  description: string;
-  impact: 'high' | 'medium' | 'low';
-  yieldIncrease: string;
-  costImpact: string;
-  implementation: string;
-  timeRequired: string;
-  applied: boolean;
-}
-const [optimizationOptions, setOptimizationOptions] = useState<OptimizationOption[]>([]);
+    id: string;
+    title: string;
+    description: string;
+    impact: 'high' | 'medium' | 'low';
+    yieldIncrease: string;
+    costImpact: string;
+    implementation: string;
+    timeRequired: string;
+    applied: boolean;
+  }
+  const [optimizationOptions, setOptimizationOptions] = useState<OptimizationOption[]>([]);
   const [showOptimizations, setShowOptimizations] = useState(false);
   
   const form = useForm({
@@ -177,36 +176,39 @@ const [optimizationOptions, setOptimizationOptions] = useState<OptimizationOptio
       setPredictionData(predictedData);
       
       // Generate optimization suggestions
-      const optimizations = [
+      const optimizations: OptimizationOption[] = [
         {
-          id: 1,
-          title: "Apply nitrogen-rich fertilizer before rainfall",
+          id: '1',
+          title: "Implement soil testing and targeted fertilization",
           impact: "high",
-          yieldIncrease: "+8%",
-          costImpact: "$45/acre",
-          implementation: "Easy",
-          timeRequired: "1-2 days",
-          description: "Soil analysis shows nitrogen deficiency. Applying before forecasted rain will maximize absorption."
+          yieldIncrease: "+15%",
+          costImpact: "$50/acre",
+          implementation: "Moderate",
+          timeRequired: "2-3 days",
+          description: "Based on your soil type, targeted nutrients can significantly boost crop health.",
+          applied: false
         },
         {
-          id: 2,
-          title: "Plant in east-west rows to increase sunlight exposure",
+          id: '2',
+          title: "Adjust planting density for optimal sunlight",
           impact: "medium",
-          yieldIncrease: "+5%",
-          costImpact: "Minimal",
-          implementation: "Medium",
-          timeRequired: "During planting",
-          description: "Your field orientation can be optimized to increase total sunlight exposure by 12%."
+          yieldIncrease: "+8%",
+          costImpact: "$20/acre",
+          implementation: "Easy",
+          timeRequired: "1 day",
+          description: "Slight adjustments to how densely you plant can improve light penetration and airflow.",
+          applied: false
         },
         {
-          id: 3,
+          id: '3',
           title: "Install drip irrigation for water efficiency",
           impact: "high",
           yieldIncrease: "+12%",
           costImpact: "$120/acre",
           implementation: "Complex",
           timeRequired: "1 week",
-          description: "Given your water source and rainfall patterns, drip irrigation would significantly improve yield consistency."
+          description: "Given your water source and rainfall patterns, drip irrigation would significantly improve yield consistency.",
+          applied: false
         }
       ];
       
@@ -576,7 +578,7 @@ const [optimizationOptions, setOptimizationOptions] = useState<OptimizationOptio
                     <div className="text-sm text-gray-500 mb-1">Estimated Revenue</div>
                     <div className="text-2xl font-bold flex items-center">
                       ${predictionData.estimatedRevenue}
-                      <Badge className={`ml-2 ${
+                      <Badge className={`${
                         predictionData.marketTrend.trend === "rising" 
                           ? "bg-green-100 text-green-800" 
                           : predictionData.marketTrend.trend === "falling" 

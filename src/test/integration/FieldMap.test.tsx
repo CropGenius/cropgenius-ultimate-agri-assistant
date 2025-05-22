@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@/test/test-utils';
 import FieldMap from '@/components/fields/FieldMap';
@@ -42,7 +43,11 @@ const mockGeolocation = {
   watchPosition: vi.fn(),
 };
 
-global.navigator.geolocation = mockGeolocation as any;
+Object.defineProperty(global.navigator, 'geolocation', {
+  value: mockGeolocation,
+  writable: true,
+  configurable: true
+});
 
 describe('FieldMap Component', () => {
   const mockOnBoundaryChange = vi.fn();
@@ -53,20 +58,14 @@ describe('FieldMap Component', () => {
   };
   
   const mockBoundary: Boundary = {
-    type: 'Feature',
-    properties: {},
-    geometry: {
-      type: 'Polygon',
-      coordinates: [
-        [
-          [0, 0],
-          [1, 0],
-          [1, 1],
-          [0, 1],
-          [0, 0],
-        ],
-      ],
-    },
+    type: 'polygon',
+    coordinates: [
+      { lat: 0, lng: 0 },
+      { lat: 1, lng: 0 },
+      { lat: 1, lng: 1 },
+      { lat: 0, lng: 1 },
+      { lat: 0, lng: 0 }
+    ]
   };
   
   // Mock the canvas dimensions

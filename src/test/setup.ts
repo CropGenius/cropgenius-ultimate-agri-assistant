@@ -47,8 +47,16 @@ class ResizeObserver {
 
 window.ResizeObserver = ResizeObserver;
 
-// Mock scrollTo
-window.scrollTo = vi.fn();
+// Mock scrollTo to handle both function signatures
+const scrollToMock = vi.fn<[ScrollToOptions | number, number?], void>();
+
+// Type assertion to handle both function signatures
+const typedScrollTo = scrollToMock as unknown as {
+  (options?: ScrollToOptions): void;
+  (x: number, y: number): void;
+};
+
+window.scrollTo = typedScrollTo;
 
 // Mock Supabase client
 vi.mock('@/lib/supabase', () => ({

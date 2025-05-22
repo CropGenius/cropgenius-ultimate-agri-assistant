@@ -2,7 +2,7 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { FALLBACK_USER_ID } from '../utils/fallbackUser';
 
 // Define the shape of our auth context
-type AuthContextType = {
+export type AuthContextType = {
   user: {
     id: string;
     email?: string;

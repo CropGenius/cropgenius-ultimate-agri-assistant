@@ -8,7 +8,12 @@ declare global {
   interface Window {
     __SUPPRESS_ERROR_TOASTS?: boolean;
     CropGeniusDebug?: {
+      errors: any[];
       logError: (error: any) => void;
+      clearErrors: () => void;
+      downloadErrorLog: () => void;
+      toggleDebugPanel: () => void;
+      isDebugPanelVisible: boolean;
       [key: string]: any;
     };
   }

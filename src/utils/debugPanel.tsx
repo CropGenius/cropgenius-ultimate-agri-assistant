@@ -35,12 +35,13 @@ interface DebugEntry {
 declare global {
   interface Window {
     CropGeniusDebug?: {
-      errors: DebugEntry[];
+      errors: any[];
       logError: (error: any) => void;
       clearErrors: () => void;
       downloadErrorLog: () => void;
       toggleDebugPanel: () => void;
       isDebugPanelVisible: boolean;
+      [key: string]: any;
     };
   }
 }

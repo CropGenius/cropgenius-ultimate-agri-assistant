@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, Edit, Map, ArrowLeft } from "lucide-react";
 import { Field } from "@/types/field";
-import { useErrorLogging } from '@/hooks/use-error-logging';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -21,9 +20,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import AuthContext, { type AuthContextType } from '@/context/AuthContext';
+import { getFallbackUserId } from '@/utils/fallbackUser';
+import { useErrorLogging } from '@/hooks/use-error-logging';
 
 const ManageFields = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useContext<AuthContextType>(AuthContext);
   const { logError, logSuccess, trackOperation } = useErrorLogging('ManageFieldsPage');
   const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState(true);
