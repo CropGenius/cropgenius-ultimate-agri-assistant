@@ -14,11 +14,11 @@
   "overrides": {
     "@types/react": "^18.2.43",
     "@testing-library/react-hooks": {
-      "@types/react": "$@types/react"
-    },
-    "@testing-library/react-hooks@8.0.1": { 
-      "@types/react": "$@types/react"
+      "@types/react": "^18.2.43"
     }
+  },
+  "resolutions": {
+    "@types/react": "^18.2.43"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -87,7 +87,7 @@
     "@testing-library/dom": "^9.3.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^14.1.2",
-    "@testing-library/react-hooks": "^7.0.2",
+    "@testing-library/react-hooks": "7.0.2",
     "@testing-library/user-event": "^14.5.2",
     "@types/jest": "^29.5.11",
     "@types/node": "^20.10.5",
