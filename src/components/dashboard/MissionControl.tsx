@@ -208,7 +208,7 @@ export default function MissionControl({ actions = [], loading = false }: Missio
   };
 
   return (
-    <div className="px-4 mt-6 pb-2 container-safe">
+    <div className="px-4 mt-6 pb-2 container-safe block !visible" style={{display: 'block'}}>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold">Today's Genius Actions</h2>
         {completedCount > 0 && (

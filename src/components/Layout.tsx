@@ -95,10 +95,10 @@ const Layout = ({ children }: LayoutProps) => {
         </Link>
       </nav>
       
-      {/* Main Content Area with proper padding for mobile */}
+      {/* Main Content Area with optimized padding for mobile */}
       <main 
-        className="pb-20 flex-1 overflow-x-hidden container-safe" 
-        style={{ paddingTop: '120px !important' }} // Aggressive padding for diagnosis
+        className="pb-20 flex-1 overflow-x-visible overflow-y-auto container-safe" 
+        style={{ paddingTop: isMobile ? '12px' : '16px' }}
       >
         {children}
       </main>

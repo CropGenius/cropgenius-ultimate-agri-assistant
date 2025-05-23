@@ -122,7 +122,7 @@ export default function PowerHeader({
   };
 
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative overflow-visible w-full">
       {/* Subtle parallax background - would be a video in production */}
       <div className="absolute inset-0 bg-gradient-to-b from-green-900/20 to-transparent opacity-20 z-0"></div>
       
@@ -131,14 +131,14 @@ export default function PowerHeader({
           <div className="flex-1">
             <h1 className="text-xl font-semibold flex items-center">
               <span className="mr-1">{greeting},</span>
-              <span className="text-primary font-bold animate-fade-in">{userName}.</span>
+              <span className="text-primary font-bold">{userName}.</span>
             </h1>
             
             <p className="text-sm text-muted-foreground mt-1">
               Let's grow your wealth today.
             </p>
             
-            <div className="flex items-center mt-3 gap-3">
+            <div className="flex flex-wrap items-center mt-3 gap-3">
               <div className="flex flex-col">
                 <div className="flex items-center">
                   <span className="text-lg font-bold">₦{farmValue.value.toLocaleString()}</span>
@@ -152,7 +152,7 @@ export default function PowerHeader({
               
               <Badge 
                 className={cn(
-                  "font-medium flex items-center gap-1 py-1.5 animate-pulse", 
+                  "font-medium flex items-center gap-1 py-1.5", 
                   getFarmScoreColor(farmScore)
                 )}
               >
@@ -163,20 +163,18 @@ export default function PowerHeader({
               </Badge>
             </div>
             
-            {/* AI Chat Tip */}
-            {isAiTipVisible && (
-              <div className="mt-3 bg-primary/10 p-2 rounded-lg border border-primary/20 flex items-start gap-2">
-                <div className="bg-primary/20 rounded-full p-1 mt-0.5">
-                  <Star className="h-3 w-3 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium">CropGenius Tip:</p>
-                  <p className="text-xs">{aiTip}</p>
-                </div>
+            {/* AI Chat Tip - Always visible */}
+            <div className="mt-3 bg-primary/10 p-2 rounded-lg border border-primary/20 flex items-start gap-2">
+              <div className="bg-primary/20 rounded-full p-1 mt-0.5">
+                <Star className="h-3 w-3 text-primary" />
               </div>
-            )}
+              <div>
+                <p className="text-xs font-medium">CropGenius Tip:</p>
+                <p className="text-xs">{aiTip}</p>
+              </div>
+            </div>
             
-            <div className="flex items-center mt-3 gap-2">
+            <div className="flex flex-wrap items-center mt-3 gap-2">
               <div className="flex items-center text-sm text-muted-foreground">
                 {getWeatherIcon()}
                 <span className="ml-1">
