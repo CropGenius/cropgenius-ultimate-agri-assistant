@@ -1,6 +1,6 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -132,7 +132,6 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner position="top-center" closeButton />
-          <BrowserRouter>
             <ErrorBoundary>
               <div className="content-stable">
                 <Routes>
@@ -173,7 +172,6 @@ const App = () => {
               {/* Development mode debug panel */}
               {(isDev || localStorage.getItem('DEV_MODE') === 'true') && <DevDebugPanel />}
             </div>
-          </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
