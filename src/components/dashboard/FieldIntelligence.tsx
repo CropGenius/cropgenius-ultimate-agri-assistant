@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MapPin, Plus, Leaf, CloudRain, Sun, Cloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -62,11 +61,11 @@ export default function FieldIntelligence({ fields = [], loading = false }: Fiel
         <h2 className="text-lg font-semibold">My Fields {fields.length > 0 && <span className="text-sm font-normal text-muted-foreground">({fields.length})</span>}</h2>
       </div>
       
-      <div className="pb-1 overflow-x-auto -mx-1 px-1 flex gap-3 snap-x hide-scrollbar">
+      <div className="pb-1 -mx-1 px-1 flex flex-wrap md:flex-nowrap md:overflow-x-auto gap-3 md:snap-x md:hide-scrollbar">
         {fields.map((field, index) => (
           <div
             key={field.id}
-            className="min-w-[220px] max-w-[250px] flex-shrink-0 cursor-pointer snap-start"
+            className="min-w-[220px] max-w-[250px] w-full md:w-auto md:flex-shrink-0 cursor-pointer md:snap-start"
             style={{
               opacity: 1,
               transform: 'translateY(0px)',
@@ -168,7 +167,7 @@ export default function FieldIntelligence({ fields = [], loading = false }: Fiel
         
         <Button 
           variant="outline" 
-          className="min-w-[220px] h-[175px] border-dashed flex-col gap-1 flex-shrink-0 snap-start"
+          className="min-w-[220px] w-full md:w-auto h-[175px] border-dashed flex-col gap-1 md:flex-shrink-0 md:snap-start"
           onClick={() => navigate('/manage-fields')}
         >
           <Plus className="h-5 w-5" />
