@@ -77,11 +77,29 @@ class ErrorBoundary extends Component<Props, State> {
     } catch (e) {
       // Silent catch if localStorage fails
     }
+
+    // Add error to debug panel if available
+    if (window.CropGeniusDebug && typeof window.CropGeniusDebug.logError === 'function') {
+      try {
+        window.CropGeniusDebug.logError({
+          type: 'react-error',
+          message: error?.message || 'Unknown error',
+          stack: error?.stack,
+          componentStack: errorInfo?.componentStack,
+          timestamp: new Date().toISOString()
+        });
+      } catch (e) {
+        console.error("Failed to log to debug panel", e);
+      }
+    }
     
-    // Show toast notification
-    toast.error('Something went wrong', {
-      description: 'We encountered an unexpected error. Our team has been notified.'
-    });
+    // Show toast notification - this can be the primary non-blocking notification
+    if (!window.__SUPPRESS_ERROR_TOASTS) {
+      toast.error(error?.message || 'An unexpected error occurred', {
+        description: 'Please try again or contact support if the issue persists.',
+        duration: 8000 // Give user more time to see it
+      });
+    }
   }
 
   handleReset = (): void => {
@@ -93,50 +111,68 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   render(): ReactNode {
-    // Always render children even if there's an error
-    // Just trigger a toast notification if an error occurs
-    if (this.state.hasError && !window.__SUPPRESS_ERROR_TOASTS) {
-      // Show a small non-blocking error indicator in the corner
-      setTimeout(() => {
-        // Log to console first
-        console.error("[ErrorBoundary]", this.state.error);
-        console.error("[Component Stack]", this.state.errorInfo?.componentStack);
-        
-        // Add error to debug panel if available
-        if (window.CropGeniusDebug && typeof window.CropGeniusDebug.logError === 'function') {
-          try {
-            window.CropGeniusDebug.logError({
-              type: 'react-error',
-              message: this.state.error?.message || 'Unknown error',
-              stack: this.state.error?.stack,
-              componentStack: this.state.errorInfo?.componentStack,
-              timestamp: new Date().toISOString()
-            });
-          } catch (e) {
-            console.error("Failed to log to debug panel", e);
-          }
-        }
-        
-        // Show non-blocking notification
-        toast.error(this.state.error?.message || "Non-critical error detected", {
-          description: "Error logged to console and debug panel",
-          action: {
-            label: "Details",
-            onClick: () => {
-              console.group("Error Details");
-              console.error(this.state.error);
-              console.error(this.state.errorInfo?.componentStack);
-              console.groupEnd();
-            }
-          },
-          duration: 5000
-        });
-      }, 0);
-      
-      // After logging the error, reset the error state so the app can try again
-      setTimeout(() => {
-        this.handleReset();
-      }, 1000);
+    if (this.state.hasError) {
+      // If a custom fallback is provided, render it
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+      // Otherwise, render a default fallback UI
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          margin: '20px auto',
+          border: '1px solid #ff4d4f',
+          borderRadius: '8px',
+          backgroundColor: '#fff1f0',
+          maxWidth: '600px',
+          fontFamily: 'sans-serif'
+        }}>
+          <AlertTriangle size={48} color="#ff4d4f" style={{ marginBottom: '16px' }} />
+          <h2 style={{ fontSize: '24px', color: '#cf1322', marginBottom: '8px' }}>Oops! Something went wrong.</h2>
+          <p style={{ fontSize: '16px', color: '#595959', marginBottom: '16px', textAlign: 'center' }}>
+            We've encountered an unexpected issue. Please try refreshing the page or clicking the button below.
+          </p>
+          {this.state.error && (
+            <details style={{ width: '100%', marginBottom: '16px' }}>
+              <summary style={{ cursor: 'pointer', color: '#007bff', marginBottom: '8px' }}>Error Details</summary>
+              <pre style={{
+                textAlign: 'left',
+                background: '#f0f0f0',
+                padding: '12px',
+                borderRadius: '4px',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-all',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                fontSize: '12px'
+              }}>
+                <strong>Message:</strong> {this.state.error.message}
+                {this.state.errorInfo && this.state.errorInfo.componentStack && (
+                  <>
+                    <br /><br /><strong>Component Stack:</strong>
+                    {this.state.errorInfo.componentStack}
+                  </>
+                )}
+              </pre>
+            </details>
+          )}
+          <Button onClick={this.handleReset} style={{ 
+            padding: '10px 20px',
+            fontSize: '16px',
+            cursor: 'pointer',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px'
+          }}>
+            <RefreshCw size={16} style={{ marginRight: '8px' }} /> Try Again
+          </Button>
+        </div>
+      );
     }
 
     return this.props.children;
