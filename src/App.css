@@ -40,3 +40,33 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Mobile responsiveness fixes */
+@media (max-width: 768px) {
+  /* Force My Fields section to stack vertically */
+  [class*="overflow-x-auto"] {
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
+  
+  [class*="flex-nowrap"] {
+    flex-wrap: wrap !important;
+  }
+  
+  [class*="snap-x"] {
+    scroll-snap-type: none !important;
+  }
+  
+  /* Force field cards to be full width on mobile */
+  [class*="min-w-[220px]"] {
+    min-width: 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex-shrink: 1 !important;
+  }
+  
+  /* Add margin between stacked cards */
+  [class*="min-w-[220px]"]:not(:last-child) {
+    margin-bottom: 1rem !important;
+  }
+}
