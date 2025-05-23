@@ -57,35 +57,13 @@
         line-height: 1.5;
       }
       
-      #root, #loading {
+      #root {
         height: 100vh;
         width: 100%;
         display: flex;
         justify-content: center;
         align-items: center;
       }
-      
-      #loading {
-        position: fixed;
-        top: 0;
-        left: 0;
-        background: var(--background);
-        z-index: 9999;
-        flex-direction: column;
-        gap: 1.5rem;
-        transition: opacity 0.3s ease-out;
-      }
-      
-      .spinner {
-        width: 50px;
-        height: 50px;
-        border: 5px solid rgba(16, 185, 129, 0.1);
-        border-top: 5px solid var(--primary);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-      
-      /* Error styles removed - errors now only go to console and debug panel */
       
       .btn {
         padding: 0.75rem 1.5rem;
@@ -106,36 +84,19 @@
         background-color: var(--primary-dark);
       }
       
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      
       @media (prefers-color-scheme: dark) {
         :root {
           --background: #0f172a;
           --text: #f8fafc;
         }
-        
-        #loading {
-          background: var(--background);
-        }
-        /* Dark mode error styles removed */
       }
     </style>
   </head>
   <body>
-    <!-- Error handling moved to CropGenius Debug Panel - No blocking UI -->
-    
-    <!-- Loading Screen -->
-    <div id="loading">
-      <div class="spinner"></div>
-      <div>Loading CropGenius...</div>
-    </div>
-    
     <!-- Main App Mount Point -->
     <div id="root"></div>
     
+    <script type="module" src="/src/main.tsx"></script>
     <script>
       // Initialize debug error handling system
       window.CropGeniusDebug = window.CropGeniusDebug || {};
@@ -180,59 +141,6 @@
         });
         // Prevent default to avoid browser's error UI
         event.preventDefault();
-      });
-      
-      // Load the app after DOM is ready
-      document.addEventListener('DOMContentLoaded', function() {
-        try {
-          // Check for ES modules support
-          if (!('noModule' in HTMLScriptElement.prototype)) {
-            throw new Error('Your browser does not support ES Modules. Please update your browser.');
-          }
-          
-          // Load appropriate script based on environment
-          // Create and append the main script dynamically
-          const script = document.createElement('script');
-          script.type = 'module';
-          
-          // Check if running in development or production mode
-          const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-          
-          // In development, load from source directly
-          // In production, load the emergency UI script
-          script.src = isDev ? '/src/main.tsx' : './assets/index.js';
-          
-          document.head.appendChild(script);
-          
-          // Fallback in case the dynamic script loading fails
-          if (!isDev) {
-            // Add a direct link to the emergency UI script for production
-            console.log('[CropGenius] Adding fallback script link');
-            const fallbackScript = document.createElement('script');
-            fallbackScript.src = './assets/index.js';
-            fallbackScript.defer = true;
-            document.head.appendChild(fallbackScript);
-          }
-
-          // Hide loading screen after app is mounted
-          setTimeout(() => {
-            const loading = document.getElementById('loading');
-            if (loading) {
-              loading.style.opacity = '0';
-              setTimeout(() => {
-                loading.style.display = 'none';
-              }, 300);
-            }
-          }, 1000);
-          
-        } catch (error) {
-          console.error('Initialization error:', error);
-          window.CropGeniusDebug.logError({
-            type: 'init-error',
-            message: 'Failed to initialize: ' + error.message,
-            stack: error.stack
-          });
-        }
       });
       
       // Handle service worker registration for PWA
