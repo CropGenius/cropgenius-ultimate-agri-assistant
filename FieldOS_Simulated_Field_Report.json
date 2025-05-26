@@ -1,0 +1,119 @@
+{
+  "reportId": "FIR-20240315-SN734-F001",
+  "generatedTimestamp": "2024-03-15T10:30:00Z",
+  "fieldId": "FIELD_SN734_F001",
+  "userId": "USER_JDOE88",
+  "contextSnapshot": {
+    "currentCrop": "Maize (Variety ZM523)",
+    "currentGrowthStage": "Vegetative (V6)",
+    "soilMoistureLevel": "Optimal (65% field capacity)",
+    "soilNutrientAnalysis": {
+      "nitrogen": "Slightly Deficient",
+      "phosphorus": "Adequate",
+      "potassium": "Adequate",
+      "ph": 6.8
+    },
+    "weatherOutlook": "Sunny for next 2 days, chance of moderate rain (5-10mm) in 3-4 days, temperatures stable.",
+    "recentObservations": [
+      {
+        "observationId": "OBS_001",
+        "date": "2024-03-14",
+        "type": "Visual",
+        "notes": "Minor leaf discoloration on older plants in sector B."
+      }
+    ]
+  },
+  "historicalInsightsSummary": {
+    "averageYieldLast3Cycles": "7.2 tons/ha",
+    "commonPestObserved": "Fall Armyworm (low incidence last season, successfully controlled with pheromone traps and targeted spraying)",
+    "bestPerformingIrrigationSchedule": "Deep watering every 7-10 days during vegetative stage, adjusted for rainfall.",
+    "successfulFertilizerRegimes": [
+      "Basal application of NPK (10-20-10) at planting.",
+      "Top dressing of Urea at V4 and V8 stages."
+    ],
+    "notesOnVarietyZM523": "Good drought tolerance, responds well to timely nitrogen application."
+  },
+  "seasonalForecastScenarios": [
+    {
+      "scenarioName": "Baseline (Current Practices & Average Weather)",
+      "projectedYieldChange": "+2% to -3% vs historical average",
+      "keyAssumptions": ["Continuation of current irrigation and fertilization schedule.", "Average rainfall for the remainder of the season.", "Pest pressure similar to previous years."],
+      "potentialRisks": ["Slight nitrogen deficiency might limit optimal growth if not addressed.", "Moderate risk of Fall Armyworm outbreak if conditions become favorable."]
+    },
+    {
+      "scenarioName": "Optimized Nutrient Management & Favorable Weather",
+      "projectedYieldChange": "+8% to +15% vs historical average",
+      "keyAssumptions": ["Timely nitrogen application as recommended.", "Slightly above average rainfall, well-distributed.", "Effective pest scouting and proactive measures."],
+      "potentialRisks": ["Over-application of water if rainfall is higher than expected, leading to nutrient leaching."]
+    },
+    {
+      "scenarioName": "Dry Spell & Increased Pest Pressure",
+      "projectedYieldChange": "-10% to -25% vs historical average",
+      "keyAssumptions": ["Below average rainfall for next 4 weeks.", "Increased temperatures leading to higher evapotranspiration.", "Higher than average Fall Armyworm migration."],
+      "potentialRisks": ["Significant yield loss due to water stress.", "Crop damage from pests requiring reactive interventions."]
+    }
+  ],
+  "recommendedActions": [
+    {
+      "actionId": "ACT_N_TOPDRESS_001",
+      "description": "Apply 50kg/ha of Urea (46-0-0) as top dressing within the next 2-3 days.",
+      "rationale": "Soil analysis indicates slight Nitrogen deficiency. Current V6 growth stage is critical for nitrogen uptake to support biomass development. Forecasted rain in 3-4 days will help incorporate the fertilizer. Similar fields in the farmer cluster have reported positive yield responses to timely N application at this stage.",
+      "priority": "High",
+      "supportingEvidenceLinks": [
+        "contextSnapshot.soilNutrientAnalysis.nitrogen",
+        "contextSnapshot.currentGrowthStage",
+        "contextSnapshot.weatherOutlook",
+        "historicalInsightsSummary.successfulFertilizerRegimes",
+        "clusterInsight.NITROGEN_RESPONSE_V6_MAIZE_ID451"
+      ],
+      "estimatedImpact": "Potential yield increase: 5-10%. Improved plant vigor and chlorophyll content.",
+      "implementationNotes": "Apply evenly, avoiding direct contact with plant leaves. If no rain occurs within 2 days of application, consider a light irrigation cycle."
+    },
+    {
+      "actionId": "ACT_PEST_SCOUT_002",
+      "description": "Intensify scouting for Fall Armyworm, especially in Sector B where leaf discoloration was noted.",
+      "rationale": "Historical data indicates Fall Armyworm presence. Early detection is key for effective and low-cost management. Leaf discoloration could be an early sign, though nutrient-related for older leaves.",
+      "priority": "Medium",
+      "supportingEvidenceLinks": [
+        "contextSnapshot.recentObservations.OBS_001",
+        "historicalInsightsSummary.commonPestObserved"
+      ],
+      "estimatedImpact": "Reduced risk of significant pest damage by 30-50% through early intervention.",
+      "implementationNotes": "Check whorls of young plants. Look for egg masses and small larvae. Report findings via the app."
+    },
+    {
+      "actionId": "ACT_IRRIGATION_ADJ_003",
+      "description": "Maintain current irrigation schedule but prepare to potentially delay next cycle if forecasted rain is significant.",
+      "rationale": "Soil moisture is currently optimal. Upcoming rain could replenish soil water, making immediate irrigation unnecessary and potentially harmful (leaching).",
+      "priority": "Medium",
+      "supportingEvidenceLinks": [
+        "contextSnapshot.soilMoistureLevel",
+        "contextSnapshot.weatherOutlook",
+        "historicalInsightsSummary.bestPerformingIrrigationSchedule"
+      ],
+      "estimatedImpact": "Water conservation. Reduced risk of nutrient leaching and waterlogging.",
+      "implementationNotes": "Monitor rainfall amount. Use a soil moisture probe to verify levels before deciding to irrigate post-rain."
+    }
+  ],
+  "overallConfidence": {
+    "score": 0.85,
+    "category": "High",
+    "reasoning": "Strong alignment between current field conditions, historical performance, and favorable short-term forecast when recommended actions are taken. Primary risk factor (Nitrogen) is directly addressed."
+  },
+  "feedbackRequest": {
+    "reportFeedbackQueryText": "How relevant is this FieldIntelligenceReport to your current situation and plans?",
+    "reportFeedbackOptions": [
+      {"value": "very_relevant", "label": "Very Relevant"},
+      {"value": "somewhat_relevant", "label": "Somewhat Relevant"},
+      {"value": "not_relevant", "label": "Not Relevant"}
+    ],
+    "actionFeedbackPrompt": "For each recommended action, please indicate your planned approach:",
+    "actionFeedbackOptions": [
+      {"value": "will_implement", "label": "Will Implement"},
+      {"value": "will_consider", "label": "Will Consider"},
+      {"value": "will_not_implement", "label": "Will Not Implement"},
+      {"value": "need_more_info", "label": "Need More Information"}
+    ],
+    "generalCommentsPrompt": "Do you have any other comments or observations to share about this report or your field?"
+  }
+}
