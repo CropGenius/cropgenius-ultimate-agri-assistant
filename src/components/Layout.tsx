@@ -97,7 +97,7 @@ const Layout = ({ children }: LayoutProps) => {
       
       {/* Main Content Area with optimized padding for mobile */}
       <main 
-        className="pb-20 flex-1 overflow-x-visible overflow-y-auto container-safe" 
+        className="pb-20 flex-1 overflow-x-hidden overflow-y-auto container-safe" 
         style={{ paddingTop: isMobile ? '12px' : '16px' }}
       >
         {children}

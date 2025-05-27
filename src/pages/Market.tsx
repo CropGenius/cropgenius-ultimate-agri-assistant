@@ -1,541 +1,107 @@
-import { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
-  CardDescription,
-  CardFooter
+  CardDescription
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
-import { 
-  Check, 
-  ChevronRight,
-  Clock,
-  Coins, 
-  DollarSign, 
-  FileCheck, 
-  HandCoins, 
-  LineChart, 
+import PostTradeForm from "@/components/market/PostTradeForm";
+import { useMarket } from "@/hooks/useMarket";
+import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  HandCoins,
+  LineChart,
   Package,
   ShieldCheck,
-  ShoppingCart, 
+  ShoppingCart,
   Star,
-  ThumbsUp,
-  Truck,
   Users,
-  Zap
+  Zap,
+  AlertCircle
 } from "lucide-react";
-
-interface CropListing {
-  id: number;
-  cropType: string;
-  quantity: number;
-  unit: string;
-  quality: string;
-  location: string;
-  price: number;
-  marketPrice: number;
-  expiresIn: string;
-  priceStatus: 'rising' | 'falling' | 'stable';
-  priceChange: number;
-  holdRecommendation: {
-    recommend: boolean;
-    days: number;
-    expectedIncrease: number;
-  };
-  seller: {
-    name: string;
-    rating: number;
-    verified: boolean;
-    transactions: number;
-  };
-  isMine?: boolean;
-  photo?: string;
-  bulkDeal?: {
-    farmersJoined: number;
-    targetFarmers: number;
-    bonusPercentage: number;
-  };
-}
-
-interface Buyer {
-  id: number;
-  name: string;
-  location: string;
-  lookingFor: string[];
-  verified: boolean;
-  rating: number;
-  transactions: number;
-  offersAboveMarket: number;
-  paymentMethods: string[];
-  dealSize: 'small' | 'medium' | 'large';
-  paysFast: boolean;
-}
-
-interface MyCrop {
-  id: number;
-  cropType: string;
-  readyToSell: boolean;
-  harvestDate: string;
-  quantity: number;
-  unit: string;
-  quality: string;
-  isListed: boolean;
-  currentPrice: number;
-  suggestedPrice: number;
-  marketTrend: {
-    status: 'rising' | 'falling' | 'stable';
-    forecast: string;
-    changePercent: number;
-  };
-}
-
-interface BulkDeal {
-  id: number;
-  cropType: string;
-  organizer: string;
-  farmersJoined: number;
-  targetFarmers: number;
-  priceBonus: number;
-  deadline: string;
-  location: string;
-  minQuantity: number;
-  buyer: string;
-  isNew: boolean;
-}
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Market = () => {
-  const [marketListings, setMarketListings] = useState<CropListing[]>([
-    {
-      id: 1,
-      cropType: "Maize",
-      quantity: 2500,
-      unit: "kg",
-      quality: "Premium",
-      location: "Central Region",
-      price: 175,
-      marketPrice: 150,
-      expiresIn: "3 days",
-      priceStatus: "rising",
-      priceChange: 8,
-      holdRecommendation: {
-        recommend: true,
-        days: 7,
-        expectedIncrease: 15
-      },
-      seller: {
-        name: "Thomas N.",
-        rating: 4.8,
-        verified: true,
-        transactions: 26
-      }
-    },
-    {
-      id: 2,
-      cropType: "Tomatoes",
-      quantity: 850,
-      unit: "kg",
-      quality: "Standard",
-      location: "Western Region",
-      price: 120,
-      marketPrice: 125,
-      expiresIn: "2 days",
-      priceStatus: "falling",
-      priceChange: 4,
-      holdRecommendation: {
-        recommend: false,
-        days: 0,
-        expectedIncrease: 0
-      },
-      seller: {
-        name: "Martha K.",
-        rating: 4.2,
-        verified: true,
-        transactions: 14
-      },
-      bulkDeal: {
-        farmersJoined: 8,
-        targetFarmers: 10,
-        bonusPercentage: 12
-      }
-    },
-    {
-      id: 3,
-      cropType: "Cassava",
-      quantity: 3200,
-      unit: "kg",
-      quality: "Premium",
-      location: "Eastern Region",
-      price: 90,
-      marketPrice: 85,
-      expiresIn: "5 days",
-      priceStatus: "stable",
-      priceChange: 0,
-      holdRecommendation: {
-        recommend: false,
-        days: 0,
-        expectedIncrease: 0
-      },
-      seller: {
-        name: "Joseph M.",
-        rating: 4.9,
-        verified: true,
-        transactions: 41
-      }
-    },
-    {
-      id: 4,
-      cropType: "Rice",
-      quantity: 1200,
-      unit: "kg",
-      quality: "Premium",
-      location: "Central Region",
-      price: 210,
-      marketPrice: 200,
-      expiresIn: "7 days",
-      priceStatus: "rising",
-      priceChange: 5,
-      holdRecommendation: {
-        recommend: true,
-        days: 14,
-        expectedIncrease: 18
-      },
-      seller: {
-        name: "Grace O.",
-        rating: 4.7,
-        verified: true,
-        transactions: 22
-      }
-    },
-  ]);
-  
-  const [myCrops, setMyCrops] = useState<MyCrop[]>([
-    {
-      id: 1,
-      cropType: "Maize",
-      readyToSell: true,
-      harvestDate: "Last week",
-      quantity: 1800,
-      unit: "kg",
-      quality: "Premium",
-      isListed: false,
-      currentPrice: 150,
-      suggestedPrice: 175,
-      marketTrend: {
-        status: "rising",
-        forecast: "Prices expected to increase by 15% in the next 7 days",
-        changePercent: 15
-      }
-    },
-    {
-      id: 2,
-      cropType: "Tomatoes",
-      readyToSell: true,
-      harvestDate: "Yesterday",
-      quantity: 350,
-      unit: "kg",
-      quality: "Standard",
-      isListed: false,
-      currentPrice: 120,
-      suggestedPrice: 120,
-      marketTrend: {
-        status: "falling",
-        forecast: "Prices expected to drop by 8% in the next 3 days. Sell now.",
-        changePercent: -8
-      }
-    },
-    {
-      id: 3,
-      cropType: "Beans",
-      readyToSell: false,
-      harvestDate: "In 2 weeks",
-      quantity: 450,
-      unit: "kg",
-      quality: "Premium",
-      isListed: false,
-      currentPrice: 195,
-      suggestedPrice: 205,
-      marketTrend: {
-        status: "stable",
-        forecast: "Prices expected to remain stable for the next month",
-        changePercent: 1
-      }
-    }
-  ]);
-  
-  const [topBuyers, setTopBuyers] = useState<Buyer[]>([
-    {
-      id: 1,
-      name: "National Food Processors",
-      location: "Central Region",
-      lookingFor: ["Maize", "Rice", "Soybeans"],
-      verified: true,
-      rating: 4.9,
-      transactions: 372,
-      offersAboveMarket: 8,
-      paymentMethods: ["Mobile Money", "Bank Transfer"],
-      dealSize: "large",
-      paysFast: true
-    },
-    {
-      id: 2,
-      name: "Fresh Grocers Ltd",
-      location: "Western Region",
-      lookingFor: ["Tomatoes", "Onions", "Peppers"],
-      verified: true,
-      rating: 4.7,
-      transactions: 156,
-      offersAboveMarket: 12,
-      paymentMethods: ["Mobile Money"],
-      dealSize: "medium",
-      paysFast: true
-    },
-    {
-      id: 3,
-      name: "Eastern Exporters Co.",
-      location: "Eastern Region",
-      lookingFor: ["Cassava", "Cocoa", "Yams"],
-      verified: true,
-      rating: 4.8,
-      transactions: 203,
-      offersAboveMarket: 15,
-      paymentMethods: ["Bank Transfer", "Mobile Money"],
-      dealSize: "large",
-      paysFast: false
-    }
-  ]);
-  
-  const [bulkDeals, setBulkDeals] = useState<BulkDeal[]>([
-    {
-      id: 1,
-      cropType: "Maize",
-      organizer: "Regional Cooperative",
-      farmersJoined: 28,
-      targetFarmers: 50,
-      priceBonus: 25,
-      deadline: "4 days",
-      location: "Central Region",
-      minQuantity: 500,
-      buyer: "National Food Processors",
-      isNew: true
-    },
-    {
-      id: 2,
-      cropType: "Tomatoes",
-      organizer: "Western Farmers Alliance",
-      farmersJoined: 8,
-      targetFarmers: 10,
-      priceBonus: 12,
-      deadline: "2 days",
-      location: "Western Region",
-      minQuantity: 200,
-      buyer: "Fresh Grocers Ltd",
-      isNew: false
-    },
-    {
-      id: 3,
-      cropType: "Cassava",
-      organizer: "Eastern Growers Association",
-      farmersJoined: 35,
-      targetFarmers: 40,
-      priceBonus: 18,
-      deadline: "6 days",
-      location: "Eastern Region",
-      minQuantity: 400,
-      buyer: "Eastern Exporters Co.",
-      isNew: false
-    }
-  ]);
-  
+  const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState("marketplace");
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [aiInsights, setAiInsights] = useState({
-    lastUpdated: "5 minutes ago",
-    marketOverview: "Market prices for maize and rice are trending upward. Tomato prices are falling due to increased supply. Best time to sell beans and soybeans.",
-    topOpportunities: [
-      {
-        crop: "Maize",
-        action: "Hold for 7-10 days",
-        reason: "Prices expected to rise by 15% due to regional shortages"
-      },
-      {
-        crop: "Rice",
-        action: "Join bulk selling group",
-        reason: "25% above-market prices for bulk sellers"
-      },
-      {
-        crop: "Tomatoes",
-        action: "Sell immediately",
-        reason: "Prices falling due to oversupply"
-      }
-    ]
-  });
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
+  
+  const {
+    marketListings,
+    myCrops,
+    topBuyers,
+    bulkDeals,
+    aiInsights,
+    isLoading,
+    isRefreshing,
+    error,
+    refreshMarket,
+    handlePostTrade,
+    handleContactSeller,
+    listCrop,
+    joinBulkDeal,
+    contactBuyer,
+    withdrawListing,
+    sellNow
+  } = useMarket();
 
-  const refreshMarket = () => {
-    setIsRefreshing(true);
-    
-    setTimeout(() => {
-      toast.success("Market data updated with latest AI analysis", {
-        description: "Analyzing crop prices, buyer demand, and market trends",
-      });
-      
-      setIsRefreshing(false);
-    }, 2000);
-  };
-
-  const listCrop = (cropId: number) => {
-    const crop = myCrops.find(c => c.id === cropId);
-    if (!crop) return;
-    
-    const newListing: CropListing = {
-      id: marketListings.length + 1,
-      cropType: crop.cropType,
-      quantity: crop.quantity,
-      unit: crop.unit,
-      quality: crop.quality,
-      location: "Central Region",
-      price: crop.suggestedPrice,
-      marketPrice: crop.currentPrice,
-      expiresIn: "7 days",
-      priceStatus: crop.marketTrend.status,
-      priceChange: Math.abs(crop.marketTrend.changePercent),
-      holdRecommendation: {
-        recommend: crop.marketTrend.status === "rising",
-        days: crop.marketTrend.status === "rising" ? 7 : 0,
-        expectedIncrease: crop.marketTrend.status === "rising" ? Math.abs(crop.marketTrend.changePercent) : 0
-      },
-      seller: {
-        name: "Emmanuel",
-        rating: 4.6,
-        verified: true,
-        transactions: 15
-      },
-      isMine: true
-    };
-    
-    setMarketListings([newListing, ...marketListings]);
-    setMyCrops(myCrops.map(c => 
-      c.id === cropId ? { ...c, isListed: true } : c
-    ));
-    
-    toast.success(`Your ${crop.cropType} is now listed for sale!`, {
-      description: "Buyers can now see and purchase your crop",
+  // Handle errors
+  const handleError = useCallback((error: Error) => {
+    toast({
+      title: "Error",
+      description: error.message,
+      variant: "destructive"
     });
-  };
+  }, [toast]);
 
-  const joinBulkDeal = (dealId: number) => {
-    const deal = bulkDeals.find(d => d.id === dealId);
-    if (!deal) return;
-    
-    setBulkDeals(bulkDeals.map(d => 
-      d.id === dealId ? { ...d, farmersJoined: d.farmersJoined + 1, isNew: false } : d
-    ));
-    
-    toast.success(`You've joined the ${deal.cropType} bulk selling group!`, {
-      description: `You'll get ${deal.priceBonus}% above market price when the group target is reached`,
-    });
-  };
+  if (error) {
+    return (
+      <Layout>
+        <div className="p-5 pb-20 animate-fade-in">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
+              <p className="text-gray-600">Failed to load market data</p>
+              <Button 
+                onClick={refreshMarket}
+                className="mt-4"
+                variant="outline"
+              >
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
-  const contactBuyer = (buyerId: number) => {
-    const buyer = topBuyers.find(b => b.id === buyerId);
-    if (!buyer) return;
-    
-    toast.success(`Contact request sent to ${buyer.name}`, {
-      description: "They'll receive your crop details and contact you directly",
-    });
-  };
-
-  const withdrawListing = (listingId: number) => {
-    const listing = marketListings.find(l => l.id === listingId);
-    if (!listing || !listing.isMine) return;
-    
-    setMarketListings(marketListings.filter(l => l.id !== listingId));
-    
-    setMyCrops(myCrops.map(c => 
-      c.cropType === listing.cropType ? { ...c, isListed: false } : c
-    ));
-    
-    toast.success(`Your ${listing.cropType} listing has been removed`, {
-      description: "Your crop is no longer available for sale",
-    });
-  };
-
-  const sellNow = (listingId: number) => {
-    const listing = marketListings.find(l => l.id === listingId);
-    if (!listing || !listing.isMine) return;
-    
-    toast.info("Completing Sale", {
-      description: "Processing your sale securely...",
-    });
-    
-    setTimeout(() => {
-      setMarketListings(marketListings.filter(l => l.id !== listingId));
-      
-      setMyCrops(myCrops.filter(c => c.cropType !== listing.cropType));
-      
-      toast.success(`Your ${listing.cropType} has been sold!`, {
-        description: `Payment of ${listing.price * listing.quantity} has been processed securely`,
-      });
-    }, 2000);
-  };
-
-  const handlePostTrade = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const form = e.target as HTMLFormElement;
-    const cropType = form.cropType.value;
-    const quantity = parseInt(form.quantity.value);
-    const unit = form.unit.value;
-    const quality = form.quality.value;
-    const location = form.location.value;
-    const price = parseInt(form.price.value);
-    const marketPrice = parseInt(form.marketPrice.value);
-    const expiresIn = form.expiresIn.value;
-    const priceStatus = form.priceStatus.value;
-    const priceChange = parseInt(form.priceChange.value);
-    const holdRecommendation = {
-      recommend: form.holdRecommendation.value === "true",
-      days: parseInt(form.holdRecommendationDays.value),
-      expectedIncrease: parseInt(form.holdRecommendationExpectedIncrease.value)
-    };
-    const seller = {
-      name: form.sellerName.value,
-      rating: parseInt(form.sellerRating.value),
-      verified: form.sellerVerified.value === "true",
-      transactions: parseInt(form.sellerTransactions.value)
-    };
-    const isMine = form.isMine.value === "true";
-    const photo = form.photo.value;
-    const bulkDeal = {
-      farmersJoined: parseInt(form.bulkDealFarmersJoined.value),
-      targetFarmers: parseInt(form.bulkDealTargetFarmers.value),
-      bonusPercentage: parseInt(form.bulkDealBonusPercentage.value)
-    };
-    
-    setMarketListings(prevListings => {
-      return prevListings.map(l => ({
-        ...l,
-      }));
-    });
-    
-    toast("Trade posted successfully!");
-  };
-
-  const handleContactSeller = () => {
-    const seller = marketListings.find(l => l.id === parseInt(selectedTab));
-    if (!seller) return;
-    
-    toast("Contact request sent to seller!");
-  };
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="p-5 pb-20 animate-fade-in">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-48" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-48" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -546,23 +112,33 @@ const Market = () => {
               <h1 className="text-2xl font-bold text-crop-green-700">AI Smart Market</h1>
               <p className="text-gray-600">AI-powered trading platform for maximum profits</p>
             </div>
-            <Button 
-              onClick={refreshMarket} 
-              className="bg-crop-green-600 hover:bg-crop-green-700 text-white flex items-center"
-              disabled={isRefreshing}
-            >
-              {isRefreshing ? (
-                <>
-                  <LineChart className="h-4 w-4 mr-2 animate-spin" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <LineChart className="h-4 w-4 mr-2" />
-                  Update Market AI
-                </>
-              )}
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline" 
+                className="bg-white hover:bg-gray-50 text-crop-green-700 border-crop-green-300 flex items-center"
+                onClick={() => navigate('/market/intelligence')}
+              >
+                <LineChart className="h-4 w-4 mr-2" />
+                Market Intelligence
+              </Button>
+              <Button 
+                onClick={refreshMarket} 
+                className="bg-crop-green-600 hover:bg-crop-green-700 text-white flex items-center"
+                disabled={isRefreshing}
+              >
+                {isRefreshing ? (
+                  <>
+                    <LineChart className="h-4 w-4 mr-2 animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <LineChart className="h-4 w-4 mr-2" />
+                    Update Market AI
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
           
           <Card className="mt-4 border-crop-green-200 bg-crop-green-50">
@@ -614,10 +190,13 @@ const Market = () => {
 
           <TabsContent value="marketplace" className="mt-4">
             <div className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-800 flex items-center">
-                <ShoppingCart className="h-5 w-5 mr-2 text-crop-green-600" />
-                Available Crop Listings
-              </h2>
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                  <ShoppingCart className="h-5 w-5 mr-2 text-crop-green-600" />
+                  Available Crop Listings
+                </h2>
+                <PostTradeForm onSubmit={handlePostTrade} />
+              </div>
               
               {marketListings.map(listing => (
                 <Card key={listing.id} className={`overflow-hidden ${listing.isMine ? 'border-crop-green-400 bg-crop-green-50' : ''}`}>
@@ -680,8 +259,8 @@ const Market = () => {
                               <span className="text-xs font-medium">{listing.seller.rating}</span>
                             </div>
                             {listing.seller.verified && (
-                              <div className="flex items-center bg-sky-blue-100 px-2 py-1 rounded-full">
-                                <ShieldCheck className="h-3 w-3 text-sky-blue-500 mr-1" />
+                              <div className="flex items-center bg-blue-100 px-2 py-1 rounded-full">
+                                <ShieldCheck className="h-3 w-3 text-blue-500 mr-1" />
                                 <span className="text-xs font-medium">Verified</span>
                               </div>
                             )}
@@ -745,6 +324,7 @@ const Market = () => {
                             variant="outline" 
                             size="sm" 
                             className="text-gray-600"
+                            onClick={() => handleContactSeller(listing.id)}
                           >
                             Contact Seller
                           </Button>
@@ -1019,4 +599,11 @@ const Market = () => {
   );
 };
 
-export default Market;
+// Wrap the component with error boundary
+export default function MarketWithErrorBoundary() {
+  return (
+    <ErrorBoundary>
+      <Market />
+    </ErrorBoundary>
+  );
+}

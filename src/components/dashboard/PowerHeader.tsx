@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -129,12 +128,12 @@ export default function PowerHeader({
       <div className="p-4 pb-2 relative z-10">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h1 className="text-xl font-semibold flex items-center">
+            <h1 className="text-xl font-semibold flex items-center break-words">
               <span className="mr-1">{greeting},</span>
               <span className="text-primary font-bold">{userName}.</span>
             </h1>
             
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1 break-words">
               Let's grow your wealth today.
             </p>
             
@@ -168,14 +167,14 @@ export default function PowerHeader({
               <div className="bg-primary/20 rounded-full p-1 mt-0.5">
                 <Star className="h-3 w-3 text-primary" />
               </div>
-              <div>
+              <div className="break-words">
                 <p className="text-xs font-medium">CropGenius Tip:</p>
                 <p className="text-xs">{aiTip}</p>
               </div>
             </div>
             
             <div className="flex flex-wrap items-center mt-3 gap-2">
-              <div className="flex items-center text-sm text-muted-foreground">
+              <div className="flex items-center text-sm text-muted-foreground break-words">
                 {getWeatherIcon()}
                 <span className="ml-1">
                   {location} — {temperature > 0 ? `${temperature}°C` : ''} {weatherCondition}

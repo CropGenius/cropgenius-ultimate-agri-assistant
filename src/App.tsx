@@ -14,6 +14,7 @@ import Scan from "./pages/Scan";
 import FarmPlan from "./pages/FarmPlan";
 import YieldPredictor from "./pages/YieldPredictor";
 import Market from "./pages/Market";
+import MarketIntelligence from "./pages/MarketIntelligence";
 import Weather from "./pages/Weather";
 import Chat from "./pages/Chat";
 import Fields from "./pages/Fields";
@@ -140,6 +141,7 @@ const App = () => {
                   <Route path="/farm-plan" element={<FarmPlan />} />
                   <Route path="/predictions" element={<YieldPredictor />} />
                   <Route path="/market" element={<Market />} />
+                  <Route path="/market/intelligence" element={<MarketIntelligence />} />
                   <Route path="/weather" element={<Weather />} />
                   <Route path="/chat" element={<Chat />} />
                   <Route path="/ai-assistant" element={<Chat />} />

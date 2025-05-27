@@ -19,6 +19,16 @@ export default defineConfig(({ mode }) => {
       port: 8080,
       strictPort: true, // Exit if port is already in use
       open: true, // Open the browser on server start
+      proxy: {
+        // Proxy API requests to mock service worker in development
+        '/api': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+          // For development, we'll use mock service worker to handle these
+          // In production, update this to your actual API URL
+          rewrite: (path) => path
+        }
+      }
     },
     
     // Preview server configuration

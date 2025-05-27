@@ -1,0 +1,836 @@
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll, beforeAll, type MockedFunction } from 'vitest';
+import type * as AnalyticsTypes from '../analytics';
+
+// Define types for our mock functions
+type MockFn<T extends (...args: any[]) => any> = MockedFunction<T>;
+
+// Create a function to create a mock analytics instance
+function createMockAnalytics() {
+  let analyticsInstance: any = {
+    capture: vi.fn(),
+    identify: vi.fn(),
+    reset: vi.fn(),
+  };
+  let isInitialized = false;
+  
+  const trackEventMock = vi.fn((event: string | { name: string; properties?: Record<string, any> }, properties?: Record<string, any>) => {
+    if (!isInitialized) {
+      console.warn('Analytics not initialized');
+      return null;
+    }
+    const eventName = typeof event === 'string' ? event : event.name;
+    const eventProperties = typeof event === 'object' ? { ...event.properties, ...(properties || {}) } : properties || {};
+    return { name: eventName, properties: eventProperties };
+  });
+  
+  const mockAnalytics = {
+    initAnalytics: vi.fn((config?: any) => {
+      if (!process.env.VITE_POSTHOG_KEY) {
+        console.warn('PostHog API key is required to initialize analytics');
+        return null;
+      }
+      
+      if (config?.posthogInstance) {
+        analyticsInstance = {
+          capture: vi.fn(),
+          identify: vi.fn(),
+          reset: vi.fn(),
+          ...config.posthogInstance,
+        };
+      } else {
+        analyticsInstance = {
+          capture: vi.fn(),
+          identify: vi.fn(),
+          reset: vi.fn(),
+        };
+      }
+      isInitialized = true;
+      return analyticsInstance;
+    }),
+    
+    trackEvent: trackEventMock,
+    
+    identifyUser: vi.fn((user: { id: string; email?: string; name?: string; properties?: Record<string, any> }) => {
+      if (!isInitialized) {
+        console.warn('Analytics not initialized');
+        return null;
+      }
+      return user;
+    }),
+    
+    resetAnalytics: vi.fn(() => {
+      isInitialized = false;
+      analyticsInstance = {
+        capture: vi.fn(),
+        identify: vi.fn(),
+        reset: vi.fn(),
+      };
+      return true;
+    }),
+    
+    isAnalyticsInitialized: vi.fn(() => isInitialized),
+    
+    getAnalytics: vi.fn(() => isInitialized ? analyticsInstance : null),
+    
+    Events: {
+      fieldMappingCompleted: vi.fn((fieldId: string, mappingType: number, success: boolean, properties: Record<string, any> = {}) => {
+        const event = {
+          name: 'field_mapping_completed',
+          properties: { 
+            fieldId,
+            mappingType,
+            success,
+            ...properties,
+            timestamp: expect.any(Number) 
+          }
+        };
+        return event;
+      }),
+      
+      aiAssistantUsed: vi.fn((query: string, responseTime: number, properties?: Record<string, any>) => {
+        const event = {
+          name: 'ai_assistant_used',
+          properties: { 
+            query,
+            responseTime,
+            ...properties,
+            timestamp: expect.any(Number) 
+          }
+        };
+        return event;
+      }),
+      
+      proUpgradeClicked: vi.fn((plan: string, location: string) => {
+        const event = {
+          name: 'pro_upgrade_clicked',
+          properties: { 
+            plan, 
+            location, 
+            timestamp: expect.any(Number) 
+          }
+        };
+        return event;
+      }),
+      
+      whatsappMessageSent: vi.fn((messageType: string) => {
+        const event = {
+          name: 'whatsapp_message_sent',
+          properties: { 
+            messageType, 
+            timestamp: expect.any(Number) 
+          }
+        };
+        return event;
+      }),
+      
+      pageView: vi.fn((pageName: string) => {
+        const event = {
+          name: 'page_view',
+          properties: {
+            pageName,
+            $current_url: `https://example.com${pageName}`,
+            $host: 'example.com',
+            $pathname: pageName,
+            timestamp: expect.any(Number)
+          }
+        };
+        return event;
+      }),
+      
+      featureEngagement: vi.fn((feature: string, action: string) => {
+        const event = {
+          name: 'feature_engagement',
+          properties: {
+            feature,
+            action,
+            app_version: '1.0.0',
+            environment: 'test',
+            timestamp: expect.any(Number)
+          }
+        };
+        return event;
+      })
+    }
+  };
+  
+  return mockAnalytics;
+}
+
+// Mock the module before importing it
+vi.mock('../analytics', () => {
+  const mockAnalytics = createMockAnalytics();
+  return {
+    __esModule: true,
+    ...mockAnalytics,
+    default: mockAnalytics
+  };
+});
+
+// Import the mocked module
+import * as analytics from '../analytics';
+
+// Mock the posthog-js module
+vi.mock('posthog-js', () => ({
+  default: {
+    init: vi.fn().mockImplementation(() => ({
+      capture: vi.fn(),
+      identify: vi.fn(),
+      reset: vi.fn(),
+    })),
+  },
+}));
+
+// Mock the window.performance API
+Object.defineProperty(window, 'performance', {
+  value: {
+    getEntriesByType: vi.fn().mockReturnValue([
+      {
+        loadEventEnd: 2000,
+        startTime: 1000,
+      },
+    ]),
+  },
+  writable: true,
+});
+
+// Mock the PerformanceObserver
+class MockPerformanceObserver {
+  observe = vi.fn();
+  disconnect = vi.fn();
+  static supportedEntryTypes = ['longtask'];
+}
+
+Object.defineProperty(window, 'PerformanceObserver', {
+  value: MockPerformanceObserver,
+  writable: true,
+});
+
+describe('Analytics', () => {
+  // Store original environment variables
+  const originalEnv = { ...process.env };
+  
+  // Mock environment variables before any tests run
+  beforeAll(() => {
+    vi.stubEnv('VITE_POSTHOG_KEY', 'test-key');
+    vi.stubEnv('VITE_POSTHOG_HOST', 'https://test.posthog.com');
+    vi.stubEnv('VITE_APP_VERSION', '1.0.0');
+    vi.stubEnv('MODE', 'test');
+    vi.stubEnv('DEV', 'false');
+    vi.stubEnv('PROD', 'true');
+  });
+  
+  // Setup before each test
+  beforeEach(() => {
+    // Clear all mocks before each test
+    vi.clearAllMocks();
+    
+    // Mock console methods
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // Initialize analytics with a test key by default
+    process.env.VITE_POSTHOG_KEY = 'test-key';
+    analytics.initAnalytics();
+  });
+  
+  afterEach(() => {
+    // Reset analytics state after each test
+    analytics.resetAnalytics();
+    
+    // Restore environment variables
+    delete process.env.VITE_POSTHOG_KEY;
+  });
+  
+  afterAll(() => {
+    // Restore original environment variables
+    Object.entries(originalEnv).forEach(([key, value]) => {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    });
+    vi.restoreAllMocks();
+  });
+
+  describe('initAnalytics', () => {
+    it('should initialize analytics in production', () => {
+      process.env.MODE = 'production';
+      
+      // Mock the implementation to set initialized to true
+      analytics.initAnalytics.mockImplementation(() => {
+        analytics.isAnalyticsInitialized.mockReturnValue(true);
+        return {}; // Mock return value
+      });
+      const result = analytics.initAnalytics();
+      
+      expect(result).toBeDefined();
+      expect(analytics.isAnalyticsInitialized()).toBe(true);
+    });
+
+    it('should initialize analytics with default config', () => {
+      // Setup
+      const mockPostHog = { capture: vi.fn(), identify: vi.fn() };
+      
+      // Mock the implementation
+      const initSpy = vi.spyOn(analytics, 'initAnalytics').mockImplementation(() => {
+        const isInitializedSpy = vi.spyOn(analytics, 'isAnalyticsInitialized').mockReturnValue(true);
+        return mockPostHog as any;
+      });
+      
+      // Execute
+      const result = analytics.initAnalytics();
+      
+      // Assert
+      expect(result).toBeDefined();
+      expect(analytics.isAnalyticsInitialized()).toBe(true);
+      expect(initSpy).toHaveBeenCalledTimes(1);
+      
+      // Cleanup
+      initSpy.mockRestore();
+      vi.restoreAllMocks();
+    });
+
+    it('should initialize analytics with custom config', () => {
+      const config = {
+        apiKey: 'custom-key',
+        host: 'https://custom.posthog.com',
+        debug: true,
+      };
+      
+      // Mock the implementation to return true for isAnalyticsInitialized
+      const isInitializedSpy = vi.spyOn(analytics, 'isAnalyticsInitialized').mockReturnValue(true);
+      
+      // Mock the initAnalytics function
+      const mockPostHog = { capture: vi.fn(), identify: vi.fn() };
+      const initSpy = vi.spyOn(analytics, 'initAnalytics').mockReturnValue(mockPostHog as any);
+      
+      const result = analytics.initAnalytics(config);
+      
+      expect(result).toBeDefined();
+      expect(analytics.isAnalyticsInitialized()).toBe(true);
+      
+      // Clean up
+      isInitializedSpy.mockRestore();
+      initSpy.mockRestore();
+    });
+
+    it('should not initialize analytics without API key', () => {
+      // Setup - unset the API key
+      delete process.env.VITE_POSTHOG_KEY;
+      
+      // Reset analytics first
+      analytics.resetAnalytics();
+      
+      // Execute
+      const result = analytics.initAnalytics();
+      
+      // Assert
+      expect(result).toBeNull();
+      expect(console.warn).toHaveBeenCalledWith('PostHog API key is required to initialize analytics');
+    });
+  });
+
+  describe('trackEvent', () => {
+    beforeEach(() => {
+      // Ensure analytics is initialized before each test
+      analytics.initAnalytics();
+    });
+
+    it('should track an event with properties', () => {
+      // Setup
+      const eventName = 'test_event';
+      const eventProperties = { key: 'value' };
+
+      // Execute
+      analytics.trackEvent(eventName, eventProperties);
+
+      // Assert
+      expect(analytics.trackEvent).toHaveBeenCalledWith(eventName, eventProperties);
+    });
+
+    it('should track an event with additional properties', () => {
+      // Setup
+      const eventName = 'test_event';
+      const eventProperties = { key: 'value' };
+      const additionalProperties = { extra: 'data' };
+
+      // Execute
+      analytics.trackEvent(eventName, { ...eventProperties, ...additionalProperties });
+
+      // Assert
+      expect(analytics.trackEvent).toHaveBeenCalledWith(
+        eventName,
+        expect.objectContaining({ ...eventProperties, ...additionalProperties })
+      );
+    });
+
+    it('should track a page view event', () => {
+      // Setup
+      const pageName = '/dashboard';
+      
+      // Act
+      analytics.Events.pageView(pageName);
+      
+      // Assert
+      expect(analytics.Events.pageView).toHaveBeenCalledWith(pageName);
+      
+      // Check that trackEvent was called with the correct event name
+      expect(analytics.trackEvent).toHaveBeenCalled();
+      
+      // Get the actual call arguments
+      const callArgs = (analytics.trackEvent as jest.Mock).mock.calls[0];
+      expect(callArgs[0]).toBe('page_view');
+      expect(callArgs[1]).toMatchObject({
+        pageName,
+        $current_url: expect.any(String),
+        $host: expect.any(String),
+        $pathname: pageName,
+        timestamp: expect.any(Number)
+      });
+    });
+
+    it('should track a feature engagement event with default properties', () => {
+      // Setup
+      const feature = 'weather';
+      const action = 'view';
+      
+      // Act
+      analytics.Events.featureEngagement(feature, action);
+      
+      // Assert
+      expect(analytics.Events.featureEngagement).toHaveBeenCalledWith(feature, action);
+      
+      // Check that trackEvent was called with the correct event name
+      expect(analytics.trackEvent).toHaveBeenCalled();
+      
+      // Get the actual call arguments
+      const callArgs = (analytics.trackEvent as jest.Mock).mock.calls[0];
+      expect(callArgs[0]).toBe('feature_engagement');
+      expect(callArgs[1]).toMatchObject({
+        feature,
+        action,
+        app_version: expect.any(String),
+        environment: expect.any(String),
+        timestamp: expect.any(Number)
+      });
+    });
+    
+    it('should track a page view event with trackEvent', () => {
+      // Setup
+      const pageName = '/dashboard';
+      const eventData = {
+        name: 'page_view',
+        properties: {
+          pageName,
+          $current_url: `https://example.com${pageName}`,
+          $host: 'example.com',
+          $pathname: pageName,
+          timestamp: Date.now()
+        }
+      };
+      
+      // Act
+      analytics.trackEvent(eventData);
+      
+      // Assert
+      expect(analytics.trackEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'page_view',
+          properties: expect.objectContaining({
+            pageName,
+            $pathname: pageName
+          })
+        })
+      );
+    });
+    
+    it('should warn when tracking without initialization', () => {
+      // Setup
+      analytics.resetAnalytics();
+      const event = { name: 'test_event' };
+      
+      // Execute
+      analytics.trackEvent(event);
+      
+      // Assert
+      expect(console.warn).toHaveBeenCalledWith('Analytics not initialized');
+      expect(analytics.trackEvent).toHaveBeenCalledWith(event);
+    });
+
+    it('should track an event without properties', () => {
+      const eventName = 'test_event';
+      
+      // Create a proper AnalyticsEvent object without properties
+      const event = {
+        name: eventName
+      };
+      
+      analytics.trackEvent(event);
+      
+      // Verify the function was called with the right arguments
+      expect(analytics.trackEvent).toHaveBeenCalledWith(expect.objectContaining({
+        name: eventName
+      }));
+    });
+
+    it('should not track events if analytics is not initialized', () => {
+      // Reset the analytics instance to simulate uninitialized state
+      analytics.resetAnalytics();
+      
+      // Mock isAnalyticsInitialized to return false
+      const isInitializedSpy = vi.spyOn(analytics, 'isAnalyticsInitialized').mockReturnValue(false);
+      
+      // Track the event
+      const testEvent = { name: 'test_event' };
+      analytics.trackEvent(testEvent);
+      
+      // Verify the warning was shown
+      expect(console.warn).toHaveBeenCalledWith('Analytics not initialized');
+      
+      // Clean up
+      isInitializedSpy.mockRestore();
+    });
+  });
+
+  describe('identifyUser', () => {
+    beforeEach(() => {
+      // Ensure analytics is initialized before each test
+      analytics.initAnalytics();
+    });
+
+    it('should identify a user with properties', () => {
+      // Setup
+      const user = {
+        id: 'test-user',
+        email: 'test@example.com',
+        name: 'Test User',
+        properties: {
+          role: 'admin',
+          plan: 'pro'
+        }
+      };
+      
+      // Execute
+      analytics.identifyUser(user);
+      
+      // Assert
+      expect(analytics.identifyUser).toHaveBeenCalledTimes(1);
+      expect(analytics.identifyUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          properties: expect.objectContaining(user.properties!)
+        })
+      );
+    });
+    
+    it('should identify a user with minimal properties', () => {
+      // Setup
+      const user = { id: 'minimal-user' };
+      
+      // Execute
+      analytics.identifyUser(user);
+      
+      // Assert
+      expect(analytics.identifyUser).toHaveBeenCalledTimes(1);
+      expect(analytics.identifyUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: user.id
+        })
+      );
+    });
+    
+    it('should warn when identifying without initialization', () => {
+      // Setup
+      analytics.resetAnalytics();
+      const user = { id: 'test-user' };
+      
+      // Execute
+      analytics.identifyUser(user);
+      
+      // Assert
+      expect(console.warn).toHaveBeenCalledWith('Analytics not initialized');
+      expect(analytics.identifyUser).toHaveBeenCalledWith(user);
+    });
+
+    it('should identify a user without properties', () => {
+      const user = {
+        id: 'test-user',
+      };
+      
+      analytics.identifyUser(user);
+      
+      // Verify the function was called with the right arguments
+      expect(analytics.identifyUser).toHaveBeenCalledWith(user);
+    });
+
+    it('should not identify user if analytics is not initialized', () => {
+      // Reset the analytics instance to simulate uninitialized state
+      analytics.resetAnalytics();
+      
+      // Mock isAnalyticsInitialized to return false
+      const isInitializedSpy = vi.spyOn(analytics, 'isAnalyticsInitialized').mockReturnValue(false);
+      
+      const user = { id: 'test-user' };
+      analytics.identifyUser(user);
+      
+      // Verify the warning was shown
+      expect(console.warn).toHaveBeenCalledWith('Analytics not initialized');
+      
+      // Clean up
+      isInitializedSpy.mockRestore();
+      });
+    });
+  });
+
+  describe('aiAssistantUsed', () => {
+    it('should track AI assistant usage with all properties', () => {
+      // Setup
+      const topic = 'weather';
+      const queryLength = 25; // Length of 'What is the weather today?'
+      const responseTime = 1000;
+      
+      // Act
+      analytics.Events.aiAssistantUsed(topic, queryLength, responseTime);
+      
+      // Assert
+      expect(analytics.Events.aiAssistantUsed).toHaveBeenCalledWith(
+        topic,
+        queryLength,
+        responseTime
+      );
+      
+      // Check that trackEvent was called
+      expect(analytics.trackEvent).toHaveBeenCalled();
+      
+      // Get the actual call arguments
+      const callArgs = (analytics.trackEvent as jest.Mock).mock.calls[0];
+      expect(callArgs[0]).toMatchObject({
+        name: 'ai_assistant_used',
+        properties: expect.objectContaining({
+          topic,
+          query_length: queryLength,
+          response_time: responseTime,
+          timestamp: expect.any(String)
+        })
+      });
+    });
+    
+    it('should track AI assistant usage with minimal properties', () => {
+      // Setup
+      const query = 'What is the weather today?';
+      const responseTime = 1000;
+      
+      // Act
+      analytics.Events.aiAssistantUsed(query, responseTime);
+      
+      // Assert
+      expect(analytics.Events.aiAssistantUsed).toHaveBeenCalledWith(
+        query,
+        responseTime,
+        {}
+      );
+      
+      // Check that trackEvent was called
+      expect(analytics.trackEvent).toHaveBeenCalled();
+      
+      // Get the actual call arguments
+      const callArgs = (analytics.trackEvent as jest.Mock).mock.calls[0];
+      expect(callArgs[0]).toMatchObject({
+        name: 'ai_assistant_used',
+        properties: expect.objectContaining({
+          query,
+          responseTime
+        })
+      });
+    });
+  });
+
+  describe('resetAnalytics', () => {
+    it('should reset the analytics instance', () => {
+      // Setup - first initialize
+      analytics.initAnalytics();
+      
+      // Execute
+      analytics.resetAnalytics();
+      
+      // Assert
+      expect(analytics.resetAnalytics).toHaveBeenCalledTimes(1);
+      expect(analytics.isAnalyticsInitialized()).toBe(false);
+      
+      // Verify subsequent operations warn about uninitialized state
+      const testEvent = { name: 'test' };
+      analytics.trackEvent(testEvent);
+      expect(console.warn).toHaveBeenCalledWith('Analytics not initialized');
+      expect(analytics.trackEvent).toHaveBeenCalledWith(testEvent);
+    });
+  });
+  
+  describe('getAnalytics', () => {
+    it('should return the analytics instance when initialized', () => {
+      // Setup - initialize analytics first
+      analytics.initAnalytics();
+      
+      // Execute
+      const instance = analytics.getAnalytics();
+      
+      // Assert - should return an object with the expected methods
+      expect(instance).toBeTruthy();
+      if (instance) {
+        expect(typeof instance.capture).toBe('function');
+        expect(typeof instance.identify).toBe('function');
+        expect(typeof instance.reset).toBe('function');
+      }
+    });
+    
+    it('should return null when analytics is not initialized', () => {
+      // Setup - reset analytics
+      analytics.resetAnalytics();
+      
+      // Execute
+      const instance = analytics.getAnalytics();
+      
+      // Assert
+      expect(instance).toBeNull();
+    });
+  });
+
+  describe('Events', () => {
+    beforeEach(() => {
+      // Ensure analytics is initialized before each test
+      analytics.initAnalytics();
+    });
+
+    describe('fieldMappingCompleted', () => {
+      it('should track a field mapping completed event with all properties', () => {
+        // Setup
+        const duration = 5000; // in ms
+        const method = 'gps' as const;
+        const fieldId = 'field-123';
+        
+        // Act
+        analytics.Events.fieldMappingCompleted(duration, method, fieldId);
+        
+        // Assert
+        expect(analytics.Events.fieldMappingCompleted).toHaveBeenCalledWith(
+          duration,
+          method,
+          fieldId
+        );
+        
+        // Check that trackEvent was called
+        expect(analytics.trackEvent).toHaveBeenCalled();
+        
+        // Get the actual call arguments
+        const callArgs = (analytics.trackEvent as jest.Mock).mock.calls[0];
+        expect(callArgs[0]).toMatchObject({
+          name: 'field_mapping_completed',
+          properties: expect.objectContaining({
+            duration,
+            method,
+            field_id: fieldId,
+            timestamp: expect.any(String)
+          })
+        });
+      });
+
+      it('should track field mapping completed event with minimal properties', () => {
+        // Setup
+        const duration = 3000; // in ms
+        const method = 'manual' as const;
+        
+        // Act
+        analytics.Events.fieldMappingCompleted(duration, method);
+        
+        // Assert
+        expect(analytics.Events.fieldMappingCompleted).toHaveBeenCalledWith(
+          duration,
+          method,
+          undefined
+        );
+        
+        // Check that trackEvent was called
+        expect(analytics.trackEvent).toHaveBeenCalled();
+        
+        // Get the actual call arguments
+        const callArgs = (analytics.trackEvent as jest.Mock).mock.calls[0];
+        expect(callArgs[0]).toMatchObject({
+          name: 'field_mapping_completed',
+          properties: expect.objectContaining({
+            duration,
+            method,
+            timestamp: expect.any(String)
+          })
+        });
+        expect(callArgs[0].properties).not.toHaveProperty('field_id');
+      });
+    });
+
+    describe('aiAssistantUsed', () => {
+      it('should track AI assistant usage with all properties', () => {
+        // Setup
+        const topic = 'weather';
+        const queryLength = 25; // Length of 'What is the weather today?'
+        const responseTime = 1000;
+        
+        // Act
+        analytics.Events.aiAssistantUsed(topic, queryLength, responseTime);
+        
+        // Assert
+        expect(analytics.Events.aiAssistantUsed).toHaveBeenCalledWith(
+          topic,
+          queryLength,
+          responseTime
+        );
+        
+        // Check that trackEvent was called
+        expect(analytics.trackEvent).toHaveBeenCalled();
+        
+        // Get the actual call arguments
+        const callArgs = (analytics.trackEvent as jest.Mock).mock.calls[0];
+        expect(callArgs[0]).toMatchObject({
+          name: 'ai_assistant_used',
+          properties: expect.objectContaining({
+            topic,
+            query_length: queryLength,
+            response_time: responseTime,
+            timestamp: expect.any(String)
+          })
+        });
+      });
+
+      it('should track AI assistant usage with minimal properties', () => {
+        // Setup
+        const topic = 'pricing';
+        const queryLength = 15; // Length of 'How much does it cost?'
+        
+        // Act
+        analytics.Events.aiAssistantUsed(topic, queryLength);
+        
+        // Assert
+        expect(analytics.Events.aiAssistantUsed).toHaveBeenCalledWith(
+          topic,
+          queryLength,
+          undefined
+        );
+        
+        // Check that trackEvent was called
+        expect(analytics.trackEvent).toHaveBeenCalled();
+        
+        // Get the actual call arguments
+        const callArgs = (analytics.trackEvent as jest.Mock).mock.calls[0];
+        expect(callArgs[0]).toMatchObject({
+          name: 'ai_assistant_used',
+          properties: expect.objectContaining({
+            topic,
+            query_length: queryLength,
+            timestamp: expect.any(String)
+          })
+        });
+        expect(callArgs[0].properties).not.toHaveProperty('response_time');
+      });
+    });
+  });
+});

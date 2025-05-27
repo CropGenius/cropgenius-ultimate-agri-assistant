@@ -3,11 +3,9 @@ import { getFallbackUserId } from '../utils/fallbackUser';
 import AuthContext from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Layout from "@/components/Layout";
-import { supabase } from "@/integrations/supabase/client";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useMemoryStore } from '@/hooks/useMemoryStore';
-import { toast } from "sonner";
-import { isOnline } from "@/utils/isOnline";
+
+// Using the existing Window interface from debugPanel.tsx
 
 // Import our new components
 import PowerHeader from "@/components/dashboard/PowerHeader";
@@ -22,7 +20,6 @@ export default function Index() {
   const userId = getFallbackUserId(user?.id);
   const { memory } = useMemoryStore();
   const [loading, setLoading] = useState(true);
-  const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
   const [weatherInfo, setWeatherInfo] = useState({
     location: "Detecting location...",
     temperature: 0,
@@ -46,12 +43,6 @@ export default function Index() {
       setLoading(true);
       
       try {
-        // Set fixed location and weather data to prevent flickering
-        setLocation({
-          lat: 0.5233,
-          lng: 35.2732
-        });
-        
         // Use fixed weather data instead of random generation
         setWeatherInfo({
           location: "Kakamega, Kenya",
@@ -232,6 +223,7 @@ export default function Index() {
       condition: region.condition
     });
   };
+  
 
   // Show Pro upgrade modal - without excessive toasts
   const handleShowProUpgrade = () => {
@@ -242,30 +234,38 @@ export default function Index() {
   return (
     <Layout>
       {/* POWER HEADER */}
-      <PowerHeader 
-        location={weatherInfo.location}
-        temperature={weatherInfo.temperature}
-        weatherCondition={weatherInfo.condition}
-        farmScore={farmScore}
-        synced={allSynced}
-      />
+      <div style={{display: 'block !important', minHeight: '100px !important', background: 'lime !important', border: '2px solid red', padding: '4px', marginBottom: '8px'}}>
+        <PowerHeader 
+          location={weatherInfo.location}
+          temperature={weatherInfo.temperature}
+          weatherCondition={weatherInfo.condition}
+          farmScore={farmScore}
+          synced={allSynced}
+        />
+      </div>
       
       {/* MISSION CONTROL */}
-      <MissionControl 
-        actions={actions}
-        loading={actionsLoading}
-      />
+      <div style={{display: 'block !important', minHeight: '100px !important', background: 'cyan !important', border: '2px solid blue', padding: '4px', marginBottom: '8px'}}>
+        <MissionControl 
+          actions={actions}
+          loading={actionsLoading}
+        />
+      </div>
       
       {/* FIELD INTELLIGENCE */}
-      <FieldIntelligence 
-        fields={fields}
-        loading={fieldsLoading}
-      />
+      <div style={{border: '2px solid green', background: 'rgba(0,255,0,0.05)', padding: 4, marginBottom: 8}}>
+        <FieldIntelligence 
+          fields={fields}
+          loading={fieldsLoading}
+        />
+      </div>
       
       {/* MONEY ZONE */}
-      <MoneyZone 
-        onUpgrade={handleShowProUpgrade}
-      />
+      <div style={{border: '2px solid orange', background: 'rgba(255,165,0,0.05)', padding: 4, marginBottom: 8}}>
+        <MoneyZone 
+          onUpgrade={handleShowProUpgrade}
+        />
+      </div>
     </Layout>
   );
 }
