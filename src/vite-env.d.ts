@@ -1,6 +1,15 @@
 
 /// <reference types="vite/client" />
 
+interface ImportMeta {
+  readonly env: {
+    [key: string]: string | boolean | undefined;
+    DEV: boolean;
+    PROD: boolean;
+    MODE: 'development' | 'production';
+  };
+}
+
 interface Window {
   SpeechRecognition?: typeof SpeechRecognition;
   webkitSpeechRecognition?: typeof SpeechRecognition;

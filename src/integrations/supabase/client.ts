@@ -1,9 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
 import { env } from '@/lib/env';
 import { logError } from '@/utils/debugPanel';
 
-const isDev = import.meta.env.DEV;
+const isDev = process.env.NODE_ENV === 'development';
 
 // Custom fetch handler with debug logging
 const debugFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -65,39 +65,51 @@ const debugFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise
   }
 };
 
-// Create a simple Supabase client without authentication
-export const supabase = createClient<Database>(
-  env.VITE_SUPABASE_URL,
-  env.VITE_SUPABASE_ANON_KEY,
-  {
-      auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false
-    },
-    global: {
-      headers: {
-        'x-application-name': 'CROPGenius',
-      },
-      fetch: debugFetch
-    }
-  }
-);
+// Singleton Supabase client
+let supabaseInstance: SupabaseClient | null = null;
 
-// Mock auth state that always returns a default user
-export const logAuthState = async () => ({
-  data: { 
-    session: isDev 
-      ? { 
-          user: { id: 'dev-user', email: 'dev@example.com' },
-          expires_at: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
-          access_token: 'dummy-access-token',
-          refresh_token: 'dummy-refresh-token'
+export const getSupabase = () => {
+  if (!supabaseInstance) {
+    supabaseInstance = createClient<Database>(
+      env.VITE_SUPABASE_URL,
+      env.VITE_SUPABASE_ANON_KEY,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storage: localStorage,
+        },
+        global: {
+          headers: {
+            'x-application-name': 'CROPGenius',
+          },
+          fetch: debugFetch
         }
-      : null
-  }, 
-  error: null
-});
+      }
+    );
+  }
+  return supabaseInstance;
+};
+
+// Export singleton instance
+export const supabase = getSupabase();
+
+// Real auth state check
+export const logAuthState = async () => {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    return { data, error };
+  } catch (error) {
+    logError({
+      type: 'network-error',
+      severity: 'error',
+      message: 'Failed to get session',
+      details: error instanceof Error ? error.message : String(error)
+    });
+    return { data: null, error: error instanceof Error ? error : new Error('Unknown auth error') };
+  }
+};
 
 // Mock function for token refresh (no-op in no-auth mode)
 export const proactiveTokenRefresh = async () => ({
@@ -110,15 +122,11 @@ export const proactiveTokenRefresh = async () => ({
   error: null 
 });
 
-// Mock function to get user metadata
-export const getUserMetadata = async () => ({
-  data: {
-    id: require('../../utils/fallbackUser').FALLBACK_USER_ID,
-    email: 'user@example.com',
-    user_metadata: { full_name: 'Guest User' }
-  },
-  error: null
-});
+// Get real user metadata
+export const getUserMetadata = async () => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  return { data: user, error };
+};
 
 // Mock function to check and refresh session
 export const checkAndRefreshSession = async () => ({

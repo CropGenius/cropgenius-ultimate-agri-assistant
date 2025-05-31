@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
-import { initAnalytics } from '@/lib/analytics';
+import { initAnalytics, getAnalytics } from '@/lib/analytics';
 import { logError } from '@/utils/debugPanel';
 
 // Simple MSW provider component
@@ -42,6 +42,17 @@ const MSWProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 // Add window loaded event to help debug loading issues
 window.addEventListener('load', () => {
   console.log('[CropGenius] Window loaded successfully');
+  
+  // Register service worker for PWA functionality
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('[Service Worker] Registered successfully with scope: ', registration.scope);
+      })
+      .catch(error => {
+        console.error('[Service Worker] Registration failed: ', error);
+      });
+  }
 });
 
 // Initialize analytics
@@ -100,6 +111,7 @@ window.addEventListener('error', (event) => {
     },
   });
   
+  const analytics = getAnalytics();
   if (analytics) {
     analytics.capture('error_occurred', {
       message: error.message,

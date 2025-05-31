@@ -1,8 +1,11 @@
 // Service Worker
 const CACHE_NAME = 'cropgenius-cache-v1';
+const CACHE_NAME = 'cropgenius-cache-v2';  // Updated cache name to force refresh
 const urlsToCache = [
   '/',
   '/index.html',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
   // Add other assets like CSS, JS, images that you want to cache
   // Be careful with versioned assets if their names change frequently
 ];
@@ -48,31 +51,37 @@ self.addEventListener('fetch', (event) => {
         .catch(() => caches.match(event.request))
         .catch(() => caches.match('/index.html'))
     );
-  } else if (urlsToCache.includes(new URL(event.request.url).pathname) || event.request.destination) {
-    // For other requests (assets, etc.), use cache-first strategy
+  } else {
+    // For all other requests, use cache-first strategy
     event.respondWith(
       caches.match(event.request)
         .then((response) => {
+          // Return cached response if found
           if (response) {
-            // console.log('[Service Worker] Found in cache:', event.request.url);
             return response;
           }
-          // console.log('[Service Worker] Not in cache, fetching:', event.request.url);
-          return fetch(event.request).then(networkResponse => {
-            // Optionally cache new assets dynamically if needed
-            // Be careful with caching opaque responses (e.g., from CDNs without CORS)
-            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          
+          // Otherwise fetch from network
+          return fetch(event.request)
+            .then(networkResponse => {
+              // Clone the response for caching
               const responseToCache = networkResponse.clone();
-              caches.open(CACHE_NAME).then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-            }
-            return networkResponse;
-          });
-        })
-        .catch(err => {
-          console.error('[Service Worker] Fetch failed:', err, event.request.url);
-          // You could return a fallback image/resource here if appropriate
+              
+              // Cache successful responses
+              if (networkResponse.ok) {
+                caches.open(CACHE_NAME)
+                  .then(cache => cache.put(event.request, responseToCache));
+              }
+              
+              return networkResponse;
+            })
+            .catch(err => {
+              console.error('[Service Worker] Fetch failed:', err, event.request.url);
+              // Return fallback for image requests
+              if (event.request.destination === 'image') {
+                return caches.match('/icons/icon-192x192.png');
+              }
+            });
         })
     );
   }

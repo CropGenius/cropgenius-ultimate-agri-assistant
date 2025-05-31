@@ -1,5 +1,6 @@
 
 import { v4 as uuidv4 } from 'uuid';
+import type { Field } from '@/types/field';
 import { supabase } from '@/integrations/supabase/client';
 import { Field } from '@/types/field';
 import { isOnline } from './isOnline';
@@ -21,8 +22,13 @@ export const syncOfflineFields = async (): Promise<{
     return { success: false, synced: 0, failed: 0, remaining: 0 };
   }
   
-  // Get the current user ID (mocked for now)
-  const userId = getCurrentUserId();
+  // Get real user ID from Supabase
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    console.error('❌ [syncOfflineFields] Failed to get user:', userError);
+    return { success: false, synced: 0, failed: 0, remaining: offlineFields.length };
+  }
+  const userId = user.id;
   
   // Get offline fields
   const offlineFields = JSON.parse(localStorage.getItem('cropgenius_offline_fields') || '[]') as Field[];
@@ -49,13 +55,14 @@ export const syncOfflineFields = async (): Promise<{
       // Ensure field has user_id set to current user
       const fieldToSync = {
         ...field,
-        user_id: userId,
-        // Use existing ID if it's not an offline ID (UUID format check)
-        id: field.id?.length === 36 ? undefined : field.id
+        user_id: userId
       };
       
       // Remove metadata fields that aren't in the Supabase schema
       const { is_synced, offline_id, deleted, ...cleanField } = fieldToSync;
+      
+      // Preserve the offline ID for crop associations
+      const offlineFieldId = field.id;
       
       // Check if field has a valid farm ID
       if (!cleanField.farm_id || cleanField.farm_id === 'local-farm') {
@@ -88,17 +95,18 @@ export const syncOfflineFields = async (): Promise<{
       
       for (const crop of fieldCrops) {
         try {
-          // Update to use the new field ID
+          // Update to use the new field ID (use the ID from Supabase response if available)
           const cropToSync = {
             ...crop,
-            field_id: cleanField.id
+            field_id: cleanField.id || offlineFieldId
           };
           
           // Remove metadata fields
           const { id, is_synced, offline_id, ...cleanCrop } = cropToSync;
           
           // Insert the crop
-          await supabase.from('field_crops').insert(cleanCrop);
+          const { error: cropError } = await supabase.from('field_crops').insert(cleanCrop);
+          if (cropError) throw cropError;
           
           // Remove from offline crops
           const updatedOfflineCrops = offlineCrops.filter((c: any) => c.id !== crop.id);

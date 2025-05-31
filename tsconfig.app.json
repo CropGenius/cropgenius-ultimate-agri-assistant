@@ -26,7 +26,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "composite": true,
+    "noEmit": false
   },
   "include": ["src"],
   "exclude": ["supabase", "**/node_modules", "**/*.spec.ts"]
