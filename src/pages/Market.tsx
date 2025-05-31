@@ -26,7 +26,7 @@ import {
   Zap,
   AlertCircle
 } from "lucide-react";
-import { ErrorBoundary } from "@/components/ErrorBoundary.tsx";
+import ErrorBoundary from "@/components/error/ErrorBoundary.tsx";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Market = () => {
