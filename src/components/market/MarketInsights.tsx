@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, TrendingUpDown, Info } from 'lucide-react';
+import { TrendingUp, TrendingDown, TrendUpDown, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export interface MarketInsight {
@@ -42,7 +42,7 @@ export const MarketInsights: React.FC<MarketInsightsProps> = ({
         return <TrendingDown className="w-4 h-4 text-red-500" />;
       case 'neutral':
       default:
-        return <TrendingUpDown className="w-4 h-4 text-blue-500" />;
+        return <TrendUpDown className="w-4 h-4 text-blue-500" />;
     }
   };
 
