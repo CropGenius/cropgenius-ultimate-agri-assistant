@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Layout from "@/components/Layout";
 import CropScanner from "@/components/scanner/CropScanner";
 import FieldBrainAssistant from "@/components/ai/FieldBrainAssistant";
