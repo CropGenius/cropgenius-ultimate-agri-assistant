@@ -20,7 +20,7 @@ export default function Index() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { memory } = useMemoryStore();
-  // Prevent loading screens by setting loading to false by default
+  // No loading state - app must load instantly
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
   const [weatherInfo, setWeatherInfo] = useState({
@@ -38,16 +38,13 @@ export default function Index() {
   
   // Field Intelligence: Fields data
   const [fields, setFields] = useState<any[]>([]);
-  const [fieldsLoading, setFieldsLoading] = useState(false);
-
-  useEffect(() => {
-    // Ensure component is never in a loading state
-    setLoading(false);
-  }, []);
+  const [fieldsLoading, setFieldsLoading] = useState(true);
 
   useEffect(() => {
     // Check for user session and load data
     const loadData = async () => {
+      // No loading state - instant load
+      
       try {
         // Get user location
         if (navigator.geolocation) {
@@ -84,6 +81,7 @@ export default function Index() {
       } catch (err) {
         console.error("Error loading data:", err);
       } finally {
+        // Always ensure loading is false
         setLoading(false);
       }
     };

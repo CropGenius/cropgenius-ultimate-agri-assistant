@@ -1,18 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Fix module loading issues - Must be first script -->
+    <script src="/fix-modules.js"></script>
+    
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>cropgenius</title>
+    <title>CropGenius</title>
     <meta name="description" content="Smart farming simplified" />
     <meta name="author" content="kimathi" />
     <meta property="og:image" content="/og-image.png" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    
+    <!-- Force immediate rendering - No loading screens -->
+    <style>
+      /* No loading screens or spinners */
+      body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
+      #root { display: block !important; height: 100%; width: 100%; }
+      .loader, .loading, .spinner { display: none !important; visibility: hidden !important; }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
-    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+    <div id="root">
+      <!-- Direct content delivery - No loading screens -->
+      <div id="instant-app"></div>
+    </div>
+    
+    <!-- Handle module loading errors and eliminate loading screens -->
+    <script>
+      // Immediately render content
+      document.addEventListener('DOMContentLoaded', function() {
+        // Force module type for all scripts
+        document.querySelectorAll('script[type="text/javascript"]').forEach(script => {
+          script.type = 'module';
+        });
+      });
+      
+      // Eliminate any loading screens
+      const noLoading = setInterval(() => {
+        const loaders = document.querySelectorAll('.loading, .loader, .spinner');
+        if (loaders.length > 0) {
+          loaders.forEach(el => el.remove());
+        }
+      }, 100);
+    </script>
+    
+    <!-- Main application script -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

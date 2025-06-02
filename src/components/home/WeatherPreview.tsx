@@ -28,7 +28,7 @@ interface WeatherPreview {
 
 export default function WeatherPreview() {
   const [weather, setWeather] = useState<WeatherPreview | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Always set loading to false to prevent loading screens
   const [activeDay, setActiveDay] = useState(0);
   const [animation, setAnimation] = useState(false);
   const [locationName, setLocationName] = useState("Your Farm");

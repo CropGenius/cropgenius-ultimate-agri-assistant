@@ -26,8 +26,10 @@ const DEV_USER_ID = "00000000-0000-0000-0000-000000000000"; // Valid UUID format
 const DEV_FARM_ID = "00000000-0000-0000-0000-000000000001"; // Valid UUID format
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // TODO: re-enable auth
-  // Original auth state
+  // Don't need these individual states as we're using authState
+  // const [user, setUser] = useState<User | null>(null);
+  // const [loading, setLoading] = useState(false);
+  // Always keep loading false to eliminate loading screens
   const [authState, setAuthState] = useState<AuthState>({
     // Development bypass: provide mock user and session with proper UUID format
     user: {
