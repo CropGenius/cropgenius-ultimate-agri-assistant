@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { Field, Farm, FieldCrop, FieldHistory, Boundary } from "@/types/field";
@@ -32,123 +33,98 @@ const saveOfflineData = <T>(key: string, data: T[]): void => {
   }
 };
 
-// Fix Field type to include the 'deleted' property
-// by updating the field interface in our code rather than modifying type definitions
-interface FieldWithDeleteFlag extends Field {
-  deleted?: boolean;
-}
+// Farm ownership verification: Checks if the user owns the specified farm.
+const verifyFarmOwnership = async (farmId: string, userId: string): Promise<{ isOwner: boolean; error?: string }> => {
+  if (!userId) {
+    console.warn("[verifyFarmOwnership] Missing user ID.");
+    return { isOwner: false, error: "User ID is required for farm ownership verification." };
+  }
+  if (!farmId) {
+    console.warn("[verifyFarmOwnership] Missing farm ID.");
+    return { isOwner: false, error: "Farm ID is required for farm ownership verification." };
+  }
 
-// Enhanced farm ownership verification with auto-creation
-const verifyFarmOwnership = async (farmId: string, userId: string): Promise<boolean> => {
   try {
-    // Always succeed if we don't have enough information
-    if (!userId) {
-      console.warn("⚠️ [verifyFarmOwnership] Missing user ID, proceeding anyway");
-      return true;
-    }
-    
-    // Create default farm if missing
-    if (!farmId) {
-      const newFarmId = await verifyOrCreateFarm(supabase, userId);
-      console.log("✅ Created default farm for user:", newFarmId);
-      return true;
-    }
-    
-    // Check farm ownership but don't block on errors
-    try {
-      const { data, error } = await supabase
-        .from('farms')
-        .select('id, user_id')
-        .eq('id', farmId)
-        .maybeSingle();
-        
-      if (error) {
-        console.warn("⚠️ Farm ownership verification error:", error);
-        
-        // Create a default farm instead of blocking
-        const newFarmId = await verifyOrCreateFarm(supabase, userId);
-        console.log("✅ Created fallback farm due to verification error:", newFarmId);
-        return true;
+    const { data, error } = await supabase
+      .from('farms')
+      .select('id, user_id')
+      .eq('id', farmId)
+      .single(); // Use .single() to expect one row or throw error if not found
+
+    if (error) {
+      if (error.code === 'PGRST116') { // PostgREST error code for 'Not a single row'
+        console.warn(`[verifyFarmOwnership] Farm not found: ${farmId}. Error: ${error.message}`);
+        return { isOwner: false, error: "Farm not found." };
       }
-      
-      // If farm doesn't belong to user, log the issue but don't block them
-      if (data && data.user_id !== userId) {
-        console.warn(`⚠️ User ${userId} attempted to access farm ${farmId} owned by ${data.user_id}`);
-        
-        // Log ownership mismatch for analytics
-        try {
-          await supabase.from("ownership_mismatches").insert([{ 
-            attempted_user: userId, 
-            farm_id: farmId,
-            owner_id: data.user_id,
-            created_at: new Date().toISOString()
-          }]);
-        } catch (err) {
-          // Ignore errors in logging
-        }
-        
-        // Get a farm that the user does own
-        try {
-          const { data: userFarm } = await supabase
-            .from('farms')
-            .select('id')
-            .eq('user_id', userId)
-            .limit(1)
-            .maybeSingle();
-            
-          if (userFarm?.id) {
-            // Silently redirect to a farm they do own
-            console.log(`⚠️ Redirecting user to their own farm ${userFarm.id} instead of ${farmId}`);
-            return true; // Allow the operation with their farm instead
-          }
-        } catch (err) {
-          // Ignore errors in fallback
-        }
-        
-        // If all else fails, create a new farm
-        const newFarmId = await verifyOrCreateFarm(supabase, userId);
-        console.log("✅ Created new farm as last resort:", newFarmId);
-      }
-    } catch (error) {
-      console.error("Error in verifyFarmOwnership:", error);
-      // Create a default farm in case of error
-      const newFarmId = await verifyOrCreateFarm(supabase, userId);
-      console.log("✅ Created emergency farm due to verification error:", newFarmId);
+      console.error(`[verifyFarmOwnership] Error fetching farm ${farmId}:`, error);
+      return { isOwner: false, error: `Database error: ${error.message}` };
     }
-    
-    return true; // Always return true to never block the user
-  } catch (error) {
-    console.error("Critical error verifying farm ownership:", error);
-    return true; // NEVER block the user
+
+    if (data.user_id !== userId) {
+      console.warn(`[verifyFarmOwnership] User ${userId} does not own farm ${farmId}. Owner: ${data.user_id}`);
+      // Log ownership mismatch for analytics/security audit if needed
+      // await supabase.from("ownership_mismatches").insert(...);
+      return { isOwner: false, error: "Farm access denied. User does not own this farm." };
+    }
+
+    return { isOwner: true };
+  } catch (e: any) {
+    console.error(`[verifyFarmOwnership] Critical error verifying farm ${farmId} for user ${userId}:`, e);
+    return { isOwner: false, error: `Critical system error: ${e.message}` };
   }
 };
 
-// Verify field can be accessed by the current user
-export const verifyFieldAccess = async (fieldId: string, userId: string): Promise<boolean> => {
-  try {
-    if (!isOnline() || !fieldId || !userId) return true; // Default to allowing access offline
-    
-    const { data, error } = await supabase
-      .from('fields')
-      .select('id, farm_id')
-      .eq('id', fieldId)
-      .maybeSingle();
-      
-    if (error || !data) {
-      console.error("Field access verification error:", error);
-      return true; // Default to allowing access on error
+// Verify field can be accessed by the current user, given their active farmId
+export const verifyFieldAccess = async (fieldId: string, userId: string, userFarmId: string): Promise<{ canAccess: boolean; error?: string }> => {
+  if (!userId || !userFarmId || !fieldId) {
+    return { canAccess: false, error: "User ID, Farm ID, and Field ID are required for field access verification." };
+  }
+
+  // 1. Verify the user actually owns the farm they claim to be active on.
+  const farmAuth = await verifyFarmOwnership(userFarmId, userId);
+  if (!farmAuth.isOwner) {
+    console.warn(`[verifyFieldAccess] User ${userId} does not own the provided farm ${userFarmId}.`);
+    return { canAccess: false, error: farmAuth.error || "Farm access denied." };
+  }
+
+  // 2. If online, check if the field exists and belongs to that farm.
+  if (isOnline()) {
+    try {
+      const { data: fieldData, error: fieldError } = await supabase
+        .from('fields')
+        .select('id, farm_id')
+        .eq('id', fieldId)
+        .single(); // Expect one row or error
+
+      if (fieldError) {
+        if (fieldError.code === 'PGRST116') {
+          console.warn(`[verifyFieldAccess] Field not found: ${fieldId}. Error: ${fieldError.message}`);
+          return { canAccess: false, error: "Field not found." };
+        }
+        console.error(`[verifyFieldAccess] Error fetching field ${fieldId}:`, fieldError);
+        return { canAccess: false, error: `Database error: ${fieldError.message}` };
+      }
+
+      if (fieldData.farm_id !== userFarmId) {
+        console.warn(`[verifyFieldAccess] Field ${fieldId} (farm: ${fieldData.farm_id}) does not belong to user's active farm ${userFarmId}.`);
+        return { canAccess: false, error: "Field does not belong to your active farm." };
+      }
+
+      return { canAccess: true };
+    } catch (e: any) {
+      console.error(`[verifyFieldAccess] Critical error verifying field ${fieldId} access:`, e);
+      return { canAccess: false, error: `Critical system error: ${e.message}` };
     }
-    
-    // Now verify that the farm belongs to the user
-    return await verifyFarmOwnership(data.farm_id, userId);
-  } catch (error) {
-    console.error("Error verifying field access:", error);
-    return true; // Always default to allowing access
+  } else {
+    // Offline: Assume access is allowed if basic IDs are present. Data integrity handled by sync.
+    // More sophisticated offline logic could check local cache if available.
+    console.log(`[verifyFieldAccess] Offline mode: Assuming access to field ${fieldId} for user ${userId} on farm ${userFarmId}.`);
+    return { canAccess: true }; 
   }
 };
 
 // Field CRUD operations with ownership fallbacks and auto-correction
-export const createField = async (field: Omit<Field, "id" | "created_at" | "updated_at">): Promise<{data: Field | null, error: string | null}> => {
+export const createField = async (field: Omit<Field, "id" | "created_at" | "updated_at"> & { user_id: string; farm_id: string }): Promise<{data: Field | null, error: string | null}> => {
   // Generate a temporary ID for offline use
   const offlineId = uuidv4();
   
@@ -169,26 +145,20 @@ export const createField = async (field: Omit<Field, "id" | "created_at" | "upda
   // If online, try to save directly to Supabase
   if (isOnline()) {
     try {
-      // Always ensure a valid farm_id
-      let resolvedFarmId = field.farm_id;
-      
-      if (field.user_id) {
-        try {
-          // Attempt to get/create a valid farm ID
-          resolvedFarmId = await verifyOrCreateFarm(supabase, field.user_id);
-        } catch (error) {
-          console.error("❌ Farm resolution error:", error);
-          // Continue with whatever farm_id we have - don't block the user
-        }
+      // 1. Verify farm ownership
+      const ownership = await verifyFarmOwnership(field.farm_id, field.user_id);
+      if (!ownership.isOwner) {
+        console.warn(`[createField] User ${field.user_id} does not own farm ${field.farm_id}. Error: ${ownership.error}`);
+        return { data: null, error: ownership.error || "Farm access denied or farm not found." };
       }
-      
-      // Insert field with sanitized data and resolvedFarmId
+
+      // 2. Insert field with sanitized data and validated farm_id
       const { data, error } = await supabase
         .from('fields')
         .insert({
           name: sanitizedField.name,
           user_id: field.user_id,
-          farm_id: resolvedFarmId, // Use resolved farm_id
+          farm_id: field.farm_id, // Use validated farm_id
           size: sanitizedField.size,
           size_unit: sanitizedField.size_unit,
           boundary: sanitizedField.boundary,
@@ -199,82 +169,54 @@ export const createField = async (field: Omit<Field, "id" | "created_at" | "upda
           shared_with: field.shared_with
         })
         .select()
-        .maybeSingle();
+        .single(); // Use single to ensure it was created or throw error
       
       if (error) {
-        // Try one more time with minimal field data
-        console.warn("⚠️ Initial field creation failed, trying minimal data:", error);
+        console.error("Error inserting field into Supabase:", error);
+        // Log the error with more details
+        await logFieldError(supabase, field.user_id, "insert_error", field, error);
         
+        // Attempt minimal insert as a fallback (optional, could be removed for stricter error handling)
+        console.warn("⚠️ Initial field creation failed, trying minimal data:", error.message);
         const { data: minimalData, error: minimalError } = await supabase
           .from('fields')
           .insert({
             name: sanitizedField.name,
             user_id: field.user_id,
-            farm_id: resolvedFarmId
+            farm_id: field.farm_id
           })
           .select()
-          .maybeSingle();
-          
+          .single();
+
         if (minimalError) {
-          // Log the error but don't fail
-          if (field.user_id) {
-            await logFieldError(supabase, field.user_id, "insert_error", field, minimalError);
-          }
-          
-          // Fall back to offline storage
-          const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
-          offlineFields.push(newField);
-          saveOfflineData(OFFLINE_FIELDS_KEY, offlineFields);
-          
-          toast.warning("Saved locally", {
-            description: "Your field has been saved offline and will sync when you reconnect."
-          });
-          
-          return { data: newField, error: null }; // Return success anyway
+          console.error("Error inserting minimal field data into Supabase:", minimalError);
+          await logFieldError(supabase, field.user_id, "minimal_insert_error", {name: sanitizedField.name, user_id: field.user_id, farm_id: field.farm_id}, minimalError);
+          return { data: null, error: `Failed to create field: ${minimalError.message}` };
         }
-        
-        toast.success("Field added", {
-          description: `${sanitizedField.name} has been added to your farm.`
-        });
-        
+        console.log("✅ Successfully created field with minimal data after initial failure.");
         return { data: minimalData, error: null };
       }
       
-      toast.success("Field added", {
-        description: `${sanitizedField.name} has been added to your farm.`
-      });
-      
+      console.log("✅ Field created successfully in Supabase.");
       return { data, error: null };
     } catch (error: any) {
-      console.error("Error creating field:", error);
-      
-      // Always fall back to offline storage
-      const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
-      offlineFields.push(newField);
-      saveOfflineData(OFFLINE_FIELDS_KEY, offlineFields);
-      
-      toast.warning("Saved offline", {
-        description: "Your field has been saved offline and will sync when you reconnect."
-      });
-      
-      return { data: newField, error: null }; // Return success anyway
+      console.error("Critical error during online field creation:", error);
+      await logFieldError(supabase, field.user_id, "critical_create_error", field, error);
+      return { data: null, error: `Critical error creating field: ${error.message}` };
     }
   } else {
     // Store offline if not connected
     const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
     offlineFields.push(newField);
     saveOfflineData(OFFLINE_FIELDS_KEY, offlineFields);
-    
-    toast.info("Saved offline", {
-      description: "Your field has been saved offline and will sync when you reconnect."
-    });
-    
+    console.log(`[createField] Field ${newField.id} saved offline for user ${field.user_id}.`);
+    // It's a successful local save, so no error is returned to the caller for offline mode.
     return { data: newField, error: null };
   }
 };
 
 // Get all fields (combines online + offline data)
-export const getAllFields = async (userId: string): Promise<{data: Field[], error: string | null}> => {
+export const getAllFields = async (userId: string, farmId: string): Promise<{data: Field[], error: string | null}> => {
   try {
     let fields: Field[] = [];
     
@@ -283,7 +225,8 @@ export const getAllFields = async (userId: string): Promise<{data: Field[], erro
       const { data, error } = await supabase
         .from('fields')
         .select('*')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .eq('farm_id', farmId);
         
       if (error) throw error;
       fields = data || [];
@@ -291,7 +234,7 @@ export const getAllFields = async (userId: string): Promise<{data: Field[], erro
     
     // Get any offline fields
     const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY)
-      .filter(field => field.user_id === userId && !field.is_synced);
+      .filter(field => field.user_id === userId && field.farm_id === farmId && !field.is_synced);
     
     // Combine results, giving preference to online data
     const combinedFields = [...fields];
@@ -309,14 +252,17 @@ export const getAllFields = async (userId: string): Promise<{data: Field[], erro
     
     // If fetch fails, return offline data only
     const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY)
-      .filter(field => field.user_id === userId);
+      .filter(field => field.user_id === userId && field.farm_id === farmId);
       
     return { data: offlineFields, error: error.message };
   }
 };
 
-// Update field with offline support - update the param type to include delete flag
-export const updateField = async (field: FieldWithDeleteFlag): Promise<{data: Field | null, error: string | null}> => {
+
+// ... rest of the code remains the same ...
+
+// Update field with offline support
+export const updateField = async (field: Field, userId: string, farmId: string): Promise<{data: Field | null, error: string | null}> => {
   // Update local timestamp
   const updatedField = {
     ...field,
@@ -327,281 +273,306 @@ export const updateField = async (field: FieldWithDeleteFlag): Promise<{data: Fi
   // If online, update in Supabase
   if (isOnline()) {
     try {
+      // 1. Verify field access
+      const access = await verifyFieldAccess(field.id, userId, farmId);
+      if (!access.canAccess) {
+        console.warn(`[updateField] User ${userId} cannot access field ${field.id} on farm ${farmId}. Error: ${access.error}`);
+        return { data: null, error: access.error || "Field access denied or field not found." };
+      }
+
       // Skip the offline-specific fields when updating Supabase
-      const { offline_id, is_synced, ...supabaseField } = updatedField;
+      const { offline_id, is_synced, ...supabaseFieldData } = updatedField;
       
       const { data, error } = await supabase
         .from('fields')
-        .update(supabaseField)
+        .update(supabaseFieldData)
         .eq('id', field.id)
+        .eq('user_id', userId) // Ensure user owns the record they are updating
         .select()
         .single();
         
-      if (error) throw error;
-      
-      toast.success("Field updated", {
-        description: `${field.name} has been updated.`
-      });
-      
-      return { data, error: null };
-    } catch (error: any) {
-      console.error("Error updating field:", error);
-      
-      // Store update offline if API call fails
-      const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
-      const index = offlineFields.findIndex(f => 
-        f.id === field.id || f.offline_id === field.offline_id
-      );
-      
-      if (index >= 0) {
-        offlineFields[index] = updatedField;
-      } else {
-        offlineFields.push(updatedField);
+      if (error) {
+        console.error(`[updateField] Error updating field ${field.id} in Supabase:`, error);
+        await logFieldError(supabase, userId, "update_error", field, error);
+        return { data: null, error: `Failed to update field: ${error.message}` };
       }
       
-      saveOfflineData(OFFLINE_FIELDS_KEY, offlineFields);
-      
-      toast.warning("Saved offline", {
-        description: "Your changes have been saved offline and will sync when you reconnect."
-      });
-      
-      return { data: updatedField, error: error.message };
+      console.log(`[updateField] Field ${data?.id} updated successfully in Supabase.`);
+      return { data, error: null };
+    } catch (error: any) {
+      console.error(`[updateField] Critical error updating field ${field.id}:`, error);
+      await logFieldError(supabase, userId, "critical_update_error", field, error);
+      return { data: null, error: `Critical error updating field: ${error.message}` };
     }
   } else {
     // Store offline if not connected
     const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
     const index = offlineFields.findIndex(f => 
-      f.id === field.id || f.offline_id === field.offline_id
+      f.id === field.id || (f.offline_id && f.offline_id === field.offline_id)
     );
     
     if (index >= 0) {
-      offlineFields[index] = updatedField;
+      offlineFields[index] = { ...updatedField, is_synced: false }; // Mark as not synced
     } else {
-      offlineFields.push(updatedField);
+      // This case should ideally not happen if field was fetched correctly
+      offlineFields.push({ ...updatedField, is_synced: false }); 
     }
     
     saveOfflineData(OFFLINE_FIELDS_KEY, offlineFields);
-    
-    toast.info("Saved offline", {
-      description: "Your changes have been saved offline and will sync when you reconnect."
-    });
-    
+    console.log(`[updateField] Field ${updatedField.id || updatedField.offline_id} updated offline for user ${userId}.`);
     return { data: updatedField, error: null };
   }
 };
 
 // Delete field with offline support
-export const deleteField = async (fieldId: string): Promise<{error: string | null}> => {
+export const deleteField = async (fieldId: string, userId: string, farmId: string): Promise<{error: string | null}> => {
   if (isOnline()) {
     try {
+      // 1. Verify field access
+      const access = await verifyFieldAccess(fieldId, userId, farmId);
+      if (!access.canAccess) {
+        console.warn(`[deleteField] User ${userId} cannot access field ${fieldId} on farm ${farmId}. Error: ${access.error}`);
+        return { error: access.error || "Field access denied or field not found." };
+      }
+
       const { error } = await supabase
         .from('fields')
         .delete()
-        .eq('id', fieldId);
+        .eq('id', fieldId)
+        .eq('user_id', userId); // Ensure user owns the record they are deleting
         
-      if (error) throw error;
+      if (error) {
+        console.error(`[deleteField] Error deleting field ${fieldId} from Supabase:`, error);
+        await logFieldError(supabase, userId, "delete_error", { field_id: fieldId }, error);
+        return { error: `Failed to delete field: ${error.message}` };
+      }
       
       // Also remove from offline storage if it exists there
       const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY)
         .filter(field => field.id !== fieldId && field.offline_id !== fieldId);
-      
       saveOfflineData(OFFLINE_FIELDS_KEY, offlineFields);
-      
-      toast.success("Field deleted", {
-        description: "The field has been removed from your farm."
-      });
-      
+      console.log(`[deleteField] Field ${fieldId} deleted successfully from Supabase and offline cache for user ${userId}.`);
       return { error: null };
     } catch (error: any) {
-      console.error("Error deleting field:", error);
-      return { error: error.message };
+      console.error(`[deleteField] Critical error deleting field ${fieldId}:`, error);
+      await logFieldError(supabase, userId, "critical_delete_error", { field_id: fieldId }, error);
+      return { error: `Critical error deleting field: ${error.message}` };
     }
   } else {
     // Mark for deletion when back online
     const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
-    const fieldIndex = offlineFields.findIndex(f => f.id === fieldId || f.offline_id === fieldId);
+    const fieldIndex = offlineFields.findIndex(f => f.id === fieldId || (f.offline_id && f.offline_id === fieldId));
     
     if (fieldIndex >= 0) {
-      // If it's an offline-only field, just remove it
-      if (offlineFields[fieldIndex].offline_id && !offlineFields[fieldIndex].is_synced) {
-        offlineFields.splice(fieldIndex, 1);
+      // If it's an offline-only field (never synced), just remove it locally
+      if (offlineFields[fieldIndex].offline_id && !offlineFields[fieldIndex].id.startsWith('temp-')) { // Check if it has a server ID
+         offlineFields.splice(fieldIndex, 1);
+         console.log(`[deleteField] Offline-only field ${offlineFields[fieldIndex].offline_id} removed locally for user ${userId}.`);
       } else {
-        // Otherwise mark for deletion when online
+        // Otherwise mark for server deletion when online
         offlineFields[fieldIndex].deleted = true;
-        offlineFields[fieldIndex].is_synced = false;
+        offlineFields[fieldIndex].is_synced = false; // Needs to be synced for deletion
+        console.log(`[deleteField] Field ${fieldId} marked for server deletion (offline) for user ${userId}.`);
       }
-      
       saveOfflineData(OFFLINE_FIELDS_KEY, offlineFields);
+    } else {
+      console.warn(`[deleteField] Field ${fieldId} not found in offline storage for user ${userId} to mark for deletion.`);
+      // Optionally return an error if the field to be deleted offline is not found
+      // return { error: "Field not found for offline deletion." };
     }
-    
-    toast.info("Marked for deletion", {
-      description: "This field will be deleted when you reconnect to the internet."
-    });
-    
-    return { error: null };
-  }
-};
-
-// Sync all offline data to the server
-export const syncOfflineData = async (userId: string): Promise<{success: boolean, error: string | null}> => {
-  if (!isOnline()) {
-    return { success: false, error: "You are currently offline" };
-  }
-  
-  try {
-    // Sync fields
-    const offlineFields = getOfflineData<FieldWithDeleteFlag>(OFFLINE_FIELDS_KEY)
-      .filter(field => !field.is_synced && field.user_id === userId);
-    
-    // Process each field sequentially
-    for (const field of offlineFields) {
-      if (field.deleted) {
-        // Delete fields marked for deletion
-        if (field.id.includes('-')) {
-          // This is an offline ID that was never synced, so no need to delete from server
-          continue;
-        }
-        
-        await supabase.from('fields').delete().eq('id', field.id);
-      } else if (!field.id || field.id.includes('-')) {
-        // New field that was created offline
-        const { offline_id, is_synced, id, ...newField } = field;
-        const { data, error } = await supabase.from('fields').insert(newField).select().single();
-        
-        if (!error && data) {
-          // Update the local storage with the new server ID
-          const allOfflineFields = getOfflineData<FieldWithDeleteFlag>(OFFLINE_FIELDS_KEY);
-          const index = allOfflineFields.findIndex(f => f.offline_id === field.offline_id);
-          
-          if (index >= 0) {
-            allOfflineFields[index] = {
-              ...data,
-              offline_id: field.offline_id,
-              is_synced: true
-            };
-            
-            saveOfflineData(OFFLINE_FIELDS_KEY, allOfflineFields);
-          }
-        }
-      } else {
-        // Existing field that was updated offline
-        const { offline_id, is_synced, ...updateField } = field;
-        await supabase.from('fields').update(updateField).eq('id', field.id);
-      }
-    }
-    
-    // Update all synced status
-    const allOfflineFields = getOfflineData<FieldWithDeleteFlag>(OFFLINE_FIELDS_KEY);
-    saveOfflineData(
-      OFFLINE_FIELDS_KEY, 
-      allOfflineFields.filter(f => !f.deleted).map(f => ({...f, is_synced: true}))
-    );
-    
-    toast.success("Data synchronized", {
-      description: "Your field data has been successfully synchronized with the server."
-    });
-    
-    return { success: true, error: null };
-  } catch (error: any) {
-    console.error("Error syncing offline data:", error);
-    
-    toast.error("Sync failed", {
-      description: "There was a problem synchronizing your data. Please try again."
-    });
-    
-    return { success: false, error: error.message };
+    return { error: null }; // Successful offline operation
   }
 };
 
 // Get field by ID (combines online + offline data)
-export const getFieldById = async (fieldId: string): Promise<{data: Field | null, error: string | null}> => {
-  try {
-    // Check offline storage first
-    const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
-    const offlineField = offlineFields.find(f => f.id === fieldId || f.offline_id === fieldId);
-    
-    // If online, try to get from Supabase
-    if (isOnline()) {
+export const getFieldById = async (fieldId: string, userId: string, farmId: string): Promise<{data: Field | null, error: string | null}> => {
+  // If online, try to get from Supabase with access checks
+  if (isOnline()) {
+    try {
+      const access = await verifyFieldAccess(fieldId, userId, farmId);
+      if (!access.canAccess) {
+        console.warn(`[getFieldById] User ${userId} cannot access field ${fieldId} on farm ${farmId}. Error: ${access.error}`);
+        return { data: null, error: access.error || "Field access denied or field not found." };
+      }
+
       const { data, error } = await supabase
         .from('fields')
         .select('*')
         .eq('id', fieldId)
-        .maybeSingle();
+        .eq('user_id', userId) // Ensure user ownership
+        .eq('farm_id', farmId) // Ensure farm context
+        .single(); 
         
-      if (error) throw error;
-      
-      // If found online, return that data
-      if (data) return { data, error: null };
+      if (error) {
+        console.error(`[getFieldById] Error fetching field ${fieldId} from Supabase after access check:`, error);
+        // Fall through to check offline
+      } else if (data) {
+        console.log(`[getFieldById] Field ${fieldId} fetched successfully from Supabase for user ${userId}.`);
+        return { data, error: null };
+      }
+    } catch (e: any) {
+      console.error(`[getFieldById] Critical error fetching field ${fieldId} online:`, e);
+      // Fall through to check offline
+    }
+  }
+
+  // Check offline storage if offline or if online fetch failed/returned no data
+  const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
+  const foundOfflineField = offlineFields.find(f => 
+      (f.id === fieldId || (f.offline_id && f.offline_id === fieldId)) &&
+      f.user_id === userId && 
+      f.farm_id === farmId
+  );
+  
+  if (foundOfflineField) {
+    console.log(`[getFieldById] Field ${fieldId} found in offline storage for user ${userId} and farm ${farmId}.`);
+    return { data: foundOfflineField, error: null };
+  }
+  
+  console.warn(`[getFieldById] Field ${fieldId} not found for user ${userId} on farm ${farmId} in online or offline storage.`);
+  return { data: null, error: "Field not found or access denied." };
+};
+
+// Sync all offline data to the server
+export const syncOfflineData = async (userId: string): Promise<{success: boolean, error: string | null, details?: Array<{id: string | undefined, operation: string, error: string}>}> => {
+  if (!isOnline()) {
+    return { success: false, error: "You are currently offline" };
+  }
+  
+  const syncErrors: Array<{id: string | undefined, operation: string, error: string}> = [];
+  try {
+    const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY)
+      .filter(field => !field.is_synced && field.user_id === userId);
+    
+    for (const field of offlineFields) {
+      try {
+        if (field.deleted) {
+          if (field.id && !field.id.startsWith('temp-') && !field.id.includes('-')) { // Ensure it's a server ID
+            console.log(`[syncOfflineData] Deleting field ${field.id} from server for user ${userId}.`);
+            const { error: deleteError } = await supabase.from('fields').delete().eq('id', field.id).eq('user_id', userId);
+            if (deleteError) {
+              console.error(`[syncOfflineData] Error deleting field ${field.id}:`, deleteError);
+              syncErrors.push({ id: field.id, operation: 'delete', error: deleteError.message });
+              continue; 
+            }
+          }
+        } else if (!field.id || field.id.startsWith('temp-') || field.id.includes('-')) {
+          console.log(`[syncOfflineData] Creating new field (offlineId: ${field.offline_id}) for user ${userId}.`);
+          const { offline_id, is_synced, id, user_id: fieldUserId, farm_id: fieldFarmId, ...newFieldData } = field;
+          
+          if (fieldUserId !== userId) {
+            syncErrors.push({ id: offline_id, operation: 'create', error: 'User ID mismatch during sync' });
+            continue;
+          }
+          const farmOwnership = await verifyFarmOwnership(fieldFarmId, userId);
+          if (!farmOwnership.isOwner) {
+            syncErrors.push({ id: offline_id, operation: 'create', error: farmOwnership.error || 'Farm ownership verification failed during sync' });
+            continue;
+          }
+          const { data: createdData, error: createError } = await supabase.from('fields').insert({...newFieldData, user_id: userId, farm_id: fieldFarmId}).select().single();
+          if (createError) {
+            console.error(`[syncOfflineData] Error creating field ${offline_id}:`, createError);
+            syncErrors.push({ id: offline_id, operation: 'create', error: createError.message });
+            continue;
+          }
+          if (createdData) {
+            const allOffline = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
+            const idx = allOffline.findIndex(f => f.offline_id === offline_id);
+            if (idx >= 0) {
+              allOffline[idx] = { ...createdData, offline_id: offline_id, is_synced: true };
+              saveOfflineData(OFFLINE_FIELDS_KEY, allOffline);
+            }
+          }
+        } else { // Existing field that was updated offline
+          console.log(`[syncOfflineData] Updating field ${field.id} for user ${userId}.`);
+          const { offline_id, is_synced, user_id: fieldUserId, created_at, ...updateFieldData } = field; // Exclude created_at from update
+           if (fieldUserId !== userId) {
+            syncErrors.push({ id: field.id, operation: 'update', error: 'User ID mismatch during sync' });
+            continue;
+          }
+          const { error: updateError } = await supabase.from('fields').update(updateFieldData).eq('id', field.id).eq('user_id', userId);
+          if (updateError) {
+            console.error(`[syncOfflineData] Error updating field ${field.id}:`, updateError);
+            syncErrors.push({ id: field.id, operation: 'update', error: updateError.message });
+            continue;
+          }
+        }
+      } catch (operationError: any) {
+        console.error(`[syncOfflineData] Error processing field ${field.offline_id || field.id}:`, operationError);
+        syncErrors.push({ id: field.offline_id || field.id, operation: field.deleted ? 'delete' : (field.id && !field.id.startsWith('temp-') ? 'update' : 'create'), error: operationError.message });
+      }
     }
     
-    // Return offline data if found
-    if (offlineField) return { data: offlineField, error: null };
+    const finalOfflineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
+    saveOfflineData(
+      OFFLINE_FIELDS_KEY, 
+      finalOfflineFields.filter(f => !f.deleted || (f.deleted && syncErrors.some(e => e.id === f.id && e.operation === 'delete'))) // Keep failed deletes
+                      .map(f => ({...f, is_synced: !syncErrors.some(e => e.id === (f.offline_id || f.id)) }) )
+    );
     
-    // Not found in either place
-    return { data: null, error: "Field not found" };
-  } catch (error: any) {
-    console.error("Error getting field:", error);
-    
-    // Try offline as fallback
-    const offlineFields = getOfflineData<Field>(OFFLINE_FIELDS_KEY);
-    const offlineField = offlineFields.find(f => f.id === fieldId || f.offline_id === fieldId);
-    
-    if (offlineField) {
-      return { data: offlineField, error: null };
+    if (syncErrors.length > 0) {
+      console.warn('[syncOfflineData] Some items failed to sync:', syncErrors);
+      return { success: false, error: "Some items failed to sync. Check console for details.", details: syncErrors };
     }
-    
-    return { data: null, error: error.message };
+
+    console.log('[syncOfflineData] All data synchronized successfully.');
+    return { success: true, error: null };
+  } catch (error: any) { // Catch errors from initial offlineFields fetch or other unexpected issues
+    console.error("[syncOfflineData] Critical error during sync setup:", error);
+    return { success: false, error: `Critical sync error: ${error.message}`, details: syncErrors.length > 0 ? syncErrors : undefined };
   }
 };
 
 // Share field with other users
 export const shareField = async (
   fieldId: string, 
-  userIdToShare: string
+  userIdToShareWith: string,
+  currentUserId: string, // User performing the share action
+  currentFarmId: string  // Active farm context of the current user
 ): Promise<{success: boolean, error: string | null}> => {
   if (!isOnline()) {
-    return { success: false, error: "Cannot share fields while offline" };
+    return { success: false, error: "Cannot share fields while offline." };
   }
   
   try {
-    // Get current field data
-    const { data: field, error: fetchError } = await getFieldById(fieldId);
+    // 1. Verify current user has access to the field they are trying to share
+    const { data: fieldToShare, error: accessError } = await getFieldById(fieldId, currentUserId, currentFarmId);
     
-    if (fetchError || !field) {
-      throw new Error(fetchError || "Field not found");
+    if (accessError || !fieldToShare) {
+      console.warn(`[shareField] User ${currentUserId} cannot access field ${fieldId} to share it. Error: ${accessError}`);
+      return { success: false, error: accessError || "Field not found or you do not have permission to share this field." };
     }
     
-    // Update shared status
-    const sharedWith = field.shared_with || [];
-    
-    // Only add if not already shared
-    if (!sharedWith.includes(userIdToShare)) {
-      sharedWith.push(userIdToShare);
+    // 2. Update shared status
+    const currentSharedWith = fieldToShare.shared_with || [];
+    if (currentSharedWith.includes(userIdToShareWith)) {
+      console.log(`[shareField] Field ${fieldId} already shared with user ${userIdToShareWith}.`);
+      return { success: true, error: null }; // Already shared, count as success
     }
     
-    const { error } = await supabase
+    const newSharedWith = [...currentSharedWith, userIdToShareWith];
+    
+    const { error: updateError } = await supabase
       .from('fields')
       .update({
         is_shared: true,
-        shared_with: sharedWith
+        shared_with: newSharedWith
       })
-      .eq('id', fieldId);
+      .eq('id', fieldId)
+      .eq('user_id', currentUserId); // Ensure only owner can modify share status (or adjust if others can too)
       
-    if (error) throw error;
+    if (updateError) {
+      console.error(`[shareField] Error updating share status for field ${fieldId}:`, updateError);
+      await logFieldError(supabase, currentUserId, "share_error", {field_id: fieldId, share_with: userIdToShareWith}, updateError);
+      return { success: false, error: `Failed to share field: ${updateError.message}` };
+    }
     
-    toast.success("Field shared", {
-      description: "You have successfully shared access to this field."
-    });
-    
+    console.log(`[shareField] Field ${fieldId} successfully shared with user ${userIdToShareWith} by user ${currentUserId}.`);
     return { success: true, error: null };
   } catch (error: any) {
-    console.error("Error sharing field:", error);
-    
-    toast.error("Sharing failed", {
-      description: error.message || "There was a problem sharing this field."
-    });
-    
-    return { success: false, error: error.message };
+    console.error(`[shareField] Critical error sharing field ${fieldId}:`, error);
+    await logFieldError(supabase, currentUserId, "critical_share_error", {field_id: fieldId, share_with: userIdToShareWith}, error);
+    return { success: false, error: `Critical error sharing field: ${error.message}` };
   }
 };
 

@@ -1,0 +1,19 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`OfflineModeBanner > matches snapshot 1`] = `
+<div>
+  <div
+    class="bg-yellow-100 p-2 text-center"
+    data-testid="offline-banner"
+  >
+    <p>
+      You are currently offline. Some features may be limited.
+    </p>
+    <button
+      data-testid="dismiss-button"
+    >
+      Dismiss
+    </button>
+  </div>
+</div>
+`;

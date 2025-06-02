@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Droplet, AlertTriangle, TrendingUp, Check, 
@@ -6,7 +5,7 @@ import {
   Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { cn } from '@/utils/cn';
 import { useNavigate } from 'react-router-dom';
@@ -208,7 +207,7 @@ export default function MissionControl({ actions = [], loading = false }: Missio
                     "border-l-4 transition-all duration-300 overflow-hidden animate-fade-in",
                     action.completed ? "opacity-60 border-l-green-500 bg-muted/30" : 
                     getUrgencyColor(action.urgency),
-                    {"animate-in zoom-in-95": index < 3},
+                    index < 3 ? "animate-in zoom-in-95" : "",
                   )}
                   style={{animationDelay: `${index * 100}ms`}}
                 >

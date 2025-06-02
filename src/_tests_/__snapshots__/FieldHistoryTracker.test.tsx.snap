@@ -1,0 +1,113 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FieldHistoryTracker > matches snapshot with sample data 1`] = `
+<div>
+  <div
+    data-testid="field-history-tracker"
+  >
+    <h3>
+      Field History
+    </h3>
+    <div
+      data-testid="history-list"
+    >
+      <div
+        data-testid="history-event-1"
+      >
+        <div
+          data-testid="history-date-1"
+        >
+          2024-01-01T10:00:00.000Z
+        </div>
+        <div
+          data-testid="history-action-1"
+        >
+          Planted Maize
+        </div>
+        <div
+          data-testid="history-details-1"
+        >
+          <div
+            data-testid="history-detail-1-crop"
+          >
+            crop
+            : 
+            Maize
+          </div>
+          <div
+            data-testid="history-detail-1-area"
+          >
+            area
+            : 
+            1ha
+          </div>
+        </div>
+      </div>
+      <div
+        data-testid="history-event-2"
+      >
+        <div
+          data-testid="history-date-2"
+        >
+          2024-03-15T11:30:00.000Z
+        </div>
+        <div
+          data-testid="history-action-2"
+        >
+          Applied Fertilizer
+        </div>
+        <div
+          data-testid="history-details-2"
+        >
+          <div
+            data-testid="history-detail-2-type"
+          >
+            type
+            : 
+            NPK
+          </div>
+          <div
+            data-testid="history-detail-2-amount"
+          >
+            amount
+            : 
+            50kg
+          </div>
+        </div>
+      </div>
+      <div
+        data-testid="history-event-3"
+      >
+        <div
+          data-testid="history-date-3"
+        >
+          2024-05-01T09:15:00.000Z
+        </div>
+        <div
+          data-testid="history-action-3"
+        >
+          Harvested
+        </div>
+        <div
+          data-testid="history-details-3"
+        >
+          <div
+            data-testid="history-detail-3-yield"
+          >
+            yield
+            : 
+            5 tons
+          </div>
+          <div
+            data-testid="history-detail-3-quality"
+          >
+            quality
+            : 
+            Good
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;

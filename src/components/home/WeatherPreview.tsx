@@ -6,102 +6,166 @@ import { Cloud, CloudRain, Sun, Wind, ArrowRight, Droplet, CloudLightning, Therm
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
-import { toast } from "sonner";
+// import { toast } from "sonner"; // Toast for critical weather removed for now
+import { useAIAgentHub } from "@/hooks/useAIAgentHub";
+import { ProcessedCurrentWeather, ProcessedForecastItem } from "@/agents/WeatherAgent";
 
-interface WeatherPreview {
+// Define a new interface for the processed data to be displayed
+interface DisplayableForecastItem {
+  day: string; // "Today", "Tue", "Wed"
+  temp: number; // Avg or Max temp for the day
+  icon: "sun" | "cloud" | "rain" | "storm"; // Dominant icon
+  rainChance: number; // Max rain chance for the day
+}
+
+interface DisplayableWeather {
   temp: number;
   condition: string;
   icon: "sun" | "cloud" | "rain" | "storm";
-  rainChance: number;
+  rainChance: number; // Probability of precipitation for current (approximated from first forecast item)
   humidity: number;
-  windSpeed: number;
-  recommendation: string;
-  farmAction: string;
-  urgency: "normal" | "warning" | "critical";
-  forecast: Array<{
-    day: string;
-    temp: number;
-    icon: "sun" | "cloud" | "rain" | "storm";
-    rainChance: number;
-  }>;
+  windSpeed: number; // in km/h
+  forecast: DisplayableForecastItem[];
 }
 
 export default function WeatherPreview() {
-  const [weather, setWeather] = useState<WeatherPreview | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [displayWeather, setDisplayWeather] = useState<DisplayableWeather | null>(null);
   const [activeDay, setActiveDay] = useState(0);
   const [animation, setAnimation] = useState(false);
   const [locationName, setLocationName] = useState("Your Farm");
-  
-  useEffect(() => {
-    // Simulate fetching location
-    setTimeout(() => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setLocationName("Detected Farm Location");
-            fetchWeatherData(position.coords.latitude, position.coords.longitude);
-          },
-          () => {
-            fetchWeatherData(-1.2921, 36.8219); // Default to Nairobi if location not available
-          }
-        );
-      } else {
-        fetchWeatherData(-1.2921, 36.8219); // Default to Nairobi if geolocation not supported
+  const [currentLatitude, setCurrentLatitude] = useState<number | null>(null);
+  const [currentLongitude, setCurrentLongitude] = useState<number | null>(null);
+
+  const {
+    fetchCurrentWeather,
+    currentWeather,
+    isLoadingCurrentWeather,
+    currentWeatherError,
+    fetchWeatherForecast,
+    weatherForecast,
+    isLoadingWeatherForecast,
+    weatherForecastError,
+  } = useAIAgentHub();
+
+  const mapOwmIconToPreviewIcon = (iconCode: string, mainCondition: string): "sun" | "cloud" | "rain" | "storm" => {
+    if (iconCode.startsWith("01")) return "sun"; // Clear sky
+    if (iconCode.startsWith("02")) return "sun"; // Few clouds (consider sun/cloud)
+    if (iconCode.startsWith("03") || iconCode.startsWith("04")) return "cloud"; // Scattered, broken, overcast clouds
+    if (iconCode.startsWith("09") || iconCode.startsWith("10")) return "rain"; // Shower rain, rain
+    if (iconCode.startsWith("11")) return "storm"; // Thunderstorm
+    if (iconCode.startsWith("13")) return "cloud"; // Snow (map to cloud for now)
+    if (iconCode.startsWith("50")) return "cloud"; // Mist
+    // Fallback based on main condition for robustness
+    if (mainCondition.toLowerCase().includes("rain")) return "rain";
+    if (mainCondition.toLowerCase().includes("storm") || mainCondition.toLowerCase().includes("thunder")) return "storm";
+    if (mainCondition.toLowerCase().includes("cloud")) return "cloud";
+    return "sun"; // Default
+  };
+
+  const processForecastData = (forecastItems: ProcessedForecastItem[]): DisplayableForecastItem[] => {
+    if (!forecastItems || forecastItems.length === 0) return [];
+
+    const dailyData: { [key: string]: { temps: number[], icons: ("sun" | "cloud" | "rain" | "storm")[], rainChances: number[], items: number } } = {};
+
+    forecastItems.forEach(item => {
+      const date = new Date(item.forecastTimestamp);
+      const dayKey = date.toISOString().split('T')[0];
+
+      if (!dailyData[dayKey]) {
+        dailyData[dayKey] = { temps: [], icons: [], rainChances: [], items: 0 };
       }
-    }, 800);
-  }, []);
-  
-  const fetchWeatherData = (lat: number, lon: number) => {
-    // In a real app, this would fetch from a weather API
-    // For now, we'll simulate AI-generated weather insights
-    setTimeout(() => {
-      // Determine if we should show a weather alert based on random chance (30%)
-      const hasAlert = Math.random() > 0.7;
+      dailyData[dayKey].temps.push(item.temperatureCelsius);
+      dailyData[dayKey].icons.push(mapOwmIconToPreviewIcon(item.weatherIconCode, item.weatherMain));
+      dailyData[dayKey].rainChances.push(item.pop * 100);
+      dailyData[dayKey].items++;
+    });
+
+    const today = new Date().toISOString().split('T')[0];
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    return Object.keys(dailyData).slice(0, 5).map(dayKey => {
+      const dayData = dailyData[dayKey];
+      const date = new Date(dayKey + 'T00:00:00'); // Ensure consistent date object for day name
+      let dayName = dayKey === today ? "Today" : dayNames[date.getDay()];
+
+      const avgTemp = dayData.temps.reduce((a, b) => a + b, 0) / dayData.items;
+      // Prioritize storm > rain > cloud > sun for icon
+      let dominantIcon: "sun" | "cloud" | "rain" | "storm" = "sun";
+      if (dayData.icons.includes("storm")) dominantIcon = "storm";
+      else if (dayData.icons.includes("rain")) dominantIcon = "rain";
+      else if (dayData.icons.includes("cloud")) dominantIcon = "cloud";
       
-      setWeather({
-        temp: Math.floor(22 + Math.random() * 10),
-        condition: hasAlert ? "Heavy Rain Expected" : "Partly Cloudy",
-        icon: hasAlert ? "rain" : "cloud",
-        rainChance: hasAlert ? 80 : 30,
-        humidity: 55 + Math.floor(Math.random() * 20),
-        windSpeed: 8 + Math.floor(Math.random() * 10),
-        recommendation: hasAlert 
-          ? "Delay field work and secure crops before heavy rainfall arrives."
-          : "Good conditions for field work today, monitor humidity levels for disease prevention.",
-        farmAction: hasAlert
-          ? "URGENT: Harvest mature crops within next 6 hours"
-          : "Optimal conditions for applying foliar fertilizer",
-        urgency: hasAlert ? "critical" : "normal",
-        forecast: [
-          { day: "Today", temp: 28, icon: hasAlert ? "rain" : "cloud", rainChance: hasAlert ? 80 : 30 },
-          { day: "Tue", temp: 24, icon: "rain", rainChance: 70 },
-          { day: "Wed", temp: 26, icon: "rain", rainChance: 60 },
-          { day: "Thu", temp: 29, icon: "sun", rainChance: 10 },
-          { day: "Fri", temp: 30, icon: "sun", rainChance: 5 },
-        ]
+      const maxRainChance = Math.max(...dayData.rainChances);
+
+      return {
+        day: dayName,
+        temp: Math.round(avgTemp),
+        icon: dominantIcon,
+        rainChance: Math.round(maxRainChance),
+      };
+    });
+  };
+
+  useEffect(() => {
+    const loadWeatherData = (lat: number, lon: number) => {
+      setCurrentLatitude(lat);
+      setCurrentLongitude(lon);
+      fetchCurrentWeather(lat, lon, undefined, false); // farmId not crucial for preview, don't save by default from preview
+      fetchWeatherForecast(lat, lon, undefined, false);
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          loadWeatherData(position.coords.latitude, position.coords.longitude);
+        },
+        () => {
+          // Default to a fallback location (e.g., Nairobi)
+          loadWeatherData(-1.2921, 36.8219);
+          setLocationName("Nairobi (Default)");
+        }
+      );
+    } else {
+      // Geolocation not supported, use fallback
+      loadWeatherData(-1.2921, 36.8219);
+      setLocationName("Nairobi (Default)");
+    }
+  }, [fetchCurrentWeather, fetchWeatherForecast]);
+
+  useEffect(() => {
+    if (currentWeather && weatherForecast) {
+      const processedDailyForecast = processForecastData(weatherForecast.list);
+      const currentRainChance = processedDailyForecast.length > 0 && processedDailyForecast[0].day === "Today" 
+                                ? processedDailyForecast[0].rainChance 
+                                : (weatherForecast.list[0]?.pop * 100 || 0);
+
+      setDisplayWeather({
+        temp: Math.round(currentWeather.temperatureCelsius),
+        condition: currentWeather.weatherDescription.charAt(0).toUpperCase() + currentWeather.weatherDescription.slice(1),
+        icon: mapOwmIconToPreviewIcon(currentWeather.weatherIconCode, currentWeather.weatherMain),
+        rainChance: Math.round(currentRainChance),
+        humidity: Math.round(currentWeather.humidityPercent),
+        windSpeed: parseFloat((currentWeather.windSpeedMps * 3.6).toFixed(1)), // m/s to km/h
+        forecast: processedDailyForecast,
       });
-      
-      setLoading(false);
-      
-      // Animate data refresh
+      setLocationName(currentWeather.cityName || "Detected Location");
       setAnimation(true);
       setTimeout(() => setAnimation(false), 1500);
-      
-      // Show alert if critical weather
-      if (hasAlert) {
-        setTimeout(() => {
-          toast.warning("Weather Alert Detected", {
-            description: "Heavy rainfall expected within 24 hours. AI recommends immediate action.",
-            action: {
-              label: "View Details",
-              onClick: () => {}
-            }
-          });
-        }, 1000);
-      }
-    }, 1200);
-  };
+    } else if (currentWeather && !weatherForecast && !isLoadingWeatherForecast) {
+      // Handle case where only current weather is available initially
+       setDisplayWeather({
+        temp: Math.round(currentWeather.temperatureCelsius),
+        condition: currentWeather.weatherDescription.charAt(0).toUpperCase() + currentWeather.weatherDescription.slice(1),
+        icon: mapOwmIconToPreviewIcon(currentWeather.weatherIconCode, currentWeather.weatherMain),
+        rainChance: 0, // No forecast yet to derive this
+        humidity: Math.round(currentWeather.humidityPercent),
+        windSpeed: parseFloat((currentWeather.windSpeedMps * 3.6).toFixed(1)),
+        forecast: [],
+      });
+      setLocationName(currentWeather.cityName || "Detected Location");
+    }
+  }, [currentWeather, weatherForecast, isLoadingWeatherForecast]);
+
 
   const getWeatherIcon = (icon: string, size: number = 10) => {
     const iconSize = `${size/4}rem`;
@@ -119,8 +183,25 @@ export default function WeatherPreview() {
   };
 
   const refreshWeather = () => {
-    setLoading(true);
-    fetchWeatherData(-1.2921, 36.8219);
+    if (currentLatitude !== null && currentLongitude !== null) {
+      // Clear old data to show loading state properly
+      setDisplayWeather(null);
+      fetchCurrentWeather(currentLatitude, currentLongitude, undefined, false);
+      fetchWeatherForecast(currentLatitude, currentLongitude, undefined, false);
+    } else {
+      // Attempt to re-trigger geolocation if lat/lon are not set
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setCurrentLatitude(position.coords.latitude);
+            setCurrentLongitude(position.coords.longitude);
+            fetchCurrentWeather(position.coords.latitude, position.coords.longitude, undefined, false);
+            fetchWeatherForecast(position.coords.latitude, position.coords.longitude, undefined, false);
+          },
+          () => { /* Handle error or use default */ }
+        );
+      }
+    }
   };
 
   return (
@@ -143,27 +224,37 @@ export default function WeatherPreview() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {(isLoadingCurrentWeather || isLoadingWeatherForecast || !displayWeather) && !(currentWeatherError || weatherForecastError) ? (
           <div className="flex flex-col items-center justify-center h-32">
             <div className="h-16 w-16 rounded-full bg-gray-100 animate-pulse mb-2"></div>
             <div className="h-4 w-24 bg-gray-100 animate-pulse"></div>
           </div>
-        ) : weather ? (
+        ) : currentWeatherError || weatherForecastError ? (
+          <div className="flex flex-col items-center justify-center h-32 text-red-500">
+            <AlertTriangle className="h-8 w-8 mb-2" />
+            <p className="text-sm text-center">
+              Could not load weather data.
+              {currentWeatherError && <span className="block text-xs">{currentWeatherError.message}</span>}
+              {weatherForecastError && <span className="block text-xs">{weatherForecastError.message}</span>}
+            </p>
+            <Button variant="outline" size="sm" onClick={refreshWeather} className="mt-2">Retry</Button>
+          </div>
+        ) : displayWeather ? (
           <div>
             <div className="flex items-center gap-4 mb-4">
               <div className="relative">
-                {getWeatherIcon(weather.icon, 10)}
+                {getWeatherIcon(displayWeather.icon, 10)}
                 <div className="absolute inset-0 rounded-full bg-blue-200/20 dark:bg-blue-500/10 blur-xl -z-10"></div>
               </div>
               <div>
                 <div className="text-3xl font-bold tracking-tighter flex items-start">
-                  {weather.temp}°C
+                  {displayWeather.temp}°C
                   <span className="text-sm text-muted-foreground ml-1 mt-1">
-                    {weather.condition}
+                    {displayWeather.condition}
                   </span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Wind: {weather.windSpeed} km/h
+                  Wind: {displayWeather.windSpeed} km/h
                 </div>
               </div>
             </div>
@@ -175,9 +266,9 @@ export default function WeatherPreview() {
                     <Droplet className="h-4 w-4 text-blue-500" />
                     <span>Humidity</span>
                   </div>
-                  <span className="text-sm">{weather.humidity}%</span>
+                  <span className="text-sm">{displayWeather.humidity}%</span>
                 </div>
-                <Progress value={weather.humidity} className="h-2" />
+                <Progress value={displayWeather.humidity} className="h-2" />
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
@@ -185,15 +276,15 @@ export default function WeatherPreview() {
                     <CloudRain className="h-4 w-4 text-blue-500" />
                     <span>Rain</span>
                   </div>
-                  <span className="text-sm">{weather.rainChance}%</span>
+                  <span className="text-sm">{displayWeather.rainChance}%</span>
                 </div>
-                <Progress value={weather.rainChance} className="h-2" />
+                <Progress value={displayWeather.rainChance} className="h-2" />
               </div>
             </div>
             
             <div className="mb-4 overflow-x-auto">
               <div className="flex space-x-1 pb-1 min-w-max">
-                {weather.forecast.map((day, index) => (
+                {displayWeather.forecast.map((day, index) => (
                   <div 
                     key={index}
                     className={`p-2 rounded-lg flex-1 min-w-24 text-center cursor-pointer transition-all ${
@@ -214,31 +305,9 @@ export default function WeatherPreview() {
                 ))}
               </div>
             </div>
+            {/* AI Recommendation section removed as it's not directly from the agent output yet */}
             
-            <div className={`p-3 rounded-lg mb-4 ${
-              weather.urgency === 'critical' 
-                ? 'bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 animate-pulse' 
-                : weather.urgency === 'warning'
-                  ? 'bg-amber-50 dark:bg-amber-900/30 border-l-4 border-amber-500'
-                  : 'bg-blue-50 dark:bg-blue-900/30'
-            }`}>
-              {weather.urgency === 'critical' && (
-                <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className="h-4 w-4 text-red-500" />
-                  <span className="text-xs font-bold text-red-600 dark:text-red-400">WEATHER ALERT</span>
-                </div>
-              )}
-              
-              <p className={`text-sm ${
-                weather.urgency === 'critical' 
-                  ? 'text-red-800 dark:text-red-200 font-medium' 
-                  : 'text-blue-800 dark:text-blue-200'
-              }`}>
-                <span className="font-medium">AI Farm Action:</span> {weather.farmAction}
-              </p>
-            </div>
-            
-            <Link to="/weather">
+            <Link to="/weather" className="mt-4">
               <Button variant="outline" size="sm" className="w-full group">
                 <span className="flex items-center gap-2">
                   <Cloud className="h-4 w-4" />

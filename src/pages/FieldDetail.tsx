@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,10 +15,16 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Loader2, MapPin, Trash2, Edit, ArrowLeft, Calendar, Droplets, Tractor, Leaf, History, Check, AlertCircle, RefreshCw, Zap } from "lucide-react";
 import FieldMap from "@/components/fields/FieldMap";
 import { analyzeField, getFieldRecommendations, checkFieldRisks } from "@/services/fieldAIService";
+import { useAIAgentHub } from "@/hooks/useAIAgentHub";
+import { CropScanOutput } from "@/agents/CropScanAgent"; // Assuming this path and type
+import { YieldPredictionOutput } from "@/agents/YieldPredictorAgent"; // Assuming this path and type
+import { Input } from "@/components/ui/input";
+import { Camera, BarChart3 } from 'lucide-react';
 
 const FieldDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user, farmId, isLoading: authLoading } = useAuth();
   const [field, setField] = useState<Field | null>(null);
   const [crops, setCrops] = useState<FieldCrop[]>([]);
   const [history, setHistory] = useState<FieldHistory[]>([]);
@@ -30,11 +37,30 @@ const FieldDetail = () => {
   const [risks, setRisks] = useState<any>({ hasRisks: false, risks: [] });
   const [loadingRisks, setLoadingRisks] = useState(false);
 
+  // AI Agent Hub
+  const {
+    performCropScan,
+    cropScanData,
+    isLoadingCropScan,
+    cropScanError,
+    getYieldPrediction,
+    yieldPredictionData,
+    isLoadingYieldPrediction,
+    yieldPredictionError,
+  } = useAIAgentHub();
+
+  // State for Crop Scan
+  const [cropScanImageFile, setCropScanImageFile] = useState<File | null>(null);
+
+
   useEffect(() => {
-    if (id) {
+    if (id && user && farmId) {
       loadField();
+    } else if (id && !authLoading && (!user || !farmId)) {
+      toast.error("Authentication Error", { description: "User or farm context is missing. Please re-login or select a farm." });
+      // navigate("/login"); // Or to a farm selection page
     }
-  }, [id]);
+  }, [id, user, farmId, authLoading]);
 
   const loadAIInsights = async (fieldId: string) => {
     setLoadingInsights(true);
@@ -59,13 +85,17 @@ const FieldDetail = () => {
   };
 
   const loadField = async () => {
-    if (!id) return;
+    if (!id || !user || !farmId) {
+      toast.info("Information missing", { description: "Cannot load field without field ID, user, or farm context." });
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
       
       // Get field data
-      const { data, error } = await getFieldById(id);
+      const { data, error } = await getFieldById(id, user.id, farmId);
       
       if (error || !data) {
         toast.error("Error", {
@@ -122,11 +152,14 @@ const FieldDetail = () => {
   };
 
   const handleDelete = async () => {
-    if (!field) return;
+    if (!field || !user || !farmId) {
+      toast.error("Action not allowed", { description: "Cannot delete field without field context, user, or farm information." });
+      return;
+    }
     
     try {
       setDeleting(true);
-      const { error } = await deleteField(field.id);
+      const { error } = await deleteField(field.id, user.id, farmId);
       
       if (error) {
         throw new Error(error);
@@ -393,10 +426,12 @@ const FieldDetail = () => {
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : (
+        ) : field ? (
           <div className="space-y-6">
             {renderFieldDetailsSection()}
             {renderAIInsightsSection()}
+            {renderCropScanSection()} 
+            {renderYieldPredictionSection()}
             
             <Tabs defaultValue="crops" className="mt-6">
               <TabsList>
@@ -540,6 +575,10 @@ const FieldDetail = () => {
                 </Card>
               </TabsContent>
             </Tabs>
+          </div>
+        ) : (
+          <div className="text-center p-4 text-muted-foreground">
+            Field data could not be loaded or does not exist.
           </div>
         )}
       </div>

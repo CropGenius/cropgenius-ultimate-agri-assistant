@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { 
   User, CloudSun, CloudRain, Sun, CloudLightning, Snowflake, Circle, 
-  TrendingUp, TrendingDown, ArrowUp, ArrowDown 
+  TrendingUp, TrendingDown, ArrowUp, ArrowDown, Sparkles
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

@@ -11,9 +11,11 @@ import { WifiOff } from "lucide-react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Scan from "./pages/Scan";
-import FarmPlan from "./pages/FarmPlan";
+// import FarmPlan from "./pages/FarmPlan"; // Old farm plan page
+import FarmPlanningPage from "./pages/FarmPlanningPage"; // New AI Farm Planning Page
 import YieldPredictor from "./pages/YieldPredictor";
-import Market from "./pages/Market";
+// import Market from "./pages/Market"; // Old market page
+import MarketInsightsPage from "./pages/MarketInsightsPage"; // New Smart Market Insights Page
 import Weather from "./pages/Weather";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
@@ -115,9 +117,9 @@ const App = () => {
                   
                   {/* Protected Routes */}
                   <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
-                  <Route path="/farm-plan" element={<ProtectedRoute><FarmPlan /></ProtectedRoute>} />
+                  <Route path="/farm-plan" element={<ProtectedRoute><FarmPlanningPage /></ProtectedRoute>} />
                   <Route path="/predictions" element={<ProtectedRoute><YieldPredictor /></ProtectedRoute>} />
-                  <Route path="/market" element={<ProtectedRoute><Market /></ProtectedRoute>} />
+                  <Route path="/market" element={<ProtectedRoute><MarketInsightsPage /></ProtectedRoute>} />
                   <Route path="/weather" element={<ProtectedRoute><Weather /></ProtectedRoute>} />
                   <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
                   <Route path="/ai-assistant" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
