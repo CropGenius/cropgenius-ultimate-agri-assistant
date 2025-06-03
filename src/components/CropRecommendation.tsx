@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { Sprout, Droplets, Sun, Thermometer, Calendar } from 'lucide-react';
 
 interface Crop {

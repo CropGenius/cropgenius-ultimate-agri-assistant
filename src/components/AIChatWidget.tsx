@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { Send, User, Bot, X, Maximize2, Minimize2, MessageSquare } from 'lucide-react';
 
