@@ -1,10 +1,10 @@
 // src/pages/MarketInsightsPage.tsx
 
-import React from 'react';
+import { FC } from 'react';
 import MarketInsightsDashboard from '../components/MarketInsightsDashboard';
 // import MainLayout from '../layouts/MainLayout'; // Assuming a MainLayout exists
 
-const MarketInsightsPage: React.FC = () => {
+const MarketInsightsPage: FC = () => {
   return (
     // <MainLayout title="Smart Market Insights">
     //   <MarketInsightsDashboard />

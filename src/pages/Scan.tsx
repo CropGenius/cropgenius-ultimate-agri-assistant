@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import CropScanner from "@/components/scanner/CropScanner";
 import FieldBrainAssistant from "@/components/ai/FieldBrainAssistant";
@@ -12,7 +12,7 @@ const ScanPage = () => {
   const [userId, setUserId] = useState<string | null>(null);
   
   // Get the current user ID
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchUserId = async () => {
       const { user } = await getCurrentUser();
       if (user) {

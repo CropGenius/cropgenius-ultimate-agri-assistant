@@ -1,10 +1,10 @@
 // src/pages/FarmPlanningPage.tsx
 
-import React from 'react';
+import { FC } from 'react';
 import FarmPlanner from '../components/FarmPlanner';
 // import MainLayout from '../layouts/MainLayout'; // Assuming a MainLayout exists for consistent page structure
 
-const FarmPlanningPage: React.FC = () => {
+const FarmPlanningPage: FC = () => {
   return (
     // <MainLayout title="AI Farm Planning">
     //   <FarmPlanner />
