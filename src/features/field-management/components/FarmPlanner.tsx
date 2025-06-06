@@ -1,16 +1,16 @@
 // src/components/FarmPlanner.tsx
 
 import { useState, FC } from 'react';
-import { useFarmPlanAgent } from '../hooks/agents/useFarmPlanAgent';
-import { useWeatherAgent } from '../hooks/agents/useWeatherAgent';
-import { useSmartMarketAgent } from '../hooks/agents/useSmartMarketAgent';
-import { FarmPlanInput } from '../agents/AIFarmPlanAgent';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { useFarmPlanAgent } from '@/hooks/agents/useFarmPlanAgent';
+import { useWeatherAgent } from '@/hooks/agents/useWeatherAgent';
+import { useSmartMarketAgent } from '@/hooks/agents/useSmartMarketAgent';
+import { FarmPlanInput } from '@/agents/AIFarmPlanAgent';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { WifiOff } from 'lucide-react';
-import { useOfflineStatus } from '../hooks/useOfflineStatus';
+import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import FarmPlannerForm from './FarmPlannerForm';
 import FarmPlanDisplay from './FarmPlanDisplay';
-import { FarmPlanErrorBoundary } from './ErrorBoundary';
+import { FarmPlanErrorBoundary } from '@/components/error/ErrorBoundary';
 
 const FarmPlanner: FC = () => {
   // Get weather and market data to provide context for farm planning
