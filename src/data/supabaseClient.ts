@@ -254,7 +254,7 @@ export const db = {
       if (!navigator.onLine) {
         const result = await handleOfflineOperation('update', table, data, filters);
         if (result.success) {
-          toast.info('Changes will be applied when you're back online');
+          toast.info("Changes will be applied when you're back online");
           return { data: data as T, error: null, offlineQueued: true };
         } else {
           return { 
@@ -334,7 +334,7 @@ export const db = {
       if (!navigator.onLine) {
         const result = await handleOfflineOperation('delete', table, {}, filters);
         if (result.success) {
-          toast.info('Deletion will be processed when you're back online');
+          toast.info("Deletion will be processed when you're back online");
           return { data: null, error: null, offlineQueued: true };
         } else {
           return { 
