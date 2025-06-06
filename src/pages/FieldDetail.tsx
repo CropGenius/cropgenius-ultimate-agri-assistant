@@ -787,5 +787,6 @@ const FieldDetail = () => {
     </Layout>
   </FieldDetailErrorBoundary>
 );
+};
 
 export default FieldDetail;
