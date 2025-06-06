@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import { initOfflineSync } from './services/offlineSyncService';
-import './index.css';
+import './styles/index.css';
 
 // Immediately initialize the app without any async delays
 const rootElement = document.getElementById('root');
