@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef, FC } from 'react';
 
 interface MapSelectorProps {
   onLocationSelect?: (location: { lat: number; lng: number }) => void;
@@ -7,7 +7,7 @@ interface MapSelectorProps {
   className?: string;
 }
 
-const MapSelector: React.FC<MapSelectorProps> = ({
+const MapSelector: FC<MapSelectorProps> = ({
   onLocationSelect,
   initialCenter = { lat: 0, lng: 0 },
   zoom = 2,
@@ -24,10 +24,11 @@ const MapSelector: React.FC<MapSelectorProps> = ({
     const initializeMap = async () => {
       try {
         const mapboxgl = (await import('mapbox-gl')).default;
-        
+
         // Set access token
-        (mapboxgl as any).accessToken = process.env.VITE_MAPBOX_ACCESS_TOKEN || '';
-        
+        (mapboxgl as any).accessToken =
+          process.env.VITE_MAPBOX_ACCESS_TOKEN || '';
+
         // Check browser support
         if (!(mapboxgl as any).supported()) {
           throw new Error('Your browser does not support Mapbox GL');
@@ -47,7 +48,7 @@ const MapSelector: React.FC<MapSelectorProps> = ({
         if (onLocationSelect) {
           map.current.on('click', (e: any) => {
             const { lng, lat } = e.lngLat;
-            
+
             // Update marker position
             if (marker.current) {
               marker.current.setLngLat([lng, lat]);
@@ -56,7 +57,7 @@ const MapSelector: React.FC<MapSelectorProps> = ({
                 .setLngLat([lng, lat])
                 .addTo(map.current);
             }
-            
+
             // Call the callback
             onLocationSelect({ lat, lng });
           });
@@ -77,8 +78,8 @@ const MapSelector: React.FC<MapSelectorProps> = ({
   }, [initialCenter, zoom, onLocationSelect]);
 
   return (
-    <div 
-      ref={mapContainer} 
+    <div
+      ref={mapContainer}
       id="map"
       className={`w-full h-full min-h-[400px] ${className}`}
       data-testid="map-container"

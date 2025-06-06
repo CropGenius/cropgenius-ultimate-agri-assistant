@@ -23,7 +23,7 @@ export interface YieldPredictionInput {
   cropHealth?: {
     latestScan: ProcessedCropScanResult | null;
     diseasePressure?: number; // 0-1 scale
-    pestPressure?: number;    // 0-1 scale
+    pestPressure?: number; // 0-1 scale
   } | null;
   managementPractices?: {
     irrigation?: boolean;
@@ -36,7 +36,7 @@ export interface YieldPredictionInput {
 
 export interface YieldPredictionResult {
   predictedYieldKgPerHa: number;
-  confidenceScore: number;     // 0-1 scale
+  confidenceScore: number; // 0-1 scale
   keyFactors: {
     weatherImpact: string; // e.g., 'Positive', 'Neutral', 'Slightly Negative'
     soilImpact: string;
@@ -54,16 +54,19 @@ export interface StoredYieldPrediction extends YieldPredictionResult {
   fieldId: string;
   cropType: string;
   plantingDate: string; // ISO string
-  createdAt: string;      // ISO string
-  updatedAt: string;      // ISO string
+  createdAt: string; // ISO string
+  updatedAt: string; // ISO string
   userId?: string;
 }
 
 // Cache for predictions to minimize API calls
-const predictionCache = new Map<string, {
-  timestamp: number;
-  data: Promise<YieldPredictionResult>;
-}>();
+const predictionCache = new Map<
+  string,
+  {
+    timestamp: number;
+    data: Promise<YieldPredictionResult>;
+  }
+>();
 
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30 minutes cache
 
@@ -111,7 +114,9 @@ const buildGeminiPrompt = (input: YieldPredictionInput): string => {
 const callGeminiAPI = async (prompt: string): Promise<any> => {
   if (!GEMINI_API_KEY) {
     console.error('Gemini API key is not configured');
-    throw new Error('Gemini API key is not configured. Please set VITE_GEMINI_API_KEY.');
+    throw new Error(
+      'Gemini API key is not configured. Please set VITE_GEMINI_API_KEY.'
+    );
   }
 
   const response = await fetch(GEMINI_API_URL, {
@@ -134,17 +139,28 @@ const callGeminiAPI = async (prompt: string): Promise<any> => {
   if (!response.ok) {
     const errorBody = await response.text();
     console.error('Gemini API error:', response.status, errorBody);
-    throw new Error(`Gemini API request failed: ${response.status} ${errorBody}`);
+    throw new Error(
+      `Gemini API request failed: ${response.status} ${errorBody}`
+    );
   }
   const data = await response.json();
   if (data.promptFeedback && data.promptFeedback.blockReason) {
-    console.error('Gemini API prompt blocked:', data.promptFeedback.blockReason, data.promptFeedback.safetyRatings);
-    throw new Error(`Gemini API prompt blocked: ${data.promptFeedback.blockReason}`);
+    console.error(
+      'Gemini API prompt blocked:',
+      data.promptFeedback.blockReason,
+      data.promptFeedback.safetyRatings
+    );
+    throw new Error(
+      `Gemini API prompt blocked: ${data.promptFeedback.blockReason}`
+    );
   }
   return data;
 };
 
-const parseGeminiResponse = (geminiResponse: any, input: YieldPredictionInput): YieldPredictionResult => {
+const parseGeminiResponse = (
+  geminiResponse: any,
+  input: YieldPredictionInput
+): YieldPredictionResult => {
   try {
     const text = geminiResponse.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) {
@@ -154,16 +170,23 @@ const parseGeminiResponse = (geminiResponse: any, input: YieldPredictionInput): 
 
     const jsonMatch = text.match(/```(?:json)?\s*({[\s\S]*?})\s*```/);
     const jsonStr = jsonMatch ? jsonMatch[1] : text;
-    
+
     const parsed = JSON.parse(jsonStr);
 
     // Basic validation
-    if (typeof parsed.predictedYieldKgPerHa !== 'number' || 
-        typeof parsed.confidenceScore !== 'number' ||
-        !parsed.keyFactors || 
-        !Array.isArray(parsed.recommendations)) {
-      console.warn('Gemini response missing key fields, using defaults.', parsed);
-      throw new Error('Invalid response format from Gemini, missing required fields.');
+    if (
+      typeof parsed.predictedYieldKgPerHa !== 'number' ||
+      typeof parsed.confidenceScore !== 'number' ||
+      !parsed.keyFactors ||
+      !Array.isArray(parsed.recommendations)
+    ) {
+      console.warn(
+        'Gemini response missing key fields, using defaults.',
+        parsed
+      );
+      throw new Error(
+        'Invalid response format from Gemini, missing required fields.'
+      );
     }
 
     return {
@@ -176,12 +199,22 @@ const parseGeminiResponse = (geminiResponse: any, input: YieldPredictionInput): 
         managementImpact: parsed.keyFactors.managementImpact || 'Neutral',
       },
       recommendations: parsed.recommendations.slice(0, 3), // Max 3 recommendations
-      predictionDate: parsed.predictionDate || new Date().toISOString().split('T')[0],
-      harvestDateEstimate: parsed.harvestDateEstimate || new Date(input.plantingDate.getTime() + (90 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0], // Default 90 days
+      predictionDate:
+        parsed.predictionDate || new Date().toISOString().split('T')[0],
+      harvestDateEstimate:
+        parsed.harvestDateEstimate ||
+        new Date(input.plantingDate.getTime() + 90 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0], // Default 90 days
       rawGeminiResponse: import.meta.env.DEV ? geminiResponse : undefined, // Only include raw in dev
     };
   } catch (error) {
-    console.error('Error parsing Gemini response:', error, 'Raw response:', geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text);
+    console.error(
+      'Error parsing Gemini response:',
+      error,
+      'Raw response:',
+      geminiResponse?.candidates?.[0]?.content?.parts?.[0]?.text
+    );
     // Fallback structure
     return {
       predictedYieldKgPerHa: 0,
@@ -192,9 +225,15 @@ const parseGeminiResponse = (geminiResponse: any, input: YieldPredictionInput): 
         healthImpact: 'Uncertain',
         managementImpact: 'Uncertain',
       },
-      recommendations: ['Could not parse prediction. Check input data and API response.'],
+      recommendations: [
+        'Could not parse prediction. Check input data and API response.',
+      ],
       predictionDate: new Date().toISOString().split('T')[0],
-      harvestDateEstimate: new Date(input.plantingDate.getTime() + (90 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+      harvestDateEstimate: new Date(
+        input.plantingDate.getTime() + 90 * 24 * 60 * 60 * 1000
+      )
+        .toISOString()
+        .split('T')[0],
       rawGeminiResponse: import.meta.env.DEV ? geminiResponse : undefined,
     };
   }
@@ -206,33 +245,42 @@ export const generateYieldPrediction = async (
   const cacheKey = JSON.stringify({
     fieldId: input.fieldId,
     cropType: input.cropType,
-    date: new Date().toISOString().split('T')[0] // Daily cache key component
+    date: new Date().toISOString().split('T')[0], // Daily cache key component
   });
 
   const cached = predictionCache.get(cacheKey);
-  if (cached && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     return cached.data;
   }
 
   const prompt = buildGeminiPrompt(input);
   const predictionPromise = callGeminiAPI(prompt)
-    .then(response => parseGeminiResponse(response, input))
-    .catch(error => {
+    .then((response) => parseGeminiResponse(response, input))
+    .catch((error) => {
       console.error('Yield prediction pipeline error:', error);
       // Return a fallback error-state prediction
       return {
         predictedYieldKgPerHa: 0,
         confidenceScore: 0,
-        keyFactors: { weatherImpact: 'Error', soilImpact: 'Error', healthImpact: 'Error', managementImpact: 'Error' },
+        keyFactors: {
+          weatherImpact: 'Error',
+          soilImpact: 'Error',
+          healthImpact: 'Error',
+          managementImpact: 'Error',
+        },
         recommendations: ['Error generating prediction. Please try again.'],
         predictionDate: new Date().toISOString().split('T')[0],
-        harvestDateEstimate: new Date(input.plantingDate.getTime() + (90 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+        harvestDateEstimate: new Date(
+          input.plantingDate.getTime() + 90 * 24 * 60 * 60 * 1000
+        )
+          .toISOString()
+          .split('T')[0],
       } as YieldPredictionResult;
     });
 
   predictionCache.set(cacheKey, {
     timestamp: Date.now(),
-    data: predictionPromise
+    data: predictionPromise,
   });
 
   return predictionPromise;

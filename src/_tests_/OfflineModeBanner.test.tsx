@@ -17,7 +17,7 @@ import OfflineModeBanner from '../components/OfflineModeBanner';
 
 describe('OfflineModeBanner', () => {
   const originalNavigator = { ...navigator };
-  
+
   beforeEach(() => {
     // Mock navigator.onLine
     Object.defineProperty(window, 'navigator', {
@@ -25,7 +25,7 @@ describe('OfflineModeBanner', () => {
       writable: true,
     });
   });
-  
+
   afterEach(() => {
     cleanup();
     // Restore original navigator
@@ -36,16 +36,16 @@ describe('OfflineModeBanner', () => {
 
   it('shows offline warning banner', () => {
     render(<OfflineModeBanner />);
-    
+
     const banner = screen.getByTestId('offline-banner');
     expect(banner).toBeInTheDocument();
     expect(banner).toHaveTextContent(/you are currently offline/i);
     expect(banner).toHaveClass('bg-yellow-100');
-    
+
     // Check for dismiss button
     expect(screen.getByTestId('dismiss-button')).toBeInTheDocument();
   });
-  
+
   it('matches snapshot', () => {
     const { container } = render(<OfflineModeBanner />);
     expect(container).toMatchSnapshot();

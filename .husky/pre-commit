@@ -1,0 +1,21 @@
+echo "Running pre-commit hook: lint-staged..."
+NPM_CONFIG_PREFIX=$(npm prefix -g)
+PATH="$NPM_CONFIG_PREFIX/bin:$PATH:/usr/local/bin"
+
+# Check if lint-staged is available
+if ! command -v lint-staged &> /dev/null
+then
+    echo "lint-staged could not be found. Attempting to run with npx."
+    if ! npx lint-staged --config lint-staged.config.js; then
+        echo "Pre-commit hook failed: npx lint-staged returned an error."
+        exit 1
+    fi
+else
+    if ! lint-staged --config lint-staged.config.js; then
+        echo "Pre-commit hook failed: lint-staged returned an error."
+        exit 1
+    fi
+fi
+
+echo "Pre-commit checks passed."
+exit 0

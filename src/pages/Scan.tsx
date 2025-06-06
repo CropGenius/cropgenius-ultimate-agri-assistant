@@ -1,16 +1,21 @@
-
-import { useState, useEffect } from "react";
-import Layout from "@/components/Layout";
-import CropScanner from "@/components/scanner/CropScanner";
-import FieldBrainAssistant from "@/components/ai/FieldBrainAssistant";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getCurrentUser } from "@/utils/authService";
-import { FieldBrainProvider } from "@/hooks/useFieldBrain";
+import { useState, useEffect } from 'react';
+import Layout from '@/components/Layout';
+import CropScanner from '@/components/scanner/CropScanner';
+import FieldBrainAssistant from '@/components/ai/FieldBrainAssistant';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getCurrentUser } from '@/utils/authService';
+import { FieldBrainProvider } from '@/hooks/useFieldBrain';
 
 const ScanPage = () => {
   const [userId, setUserId] = useState<string | null>(null);
-  
+
   // Get the current user ID
   useEffect(() => {
     const fetchUserId = async () => {
@@ -19,10 +24,10 @@ const ScanPage = () => {
         setUserId(user.id);
       }
     };
-    
+
     fetchUserId();
   }, []);
-  
+
   return (
     <Layout>
       <Tabs defaultValue="scanner" className="w-full">
@@ -33,7 +38,7 @@ const ScanPage = () => {
             <TabsTrigger value="assistant">AI Assistant</TabsTrigger>
           </TabsList>
         </div>
-        
+
         <TabsContent value="scanner" className="mt-0">
           <Card>
             <CardHeader className="pb-2">
@@ -47,7 +52,7 @@ const ScanPage = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="assistant" className="mt-0">
           {userId ? (
             <FieldBrainProvider userId={userId}>

@@ -7,39 +7,15 @@
  * and provide a unified interface for components to access AI-driven recommendations and data.
  */
 
-import { useState, useCallback } from 'react';
-import {
-  getCurrentWeather as getCurrentWeatherInternal,
-  getWeatherForecast as getWeatherForecastInternal,
-  ProcessedCurrentWeather,
-  ProcessedForecast
-} from '../agents/WeatherAgent';
-import {
-  performCropScanAndSave as performCropScanInternal, // Corrected import
-  CropScanInput,
-  ProcessedCropScanResult
-} from '../agents/CropScanAgent';
-import { useAuth } from '../context/AuthContext'; // Import useAuth
-import {
-  generateYieldPrediction as generateYieldPredictionInternal,
-  saveYieldPrediction as saveYieldPredictionInternal,
-  getHistoricalYieldPredictions as getHistoricalYieldPredictionsInternal,
-  YieldPredictionInput,
-  YieldPredictionResult,
-  StoredYieldPrediction
-} from '../agents/YieldPredictorAgent';
-import {
-  fetchMarketListings as fetchMarketListingsInternal,
-  MarketDataInput,
-  MarketDataOutput,
-} from '../agents/SmartMarketAgent';
-import {
-  generateFarmPlan as generateFarmPlanInternal,
-  saveFarmPlanAndTasks as saveFarmPlanAndTasksInternal,
-  FarmPlanInput,
-  FarmPlanOutput,
-  FarmTask
-} from '../agents/AIFarmPlanAgent';
+// --- Modular AI Agent Hooks ---
+import { useWeatherAgent } from './agents/useWeatherAgent';
+import { useCropScanAgent } from './agents/useCropScanAgent';
+import { useYieldPredictorAgent } from './agents/useYieldPredictorAgent';
+import { useSmartMarketAgent } from './agents/useSmartMarketAgent';
+import { useFarmPlanAgent } from './agents/useFarmPlanAgent';
+
+// Optionally, add types for the unified hub interface
+
 // import { useAuth } from '../context/AuthContext'; // Assuming AuthContext provides user info
 // import { supabase } from '../services/supabaseClient'; // Supabase client
 
@@ -74,131 +50,31 @@ import {
 // };
 
 export const useAIAgentHub = () => {
-  const { user, farmId: currentFarmId, session } = useAuth(); // Get user and farmId from AuthContext
-  // --- State for AI Weather Agent ---
-  const [currentWeather, setCurrentWeather] = useState<ProcessedCurrentWeather | null>(null);
-  const [weatherForecast, setWeatherForecast] = useState<ProcessedForecast | null>(null);
-  const [isLoadingWeather, setIsLoadingWeather] = useState<boolean>(false);
-  const [weatherError, setWeatherError] = useState<Error | null>(null);
+  // Compose all modular agent hooks
+  const weather = useWeatherAgent();
+  const cropScan = useCropScanAgent();
+  const yieldPredictor = useYieldPredictorAgent();
+  const smartMarket = useSmartMarketAgent();
+  // Pass context from other agents to farm plan agent
+  const farmPlan = useFarmPlanAgent({
+    weatherContext: weather.currentWeather ? { current: weather.currentWeather, forecast: weather.weatherForecast?.list || null } : undefined,
+    marketContext: smartMarket.marketData ? { relevantListings: smartMarket.marketData.listings } : undefined,
+  });
 
-  // --- State for Crop Scanner Agent ---
-  const [cropScanResult, setCropScanResult] = useState<(ProcessedCropScanResult & { id: string; imageUrl: string }) | null>(null);
-  const [isScanningCrop, setIsScanningCrop] = useState<boolean>(false);
-  const [cropScanError, setCropScanError] = useState<Error | null>(null);
-
-  // --- State for Yield Predictor Agent ---
-  const [yieldPrediction, setYieldPrediction] = useState<YieldPredictionResult | null>(null);
-  const [historicalYieldPredictions, setHistoricalYieldPredictions] = useState<StoredYieldPrediction[]>([]);
-  const [isPredictingYield, setIsPredictingYield] = useState<boolean>(false);
-  const [yieldPredictionError, setYieldPredictionError] = useState<Error | null>(null);
-
-  // --- State for Smart Market Agent ---
-  const [marketData, setMarketData] = useState<MarketDataOutput | null>(null);
-  const [isLoadingMarketData, setIsLoadingMarketData] = useState<boolean>(false);
-  const [marketDataError, setMarketDataError] = useState<Error | null>(null);
-
-  // --- State for AI Farm Plan Agent ---
-  const [farmPlan, setFarmPlan] = useState<FarmPlanOutput | null>(null);
-  const [isLoadingFarmPlan, setIsLoadingFarmPlan] = useState<boolean>(false);
-  const [farmPlanError, setFarmPlanError] = useState<Error | null>(null);
-
-  // --- AI Weather Agent methods ---
-  const fetchCurrentWeather = useCallback(async (
-    latitude: number,
-    longitude: number,
-    farmId?: string,
-    saveToDb: boolean = true
-  ): Promise<ProcessedCurrentWeather | undefined> => {
-    setIsLoadingWeather(true);
-    setWeatherError(null);
-    try {
-      const data = await getCurrentWeatherInternal(latitude, longitude, farmId || currentFarmId, saveToDb, user?.id); // Pass userId
-      setCurrentWeather(data);
-      return data;
-    } catch (error) {
-      console.error('Error fetching current weather:', error);
-      setWeatherError(error instanceof Error ? error : new Error('Failed to fetch current weather'));
-      throw error; // Re-throw to allow caller to handle
-    } finally {
-      setIsLoadingWeather(false);
-    }
-  }, []);
-
-  const fetchWeatherForecast = useCallback(async (
-    latitude: number,
-    longitude: number,
-    farmId?: string,
-    saveToDb: boolean = true
-  ): Promise<ProcessedForecast | undefined> => {
-    setIsLoadingWeather(true);
-    setWeatherError(null);
-    try {
-      const data = await getWeatherForecastInternal(latitude, longitude, farmId || currentFarmId, saveToDb, user?.id); // Pass userId
-      setWeatherForecast(data);
-      return data;
-    } catch (error) {
-      console.error('Error fetching weather forecast:', error);
-      setWeatherError(error instanceof Error ? error : new Error('Failed to fetch weather forecast'));
-      throw error; // Re-throw
-    } finally {
-      setIsLoadingWeather(false);
-    }
-  }, []);
-
-  // --- Crop Scanner Agent methods ---
-  const performCropScan = useCallback(async (scanInput: CropScanInput): Promise<(ProcessedCropScanResult & { id: string; imageUrl: string }) | undefined> => {
-    setIsScanningCrop(true);
-    setCropScanError(null);
-    try {
-      const result = await performCropScanInternal({ ...scanInput, userId: user?.id, farmId: scanInput.farmId || currentFarmId }); // Pass userId and farmId
-      setCropScanResult(result);
-      return result;
-    } catch (error) {
-      console.error('Error performing crop scan:', error);
-      setCropScanError(error instanceof Error ? error : new Error('Failed to perform crop scan'));
-      throw error; // Re-throw
-    } finally {
-      setIsScanningCrop(false);
-    }
-  }, []);
-
-  // const fetchAIDrivenTasks = useCallback(async (currentFarmId: string) => {
-  //   // Generate or fetch tasks based on AI analysis
-  //   // Example:
-  //   // const tasks = await FarmPlanAgent.generateDailyTasks(currentFarmId);
-  //   return [{ id: '1', title: 'Water field A', priority: 'high' }]; // Placeholder
-  // }, []);
-
-  // const refreshAllInsights = useCallback(async () => {
-  //   if (!user || !farmId) {
-  //     // Or use a default/selected farmId from context/state
-  //     setState(prev => ({ ...prev, error: new Error('User or Farm ID not available') }));
-  //     return;
-  //   }
-
-  //   setState(prev => ({ ...prev, loading: true, error: null }));
-  //   try {
-  //     const [health, market, tasks] = await Promise.all([
-  //       fetchFarmHealth(farmId),
-  //       fetchSmartMarketInsights(farmId),
-  //       fetchAIDrivenTasks(farmId),
-  //     ]);
-
-  //     setState({
-  //       farmHealthSummary: health,
-  //       smartMarketInsights: market,
-  //       aiDrivenTasks: tasks,
-  //       loading: false,
-  //       error: null,
-  //     });
-
-  //   } catch (err) {
-  //     console.error('Error refreshing AI insights:', err);
-  //     setState(prev => ({ ...prev, loading: false, error: err instanceof Error ? err : new Error(String(err)) }));
-  //   }
-  // }, [user, currentFarmId]);
-
-  // --- Smart Market Agent methods ---
+  // Return unified interface
+  return {
+    // Weather Agent
+    ...weather,
+    // Crop Scanner Agent
+    ...cropScan,
+    // Yield Predictor Agent
+    ...yieldPredictor,
+    // Smart Market Agent
+    ...smartMarket,
+    // AI Farm Plan Agent
+    ...farmPlan,
+  };
+};
   const getMarketInsights = useCallback(async (
     input: MarketDataInput
   ): Promise<MarketDataOutput | undefined> => {

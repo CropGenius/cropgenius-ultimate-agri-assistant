@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CropGenius - Offline Mode</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" href="/icons/icon-192x192.png" />
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+          Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f0f9e8;
+        color: #2e4a25;
+      }
+      .container {
+        max-width: 100%;
+        padding: 1rem;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .logo {
+        width: 120px;
+        height: 120px;
+        margin-bottom: 1.5rem;
+      }
+      h1 {
+        margin-bottom: 0.5rem;
+        font-size: 1.8rem;
+        font-weight: 700;
+      }
+      p {
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #4a6741;
+        max-width: 600px;
+      }
+      .card {
+        background-color: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        width: 100%;
+        max-width: 600px;
+      }
+      .features {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        width: 100%;
+        max-width: 600px;
+        margin-bottom: 1.5rem;
+      }
+      .feature {
+        background-color: white;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+      .feature-icon {
+        width: 2rem;
+        height: 2rem;
+        margin-right: 1rem;
+        background-color: #e6f4e1;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .feature-text {
+        font-size: 0.9rem;
+      }
+      .btn {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+      .btn:hover {
+        background-color: #388e3c;
+      }
+      .version {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-top: 1.5rem;
+      }
+
+      @media (min-width: 640px) {
+        .features {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        h1 {
+          font-size: 2.25rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <img src="/icons/icon-192x192.png" alt="CropGenius Logo" class="logo" />
+      <h1>CropGenius is working offline</h1>
+      <p>
+        You are currently offline, but don't worry - CropGenius is designed to
+        work without an internet connection. Your data is safely stored on your
+        device and will sync when you're back online.
+      </p>
+
+      <div class="card">
+        <h3>Offline Mode Features:</h3>
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">📊</div>
+            <div class="feature-text">Access your most recent farm data</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🌱</div>
+            <div class="feature-text">View saved crop information</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">📅</div>
+            <div class="feature-text">Check your farm plan and tasks</div>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">📝</div>
+            <div class="feature-text">Add new data that will sync later</div>
+          </div>
+        </div>
+        <button class="btn" id="reload-btn">Try Reconnecting</button>
+      </div>
+
+      <p>
+        All your changes and actions will be automatically synchronized once
+        your internet connection is restored.
+      </p>
+
+      <p class="version">
+        CropGenius v1.0 • Africa's Premier Farming Assistant
+      </p>
+    </div>
+
+    <script>
+      // Check for online status periodically
+      function checkOnlineStatus() {
+        if (navigator.onLine) {
+          window.location.reload();
+        }
+      }
+
+      // Try to reconnect when button is clicked
+      document.getElementById('reload-btn').addEventListener('click', () => {
+        window.location.reload();
+      });
+
+      // Check connection status every 30 seconds
+      setInterval(checkOnlineStatus, 30000);
+    </script>
+  </body>
+</html>

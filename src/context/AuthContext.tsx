@@ -1,8 +1,16 @@
-
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { Session, User } from "@supabase/supabase-js";
-import { supabase, checkAndRefreshSession } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
+import { Session, User } from '@supabase/supabase-js';
+import {
+  supabase,
+  checkAndRefreshSession,
+} from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface AuthState {
   user: User | null;
@@ -22,10 +30,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Development mock values with valid UUID format for development environment
 // Use proper UUID format for development to avoid database type errors
-const DEV_USER_ID = "00000000-0000-0000-0000-000000000000"; // Valid UUID format
-const DEV_FARM_ID = "00000000-0000-0000-0000-000000000001"; // Valid UUID format
+const DEV_USER_ID = '00000000-0000-0000-0000-000000000000'; // Valid UUID format
+const DEV_FARM_ID = '00000000-0000-0000-0000-000000000001'; // Valid UUID format
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Don't need these individual states as we're using authState
   // const [user, setUser] = useState<User | null>(null);
   // const [loading, setLoading] = useState(false);
@@ -34,11 +42,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Development bypass: provide mock user and session with proper UUID format
     user: {
       id: DEV_USER_ID,
-      email: "dev@cropgenius.ai",
+      email: 'dev@cropgenius.ai',
       app_metadata: {},
-      user_metadata: { full_name: "CropGenius Dev" },
-      aud: "authenticated",
-      created_at: "",
+      user_metadata: { full_name: 'CropGenius Dev' },
+      aud: 'authenticated',
+      created_at: '',
     } as User,
     session: { user: {} as User } as Session, // Mock session
     isLoading: false, // Set to false immediately
@@ -46,25 +54,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     farmId: DEV_FARM_ID, // Valid UUID format for farm ID
     isDevPreview: true,
   });
-  
+
   // Mock session refresh function
   const refreshSession = async () => {
-    console.log("[DEV] Mocked session refresh");
+    console.log('[DEV] Mocked session refresh');
     return Promise.resolve();
   };
 
   // Mock sign out function
   const signOut = async () => {
-    console.log("[DEV] Mocked sign out");
-    toast.info("Sign out mocked in dev mode");
+    console.log('[DEV] Mocked sign out');
+    toast.info('Sign out mocked in dev mode');
     return Promise.resolve();
   };
 
   // Original useEffect is commented out to bypass auth checks
   useEffect(() => {
-    console.log("[DEV] Authentication bypassed for development");
-    console.log("[DEV] Using mock farmId:", DEV_FARM_ID);
-    
+    console.log('[DEV] Authentication bypassed for development');
+    console.log('[DEV] Using mock farmId:', DEV_FARM_ID);
+
     // TODO: re-enable auth
     /*
     console.log("AuthProvider: Setting up auth listener");
@@ -165,7 +173,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
     */
   }, []);
-  
+
   // Check if user has a farm and store farmId - mocked for development
   const checkUserFarm = async (userId: string) => {
     // TODO: re-enable auth
@@ -198,15 +206,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Error checking farm:", error.message);
     }
     */
-    console.log("[DEV] Mock farm check for:", userId);
+    console.log('[DEV] Mock farm check for:', userId);
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      ...authState, 
-      signOut, 
-      refreshSession,
-    }}>
+    <AuthContext.Provider
+      value={{
+        ...authState,
+        signOut,
+        refreshSession,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,11 +1,26 @@
-import React from 'react';
-import { Calendar, Clock, Droplet, Thermometer, Sun, Calendar as CalendarIcon, Activity } from 'lucide-react';
+import { FC } from 'react';
+import {
+  Calendar,
+  Clock,
+  Droplet,
+  Thermometer,
+  Sun,
+  Calendar as CalendarIcon,
+  Activity,
+} from 'lucide-react';
 
 export type HistoryEvent = {
   id: string;
   date: string;
   action: string;
-  type: 'planting' | 'harvest' | 'irrigation' | 'fertilization' | 'pest_control' | 'weather' | 'other';
+  type:
+    | 'planting'
+    | 'harvest'
+    | 'irrigation'
+    | 'fertilization'
+    | 'pest_control'
+    | 'weather'
+    | 'other';
   details?: Record<string, any>;
   userId?: string;
   userName?: string;
@@ -69,21 +84,24 @@ const formatTime = (dateString: string) => {
   });
 };
 
-const FieldHistoryTracker: React.FC<FieldHistoryTrackerProps> = ({
+const FieldHistoryTracker: FC<FieldHistoryTrackerProps> = ({
   history = [],
   className = '',
   onEventClick,
   showFullHistory = true,
 }) => {
   // Group events by date
-  const groupedEvents = history.reduce<Record<string, HistoryEvent[]>>((acc, event) => {
-    const date = new Date(event.date).toDateString();
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(event);
-    return acc;
-  }, {});
+  const groupedEvents = history.reduce<Record<string, HistoryEvent[]>>(
+    (acc, event) => {
+      const date = new Date(event.date).toDateString();
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(event);
+      return acc;
+    },
+    {}
+  );
 
   // Sort dates in descending order
   const sortedDates = Object.keys(groupedEvents).sort(
@@ -95,25 +113,36 @@ const FieldHistoryTracker: React.FC<FieldHistoryTrackerProps> = ({
 
   if (history.length === 0) {
     return (
-      <div className={`bg-white rounded-lg shadow p-6 text-center ${className}`}>
+      <div
+        className={`bg-white rounded-lg shadow p-6 text-center ${className}`}
+      >
         <div className="text-gray-400">
           <CalendarIcon className="mx-auto h-10 w-10 mb-2" />
           <p>No history available</p>
-          <p className="text-sm text-gray-500 mt-1">Activities will appear here</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Activities will appear here
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`bg-white rounded-lg shadow overflow-hidden ${className}`} data-testid="field-history-tracker">
+    <div
+      className={`bg-white rounded-lg shadow overflow-hidden ${className}`}
+      data-testid="field-history-tracker"
+    >
       <div className="px-6 py-4 border-b border-gray-200">
         <h3 className="text-lg font-medium text-gray-900">Field Activity</h3>
       </div>
-      
+
       <div className="divide-y divide-gray-200">
         {displayDates.map((date) => (
-          <div key={date} className="p-4" data-testid={`history-date-format("${date}")`}>
+          <div
+            key={date}
+            className="p-4"
+            data-testid={`history-date-format("${date}")`}
+          >
             <div className="flex items-center mb-3">
               <div className="h-px bg-gray-200 flex-1"></div>
               <span className="px-3 text-sm font-medium text-gray-500 bg-white">
@@ -121,28 +150,33 @@ const FieldHistoryTracker: React.FC<FieldHistoryTrackerProps> = ({
               </span>
               <div className="h-px bg-gray-200 flex-1"></div>
             </div>
-            
+
             <ul className="space-y-3">
               {groupedEvents[date]
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .sort(
+                  (a, b) =>
+                    new Date(b.date).getTime() - new Date(a.date).getTime()
+                )
                 .map((event) => (
-                  <li 
-                    key={event.id} 
+                  <li
+                    key={event.id}
                     className={`relative pl-6 pb-4 border-l-2 ${getEventColor(event.type)} border-l-current`}
                     data-testid={`history-event-${event.id}`}
                   >
-                    <div 
+                    <div
                       className={`absolute left-0 w-3 h-3 rounded-full -translate-x-[9px] ${getEventColor(event.type).replace('bg-', 'bg-').split(' ')[0]}`}
                       style={{ top: '0.5rem' }}
                     ></div>
-                    
-                    <div 
+
+                    <div
                       className={`p-3 rounded-lg cursor-pointer hover:bg-opacity-70 transition-colors ${getEventColor(event.type)}`}
                       onClick={() => onEventClick?.(event)}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex items-center">
-                          <span className="mr-2">{getEventIcon(event.type)}</span>
+                          <span className="mr-2">
+                            {getEventIcon(event.type)}
+                          </span>
                           <span className="font-medium">{event.action}</span>
                         </div>
                         <span className="text-xs text-gray-500 flex items-center">
@@ -150,18 +184,25 @@ const FieldHistoryTracker: React.FC<FieldHistoryTrackerProps> = ({
                           {formatTime(event.date)}
                         </span>
                       </div>
-                      
-                      {event.details && Object.keys(event.details).length > 0 && (
-                        <div className="mt-2 text-sm space-y-1">
-                          {Object.entries(event.details).map(([key, value]) => (
-                            <div key={key} className="flex">
-                              <span className="text-gray-500 capitalize">{key.replace('_', ' ')}:</span>
-                              <span className="ml-1 font-medium">{String(value)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
+
+                      {event.details &&
+                        Object.keys(event.details).length > 0 && (
+                          <div className="mt-2 text-sm space-y-1">
+                            {Object.entries(event.details).map(
+                              ([key, value]) => (
+                                <div key={key} className="flex">
+                                  <span className="text-gray-500 capitalize">
+                                    {key.replace('_', ' ')}:
+                                  </span>
+                                  <span className="ml-1 font-medium">
+                                    {String(value)}
+                                  </span>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        )}
+
                       {event.userName && (
                         <div className="mt-2 text-xs text-gray-500">
                           Added by: {event.userName}
@@ -174,12 +215,14 @@ const FieldHistoryTracker: React.FC<FieldHistoryTrackerProps> = ({
           </div>
         ))}
       </div>
-      
+
       {!showFullHistory && sortedDates.length > 5 && (
         <div className="px-6 py-3 bg-gray-50 text-center border-t border-gray-200">
-          <button 
+          <button
             className="text-sm font-medium text-green-600 hover:text-green-800 focus:outline-none"
-            onClick={() => {/* Implement view all functionality */}}
+            onClick={() => {
+              /* Implement view all functionality */
+            }}
           >
             View all activity
           </button>

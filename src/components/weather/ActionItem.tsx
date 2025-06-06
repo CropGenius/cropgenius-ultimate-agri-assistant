@@ -1,7 +1,6 @@
-
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Clock,
   CheckCircle,
@@ -14,8 +13,8 @@ import {
   Zap,
   LineChart,
   Sprout,
-} from "lucide-react";
-import MiniChart from "./MiniChart";
+} from 'lucide-react';
+import MiniChart from './MiniChart';
 
 interface ActionItemProps {
   action: {
@@ -41,37 +40,47 @@ interface ActionItemProps {
   onToggleComplete: (id: string) => void;
 }
 
-export default function ActionItem({ action, isCompleted, onToggleComplete }: ActionItemProps) {
+export default function ActionItem({
+  action,
+  isCompleted,
+  onToggleComplete,
+}: ActionItemProps) {
   const getActionIcon = (icon: string) => {
-    switch(icon) {
-      case "droplet": return <Droplet className="h-5 w-5" />;
-      case "shield-alert": return <ShieldAlert className="h-5 w-5" />;
-      case "tractor": return <Tractor className="h-5 w-5" />;
-      case "circle-dollar-sign": return <CircleDollarSign className="h-5 w-5" />;
-      case "x-circle": return <XCircle className="h-5 w-5" />;
-      default: return <Wheat className="h-5 w-5" />;
+    switch (icon) {
+      case 'droplet':
+        return <Droplet className="h-5 w-5" />;
+      case 'shield-alert':
+        return <ShieldAlert className="h-5 w-5" />;
+      case 'tractor':
+        return <Tractor className="h-5 w-5" />;
+      case 'circle-dollar-sign':
+        return <CircleDollarSign className="h-5 w-5" />;
+      case 'x-circle':
+        return <XCircle className="h-5 w-5" />;
+      default:
+        return <Wheat className="h-5 w-5" />;
     }
   };
 
   const getUrgencyColor = (urgency: string) => {
-    switch(urgency) {
-      case "high": return "bg-red-500 hover:bg-red-600";
-      case "medium": return "bg-amber-500 hover:bg-amber-600";
-      default: return "bg-blue-500 hover:bg-blue-600";
+    switch (urgency) {
+      case 'high':
+        return 'bg-red-500 hover:bg-red-600';
+      case 'medium':
+        return 'bg-amber-500 hover:bg-amber-600';
+      default:
+        return 'bg-blue-500 hover:bg-blue-600';
     }
   };
 
   const getUrgencyBadge = (urgency: string) => {
-    switch(urgency) {
-      case "high": return (
-        <Badge className="bg-red-500">Urgent</Badge>
-      );
-      case "medium": return (
-        <Badge className="bg-amber-500">Important</Badge>
-      );
-      default: return (
-        <Badge className="bg-blue-500">Plan Ahead</Badge>
-      );
+    switch (urgency) {
+      case 'high':
+        return <Badge className="bg-red-500">Urgent</Badge>;
+      case 'medium':
+        return <Badge className="bg-amber-500">Important</Badge>;
+      default:
+        return <Badge className="bg-blue-500">Plan Ahead</Badge>;
     }
   };
 
@@ -84,17 +93,23 @@ export default function ActionItem({ action, isCompleted, onToggleComplete }: Ac
       }`}
     >
       <div className="flex items-start space-x-3">
-        <div className={`p-2 rounded-full ${getUrgencyColor(action.urgency)} text-white`}>
+        <div
+          className={`p-2 rounded-full ${getUrgencyColor(action.urgency)} text-white`}
+        >
           {getActionIcon(action.icon)}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start">
-            <h4 className={`font-semibold ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+            <h4
+              className={`font-semibold ${isCompleted ? 'line-through text-muted-foreground' : ''}`}
+            >
               {action.title}
             </h4>
             {!isCompleted && getUrgencyBadge(action.urgency)}
           </div>
-          <p className={`text-sm mt-1 ${isCompleted ? 'text-muted-foreground' : ''}`}>
+          <p
+            className={`text-sm mt-1 ${isCompleted ? 'text-muted-foreground' : ''}`}
+          >
             {action.description}
           </p>
           <div className="flex justify-between items-center mt-2">
@@ -103,7 +118,7 @@ export default function ActionItem({ action, isCompleted, onToggleComplete }: Ac
               <span>Expires in: {action.expiresIn}</span>
             </div>
             <Button
-              variant={isCompleted ? "outline" : "ghost"}
+              variant={isCompleted ? 'outline' : 'ghost'}
               size="sm"
               className="h-7 text-xs"
               onClick={() => onToggleComplete(action.id)}
@@ -132,11 +147,14 @@ export default function ActionItem({ action, isCompleted, onToggleComplete }: Ac
             <div className="flex justify-between text-xs text-muted-foreground mb-1">
               <span className="flex items-center">
                 <LineChart className="h-3 w-3 mr-1" />
-                {action.chartData.type === 'rainfall' && 'Rainfall Forecast (mm)'}
-                {action.chartData.type === 'temperature' && 'Temperature Trend (°C)'}
+                {action.chartData.type === 'rainfall' &&
+                  'Rainfall Forecast (mm)'}
+                {action.chartData.type === 'temperature' &&
+                  'Temperature Trend (°C)'}
                 {action.chartData.type === 'humidity' && 'Humidity Levels (%)'}
                 {action.chartData.type === 'price' && 'Market Price Trend (%)'}
-                {action.chartData.type === 'harvest' && 'Crop Maturity Index (%)'}
+                {action.chartData.type === 'harvest' &&
+                  'Crop Maturity Index (%)'}
               </span>
               <span className="flex items-center">
                 <Sprout className="h-3 w-3 mr-1 text-green-500" />

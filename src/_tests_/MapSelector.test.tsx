@@ -33,7 +33,7 @@ describe('MapSelector', () => {
 
   it('renders map element', () => {
     const { container } = render(<MapSelector />);
-    
+
     // Check if map container is rendered
     const mapContainer = container.querySelector('#map');
     expect(mapContainer).toBeInTheDocument();

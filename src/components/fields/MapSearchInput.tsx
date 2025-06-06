@@ -1,5 +1,4 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, FormEvent } from 'react';
 import { Search, Loader2, MapPin, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,11 @@ import { useErrorLogging } from '@/hooks/use-error-logging';
 
 interface MapSearchInputProps {
   onSearch: (query: string) => void;
-  onLocationSelect?: (location: { lat: number; lng: number; name: string }) => void;
+  onLocationSelect?: (location: {
+    lat: number;
+    lng: number;
+    name: string;
+  }) => void;
   isSearching?: boolean;
   className?: string;
   placeholder?: string;
@@ -20,7 +23,7 @@ export default function MapSearchInput({
   isSearching = false,
   className = '',
   placeholder = 'Search for your location or village',
-  recentSearches = []
+  recentSearches = [],
 }: MapSearchInputProps) {
   const { logError } = useErrorLogging('MapSearchInput');
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,7 +34,10 @@ export default function MapSearchInput({
   // Handle clicks outside the dropdown to close it
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setShowRecent(false);
       }
     };
@@ -42,14 +48,18 @@ export default function MapSearchInput({
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       onSearch(searchTerm.trim());
     }
   };
 
-  const handleRecentSelect = (recent: { name: string; lat: number; lng: number }) => {
+  const handleRecentSelect = (recent: {
+    name: string;
+    lat: number;
+    lng: number;
+  }) => {
     if (onLocationSelect) {
       onLocationSelect(recent);
     }
@@ -85,12 +95,12 @@ export default function MapSearchInput({
           disabled={isSearching}
         />
         <MapPin className="absolute left-3 h-4 w-4 text-muted-foreground" />
-        
+
         {searchTerm && (
-          <Button 
-            type="button" 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             className="absolute right-8 h-7 w-7 p-0"
             onClick={handleClear}
           >
@@ -98,11 +108,11 @@ export default function MapSearchInput({
             <span className="sr-only">Clear</span>
           </Button>
         )}
-        
-        <Button 
-          type="submit" 
-          size="sm" 
-          variant="ghost" 
+
+        <Button
+          type="submit"
+          size="sm"
+          variant="ghost"
           className="absolute right-0 h-full px-3 text-muted-foreground hover:text-foreground"
           disabled={isSearching || !searchTerm.trim()}
         >
@@ -114,15 +124,17 @@ export default function MapSearchInput({
           <span className="sr-only">Search</span>
         </Button>
       </div>
-      
+
       {showRecent && recentSearches.length > 0 && (
-        <div 
-          ref={dropdownRef} 
+        <div
+          ref={dropdownRef}
           className="absolute z-10 mt-1 w-full bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto"
         >
-          <div className="p-1 text-xs text-muted-foreground">Recent searches</div>
+          <div className="p-1 text-xs text-muted-foreground">
+            Recent searches
+          </div>
           {recentSearches.map((recent, index) => (
-            <div 
+            <div
               key={index}
               className="p-2 hover:bg-accent cursor-pointer flex items-center gap-2 text-sm"
               onClick={() => handleRecentSelect(recent)}

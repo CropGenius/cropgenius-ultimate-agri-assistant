@@ -1,6 +1,5 @@
-
-import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -8,7 +7,7 @@ import {
   CircleDollarSign,
   Wheat,
   BarChart3,
-} from "lucide-react";
+} from 'lucide-react';
 
 interface MarketImpactProps {
   location: {
@@ -29,31 +28,35 @@ export default function MarketImpact({ location, crops }: MarketImpactProps) {
   }, [location, crops]);
 
   const generateMarketData = () => {
-    const defaultCrops = crops.length > 0 ? crops : ["Maize", "Beans", "Coffee"];
-    
+    const defaultCrops =
+      crops.length > 0 ? crops : ['Maize', 'Beans', 'Coffee'];
+
     const weatherImpacts = [
       {
-        type: "Heavy Rainfall",
+        type: 'Heavy Rainfall',
         probability: 65,
-        marketEffect: "Delayed harvests expected to cause temporary price increases",
+        marketEffect:
+          'Delayed harvests expected to cause temporary price increases',
       },
       {
-        type: "Drought Risk",
+        type: 'Drought Risk',
         probability: 20,
-        marketEffect: "Current stocks adequate, but prices may rise if drought persists",
+        marketEffect:
+          'Current stocks adequate, but prices may rise if drought persists',
       },
       {
-        type: "Optimal Conditions",
+        type: 'Optimal Conditions',
         probability: 15,
-        marketEffect: "Ideal growing conditions may lead to surplus and price decreases",
+        marketEffect:
+          'Ideal growing conditions may lead to surplus and price decreases',
       },
     ];
-    
+
     // Pick one weather impact based on weighted probability
     const rand = Math.random() * 100;
     let cumulativeProbability = 0;
     let selectedImpact;
-    
+
     for (const impact of weatherImpacts) {
       cumulativeProbability += impact.probability;
       if (rand <= cumulativeProbability) {
@@ -61,29 +64,29 @@ export default function MarketImpact({ location, crops }: MarketImpactProps) {
         break;
       }
     }
-    
-    const generatedData = defaultCrops.map(crop => {
+
+    const generatedData = defaultCrops.map((crop) => {
       // Base price change on the selected weather impact
       let priceChange;
       let trend;
-      
-      if (selectedImpact.type === "Heavy Rainfall") {
+
+      if (selectedImpact.type === 'Heavy Rainfall') {
         priceChange = 5 + Math.random() * 10;
-        trend = "up";
-      } else if (selectedImpact.type === "Drought Risk") {
+        trend = 'up';
+      } else if (selectedImpact.type === 'Drought Risk') {
         priceChange = 2 + Math.random() * 8;
-        trend = "up";
+        trend = 'up';
       } else {
         priceChange = 2 + Math.random() * 5;
-        trend = "down";
+        trend = 'down';
       }
-      
+
       // Add some variation per crop
-      if (crop === "Coffee" && selectedImpact.type === "Heavy Rainfall") {
+      if (crop === 'Coffee' && selectedImpact.type === 'Heavy Rainfall') {
         priceChange = 2 + Math.random() * 5;
-        trend = "down";
+        trend = 'down';
       }
-      
+
       return {
         crop,
         priceChange: priceChange,
@@ -92,7 +95,7 @@ export default function MarketImpact({ location, crops }: MarketImpactProps) {
         reason: `${selectedImpact.type} - ${selectedImpact.marketEffect}`,
       };
     });
-    
+
     setMarketData(generatedData);
   };
 
@@ -100,14 +103,23 @@ export default function MarketImpact({ location, crops }: MarketImpactProps) {
     <div className="space-y-4">
       {marketData.map((item, index) => (
         <div key={index} className="flex items-start space-x-3">
-          <div className={`p-2 rounded-full ${item.trend === 'up' ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300'}`}>
-            {item.trend === 'up' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+          <div
+            className={`p-2 rounded-full ${item.trend === 'up' ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300'}`}
+          >
+            {item.trend === 'up' ? (
+              <ArrowUpRight className="h-4 w-4" />
+            ) : (
+              <ArrowDownRight className="h-4 w-4" />
+            )}
           </div>
           <div className="flex-1">
             <div className="flex justify-between items-center">
               <h4 className="font-medium">{item.crop}</h4>
-              <Badge className={item.trend === 'up' ? 'bg-green-500' : 'bg-red-500'}>
-                {item.trend === 'up' ? '+' : '-'}{item.priceChange.toFixed(1)}%
+              <Badge
+                className={item.trend === 'up' ? 'bg-green-500' : 'bg-red-500'}
+              >
+                {item.trend === 'up' ? '+' : '-'}
+                {item.priceChange.toFixed(1)}%
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">{item.reason}</p>
@@ -118,14 +130,16 @@ export default function MarketImpact({ location, crops }: MarketImpactProps) {
           </div>
         </div>
       ))}
-      
+
       <div className="pt-3 mt-3 border-t">
         <div className="flex justify-between items-center text-sm">
           <div className="flex items-center gap-1 text-muted-foreground">
             <BarChart3 className="h-4 w-4" />
             <span>AI Market Analysis</span>
           </div>
-          <Badge variant="outline" className="text-xs">Updated 2h ago</Badge>
+          <Badge variant="outline" className="text-xs">
+            Updated 2h ago
+          </Badge>
         </div>
       </div>
     </div>

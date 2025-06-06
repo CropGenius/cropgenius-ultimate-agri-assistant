@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, FC } from 'react';
 import { Globe, Check } from 'lucide-react';
 
 type Language = {
@@ -21,7 +21,7 @@ interface LanguageSelectorProps {
   value?: string;
 }
 
-const LanguageSelector: React.FC<LanguageSelectorProps> = ({
+const LanguageSelector: FC<LanguageSelectorProps> = ({
   className = '',
   onChange,
   value = 'en',
@@ -37,7 +37,8 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     setIsOpen(false);
   };
 
-  const selectedLang = languages.find((lang) => lang.code === selectedLanguage) || languages[0];
+  const selectedLang =
+    languages.find((lang) => lang.code === selectedLanguage) || languages[0];
 
   return (
     <div className={`relative ${className}`}>
@@ -91,7 +92,9 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               >
                 <div className="flex items-center">
                   <span className="mr-2 text-lg">{language.flag}</span>
-                  <span className="block font-normal truncate">{language.name}</span>
+                  <span className="block font-normal truncate">
+                    {language.name}
+                  </span>
                 </div>
                 {selectedLanguage === language.code && (
                   <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-green-600">

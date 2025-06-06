@@ -1,6 +1,5 @@
-
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 /**
  * A utility function to conditionally join tailwind classes

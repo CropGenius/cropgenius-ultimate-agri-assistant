@@ -1,5 +1,5 @@
-
-import { Coordinates, Boundary, Field, Farm } from "@/types/field";
+import { ReactNode } from 'react';
+import { Coordinates, Boundary, Field, Farm } from '@/types/field';
 
 export interface FieldFormProps {
   onSuccess?: (field: Field) => void;
@@ -48,7 +48,7 @@ export interface SmartFieldRecommenderProps {
 }
 
 export interface ProEligibilityCheckProps {
-  children: React.ReactNode;
+  children: ReactNode;
   featureType?: string;
   triggerType?: 'weather' | 'scan' | 'predict' | 'market' | 'plan';
   forceShow?: boolean;

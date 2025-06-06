@@ -10,7 +10,11 @@ vi.mock('../pages/AuthPage', () => ({
     <div data-testid="auth-page">
       <h2>Login</h2>
       <input data-testid="email-input" placeholder="Email" />
-      <input data-testid="password-input" type="password" placeholder="Password" />
+      <input
+        data-testid="password-input"
+        type="password"
+        placeholder="Password"
+      />
       <button data-testid="login-button">Sign In</button>
     </div>
   ),
@@ -23,7 +27,7 @@ describe('AuthPage', () => {
         <AuthPage />
       </Router>
     );
-    
+
     expect(screen.getByTestId('auth-page')).toBeInTheDocument();
     expect(screen.getByTestId('email-input')).toBeInTheDocument();
     expect(screen.getByTestId('password-input')).toBeInTheDocument();

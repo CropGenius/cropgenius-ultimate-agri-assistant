@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC } from 'react';
 
 interface FieldSelectCallbackProps {
   onFieldSelect: (fieldId: string) => void;
@@ -6,7 +6,7 @@ interface FieldSelectCallbackProps {
   className?: string;
 }
 
-const FieldSelectCallback: React.FC<FieldSelectCallbackProps> = ({
+const FieldSelectCallback: FC<FieldSelectCallbackProps> = ({
   onFieldSelect,
   fields = [],
   className = '',
@@ -18,7 +18,7 @@ const FieldSelectCallback: React.FC<FieldSelectCallbackProps> = ({
   return (
     <div className={`bg-white rounded-lg shadow-sm p-4 ${className}`}>
       <h3 className="text-lg font-medium text-gray-900 mb-4">Select a Field</h3>
-      
+
       {fields.length > 0 ? (
         <div className="space-y-2">
           {fields.map((field) => (
@@ -44,7 +44,7 @@ const FieldSelectCallback: React.FC<FieldSelectCallbackProps> = ({
           </button>
         </div>
       )}
-      
+
       <div className="mt-4 pt-4 border-t border-gray-100">
         <button
           onClick={() => handleSelect('new')}

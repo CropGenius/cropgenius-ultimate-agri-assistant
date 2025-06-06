@@ -1,25 +1,49 @@
 // src/components/FarmPlanner.tsx
 
-import React, { useState, useCallback } from 'react';
-import { useAIAgentHub } from '../hooks/useAIAgentHub';
-import { FarmPlanInput, FarmPlanOutput, FarmTask } from '../agents/AIFarmPlanAgent';
+import { useState, FC } from 'react';
+import { useFarmPlanAgent } from '../hooks/agents/useFarmPlanAgent';
+import { useWeatherAgent } from '../hooks/agents/useWeatherAgent';
+import { useSmartMarketAgent } from '../hooks/agents/useSmartMarketAgent';
+import { FarmPlanInput, FarmPlanOutput } from '../agents/AIFarmPlanAgent';
+import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Label } from './ui/label';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Loader2, WifiOff } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { useFarm } from '../hooks/useFarm';
+import { toast } from 'sonner';
+import diagnostics from '../utils/diagnosticService';
+import { FarmPlanErrorBoundary } from './ErrorBoundary';
+import { useOfflineStatus } from '../hooks/useOfflineStatus';
 
-const FarmPlanner: React.FC = () => {
+const FarmPlanner: FC = () => {
+  // Get weather and market data to provide context for farm planning
+  const weather = useWeatherAgent();
+  const market = useSmartMarketAgent();
+  
+  // Create weather and market context for the farm plan agent
+  const weatherContext = weather.currentWeather ? 
+    { current: weather.currentWeather, forecast: weather.weatherForecast?.list || null } : undefined;
+  const marketContext = market.marketData ? 
+    { relevantListings: market.marketData.listings } : undefined;
+
+  // Use the farm plan agent directly with context
   const {
     getFarmPlan,
     saveFarmPlan,
     farmPlan,
-    isLoadingFarmPlan,
-    farmPlanError,
-    // Assuming useAuth is integrated into useAIAgentHub and provides user/farmId implicitly or through context
-    // If not, we'd need to get user and currentFarmId from useAuth here
-  } = useAIAgentHub();
+    isLoading: isLoadingFarmPlan,
+    error: farmPlanError,
+  } = useFarmPlanAgent({ weatherContext, marketContext });
 
   const [cropTypesInput, setCropTypesInput] = useState<string>(''); // Comma-separated
   const [currentSeasonInput, setCurrentSeasonInput] = useState<string>('');
   const [userGoalsInput, setUserGoalsInput] = useState<string>('');
   const [generatedPlanInput, setGeneratedPlanInput] = useState<FarmPlanInput | null>(null);
 
+  const isOffline = useOfflineStatus();
 
   const handleGeneratePlan = async () => {
     const crops = cropTypesInput.split(',').map(crop => crop.trim()).filter(crop => crop.length > 0);
@@ -40,8 +64,7 @@ const FarmPlanner: React.FC = () => {
     };
 
     try {
-      // The hook's getFarmPlan will inject userId, farmId, weather, and market context
-      // and now returns an object { plan: FarmPlanOutput, inputUsed: FarmPlanInput }
+      // The hook will inject userId, farmId, and our provided weather and market context
       const result = await getFarmPlan(inputForAgent);
       if (result && result.plan) {
         setGeneratedPlanInput(result.inputUsed); // Store the exact input used by the agent
@@ -62,8 +85,7 @@ const FarmPlanner: React.FC = () => {
     }
 
     try {
-      // generatedPlanInput now holds the exact input (including userId, farmId, weather/market context)
-      // that was constructed by the hook and used by the agent.
+      // generatedPlanInput holds the full context with userId and farmId from the hook
       await saveFarmPlan(farmPlan, generatedPlanInput);
       alert('Farm plan and tasks saved successfully!');
       // Optionally, clear the plan or redirect after saving
@@ -77,113 +99,131 @@ const FarmPlanner: React.FC = () => {
     }
   };
 
+  // Render offline fallback UI if the user is offline
+  if (isOffline) {
+    return (
+      <Card className="border-yellow-500">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <WifiOff className="h-5 w-5 text-yellow-500" />
+            Offline Mode
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4">You're currently offline. Farm planning requires an internet connection to generate AI-powered plans.</p>
+          <p className="text-sm text-muted-foreground">Previous plans are still available for viewing in your saved plans section.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h2>AI Farm Planner</h2>
-      
-      <div style={{ marginBottom: '20px' }}>
-        <div>
-          <label htmlFor="cropTypes" style={{ marginRight: '10px' }}>Crop Types (comma-separated):</label>
-          <input 
-            type="text" 
-            id="cropTypes" 
-            value={cropTypesInput} 
-            onChange={(e) => setCropTypesInput(e.target.value)} 
-            placeholder="e.g., Maize, Beans, Tomato"
-            style={{ width: '300px', padding: '8px' }}
-          />
+    <FarmPlanErrorBoundary>
+      <div className="space-y-6">
+        <h2>AI Farm Planner</h2>
+        
+        <div className="mb-4">
+          <div>
+            <Label htmlFor="cropTypes" className="mr-2">Crop Types (comma-separated):</Label>
+            <Input 
+              type="text" 
+              id="cropTypes" 
+              value={cropTypesInput} 
+              onChange={(e) => setCropTypesInput(e.target.value)} 
+              placeholder="e.g., Maize, Beans, Tomato"
+              className="w-full md:w-80"
+            />
         </div>
-        <div style={{ marginTop: '10px' }}>
-          <label htmlFor="currentSeason" style={{ marginRight: '10px' }}>Current Season:</label>
-          <input 
+        <div className="mt-4">
+          <Label htmlFor="currentSeason" className="mr-2">Current Season:</Label>
+          <Input 
             type="text" 
             id="currentSeason" 
             value={currentSeasonInput} 
             onChange={(e) => setCurrentSeasonInput(e.target.value)} 
             placeholder="e.g., Long Rains 2024"
-            style={{ width: '300px', padding: '8px' }}
+            className="w-full md:w-80"
           />
         </div>
-        <div style={{ marginTop: '10px' }}>
-          <label htmlFor="userGoals" style={{ display: 'block', marginBottom: '5px' }}>User Goals (one per line):</label>
-          <textarea 
+        <div className="mt-4">
+          <Label htmlFor="userGoals" className="block mb-2">User Goals (one per line):</Label>
+          <Textarea 
             id="userGoals" 
             value={userGoalsInput} 
             onChange={(e) => setUserGoalsInput(e.target.value)} 
             placeholder="e.g., Maximize yield\nImprove soil health"
             rows={3}
-            style={{ width: '300px', padding: '8px' }}
+            className="w-full md:w-80"
           />
         </div>
-        <button 
+        <Button 
           onClick={handleGeneratePlan} 
           disabled={isLoadingFarmPlan}
-          style={{ marginTop: '15px', padding: '10px 15px', fontSize: '16px', cursor: 'pointer' }}
+          className="mt-6"
         >
+          {isLoadingFarmPlan && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isLoadingFarmPlan ? 'Generating Plan...' : 'Generate Farm Plan'}
-        </button>
+        </Button>
       </div>
 
       {farmPlanError && (
-        <div style={{ color: 'red', marginBottom: '20px' }}>
-          <p>Error generating farm plan: {farmPlanError.message}</p>
-        </div>
+        <Card className="border-red-500 mb-6">
+          <CardContent className="pt-6">
+            <p className="text-red-500">Error generating farm plan: {farmPlanError.message}</p>
+          </CardContent>
+        </Card>
       )}
 
       {farmPlan && (
-        <div style={{ marginTop: '30px', border: '1px solid #ccc', padding: '15px' }}>
-          <h3>Generated Farm Plan</h3>
-          <p><strong>Summary:</strong> {farmPlan.planSummary}</p>
-
-          {farmPlan.suggestedPlantingDates && Object.keys(farmPlan.suggestedPlantingDates).length > 0 && (
-            <div style={{ marginTop: '15px' }}>
-              <h4>Suggested Planting Dates:</h4>
-              <ul>
-                {Object.entries(farmPlan.suggestedPlantingDates).map(([crop, date]) => (
-                  <li key={crop}>{crop}: {new Date(date).toLocaleDateString()}</li>
-                ))}
-              </ul>
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Generated Farm Plan</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <h4 className="font-semibold mb-2">Summary:</h4>
+              <p>{farmPlan.planSummary}</p>
             </div>
+
+            {farmPlan.suggestedPlantingDates && Object.keys(farmPlan.suggestedPlantingDates).length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2">Suggested Planting Dates:</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                  {Object.entries(farmPlan.suggestedPlantingDates).map(([crop, date]) => (
+                    <li key={crop}>{crop}: {new Date(date).toLocaleDateString()}</li>
+                  ))}
+                </ul>
+              </div>
           )}
 
-          {farmPlan.resourceWarnings && farmPlan.resourceWarnings.length > 0 && (
-            <div style={{ marginTop: '15px' }}>
-              <h4>Resource Warnings:</h4>
-              <ul>
-                {farmPlan.resourceWarnings.map((warning, index) => (
-                  <li key={index}>{warning}</li>
-                ))}
-              </ul>
-            </div>
+            {farmPlan.resourceWarnings && farmPlan.resourceWarnings.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2 text-amber-600">Resource Warnings:</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                  {farmPlan.resourceWarnings.map((warning, index) => (
+                    <li key={index} className="text-amber-700">{warning}</li>
+                  ))}
+                </ul>
+              </div>
           )}
           
           <div style={{ marginTop: '15px' }}>
             <h4>Tasks:</h4>
             {farmPlan.tasks.length > 0 ? (
-              <ul style={{ listStyleType: 'none', paddingLeft: 0 }}>
-                {farmPlan.tasks.map((task, index) => (
-                  <li key={task.id || index} style={{ borderBottom: '1px solid #eee', padding: '8px 0' }}>
-                    <strong>{task.title}</strong> ({task.priority}, {task.category})
-                    <p style={{ margin: '5px 0 0 0', fontSize: '0.9em' }}>{task.description}</p>
-                    {task.dueDate && <p style={{ margin: '5px 0 0 0', fontSize: '0.8em' }}>Due: {new Date(task.dueDate).toLocaleDateString()}</p>}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No tasks generated for this plan.</p>
-            )}
           </div>
 
-          <button 
-            onClick={handleSavePlan} 
-            // disabled={!generatedPlanInput} // Or some other condition to ensure plan is ready to be saved
-            style={{ marginTop: '20px', padding: '10px 15px', fontSize: '16px', cursor: 'pointer', backgroundColor: '#28a745', color: 'white' }}
-          >
-            Save Plan and Tasks
-          </button>
-        </div>
+          <CardFooter>
+            <Button 
+              onClick={handleSavePlan} 
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Save Plan and Tasks
+            </Button>
+          </CardFooter>
+        </Card>
       )}
-    </div>
+      </div>
+    </FarmPlanErrorBoundary>
   );
 };
 

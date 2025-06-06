@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC } from 'react';
 
 interface Field {
   id: string;
@@ -14,7 +14,7 @@ interface FieldDashboardProps {
   className?: string;
 }
 
-const FieldDashboard: React.FC<FieldDashboardProps> = ({
+const FieldDashboard: FC<FieldDashboardProps> = ({
   fields,
   onFieldSelect,
   className = '',
@@ -28,10 +28,12 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({
   return (
     <div className={`bg-white shadow rounded-lg p-6 ${className}`}>
       <h2 className="text-2xl font-bold text-gray-800 mb-6">My Fields</h2>
-      
+
       {fields.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-gray-500">No fields found. Add your first field to get started.</p>
+          <p className="text-gray-500">
+            No fields found. Add your first field to get started.
+          </p>
           <button
             className="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
             onClick={() => handleFieldClick('new')}
@@ -48,9 +50,13 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({
               onClick={() => handleFieldClick(field.id)}
               data-testid={`field-${field.id}`}
             >
-              <h3 className="text-lg font-semibold text-gray-800">{field.name}</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                {field.name}
+              </h3>
               {field.cropType && (
-                <p className="text-sm text-gray-600 mt-1">Crop: {field.cropType}</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Crop: {field.cropType}
+                </p>
               )}
               {field.area && (
                 <p className="text-sm text-gray-600">Area: {field.area} ha</p>
@@ -62,8 +68,8 @@ const FieldDashboard: React.FC<FieldDashboardProps> = ({
               )}
             </div>
           ))}
-          
-          <div 
+
+          <div
             className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center cursor-pointer hover:bg-gray-50"
             onClick={() => handleFieldClick('new')}
           >

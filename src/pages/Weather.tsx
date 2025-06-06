@@ -1,7 +1,6 @@
-
-import { useEffect, useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Bell,
   Cloud,
@@ -17,24 +16,35 @@ import {
   ArrowRight,
   RefreshCw,
   MapPin,
-} from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import LiveWeatherPanel from "@/components/weather/LiveWeatherPanel";
-import ForecastPanel from "@/components/weather/ForecastPanel";
-import DisasterAlerts from "@/components/weather/DisasterAlerts";
-import SeasonalPredictions from "@/components/weather/SeasonalPredictions";
-import MarketImpact from "@/components/weather/MarketImpact";
-import FarmActionsList from "@/components/weather/FarmActionsList";
-import Layout from "@/components/Layout";
+} from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import LiveWeatherPanel from '@/components/weather/LiveWeatherPanel';
+import ForecastPanel from '@/components/weather/ForecastPanel';
+import DisasterAlerts from '@/components/weather/DisasterAlerts';
+import SeasonalPredictions from '@/components/weather/SeasonalPredictions';
+import MarketImpact from '@/components/weather/MarketImpact';
+import FarmActionsList from '@/components/weather/FarmActionsList';
+import Layout from '@/components/Layout';
 
 export default function Weather() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [location, setLocation] = useState({ lat: -0.42, lng: 36.95, name: "Nyeri, Kenya" });
+  const [location, setLocation] = useState({
+    lat: -0.42,
+    lng: 36.95,
+    name: 'Nyeri, Kenya',
+  });
   const [user, setUser] = useState<any>(null);
   const [farmData, setFarmData] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,15 +56,17 @@ export default function Weather() {
   }, []);
 
   const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (user) {
       setUser(user);
       // In a real app, we would fetch the user's farm data from Supabase
       setFarmData({
-        crops: ["Maize", "Beans", "Coffee"],
+        crops: ['Maize', 'Beans', 'Coffee'],
         size: 2.5,
-        soilType: "Clay Loam",
-        irrigationSystem: "Drip",
+        soilType: 'Clay Loam',
+        irrigationSystem: 'Drip',
       });
     }
   };
@@ -66,13 +78,13 @@ export default function Weather() {
           setLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
-            name: "Your Farm",
+            name: 'Your Farm',
           });
         },
         () => {
           toast({
-            variant: "destructive",
-            description: "Unable to access location. Using default location.",
+            variant: 'destructive',
+            description: 'Unable to access location. Using default location.',
           });
         }
       );
@@ -85,7 +97,7 @@ export default function Weather() {
     setTimeout(() => {
       setRefreshing(false);
       toast({
-        description: "Weather data updated with latest AI predictions",
+        description: 'Weather data updated with latest AI predictions',
       });
     }, 1500);
   };
@@ -96,8 +108,12 @@ export default function Weather() {
         <div className="w-full h-[80vh] flex items-center justify-center">
           <div className="text-center">
             <RefreshCw className="h-12 w-12 animate-spin text-primary mx-auto" />
-            <h2 className="mt-4 text-2xl font-semibold">Loading AI Weather Intelligence</h2>
-            <p className="text-muted-foreground">Analyzing hyperlocal conditions for your farm...</p>
+            <h2 className="mt-4 text-2xl font-semibold">
+              Loading AI Weather Intelligence
+            </h2>
+            <p className="text-muted-foreground">
+              Analyzing hyperlocal conditions for your farm...
+            </p>
           </div>
         </div>
       </Layout>
@@ -109,20 +125,30 @@ export default function Weather() {
       <div className="container py-6 space-y-8 max-w-7xl">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">AI Weather Intelligence</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              AI Weather Intelligence
+            </h1>
             <p className="text-muted-foreground mt-1">
-              Hyperlocal AI-powered weather intelligence for optimized farming decisions
+              Hyperlocal AI-powered weather intelligence for optimized farming
+              decisions
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="flex items-center gap-1 py-1.5">
               <MapPin className="h-3.5 w-3.5" />
               {location.name}
             </Badge>
-            <Button size="sm" onClick={refreshData} disabled={refreshing} className="gap-1">
-              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-              {refreshing ? "Updating..." : "Refresh"}
+            <Button
+              size="sm"
+              onClick={refreshData}
+              disabled={refreshing}
+              className="gap-1"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`}
+              />
+              {refreshing ? 'Updating...' : 'Refresh'}
             </Button>
           </div>
         </header>
@@ -142,14 +168,20 @@ export default function Weather() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between">
                   <span>AI Farm Action Recommendations</span>
-                  <Badge className="bg-amber-500 hover:bg-amber-600">Priority Actions</Badge>
+                  <Badge className="bg-amber-500 hover:bg-amber-600">
+                    Priority Actions
+                  </Badge>
                 </CardTitle>
                 <CardDescription>
-                  These AI-powered recommendations are based on current and forecasted weather conditions
+                  These AI-powered recommendations are based on current and
+                  forecasted weather conditions
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <FarmActionsList location={location} crops={farmData?.crops || []} />
+                <FarmActionsList
+                  location={location}
+                  crops={farmData?.crops || []}
+                />
               </CardContent>
             </Card>
           </div>
@@ -161,11 +193,15 @@ export default function Weather() {
                   <span>Market Weather Impact</span>
                 </CardTitle>
                 <CardDescription>
-                  AI-predicted price fluctuations based on regional weather patterns
+                  AI-predicted price fluctuations based on regional weather
+                  patterns
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <MarketImpact location={location} crops={farmData?.crops || []} />
+                <MarketImpact
+                  location={location}
+                  crops={farmData?.crops || []}
+                />
               </CardContent>
             </Card>
           </div>
@@ -182,14 +218,18 @@ export default function Weather() {
             <ForecastPanel location={location} />
           </TabsContent>
           <TabsContent value="seasonal" className="mt-4">
-            <SeasonalPredictions location={location} crops={farmData?.crops || []} />
+            <SeasonalPredictions
+              location={location}
+              crops={farmData?.crops || []}
+            />
           </TabsContent>
           <TabsContent value="rain" className="mt-4">
             <Card>
               <CardHeader>
                 <CardTitle>Rainfall Analysis & Predictions</CardTitle>
                 <CardDescription>
-                  AI-powered rainfall pattern analysis for optimal farming decisions
+                  AI-powered rainfall pattern analysis for optimal farming
+                  decisions
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-96 flex items-center justify-center">

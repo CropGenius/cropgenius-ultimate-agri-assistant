@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, FC } from 'react';
 import { WifiOff, Wifi, X } from 'lucide-react';
 
-const OfflineModeBanner: React.FC = () => {
+const OfflineModeBanner: FC = () => {
   const [isOnline, setIsOnline] = useState(true);
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -25,7 +25,7 @@ const OfflineModeBanner: React.FC = () => {
 
     // Set initial state
     setIsOnline(navigator.onLine);
-    
+
     // Add event listeners
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -48,16 +48,16 @@ const OfflineModeBanner: React.FC = () => {
   }
 
   return (
-    <div 
+    <div
       className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 ${
         isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
       }`}
       data-testid="offline-banner"
     >
-      <div 
+      <div
         className={`flex items-center px-4 py-3 rounded-lg shadow-lg ${
-          isOnline 
-            ? 'bg-green-50 border border-green-200 text-green-800' 
+          isOnline
+            ? 'bg-green-50 border border-green-200 text-green-800'
             : 'bg-yellow-50 border border-yellow-200 text-yellow-800'
         }`}
       >
@@ -70,8 +70,8 @@ const OfflineModeBanner: React.FC = () => {
         </div>
         <div className="ml-3">
           <p className="text-sm font-medium">
-            {isOnline 
-              ? 'Back online! Your changes will be synced.' 
+            {isOnline
+              ? 'Back online! Your changes will be synced.'
               : 'You are currently offline. Some features may be limited.'}
           </p>
         </div>

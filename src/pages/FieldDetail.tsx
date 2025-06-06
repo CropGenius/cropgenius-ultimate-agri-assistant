@@ -1,23 +1,37 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { supabase } from "@/integrations/supabase/client";
 import { Field, FieldCrop, FieldHistory } from "@/types/field";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { getFieldById, deleteField } from "@/services/fieldService";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Loader2, MapPin, Trash2, Edit, ArrowLeft, Calendar, Droplets, Tractor, Leaf, History, Check, AlertCircle, RefreshCw, Zap } from "lucide-react";
+import { Loader2, MapPin, Trash2, Edit, ArrowLeft, Calendar, Droplets, Tractor, Leaf, History, Check, AlertCircle, RefreshCw, Zap, Camera, Upload, BarChart, WifiOff, ScanLine, BarChart3 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import FieldMap from "@/components/fields/FieldMap";
 import { analyzeField, getFieldRecommendations, checkFieldRisks } from "@/services/fieldAIService";
+import { useCropScanAgent } from "@/hooks/agents/useCropScanAgent";
+import { useYieldPredictorAgent } from "@/hooks/agents/useYieldPredictorAgent";
+import { FieldDetailErrorBoundary, CropScanErrorBoundary, YieldPredictionErrorBoundary } from "@/components/ErrorBoundary";
+import { useOfflineStatus } from "@/hooks/useOfflineStatus";
+import { Input } from "@/components/ui/input";
+import diagnostics from "@/utils/diagnosticService";
+import { useFarm } from "@/hooks/useFarm";
 
 const FieldDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const isOffline = useOfflineStatus();
+  const { selectedFarm } = useFarm();
+  
+  // Field data state
   const [field, setField] = useState<Field | null>(null);
   const [crops, setCrops] = useState<FieldCrop[]>([]);
   const [history, setHistory] = useState<FieldHistory[]>([]);
@@ -30,11 +44,120 @@ const FieldDetail = () => {
   const [risks, setRisks] = useState<any>({ hasRisks: false, risks: [] });
   const [loadingRisks, setLoadingRisks] = useState(false);
 
+  // Crop scan state
+  const [cropScanImage, setCropScanImage] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Use specialized agent hooks directly
+  const {
+    performCropScan,
+    scanResult,
+    isLoading: isCropScanLoading,
+    error: cropScanError,
+    recentScans
+  } = useCropScanAgent();
+  
+  const {
+    predictYield,
+    prediction: yieldPrediction,
+    isLoading: isYieldPredictionLoading,
+    error: yieldPredictionError,
+    saveYieldPrediction
+  } = useYieldPredictorAgent();
+
   useEffect(() => {
     if (id) {
       loadField();
     }
   }, [id]);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setCropScanImage(event.target.files[0]);
+    }
+  };
+
+  const handlePerformCropScan = async () => {
+    if (!cropScanImage || !field) {
+      toast.error("Please select an image and ensure field data is loaded.");
+      return;
+    }
+    if (isOffline) {
+      toast.info("Crop scan requires an internet connection.");
+      return;
+    }
+    try {
+      // Get the active crop if available for metadata
+      const activeCrop = crops.find(crop => crop.status === 'active');
+      
+      // CropScanInput only requires imageFile and fieldId; cropType is not an expected property
+      const result = await performCropScan({
+        imageFile: cropScanImage,
+        fieldId: field.id,
+        // The hook will automatically add userId and farmId from context
+      });
+      
+      if (result) {
+        toast.success("Crop scan successful!");
+        // The scanResult state is updated within the hook
+      } else {
+        toast.error("Crop scan failed. Please check logs.");
+      }
+    } catch (err) {
+      diagnostics.logError(err instanceof Error ? err : new Error('Crop scan UI error'), {
+        source: 'FieldDetail.handlePerformCropScan',
+        context: { fieldId: field.id }
+      });
+      toast.error("An error occurred during crop scan.");
+    }
+  };
+
+  const handlePredictYield = async () => {
+    if (!field) {
+      toast.error("Field data not loaded.");
+      return;
+    }
+    if (isOffline) {
+      toast.info("Yield prediction requires an internet connection.");
+      return;
+    }
+    try {
+      // Get the active crop if available for better crop type and planting date information
+      const activeCrop = crops.find(crop => crop.status === 'active');
+      const cropType = activeCrop?.crop_name || 'unknown';
+      // Convert string date to Date object as required by YieldPredictionInput
+      const plantingDate = activeCrop?.planting_date 
+        ? new Date(activeCrop.planting_date) 
+        : new Date();
+      
+      // YieldPredictionInput requires weatherData property
+      const result = await predictYield({
+        fieldId: field.id,
+        cropType: cropType,
+        plantingDate: plantingDate,
+        // Add required weatherData (empty but meeting the type requirements)
+        weatherData: {
+          current: null,
+          forecast: null
+        },
+        // Optional soil data from field.soil_type if available
+        soilData: field.soil_type ? { ph: undefined } : null
+      });
+      
+      if (result) {
+        toast.success("Yield prediction generated!");
+        // The yieldPrediction state is updated within the hook
+      } else {
+        toast.error("Yield prediction failed. Please check logs.");
+      }
+    } catch (err) {
+      diagnostics.logError(err instanceof Error ? err : new Error('Yield prediction UI error'), {
+        source: 'FieldDetail.handlePredictYield',
+        context: { fieldId: field.id }
+      });
+      toast.error("An error occurred during yield prediction.");
+    }
+  };
 
   const loadAIInsights = async (fieldId: string) => {
     setLoadingInsights(true);
@@ -373,8 +496,30 @@ const FieldDetail = () => {
     </Card>
   );
 
+  if (isOffline) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-6 flex flex-col items-center justify-center h-[calc(100vh-150px)]">
+          <Card className="w-full max-w-md border-yellow-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <WifiOff className="h-6 w-6 text-yellow-500" />
+                You are Offline
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>This page requires an internet connection to load field details and perform AI analyses. Please check your connection and try again.</p>
+              <p className="text-sm text-muted-foreground mt-2">Some cached data might be displayed if available.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
-    <Layout>
+    <FieldDetailErrorBoundary>
+      <Layout>
       <div className="container mx-auto px-4 py-6">
         <div className="mb-4">
           <Button 
@@ -397,95 +542,143 @@ const FieldDetail = () => {
           <div className="space-y-6">
             {renderFieldDetailsSection()}
             {renderAIInsightsSection()}
-            
-            <Tabs defaultValue="crops" className="mt-6">
-              <TabsList>
-                <TabsTrigger value="crops">Crops</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="crops" className="mt-4">
-                <Card>
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle className="text-lg">Field Crops</CardTitle>
-                      <Button size="sm" asChild>
-                        <a href={`/fields/${field?.id}/crops/add`}>
-                          <Leaf className="h-4 w-4 mr-1" />
-                          Add Crop
-                        </a>
-                      </Button>
+
+            {/* Crop Scan Analysis Section */}
+            <CropScanErrorBoundary>
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ScanLine className="h-5 w-5 text-primary" />
+                    Crop Scan Analysis
+                  </CardTitle>
+                  <CardDescription>
+                    Upload an image of your crops for AI-powered health and issue detection.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="cropImage">Upload Crop Image</Label>
+                      <Input id="cropImage" type="file" accept="image/*" onChange={handleImageChange} className="mt-1" ref={fileInputRef} />
+                      {cropScanImage && <p className="text-sm text-muted-foreground mt-1">Selected: {cropScanImage.name}</p>}
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    {crops.length > 0 ? (
-                      <div className="space-y-4">
-                        {crops.map(crop => (
-                          <div key={crop.id} className="border rounded-md p-4">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h3 className="font-medium flex items-center gap-2">
-                                  <Leaf className="h-4 w-4 text-green-500" />
-                                  {crop.crop_name}
-                                  {crop.variety && (
-                                    <Badge variant="outline" className="ml-2">
-                                      {crop.variety}
-                                    </Badge>
-                                  )}
-                                </h3>
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  Status: {crop.status.charAt(0).toUpperCase() + crop.status.slice(1)}
-                                </div>
-                              </div>
-                              <Badge 
-                                variant={
-                                  crop.status === 'active' ? 'default' : 
-                                  crop.status === 'harvested' ? 'outline' : 'secondary'
-                                }
-                              >
-                                {crop.status}
-                              </Badge>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
-                              <div className="text-muted-foreground">Planted:</div>
-                              <div>{crop.planting_date ? new Date(crop.planting_date).toLocaleDateString() : "Not recorded"}</div>
-                              
-                              <div className="text-muted-foreground">Harvest:</div>
-                              <div>{crop.harvest_date ? new Date(crop.harvest_date).toLocaleDateString() : "Not harvested"}</div>
-                              
-                              {crop.yield_amount && (
-                                <>
-                                  <div className="text-muted-foreground">Yield:</div>
-                                  <div>{crop.yield_amount} {crop.yield_unit}</div>
-                                </>
-                              )}
-                            </div>
-                            
-                            {crop.notes && (
-                              <div className="mt-3 text-sm">
-                                <div className="text-muted-foreground">Notes:</div>
-                                <div className="mt-1">{crop.notes}</div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Leaf className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                        <h3 className="text-lg font-medium mb-1">No Crops Added Yet</h3>
-                        <p className="mb-4">Start tracking your crops to get insights and recommendations</p>
-                        <Button asChild>
-                          <a href={`/fields/${field?.id}/crops/add`}>
-                            Add Your First Crop
-                          </a>
-                        </Button>
+                    <Button onClick={handlePerformCropScan} disabled={isCropScanLoading || !cropScanImage || isOffline} className="w-full">
+                      {isCropScanLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ScanLine className="h-4 w-4 mr-2" />}
+                      Perform Crop Scan
+                    </Button>
+                    {cropScanError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Scan Error</AlertTitle>
+                        <AlertDescription>{cropScanError.message || "An unknown error occurred during crop scan."}</AlertDescription>
+                      </Alert>
+                    )}
+                    {scanResult && (
+                      <div className="mt-4 p-4 border rounded-md bg-muted/30">
+                        <h4 className="font-medium mb-2">Scan Result:</h4>
+                        <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(scanResult, null, 2)}</pre>
+                        {/* TODO: Enhance display of scanResult object */}
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                    {recentScans && recentScans.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-medium mb-2">Recent Scans:</h4>
+                        <ul className="space-y-2">
+                          {recentScans.slice(0,3).map(scan => (
+                            <li key={scan.id} className="text-xs p-2 border rounded-md">
+                              <div className="font-medium">
+                                {new Date(scan.scan_date).toLocaleDateString()} - {scan.health_status}
+                              </div>
+                              {scan.analysis_summary && (
+                                <div className="mt-1 text-muted-foreground truncate">
+                                  {scan.analysis_summary}
+                                </div>
+                              )}
+                              {scan.health_score !== undefined && (
+                                <div className="mt-1">
+                                  <div className="flex justify-between text-xs mb-1">
+                                    <span>Health Score:</span>
+                                    <span className="font-medium">{scan.health_score.toFixed(0)}%</span>
+                                  </div>
+                                  <Progress value={scan.health_score} className="h-1.5" />
+                                </div>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </CropScanErrorBoundary>
+
+            {/* Yield Prediction Section */}
+            <YieldPredictionErrorBoundary>
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                    Yield Prediction
+                  </CardTitle>
+                  <CardDescription>
+                    Get AI-powered yield estimates based on field data and conditions.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Button onClick={handlePredictYield} disabled={isYieldPredictionLoading || !field || isOffline} className="w-full">
+                      {isYieldPredictionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <BarChart3 className="h-4 w-4 mr-2" />}
+                      Predict Yield
+                    </Button>
+                    {yieldPredictionError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Prediction Error</AlertTitle>
+                        <AlertDescription>{yieldPredictionError.message || "An unknown error occurred during yield prediction."}</AlertDescription>
+                      </Alert>
+                    )}
+                    {yieldPrediction && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Predicted Yield:</span>
+                          <span className="font-semibold">{yieldPrediction.predictedYieldKgPerHa.toFixed(2)} kg/ha</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm font-medium">Confidence:</span>
+                          <span className="font-semibold">{(yieldPrediction.confidenceScore * 100).toFixed(0)}%</span>
+                        </div>
+                        <div className="flex flex-col space-y-1">
+                          <span className="text-sm font-medium">Key Factors:</span>
+                          <div className="text-sm space-y-1">
+                            <div>🌦️ Weather: {yieldPrediction.keyFactors.weatherImpact}</div>
+                            <div>🌱 Soil: {yieldPrediction.keyFactors.soilImpact}</div>
+                            <div>🌿 Health: {yieldPrediction.keyFactors.healthImpact}</div>
+                            <div>👨‍🌾 Management: {yieldPrediction.keyFactors.managementImpact}</div>
+                          </div>
+                        </div>
+                        {yieldPrediction.recommendations?.length > 0 && (
+                          <div className="mt-2">
+                            <h4 className="text-sm font-medium mb-1">Recommendations:</h4>
+                            <ul className="text-sm space-y-1 list-disc pl-5">
+                              {yieldPrediction.recommendations.map((rec, i) => (
+                                <li key={i}>{rec}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </YieldPredictionErrorBoundary>
+            
+            <Tabs defaultValue="history" className="mt-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="history">History</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              </TabsList>
               
               <TabsContent value="history" className="mt-4">
                 <Card>
@@ -539,6 +732,22 @@ const FieldDetail = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
+              
+              <TabsContent value="analytics" className="mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Analytics</CardTitle>
+                    <CardDescription>Field performance and analytics will be shown here.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8 text-muted-foreground">
+                      <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                      <h3 className="text-lg font-medium mb-1">Analytics Coming Soon</h3>
+                      <p>Detailed field analytics and performance metrics will be available here.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
             </Tabs>
           </div>
         )}
@@ -560,14 +769,23 @@ const FieldDetail = () => {
               disabled={deleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Field
+                </>
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </Layout>
-  );
-};
+  </FieldDetailErrorBoundary>
+);
 
 export default FieldDetail;

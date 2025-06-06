@@ -1,4 +1,3 @@
-
 import { devMemoryOverride, UserMemory } from '@/hooks/useMemoryStore';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -28,7 +27,7 @@ export const simulateMemoryScenarios = {
   returningUser: async () => {
     const lastLogin = new Date();
     lastLogin.setDate(lastLogin.getDate() - 7); // 7 days ago
-    
+
     return devMemoryOverride({
       farmerName: 'Returning Farmer',
       lastLogin: lastLogin.toISOString(),
@@ -44,29 +43,33 @@ export const simulateMemoryScenarios = {
       syncStatus: 'synced',
     });
   },
-  
+
   /**
    * Simulates a power user with extensive farm data
    */
   powerUser: async () => {
     const lastLogin = new Date();
     lastLogin.setHours(lastLogin.getHours() - 12); // 12 hours ago
-    
+
     return devMemoryOverride({
       farmerName: 'Power Farmer',
       lastLogin: lastLogin.toISOString(),
       lastFieldCount: 8,
       lastUsedFeature: 'fertilizer-calculator',
       recentCropsPlanted: ['maize', 'beans', 'cassava', 'rice', 'tomatoes'],
-      fieldLocations: Array(8).fill(0).map((_, i) => ({
-        name: `Field ${i+1}`,
-        size: Math.round((Math.random() * 5 + 1) * 10) / 10,
-        crop: ['maize', 'beans', 'cassava', 'rice', 'tomatoes'][Math.floor(Math.random() * 5)]
-      })),
+      fieldLocations: Array(8)
+        .fill(0)
+        .map((_, i) => ({
+          name: `Field ${i + 1}`,
+          size: Math.round((Math.random() * 5 + 1) * 10) / 10,
+          crop: ['maize', 'beans', 'cassava', 'rice', 'tomatoes'][
+            Math.floor(Math.random() * 5)
+          ],
+        })),
       lastFertilizerPlan: {
         recommendedNPK: '17-17-17',
         quantityPerHectare: 250,
-        totalCost: 45000
+        totalCost: 45000,
       },
       firstTimeUser: false,
       invitesSent: 5,
@@ -74,7 +77,7 @@ export const simulateMemoryScenarios = {
       syncStatus: 'synced',
     });
   },
-  
+
   /**
    * Simulates a referred user who came through a link
    */
@@ -89,14 +92,14 @@ export const simulateMemoryScenarios = {
       syncStatus: 'synced',
     });
   },
-  
+
   /**
    * Simulates a user with offline/sync issues
    */
   offlineUser: async () => {
     const lastLogin = new Date();
     lastLogin.setDate(lastLogin.getDate() - 3); // 3 days ago
-    
+
     return devMemoryOverride({
       farmerName: 'Offline Farmer',
       lastLogin: lastLogin.toISOString(),
@@ -104,7 +107,7 @@ export const simulateMemoryScenarios = {
       lastUsedFeature: 'weather',
       syncStatus: 'failed',
     });
-  }
+  },
 };
 
 /**
@@ -116,18 +119,18 @@ export const logCurrentMemory = async () => {
     console.warn('This function is only available in development mode');
     return;
   }
-  
+
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
     console.warn('User must be logged in to view memory');
     return null;
   }
-  
+
   try {
     // Get from localStorage first
     let memory = null;
     const localData = localStorage.getItem(`cropgenius-memory-${data.user.id}`);
-    
+
     if (localData) {
       try {
         memory = JSON.parse(localData);
@@ -136,21 +139,21 @@ export const logCurrentMemory = async () => {
         console.error('Failed to parse localStorage memory');
       }
     }
-    
+
     // Get from Supabase
     const { data: memoryData, error: memoryError } = await supabase
       .from('user_memory')
       .select('memory_data')
       .eq('user_id', data.user.id)
       .single();
-      
+
     if (memoryError) {
       console.error('Failed to fetch server memory:', memoryError);
     } else {
       console.log('💾 Memory from server:', memoryData.memory_data);
       memory = memoryData.memory_data;
     }
-    
+
     return memory;
   } catch (error) {
     console.error('Error fetching memory:', error);

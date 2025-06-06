@@ -1,7 +1,6 @@
-
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Save, Undo, MapPin, Navigation, Trash2 } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Save, Undo, MapPin, Navigation, Trash2 } from 'lucide-react';
 
 interface MapNavigatorProps {
   onComplete: () => void;
@@ -18,7 +17,7 @@ export default function MapNavigator({
   onUseCurrentLocation,
   onReset,
   isDrawing,
-  hasPoints
+  hasPoints,
 }: MapNavigatorProps) {
   return (
     <div className="flex flex-col gap-1 bg-white/90 dark:bg-gray-900/90 p-1 rounded-md shadow-md">
@@ -29,7 +28,9 @@ export default function MapNavigator({
             variant="default"
             className="h-8 px-2 py-1"
             onClick={onComplete}
-            disabled={!hasPoints || (typeof hasPoints === 'number' && hasPoints < 3)}
+            disabled={
+              !hasPoints || (typeof hasPoints === 'number' && hasPoints < 3)
+            }
           >
             <Save className="h-3 w-3 mr-1" />
             <span className="text-xs">Complete</span>

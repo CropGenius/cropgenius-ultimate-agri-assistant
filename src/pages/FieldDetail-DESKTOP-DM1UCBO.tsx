@@ -1,24 +1,59 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { useParams, useNavigate } from "react-router-dom";
-import Layout from "@/components/Layout";
-import { supabase } from "@/integrations/supabase/client";
-import { Field, FieldCrop, FieldHistory } from "@/types/field";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "sonner";
-import { getFieldById, deleteField } from "@/services/fieldService";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Loader2, MapPin, Trash2, Edit, ArrowLeft, Calendar, Droplets, Tractor, Leaf, History, Check, AlertCircle, RefreshCw, Zap } from "lucide-react";
-import FieldMap from "@/components/fields/FieldMap";
-import { analyzeField, getFieldRecommendations, checkFieldRisks } from "@/services/fieldAIService";
-import { useAIAgentHub } from "@/hooks/useAIAgentHub";
-import { CropScanOutput } from "@/agents/CropScanAgent"; // Assuming this path and type
-import { YieldPredictionOutput } from "@/agents/YieldPredictorAgent"; // Assuming this path and type
-import { Input } from "@/components/ui/input";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useParams, useNavigate } from 'react-router-dom';
+import Layout from '@/components/Layout';
+import { supabase } from '@/integrations/supabase/client';
+import { Field, FieldCrop, FieldHistory } from '@/types/field';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
+import { getFieldById, deleteField } from '@/services/fieldService';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Loader2,
+  MapPin,
+  Trash2,
+  Edit,
+  ArrowLeft,
+  Calendar,
+  Droplets,
+  Tractor,
+  Leaf,
+  History,
+  Check,
+  AlertCircle,
+  RefreshCw,
+  Zap,
+} from 'lucide-react';
+import FieldMap from '@/components/fields/FieldMap';
+import {
+  analyzeField,
+  getFieldRecommendations,
+  checkFieldRisks,
+} from '@/services/fieldAIService';
+import { useAIAgentHub } from '@/hooks/useAIAgentHub';
+import { CropScanOutput } from '@/agents/CropScanAgent'; // Assuming this path and type
+import { YieldPredictionOutput } from '@/agents/YieldPredictorAgent'; // Assuming this path and type
+import { Input } from '@/components/ui/input';
 import { Camera, BarChart3 } from 'lucide-react';
 
 const FieldDetail = () => {
@@ -52,12 +87,14 @@ const FieldDetail = () => {
   // State for Crop Scan
   const [cropScanImageFile, setCropScanImageFile] = useState<File | null>(null);
 
-
   useEffect(() => {
     if (id && user && farmId) {
       loadField();
     } else if (id && !authLoading && (!user || !farmId)) {
-      toast.error("Authentication Error", { description: "User or farm context is missing. Please re-login or select a farm." });
+      toast.error('Authentication Error', {
+        description:
+          'User or farm context is missing. Please re-login or select a farm.',
+      });
       // navigate("/login"); // Or to a farm selection page
     }
   }, [id, user, farmId, authLoading]);
@@ -68,17 +105,17 @@ const FieldDetail = () => {
       const recommendations = await getFieldRecommendations(fieldId);
       setInsights(recommendations);
     } catch (error) {
-      console.error("Failed to load insights:", error);
+      console.error('Failed to load insights:', error);
     } finally {
       setLoadingInsights(false);
     }
-    
+
     setLoadingRisks(true);
     try {
       const fieldRisks = await checkFieldRisks(fieldId);
       setRisks(fieldRisks);
     } catch (error) {
-      console.error("Failed to load risks:", error);
+      console.error('Failed to load risks:', error);
     } finally {
       setLoadingRisks(false);
     }
@@ -86,27 +123,30 @@ const FieldDetail = () => {
 
   const loadField = async () => {
     if (!id || !user || !farmId) {
-      toast.info("Information missing", { description: "Cannot load field without field ID, user, or farm context." });
+      toast.info('Information missing', {
+        description:
+          'Cannot load field without field ID, user, or farm context.',
+      });
       setLoading(false);
       return;
     }
-    
+
     try {
       setLoading(true);
-      
+
       // Get field data
       const { data, error } = await getFieldById(id, user.id, farmId);
-      
+
       if (error || !data) {
-        toast.error("Error", {
-          description: error || "Field not found",
+        toast.error('Error', {
+          description: error || 'Field not found',
         });
-        navigate("/fields");
+        navigate('/fields');
         return;
       }
-      
+
       setField(data);
-      
+
       // Get farm name if field belongs to a farm
       if (data.farm_id) {
         const { data: farmData } = await supabase
@@ -114,37 +154,37 @@ const FieldDetail = () => {
           .select('name')
           .eq('id', data.farm_id)
           .single();
-          
+
         if (farmData) {
           setFarmName(farmData.name);
         }
       }
-      
+
       // Get crops for this field
       const { data: cropsData } = await supabase
         .from('field_crops')
         .select('*')
         .eq('field_id', id)
         .order('planting_date', { ascending: false });
-        
+
       setCrops(cropsData || []);
-      
+
       // Get field history
       const { data: historyData } = await supabase
         .from('field_history')
         .select('*')
         .eq('field_id', id)
         .order('date', { ascending: false });
-        
+
       setHistory(historyData || []);
-      
+
       if (data) {
         loadAIInsights(data.id);
       }
     } catch (err) {
-      console.error("Error loading field:", err);
-      toast.error("Error", {
-        description: "Failed to load field data",
+      console.error('Error loading field:', err);
+      toast.error('Error', {
+        description: 'Failed to load field data',
       });
     } finally {
       setLoading(false);
@@ -153,27 +193,30 @@ const FieldDetail = () => {
 
   const handleDelete = async () => {
     if (!field || !user || !farmId) {
-      toast.error("Action not allowed", { description: "Cannot delete field without field context, user, or farm information." });
+      toast.error('Action not allowed', {
+        description:
+          'Cannot delete field without field context, user, or farm information.',
+      });
       return;
     }
-    
+
     try {
       setDeleting(true);
       const { error } = await deleteField(field.id, user.id, farmId);
-      
+
       if (error) {
         throw new Error(error);
       }
-      
-      toast.success("Field deleted", {
-        description: "The field has been successfully deleted",
+
+      toast.success('Field deleted', {
+        description: 'The field has been successfully deleted',
       });
-      
-      navigate("/fields");
+
+      navigate('/fields');
     } catch (err) {
-      console.error("Error deleting field:", err);
-      toast.error("Error", {
-        description: "Failed to delete field",
+      console.error('Error deleting field:', err);
+      toast.error('Error', {
+        description: 'Failed to delete field',
       });
     } finally {
       setDeleting(false);
@@ -188,7 +231,7 @@ const FieldDetail = () => {
           <div>
             <CardTitle>{field?.name}</CardTitle>
             <CardDescription>
-              {farmName ? `Part of ${farmName}` : "Independent Field"}
+              {farmName ? `Part of ${farmName}` : 'Independent Field'}
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -198,8 +241,8 @@ const FieldDetail = () => {
                 Edit
               </a>
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               size="sm"
               onClick={() => setDeleteDialogOpen(true)}
             >
@@ -216,37 +259,46 @@ const FieldDetail = () => {
               <h3 className="text-sm font-medium mb-1">Field Details</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="text-muted-foreground">Size:</div>
-                <div>{field?.size} {field?.size_unit}</div>
-                
+                <div>
+                  {field?.size} {field?.size_unit}
+                </div>
+
                 <div className="text-muted-foreground">Soil Type:</div>
-                <div>{field?.soil_type || "Not specified"}</div>
-                
+                <div>{field?.soil_type || 'Not specified'}</div>
+
                 <div className="text-muted-foreground">Irrigation:</div>
-                <div>{field?.irrigation_type || "Not specified"}</div>
-                
+                <div>{field?.irrigation_type || 'Not specified'}</div>
+
                 <div className="text-muted-foreground">Location:</div>
-                <div>{field?.location_description || "No description"}</div>
+                <div>{field?.location_description || 'No description'}</div>
               </div>
             </div>
-            
+
             <div>
               <h3 className="text-sm font-medium mb-1">Current Crops</h3>
               {crops.length > 0 ? (
                 <div className="space-y-2">
-                  {crops.filter(crop => crop.status === 'active').slice(0, 3).map(crop => (
-                    <div key={crop.id} className="flex items-center gap-2">
-                      <Leaf className="h-4 w-4 text-green-500" />
-                      <span className="text-sm">{crop.crop_name}</span>
-                      {crop.variety && (
-                        <Badge variant="outline" className="text-xs">
-                          {crop.variety}
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-                  {crops.filter(crop => crop.status === 'active').length > 3 && (
+                  {crops
+                    .filter((crop) => crop.status === 'active')
+                    .slice(0, 3)
+                    .map((crop) => (
+                      <div key={crop.id} className="flex items-center gap-2">
+                        <Leaf className="h-4 w-4 text-green-500" />
+                        <span className="text-sm">{crop.crop_name}</span>
+                        {crop.variety && (
+                          <Badge variant="outline" className="text-xs">
+                            {crop.variety}
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  {crops.filter((crop) => crop.status === 'active').length >
+                    3 && (
                     <div className="text-xs text-muted-foreground">
-                      +{crops.filter(crop => crop.status === 'active').length - 3} more crops
+                      +
+                      {crops.filter((crop) => crop.status === 'active').length -
+                        3}{' '}
+                      more crops
                     </div>
                   )}
                 </div>
@@ -256,12 +308,12 @@ const FieldDetail = () => {
                 </div>
               )}
             </div>
-            
+
             <div>
               <h3 className="text-sm font-medium mb-1">Recent Activity</h3>
               {history.length > 0 ? (
                 <div className="space-y-2">
-                  {history.slice(0, 3).map(event => (
+                  {history.slice(0, 3).map((event) => (
                     <div key={event.id} className="flex items-start gap-2">
                       <History className="h-4 w-4 text-muted-foreground mt-0.5" />
                       <div>
@@ -280,7 +332,7 @@ const FieldDetail = () => {
               )}
             </div>
           </div>
-          
+
           <div className="border rounded-md overflow-hidden h-[300px]">
             {field?.boundary ? (
               <FieldMap initialBoundary={field.boundary} readOnly />
@@ -294,15 +346,19 @@ const FieldDetail = () => {
             )}
           </div>
         </div>
-        
+
         <Separator />
-        
+
         <div className="flex justify-between">
-          <Button variant="outline" size="sm" onClick={() => navigate("/fields")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/fields')}
+          >
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to Fields
           </Button>
-          
+
           <div className="flex gap-2">
             <Button variant="outline" size="sm" asChild>
               <a href={`/fields/${field?.id}/crops/add`}>
@@ -353,10 +409,12 @@ const FieldDetail = () => {
                     ))}
                   </ul>
                 </div>
-                
+
                 {risks.hasRisks && (
                   <div>
-                    <h3 className="text-sm font-medium mb-2">Risk Assessment:</h3>
+                    <h3 className="text-sm font-medium mb-2">
+                      Risk Assessment:
+                    </h3>
                     {loadingRisks ? (
                       <div className="flex justify-center p-4">
                         <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -364,14 +422,26 @@ const FieldDetail = () => {
                     ) : (
                       <div className="space-y-2">
                         {risks.risks.map((risk: any, i: number) => (
-                          <div key={i} className="flex items-start gap-2 p-2 border rounded-md">
-                            <AlertCircle className={`h-4 w-4 mt-0.5 ${
-                              risk.likelihood === 'high' ? 'text-destructive' : 
-                              risk.likelihood === 'medium' ? 'text-orange-500' : 'text-green-500'
-                            }`} />
+                          <div
+                            key={i}
+                            className="flex items-start gap-2 p-2 border rounded-md"
+                          >
+                            <AlertCircle
+                              className={`h-4 w-4 mt-0.5 ${
+                                risk.likelihood === 'high'
+                                  ? 'text-destructive'
+                                  : risk.likelihood === 'medium'
+                                    ? 'text-orange-500'
+                                    : 'text-green-500'
+                              }`}
+                            />
                             <div>
-                              <h4 className="text-sm font-medium">{risk.name}</h4>
-                              <p className="text-xs text-muted-foreground">{risk.description}</p>
+                              <h4 className="text-sm font-medium">
+                                {risk.name}
+                              </h4>
+                              <p className="text-xs text-muted-foreground">
+                                {risk.description}
+                              </p>
                             </div>
                           </div>
                         ))}
@@ -385,10 +455,10 @@ const FieldDetail = () => {
                 No insights available yet. AI analysis may still be processing.
               </div>
             )}
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
+
+            <Button
+              variant="outline"
+              size="sm"
               className="mt-4 w-full"
               onClick={() => loadAIInsights(field?.id || '')}
               disabled={!field || loadingInsights}
@@ -410,18 +480,20 @@ const FieldDetail = () => {
     <Layout>
       <div className="container mx-auto px-4 py-6">
         <div className="mb-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className="mb-2"
-            onClick={() => navigate("/fields")}
+            onClick={() => navigate('/fields')}
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to Fields
           </Button>
-          <h1 className="text-2xl font-bold">{field?.name || "Field Details"}</h1>
+          <h1 className="text-2xl font-bold">
+            {field?.name || 'Field Details'}
+          </h1>
         </div>
-        
+
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -430,15 +502,15 @@ const FieldDetail = () => {
           <div className="space-y-6">
             {renderFieldDetailsSection()}
             {renderAIInsightsSection()}
-            {renderCropScanSection()} 
+            {renderCropScanSection()}
             {renderYieldPredictionSection()}
-            
+
             <Tabs defaultValue="crops" className="mt-6">
               <TabsList>
                 <TabsTrigger value="crops">Crops</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="crops" className="mt-4">
                 <Card>
                   <CardHeader>
@@ -455,7 +527,7 @@ const FieldDetail = () => {
                   <CardContent>
                     {crops.length > 0 ? (
                       <div className="space-y-4">
-                        {crops.map(crop => (
+                        {crops.map((crop) => (
                           <div key={crop.id} className="border rounded-md p-4">
                             <div className="flex justify-between items-start">
                               <div>
@@ -469,37 +541,64 @@ const FieldDetail = () => {
                                   )}
                                 </h3>
                                 <div className="text-sm text-muted-foreground mt-1">
-                                  Status: {crop.status.charAt(0).toUpperCase() + crop.status.slice(1)}
+                                  Status:{' '}
+                                  {crop.status.charAt(0).toUpperCase() +
+                                    crop.status.slice(1)}
                                 </div>
                               </div>
-                              <Badge 
+                              <Badge
                                 variant={
-                                  crop.status === 'active' ? 'default' : 
-                                  crop.status === 'harvested' ? 'outline' : 'secondary'
+                                  crop.status === 'active'
+                                    ? 'default'
+                                    : crop.status === 'harvested'
+                                      ? 'outline'
+                                      : 'secondary'
                                 }
                               >
                                 {crop.status}
                               </Badge>
                             </div>
-                            
+
                             <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
-                              <div className="text-muted-foreground">Planted:</div>
-                              <div>{crop.planting_date ? new Date(crop.planting_date).toLocaleDateString() : "Not recorded"}</div>
-                              
-                              <div className="text-muted-foreground">Harvest:</div>
-                              <div>{crop.harvest_date ? new Date(crop.harvest_date).toLocaleDateString() : "Not harvested"}</div>
-                              
+                              <div className="text-muted-foreground">
+                                Planted:
+                              </div>
+                              <div>
+                                {crop.planting_date
+                                  ? new Date(
+                                      crop.planting_date
+                                    ).toLocaleDateString()
+                                  : 'Not recorded'}
+                              </div>
+
+                              <div className="text-muted-foreground">
+                                Harvest:
+                              </div>
+                              <div>
+                                {crop.harvest_date
+                                  ? new Date(
+                                      crop.harvest_date
+                                    ).toLocaleDateString()
+                                  : 'Not harvested'}
+                              </div>
+
                               {crop.yield_amount && (
                                 <>
-                                  <div className="text-muted-foreground">Yield:</div>
-                                  <div>{crop.yield_amount} {crop.yield_unit}</div>
+                                  <div className="text-muted-foreground">
+                                    Yield:
+                                  </div>
+                                  <div>
+                                    {crop.yield_amount} {crop.yield_unit}
+                                  </div>
                                 </>
                               )}
                             </div>
-                            
+
                             {crop.notes && (
                               <div className="mt-3 text-sm">
-                                <div className="text-muted-foreground">Notes:</div>
+                                <div className="text-muted-foreground">
+                                  Notes:
+                                </div>
                                 <div className="mt-1">{crop.notes}</div>
                               </div>
                             )}
@@ -509,8 +608,13 @@ const FieldDetail = () => {
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
                         <Leaf className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                        <h3 className="text-lg font-medium mb-1">No Crops Added Yet</h3>
-                        <p className="mb-4">Start tracking your crops to get insights and recommendations</p>
+                        <h3 className="text-lg font-medium mb-1">
+                          No Crops Added Yet
+                        </h3>
+                        <p className="mb-4">
+                          Start tracking your crops to get insights and
+                          recommendations
+                        </p>
                         <Button asChild>
                           <a href={`/fields/${field?.id}/crops/add`}>
                             Add Your First Crop
@@ -521,7 +625,7 @@ const FieldDetail = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
-              
+
               <TabsContent value="history" className="mt-4">
                 <Card>
                   <CardHeader>
@@ -538,8 +642,11 @@ const FieldDetail = () => {
                   <CardContent>
                     {history.length > 0 ? (
                       <div className="space-y-1">
-                        {history.map(event => (
-                          <div key={event.id} className="flex py-3 border-b last:border-0">
+                        {history.map((event) => (
+                          <div
+                            key={event.id}
+                            className="flex py-3 border-b last:border-0"
+                          >
                             <div className="w-24 shrink-0 text-sm">
                               {new Date(event.date).toLocaleDateString()}
                             </div>
@@ -548,7 +655,9 @@ const FieldDetail = () => {
                                 <Badge variant="outline" className="text-xs">
                                   {event.event_type}
                                 </Badge>
-                                <h4 className="text-sm font-medium">{event.description}</h4>
+                                <h4 className="text-sm font-medium">
+                                  {event.description}
+                                </h4>
                               </div>
                               {event.notes && (
                                 <p className="text-sm text-muted-foreground mt-1">
@@ -562,8 +671,13 @@ const FieldDetail = () => {
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
                         <History className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                        <h3 className="text-lg font-medium mb-1">No History Recorded</h3>
-                        <p className="mb-4">Track activities like planting, treatments, and inspections</p>
+                        <h3 className="text-lg font-medium mb-1">
+                          No History Recorded
+                        </h3>
+                        <p className="mb-4">
+                          Track activities like planting, treatments, and
+                          inspections
+                        </p>
                         <Button asChild>
                           <a href={`/fields/${field?.id}/history/add`}>
                             Log Your First Activity
@@ -582,7 +696,7 @@ const FieldDetail = () => {
           </div>
         )}
       </div>
-      
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -594,7 +708,7 @@ const FieldDetail = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

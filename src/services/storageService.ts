@@ -38,7 +38,7 @@ export const uploadCropImage = async (
   // Sanitize filename to prevent issues, remove special characters except for period and hyphen
   const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); // Make timestamp path-friendly
-  
+
   // Construct a unique file path, e.g., user_id/farm_id/timestamp-filename.png
   let filePath = `${userId}/`;
   if (options?.farmId) {
@@ -49,7 +49,9 @@ export const uploadCropImage = async (
   }
   filePath += `${timestamp}-${sanitizedFileName}`;
 
-  console.log(`Attempting to upload to Supabase Storage: ${CROP_IMAGES_BUCKET}/${filePath}`);
+  console.log(
+    `Attempting to upload to Supabase Storage: ${CROP_IMAGES_BUCKET}/${filePath}`
+  );
 
   try {
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -65,8 +67,11 @@ export const uploadCropImage = async (
     }
 
     if (!uploadData || !uploadData.path) {
-        console.error('Supabase storage upload error: No path returned after upload.', uploadData);
-        throw new Error('Upload to Supabase Storage failed: No path returned.');
+      console.error(
+        'Supabase storage upload error: No path returned after upload.',
+        uploadData
+      );
+      throw new Error('Upload to Supabase Storage failed: No path returned.');
     }
 
     console.log('File uploaded successfully:', uploadData);
@@ -77,7 +82,10 @@ export const uploadCropImage = async (
       .getPublicUrl(uploadData.path);
 
     if (!urlData || !urlData.publicUrl) {
-      console.warn('Could not get public URL for uploaded file, but upload was successful. Path:', uploadData.path);
+      console.warn(
+        'Could not get public URL for uploaded file, but upload was successful. Path:',
+        uploadData.path
+      );
       // Depending on bucket policies, public URL might not be available or might need to be constructed differently.
       // For now, we'll throw if we can't get it, as it's expected by CropScanAgent.
       throw new Error('Failed to retrieve public URL for uploaded file.');
@@ -87,12 +95,11 @@ export const uploadCropImage = async (
       filePath: uploadData.path,
       publicUrl: urlData.publicUrl,
     };
-
   } catch (error) {
     console.error('Error in uploadCropImage:', error);
     // Ensure the error is re-thrown so the caller can handle it
     if (error instanceof Error) {
-        throw error; 
+      throw error;
     }
     throw new Error('An unknown error occurred during file upload.');
   }

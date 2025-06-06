@@ -70,8 +70,6 @@ const AuthPage: FC = () => {
             </div>
           </div>
 
-
-
           <div>
             <button
               type="submit"

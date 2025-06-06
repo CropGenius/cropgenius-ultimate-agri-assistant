@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Target, Map as MapIcon, ArrowLeft } from 'lucide-react';
@@ -18,18 +17,20 @@ interface StepTwoProps {
   onSkip: () => void;
 }
 
-export default function StepTwo({ 
-  location, 
-  boundary, 
-  onLocationChange, 
+export default function StepTwo({
+  location,
+  boundary,
+  onLocationChange,
   onBoundaryChange,
   onNext,
   onBack,
-  onSkip
+  onSkip,
 }: StepTwoProps) {
   const [searchedLocation, setSearchedLocation] = useState<string | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [recentLocations, setRecentLocations] = useState<{name: string, coordinates: Coordinates}[]>([]);
+  const [recentLocations, setRecentLocations] = useState<
+    { name: string; coordinates: Coordinates }[]
+  >([]);
 
   useEffect(() => {
     // Try to load recent locations from localStorage
@@ -39,9 +40,9 @@ export default function StepTwo({
         setRecentLocations(JSON.parse(savedLocations).slice(0, 3));
       }
     } catch (error) {
-      console.error("Error loading recent locations:", error);
+      console.error('Error loading recent locations:', error);
     }
-    
+
     // If no initial location, try to get user's current location
     if (!location && !boundary) {
       getCurrentLocation();
@@ -50,39 +51,44 @@ export default function StepTwo({
 
   const getCurrentLocation = () => {
     setIsGettingLocation(true);
-    
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const newLocation = {
           lat: position.coords.latitude,
-          lng: position.coords.longitude
+          lng: position.coords.longitude,
         };
-        
+
         onLocationChange(newLocation);
-        
+
         // Get location name
-        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${newLocation.lng},${newLocation.lat}.json?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`)
-          .then(res => res.json())
-          .then(data => {
+        fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${newLocation.lng},${newLocation.lat}.json?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`
+        )
+          .then((res) => res.json())
+          .then((data) => {
             if (data.features && data.features.length > 0) {
               setSearchedLocation(data.features[0].place_name);
             }
           })
-          .catch(err => console.error("Error getting location name:", err))
+          .catch((err) => console.error('Error getting location name:', err))
           .finally(() => setIsGettingLocation(false));
       },
       (error) => {
-        console.error("Error getting current location:", error);
+        console.error('Error getting current location:', error);
         setIsGettingLocation(false);
         toast.error("Couldn't get your location", {
-          description: "Please search for your location on the map instead"
+          description: 'Please search for your location on the map instead',
         });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
-  const handleUseRecentLocation = (recent: {name: string, coordinates: Coordinates}) => {
+  const handleUseRecentLocation = (recent: {
+    name: string;
+    coordinates: Coordinates;
+  }) => {
     onLocationChange(recent.coordinates);
     setSearchedLocation(recent.name);
     toast.info(`Using location: ${recent.name}`);
@@ -90,47 +96,51 @@ export default function StepTwo({
 
   const handleLocationChange = (location: Coordinates) => {
     onLocationChange(location);
-    
+
     // Get location name when location changes
-    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${location.lng},${location.lat}.json?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`)
-      .then(res => res.json())
-      .then(data => {
+    fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${location.lng},${location.lat}.json?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
         if (data.features && data.features.length > 0) {
           setSearchedLocation(data.features[0].place_name);
-          
+
           // Save to recent locations
           const newLocation = {
             name: data.features[0].place_name,
-            coordinates: location
+            coordinates: location,
           };
-          
+
           try {
             const savedLocations = localStorage.getItem('recentLocations');
             let locations = savedLocations ? JSON.parse(savedLocations) : [];
-            
+
             // Add to beginning, avoid duplicates
             locations = [
               newLocation,
-              ...locations.filter(loc => 
-                loc.coordinates.lat !== location.lat || loc.coordinates.lng !== location.lng
-              )
+              ...locations.filter(
+                (loc) =>
+                  loc.coordinates.lat !== location.lat ||
+                  loc.coordinates.lng !== location.lng
+              ),
             ].slice(0, 5); // Keep only 5 most recent
-            
+
             localStorage.setItem('recentLocations', JSON.stringify(locations));
           } catch (error) {
-            console.error("Error saving recent locations:", error);
+            console.error('Error saving recent locations:', error);
           }
         }
       })
-      .catch(err => console.error("Error getting location name:", err));
+      .catch((err) => console.error('Error getting location name:', err));
   };
 
   const handleNextStep = () => {
     if (!location && !boundary) {
-      toast.warning("Please select a location or draw your field boundary");
+      toast.warning('Please select a location or draw your field boundary');
       return;
     }
-    
+
     onNext();
   };
 
@@ -141,7 +151,9 @@ export default function StepTwo({
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4 }}
       >
-        <h2 className="text-2xl font-bold text-center mb-2">Where is your field?</h2>
+        <h2 className="text-2xl font-bold text-center mb-2">
+          Where is your field?
+        </h2>
         <p className="text-center text-muted-foreground mb-4">
           Search or mark your field's location on the map
         </p>
@@ -163,19 +175,19 @@ export default function StepTwo({
               />
             </div>
           </CardContent>
-          
+
           <div className="p-3 border-t bg-muted/20">
             <div className="flex items-center justify-between">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={getCurrentLocation}
                 disabled={isGettingLocation}
               >
                 <Target className="h-4 w-4 mr-1" />
-                {isGettingLocation ? "Getting location..." : "Use my location"}
+                {isGettingLocation ? 'Getting location...' : 'Use my location'}
               </Button>
-              
+
               {searchedLocation && (
                 <p className="text-xs text-muted-foreground px-2 truncate max-w-[180px]">
                   {searchedLocation}
@@ -195,9 +207,9 @@ export default function StepTwo({
           <h3 className="text-sm font-medium mb-2">Recent locations:</h3>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {recentLocations.map((location, i) => (
-              <Button 
-                key={i} 
-                variant="outline" 
+              <Button
+                key={i}
+                variant="outline"
                 size="sm"
                 className="whitespace-nowrap"
                 onClick={() => handleUseRecentLocation(location)}
@@ -210,26 +222,19 @@ export default function StepTwo({
         </motion.div>
       )}
 
-      <motion.div 
+      <motion.div
         className="flex justify-between gap-3 mt-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <Button 
-          variant="ghost" 
-          onClick={onBack}
-          className="flex-1"
-        >
+        <Button variant="ghost" onClick={onBack} className="flex-1">
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back
         </Button>
-        
+
         <div className="space-y-2 flex-1">
-          <Button 
-            onClick={handleNextStep}
-            className="w-full"
-          >
+          <Button onClick={handleNextStep} className="w-full">
             Continue
           </Button>
           <Button

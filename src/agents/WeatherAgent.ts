@@ -156,7 +156,10 @@ export interface ProcessedCurrentWeather {
 // --- Supabase Data Saving Functions ---
 
 const saveWeatherDataToSupabase = async (
-  weatherEntry: Omit<ProcessedCurrentWeather, 'cityName' | 'feelsLikeCelsius' | 'tempMinCelsius' | 'tempMaxCelsius'> & { 
+  weatherEntry: Omit<
+    ProcessedCurrentWeather,
+    'cityName' | 'feelsLikeCelsius' | 'tempMinCelsius' | 'tempMaxCelsius'
+  > & {
     farm_id?: string | null;
     user_id?: string | null; // Added user_id
     data_type: 'current' | 'forecast_hourly';
@@ -165,7 +168,7 @@ const saveWeatherDataToSupabase = async (
     temperature_celsius: number; // Renaming for clarity to match table
   }
 ) => {
-  const { 
+  const {
     latitude,
     longitude,
     timestamp, // This is 'dt' from API, effectively 'recorded_at' for current, or 'forecastTimestamp' for forecast
@@ -186,7 +189,7 @@ const saveWeatherDataToSupabase = async (
     farm_id,
     data_type,
     recorded_at, // Specific for table insertion
-    precipitation_mm
+    precipitation_mm,
   } = weatherEntry;
 
   // Map to weather_data table structure
@@ -228,16 +231,22 @@ const saveWeatherDataToSupabase = async (
 };
 
 // --- Helper Functions ---
-const kelvinToCelsius = (kelvin: number): number => parseFloat((kelvin - 273.15).toFixed(1));
-const unixToDate = (unixTimestamp: number | undefined): Date | undefined => 
+const kelvinToCelsius = (kelvin: number): number =>
+  parseFloat((kelvin - 273.15).toFixed(1));
+const unixToDate = (unixTimestamp: number | undefined): Date | undefined =>
   unixTimestamp ? new Date(unixTimestamp * 1000) : undefined;
 
 // --- Helper function to transform a single forecast list item ---
-const transformForecastListItem = (item: ForecastListItem, cityTimezoneOffset: number, cityLat: number, cityLon: number): ProcessedForecastItem => {
+const transformForecastListItem = (
+  item: ForecastListItem,
+  cityTimezoneOffset: number,
+  cityLat: number,
+  cityLon: number
+): ProcessedForecastItem => {
   return {
     forecastTimestamp: unixToDate(item.dt)!,
-    latitude: cityLat, 
-    longitude: cityLon, 
+    latitude: cityLat,
+    longitude: cityLon,
     timestamp: unixToDate(item.dt)!,
     temperatureCelsius: kelvinToCelsius(item.main.temp),
     feelsLikeCelsius: kelvinToCelsius(item.main.feels_like),
@@ -253,11 +262,13 @@ const transformForecastListItem = (item: ForecastListItem, cityTimezoneOffset: n
     weatherIconCode: item.weather[0]?.icon || '01d',
     rainLastHourMm: item.rain?.['3h'], // OWM forecast typically gives 3h rain volume
     snowLastHourMm: item.snow?.['3h'], // OWM forecast typically gives 3h snow volume
-    timezoneOffsetSeconds: cityTimezoneOffset, 
+    timezoneOffsetSeconds: cityTimezoneOffset,
   };
 };
 
-const transformCurrentWeatherData = (apiResponse: CurrentWeatherAPIResponse): ProcessedCurrentWeather => {
+const transformCurrentWeatherData = (
+  apiResponse: CurrentWeatherAPIResponse
+): ProcessedCurrentWeather => {
   return {
     latitude: apiResponse.coord.lat,
     longitude: apiResponse.coord.lon,
@@ -310,7 +321,9 @@ export const getCurrentWeather = async (
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenWeatherMap API Error:', errorData);
-      throw new Error(`Failed to fetch current weather: ${response.status} ${errorData.message || response.statusText}`);
+      throw new Error(
+        `Failed to fetch current weather: ${response.status} ${errorData.message || response.statusText}`
+      );
     }
     const apiResponseData: CurrentWeatherAPIResponse = await response.json();
     const processedData = transformCurrentWeatherData(apiResponseData);
@@ -324,10 +337,16 @@ export const getCurrentWeather = async (
           data_type: 'current',
           recorded_at: processedData.timestamp, // 'dt' from API is the recording time for current weather
           temperature_celsius: processedData.temperatureCelsius,
-          precipitation_mm: processedData.rainLastHourMm || processedData.snowLastHourMm || null,
+          precipitation_mm:
+            processedData.rainLastHourMm ||
+            processedData.snowLastHourMm ||
+            null,
         });
       } catch (dbError) {
-        console.warn('Failed to save current weather to DB, but returning API data:', dbError);
+        console.warn(
+          'Failed to save current weather to DB, but returning API data:',
+          dbError
+        );
       }
     }
     return processedData;
@@ -362,7 +381,9 @@ export const getWeatherForecast = async (
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenWeatherMap API Error (Forecast):', errorData);
-      throw new Error(`Failed to fetch weather forecast: ${response.status} ${errorData.message || response.statusText}`);
+      throw new Error(
+        `Failed to fetch weather forecast: ${response.status} ${errorData.message || response.statusText}`
+      );
     }
     const apiResponseData: ForecastAPIResponse = await response.json();
 
@@ -372,14 +393,19 @@ export const getWeatherForecast = async (
       latitude: apiResponseData.city.coord.lat,
       longitude: apiResponseData.city.coord.lon,
       timezoneOffsetSeconds: apiResponseData.city.timezone,
-      list: apiResponseData.list.map(item => 
-        transformForecastListItem(item, apiResponseData.city.timezone, apiResponseData.city.coord.lat, apiResponseData.city.coord.lon)
+      list: apiResponseData.list.map((item) =>
+        transformForecastListItem(
+          item,
+          apiResponseData.city.timezone,
+          apiResponseData.city.coord.lat,
+          apiResponseData.city.coord.lon
+        )
       ),
     };
 
     if (saveToDb) {
       // Batch save forecast data
-      const forecastEntriesToSave = transformedApiData.list.map(item => ({
+      const forecastEntriesToSave = transformedApiData.list.map((item) => ({
         ...item, // Spread item which is ProcessedForecastItem
         farm_id: farmId,
         user_id: userId, // Added userId for saving
@@ -394,25 +420,34 @@ export const getWeatherForecast = async (
           // Explicitly pass only known properties to saveWeatherDataToSupabase
           // to avoid issues if ProcessedForecastItem has more fields than expected by the save function's Omit type
           // cityName and country are not part of ProcessedForecastItem directly for db saving in this manner.
-          const { cityName, feelsLikeCelsius, tempMinCelsius, tempMaxCelsius, ...dbSafeEntry } = entry;
+          const {
+            cityName,
+            feelsLikeCelsius,
+            tempMinCelsius,
+            tempMaxCelsius,
+            ...dbSafeEntry
+          } = entry;
           await saveWeatherDataToSupabase({
             ...dbSafeEntry, // Spread the ProcessedForecastItem which is compatible after Omit
             farm_id: entry.farm_id, // Use farm_id from entry if available, else outer farmId
             user_id: entry.user_id, // Use user_id from entry
             data_type: 'forecast_hourly',
             recorded_at: entry.forecastTimestamp,
-            precipitation_mm: entry.rainLastHourMm || entry.snowLastHourMm || null,
+            precipitation_mm:
+              entry.rainLastHourMm || entry.snowLastHourMm || null,
             temperature_celsius: entry.temperatureCelsius, // Ensure this is explicitly passed if not covered by spread
           });
         } catch (dbError) {
-          console.error(`Failed to save forecast item for ${entry.forecastTimestamp}:`, dbError);
+          console.error(
+            `Failed to save forecast item for ${entry.forecastTimestamp}:`,
+            dbError
+          );
           // Continue saving other items
         }
       }
     }
 
     return transformedApiData;
-
   } catch (error) {
     console.error('Error in getWeatherForecast:', error);
     throw error; // Re-throw to be handled by the caller
@@ -431,4 +466,9 @@ export const getWeatherForecast = async (
 //   // It could combine weather data with farm-specific crop information.
 // };
 
-console.log('WeatherAgent.ts loaded with Current Weather, Forecast, and Supabase integration. API Key available:', !!OPENWEATHERMAP_API_KEY, 'Supabase client available:', !!supabase);
+console.log(
+  'WeatherAgent.ts loaded with Current Weather, Forecast, and Supabase integration. API Key available:',
+  !!OPENWEATHERMAP_API_KEY,
+  'Supabase client available:',
+  !!supabase
+);

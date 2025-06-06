@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Calendar as CalendarIcon } from 'lucide-react';
@@ -11,7 +10,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from '@/components/ui/popover';
 
 interface StepFiveProps {
   plantingDate: Date | null;
@@ -28,7 +27,7 @@ export default function StepFive({
   onBack,
   onSubmit,
   onSkip,
-  isSubmitting
+  isSubmitting,
 }: StepFiveProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
 
@@ -59,7 +58,9 @@ export default function StepFive({
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4 }}
       >
-        <h2 className="text-2xl font-bold text-center mb-2">When did you plant?</h2>
+        <h2 className="text-2xl font-bold text-center mb-2">
+          When did you plant?
+        </h2>
         <p className="text-center text-muted-foreground mb-6">
           Select a planting date or choose a general timeframe
         </p>
@@ -71,28 +72,28 @@ export default function StepFive({
         transition={{ duration: 0.4, delay: 0.1 }}
         className="grid grid-cols-2 gap-3"
       >
-        <Card 
+        <Card
           className="p-3 text-center cursor-pointer hover:bg-primary/5 transition-colors"
           onClick={() => handleQuickSelectDate(getCurrentWeek())}
         >
           <div className="text-sm font-medium">This week</div>
         </Card>
-        
-        <Card 
+
+        <Card
           className="p-3 text-center cursor-pointer hover:bg-primary/5 transition-colors"
           onClick={() => handleQuickSelectDate(getLastWeek())}
         >
           <div className="text-sm font-medium">Last week</div>
         </Card>
-        
-        <Card 
+
+        <Card
           className="p-3 text-center cursor-pointer hover:bg-primary/5 transition-colors"
           onClick={() => handleQuickSelectDate(getNextWeek())}
         >
           <div className="text-sm font-medium">Next week</div>
         </Card>
-        
-        <Card 
+
+        <Card
           className="p-3 text-center cursor-pointer hover:bg-primary/5 transition-colors"
           onClick={() => onSkip()}
         >
@@ -106,20 +107,22 @@ export default function StepFive({
         transition={{ duration: 0.4, delay: 0.2 }}
         className="pt-4"
       >
-        <h3 className="text-sm font-medium mb-3 text-center">Or pick an exact date:</h3>
-        
+        <h3 className="text-sm font-medium mb-3 text-center">
+          Or pick an exact date:
+        </h3>
+
         <div className="flex justify-center">
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
-                variant={"outline"}
+                variant={'outline'}
                 className={cn(
-                  "w-64 justify-start text-left font-normal",
-                  !plantingDate && "text-muted-foreground"
+                  'w-64 justify-start text-left font-normal',
+                  !plantingDate && 'text-muted-foreground'
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {plantingDate ? format(plantingDate, "PPP") : "Select date"}
+                {plantingDate ? format(plantingDate, 'PPP') : 'Select date'}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -137,14 +140,14 @@ export default function StepFive({
         </div>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         className="flex justify-between gap-3 mt-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
       >
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={onBack}
           className="flex-1"
           disabled={isSubmitting}
@@ -152,14 +155,10 @@ export default function StepFive({
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back
         </Button>
-        
+
         <div className="space-y-2 flex-1">
-          <Button 
-            onClick={onSubmit}
-            className="w-full"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Creating Field..." : "Finish & Create Field"}
+          <Button onClick={onSubmit} className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? 'Creating Field...' : 'Finish & Create Field'}
           </Button>
           <Button
             variant="ghost"

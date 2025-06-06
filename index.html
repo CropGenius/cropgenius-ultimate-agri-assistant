@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <!-- Fix module loading issues - Must be first script -->
     <script src="/fix-modules.js"></script>
-    
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CropGenius</title>
@@ -12,16 +12,41 @@
     <meta property="og:image" content="/og-image.png" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <link rel="manifest" href="/manifest.json" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/icons/icon-192x192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="/icons/icon-512x512.png"
+    />
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-    
+
     <!-- Force immediate rendering - No loading screens -->
     <style>
       /* No loading screens or spinners */
-      body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
-      #root { display: block !important; height: 100%; width: 100%; }
-      .loader, .loading, .spinner { display: none !important; visibility: hidden !important; }
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+      }
+      #root {
+        display: block !important;
+        height: 100%;
+        width: 100%;
+      }
+      .loader,
+      .loading,
+      .spinner {
+        display: none !important;
+        visibility: hidden !important;
+      }
     </style>
   </head>
 
@@ -30,26 +55,98 @@
       <!-- Direct content delivery - No loading screens -->
       <div id="instant-app"></div>
     </div>
-    
+
     <!-- Handle module loading errors and eliminate loading screens -->
     <script>
       // Immediately render content
-      document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener('DOMContentLoaded', function () {
         // Force module type for all scripts
-        document.querySelectorAll('script[type="text/javascript"]').forEach(script => {
-          script.type = 'module';
-        });
+        document
+          .querySelectorAll('script[type="text/javascript"]')
+          .forEach((script) => {
+            script.type = 'module';
+          });
       });
-      
+
       // Eliminate any loading screens
       const noLoading = setInterval(() => {
-        const loaders = document.querySelectorAll('.loading, .loader, .spinner');
+        const loaders = document.querySelectorAll(
+          '.loading, .loader, .spinner'
+        );
         if (loaders.length > 0) {
-          loaders.forEach(el => el.remove());
+          loaders.forEach((el) => el.remove());
         }
       }, 100);
     </script>
-    
+
+    <!-- Service Worker Registration for Offline Support -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/service-worker.js', { scope: '/' })
+            .then((registration) => {
+              console.log(
+                'ServiceWorker registered with scope:',
+                registration.scope
+              );
+
+              // Set up background sync for offline data
+              if ('sync' in registration) {
+                // Initialize IndexedDB for offline storage if needed
+                const dbPromise = indexedDB.open('cropgenius-offline', 1);
+                dbPromise.onupgradeneeded = (event) => {
+                  const db = event.target.result;
+                  if (!db.objectStoreNames.contains('outbox')) {
+                    db.createObjectStore('outbox', { keyPath: 'id' });
+                  }
+
+                  // Create stores for critical data types
+                  [
+                    'weather',
+                    'cropScans',
+                    'tasks',
+                    'market',
+                    'farmPlans',
+                    'yieldPredictions',
+                  ].forEach((store) => {
+                    if (!db.objectStoreNames.contains(store)) {
+                      const objectStore = db.createObjectStore(store, {
+                        keyPath: 'id',
+                      });
+                      if (store === 'weather') {
+                        objectStore.createIndex('timestamp', 'timestamp', {
+                          unique: false,
+                        });
+                      } else if (store === 'tasks') {
+                        objectStore.createIndex('dueDate', 'dueDate', {
+                          unique: false,
+                        });
+                      }
+                    }
+                  });
+                };
+              }
+            })
+            .catch((error) => {
+              console.error('ServiceWorker registration failed:', error);
+            });
+        });
+
+        // Listen for controller change to reload for updated service worker
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          console.log(
+            'Service worker controller changed, reloading for updates'
+          );
+          // window.location.reload(); // Uncomment in production
+        });
+      } else {
+        console.warn(
+          'Service workers are not supported in this browser. Offline mode will be limited.'
+        );
+      }
+    </script>
+
     <!-- Main application script -->
     <script type="module" src="/src/main.tsx"></script>
   </body>

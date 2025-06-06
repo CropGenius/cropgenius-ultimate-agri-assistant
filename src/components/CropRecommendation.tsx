@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FC } from 'react';
 import { Sprout, Droplets, Sun, Thermometer, Calendar } from 'lucide-react';
 
 interface Crop {
@@ -31,7 +31,7 @@ const sunExposureIcons = {
   'Full Shade': <Sun className="h-4 w-4 text-gray-400" />,
 };
 
-const CropRecommendation: React.FC<CropRecommendationProps> = ({
+const CropRecommendation: FC<CropRecommendationProps> = ({
   crops = [],
   onSelectCrop,
   className = '',
@@ -41,7 +41,9 @@ const CropRecommendation: React.FC<CropRecommendationProps> = ({
       <div className={`bg-white rounded-lg shadow p-6 ${className}`}>
         <div className="text-center py-8">
           <Sprout className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No crop recommendations</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">
+            No crop recommendations
+          </h3>
           <p className="mt-1 text-sm text-gray-500">
             Add your field details to get personalized crop recommendations.
           </p>
@@ -62,7 +64,9 @@ const CropRecommendation: React.FC<CropRecommendationProps> = ({
           >
             <div className="p-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">{crop.name}</h3>
+                <h3 className="text-lg font-medium text-gray-900">
+                  {crop.name}
+                </h3>
                 <button
                   onClick={() => onSelectCrop?.(crop.id)}
                   className="text-green-600 hover:text-green-800 text-sm font-medium focus:outline-none"
@@ -71,16 +75,20 @@ const CropRecommendation: React.FC<CropRecommendationProps> = ({
                   Select
                 </button>
               </div>
-              
+
               <p className="mt-1 text-sm text-gray-500">{crop.description}</p>
-              
+
               <div className="mt-4 space-y-2">
                 <div className="flex items-center text-sm text-gray-500">
-                  <span className="mr-2">{waterNeedIcons[crop.waterNeeds]}</span>
+                  <span className="mr-2">
+                    {waterNeedIcons[crop.waterNeeds]}
+                  </span>
                   <span>Water: {crop.waterNeeds}</span>
                 </div>
                 <div className="flex items-center text-sm text-gray-500">
-                  <span className="mr-2">{sunExposureIcons[crop.sunExposure]}</span>
+                  <span className="mr-2">
+                    {sunExposureIcons[crop.sunExposure]}
+                  </span>
                   <span>{crop.sunExposure}</span>
                 </div>
                 <div className="flex items-center text-sm text-gray-500">
@@ -92,14 +100,16 @@ const CropRecommendation: React.FC<CropRecommendationProps> = ({
                   <span>Season: {crop.growingSeason.join(', ')}</span>
                 </div>
               </div>
-              
+
               {crop.compatibility && crop.compatibility.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-gray-100">
-                  <p className="text-xs font-medium text-gray-500 mb-1">Companion Plants:</p>
+                  <p className="text-xs font-medium text-gray-500 mb-1">
+                    Companion Plants:
+                  </p>
                   <div className="flex flex-wrap gap-1">
                     {crop.compatibility.map((plant) => (
-                      <span 
-                        key={plant} 
+                      <span
+                        key={plant}
                         className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
                       >
                         {plant}

@@ -46,7 +46,9 @@ export const fetchMarketListings = async (
 ): Promise<MarketDataOutput> => {
   const { cropType, userId, farmId } = input;
 
-  console.log(`Fetching market listings for crop: ${cropType}, user: ${userId}, farm: ${farmId}`);
+  console.log(
+    `Fetching market listings for crop: ${cropType}, user: ${userId}, farm: ${farmId}`
+  );
 
   try {
     const { data, error } = await supabase
@@ -72,7 +74,6 @@ export const fetchMarketListings = async (
       // priceTrends: calculatePriceTrends(listings), // Implement this later
       // demandIndicator: assessDemand(listings), // Implement this later
     };
-
   } catch (error) {
     console.error('Error in fetchMarketListings:', error);
     throw error;

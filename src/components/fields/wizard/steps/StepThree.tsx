@@ -6,7 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
 
@@ -28,14 +34,14 @@ const commonCrops = [
   { name: 'Wheat', category: 'cereal', icon: '/crops/wheat.svg' },
   { name: 'Teff', category: 'cereal', icon: '/crops/teff.svg' },
   { name: 'Fonio', category: 'cereal', icon: '/crops/fonio.svg' },
-  
+
   // Roots & Tubers
   { name: 'Cassava', category: 'root', icon: '/crops/cassava.svg' },
   { name: 'Sweet Potato', category: 'root', icon: '/crops/sweet-potato.svg' },
   { name: 'Yam', category: 'root', icon: '/crops/yam.svg' },
   { name: 'Irish Potato', category: 'root', icon: '/crops/potato.svg' },
   { name: 'Taro', category: 'root', icon: '/crops/taro.svg' },
-  
+
   // Legumes
   { name: 'Beans', category: 'legume', icon: '/crops/beans.svg' },
   { name: 'Groundnut', category: 'legume', icon: '/crops/groundnut.svg' },
@@ -43,7 +49,7 @@ const commonCrops = [
   { name: 'Soybean', category: 'legume', icon: '/crops/soybean.svg' },
   { name: 'Pigeon Pea', category: 'legume', icon: '/crops/pigeon-pea.svg' },
   { name: 'Bambara Nut', category: 'legume', icon: '/crops/bambara.svg' },
-  
+
   // Fruits
   { name: 'Banana', category: 'fruit', icon: '/crops/banana.svg' },
   { name: 'Mango', category: 'fruit', icon: '/crops/mango.svg' },
@@ -51,9 +57,13 @@ const commonCrops = [
   { name: 'Papaya', category: 'fruit', icon: '/crops/papaya.svg' },
   { name: 'Citrus', category: 'fruit', icon: '/crops/citrus.svg' },
   { name: 'Pineapple', category: 'fruit', icon: '/crops/pineapple.svg' },
-  { name: 'Passion Fruit', category: 'fruit', icon: '/crops/passion-fruit.svg' },
+  {
+    name: 'Passion Fruit',
+    category: 'fruit',
+    icon: '/crops/passion-fruit.svg',
+  },
   { name: 'Guava', category: 'fruit', icon: '/crops/guava.svg' },
-  
+
   // Vegetables
   { name: 'Tomato', category: 'vegetable', icon: '/crops/tomato.svg' },
   { name: 'Onion', category: 'vegetable', icon: '/crops/onion.svg' },
@@ -63,7 +73,7 @@ const commonCrops = [
   { name: 'Eggplant', category: 'vegetable', icon: '/crops/eggplant.svg' },
   { name: 'Pepper', category: 'vegetable', icon: '/crops/pepper.svg' },
   { name: 'Amaranth', category: 'vegetable', icon: '/crops/amaranth.svg' },
-  
+
   // Cash Crops
   { name: 'Coffee', category: 'cash', icon: '/crops/coffee.svg' },
   { name: 'Tea', category: 'cash', icon: '/crops/tea.svg' },
@@ -75,25 +85,25 @@ const commonCrops = [
   { name: 'Oil Palm', category: 'cash', icon: '/crops/oil-palm.svg' },
   { name: 'Sisal', category: 'cash', icon: '/crops/sisal.svg' },
   { name: 'Khat', category: 'cash', icon: '/crops/khat.svg' },
-  
+
   // Others
   { name: 'Sesame', category: 'other', icon: '/crops/sesame.svg' },
   { name: 'Sunflower', category: 'other', icon: '/crops/sunflower.svg' },
   { name: 'Pyrethrum', category: 'other', icon: '/crops/pyrethrum.svg' },
   { name: 'Moringa', category: 'other', icon: '/crops/moringa.svg' },
   { name: 'Alfalfa', category: 'other', icon: '/crops/alfalfa.svg' },
-  { name: 'Napier Grass', category: 'other', icon: '/crops/napier.svg' }
+  { name: 'Napier Grass', category: 'other', icon: '/crops/napier.svg' },
 ];
 
 // Fallback images for crops that don't have icons
 const cropCategoryIcons = {
-  'cereal': '🌾',
-  'root': '🥔',
-  'legume': '🫘',
-  'fruit': '🍎',
-  'vegetable': '🥬',
-  'cash': '💰',
-  'other': '🌱'
+  cereal: '🌾',
+  root: '🥔',
+  legume: '🫘',
+  fruit: '🍎',
+  vegetable: '🥬',
+  cash: '💰',
+  other: '🌱',
 };
 
 export default function StepThree({
@@ -101,7 +111,7 @@ export default function StepThree({
   onCropTypeChange,
   onNext,
   onBack,
-  onSkip
+  onSkip,
 }: StepThreeProps) {
   const [searchValue, setSearchValue] = useState('');
   const [filteredCrops, setFilteredCrops] = useState(commonCrops);
@@ -110,7 +120,7 @@ export default function StepThree({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showSuggestionModal, setShowSuggestionModal] = useState(false);
   const [newCropName, setNewCropName] = useState('');
-  
+
   // Categories to group crops by
   const categories = [
     { name: 'All', icon: '🌱' },
@@ -125,9 +135,14 @@ export default function StepThree({
   useEffect(() => {
     // Filter crops based on search value and active category
     if (searchValue || activeCategory) {
-      const filtered = commonCrops.filter(crop => {
-        const matchesSearch = crop.name.toLowerCase().includes(searchValue.toLowerCase());
-        const matchesCategory = !activeCategory || activeCategory === 'All' || crop.category.toLowerCase() === activeCategory.toLowerCase();
+      const filtered = commonCrops.filter((crop) => {
+        const matchesSearch = crop.name
+          .toLowerCase()
+          .includes(searchValue.toLowerCase());
+        const matchesCategory =
+          !activeCategory ||
+          activeCategory === 'All' ||
+          crop.category.toLowerCase() === activeCategory.toLowerCase();
         return matchesSearch && matchesCategory;
       });
       setFilteredCrops(filtered);
@@ -145,43 +160,48 @@ export default function StepThree({
         setPopularCrops(preferences.slice(0, 3));
       }
     } catch (error) {
-      console.error("Error loading crop preferences:", error);
+      console.error('Error loading crop preferences:', error);
     }
   }, []);
 
   const handleCropSelect = (cropName: string) => {
     onCropTypeChange(cropName);
-    
+
     // Save to user preferences
     try {
       const savedFields = localStorage.getItem('userCropPreferences');
       let preferences = savedFields ? JSON.parse(savedFields) : [];
-      
+
       // Move this crop to the front or add it
       preferences = [
         cropName,
-        ...preferences.filter(crop => crop !== cropName)
+        ...preferences.filter((crop) => crop !== cropName),
       ].slice(0, 5); // Keep only 5 most popular
-      
+
       localStorage.setItem('userCropPreferences', JSON.stringify(preferences));
     } catch (error) {
-      console.error("Error saving crop preferences:", error);
+      console.error('Error saving crop preferences:', error);
     }
-    
+
     // Play a soft click sound
     try {
-      const audio = new Audio('data:audio/wav;base64,UklGRoQFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YWAFAACAgICAgICAgICAgICAgICAgICAgICAgICAf3hxeIF/gICAf4B+gICAgH+AgICAgICAgICAeHBye4KCgX+Af3+BgoKAgH+AgYKDgH+Af4CBgn98eHR5foKDgoB/gIGDg4J/f4CBg4SCgH+AgYODgH16eXyBhISDgH+AgoSEgn+AgIKEg4F/f4CCg4J+e3p8gIOEg4B/gIKEhIF/f4CCg4OCf3+AgYKAfXt7foGDg4OAf4CCg4OCf4CAgoODgn9/gIGCgH57fH6Bg4SDgH+BgoODgn+AgIKDg4F/f4CBgoF+fHx+gYOEg4F/gYKDg4F/gICCg4KBf3+AgYGAfnx9f4GDhIOBf4GCg4OBf4CAgoOCgX9/gIGBgH58fX+ChIODgX+BgoOCgX+AgIKDgoF/f4CBgYB+fH2AgoSEg4F/gYKDgoF/gICCg4KBf3+AgYGAfnx+gIKEhIOBgIGCg4KBf4CAgoOCgX9/gIGBgH59foCChIODgYCBgoOCgX+AgIKDgoF/f4CBgYB+fX6AgoSDg4GAgYKDgoF/gICCg4KBf3+AgYGAfn1+gIKEg4OBgIGCg4KBf4CAgoOCgX9/gIGBgH59foCChIODgYCBgoOCgX+AgIKDgoJ/f4CBgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEhIOBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gYODg4GAgoODgoGAgIGCgoJ/gICCgYB+fn6Bg4ODgYCCg4OCgYCAgYKCgn+AgIKBgH5+foGDg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+foGDg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+');
+      const audio = new Audio(
+        'data:audio/wav;base64,UklGRoQFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YWAFAACAgICAgICAgICAgICAgICAgICAgICAgICAf3hxeIF/gICAf4B+gICAgH+AgICAgICAgICAeHBye4KCgX+Af3+BgoKAgH+AgYKDgH+Af4CBgn98eHR5foKDgoB/gIGDg4J/f4CBg4SCgH+AgYODgH16eXyBhISDgH+AgoSEgn+AgIKEg4F/f4CCg4J+e3p8gIOEg4B/gIKEhIF/f4CCg4OCf3+AgYKAfXt7foGDg4OAf4CCg4OCf4CAgoODgn9/gIGCgH57fH6Bg4SDgH+BgoODgn+AgIKDg4F/f4CBgoF+fHx+gYOEg4F/gYKDg4F/gICCg4KBf3+AgYGAfnx9f4GDhIOBf4GCg4OBf4CAgoOCgX9/gIGBgH58fX+ChIODgX+BgoOCgX+AgIKDgoF/f4CBgYB+fH2AgoSEg4F/gYKDgoF/gICCg4KBf3+AgYGAfnx+gIKEhIOBgIGCg4KBf4CAgoOCgX9/gIGBgH59foCChIODgYCBgoOCgX+AgIKDgoF/f4CBgYB+fX6AgoSDg4GAgYKDgoF/gICCg4KBf3+AgYGAfn1+gIKEg4OBgIGCg4KBf4CAgoOCgX9/gIGBgH59foCChIODgYCBgoOCgX+AgIKDgoJ/f4CBgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEhIOBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gYODg4GAgoODgoGAgIGCgoJ/gICCgYB+fn6Bg4ODgYCCg4OCgYCAgYKCgn+AgIKBgH5+foGDg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+foGDg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+'
+      );
       audio.volume = 0.2;
-      audio.play().catch(e => console.log('Audio play prevented by browser'));
+      audio.play().catch((e) => console.log('Audio play prevented by browser'));
     } catch (error) {
       console.log('Audio playback not supported');
     }
-    
+
     setTimeout(() => onNext(), 300);
   };
 
   const handleListenForCrop = () => {
-    if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
+    if (
+      !('SpeechRecognition' in window) &&
+      !('webkitSpeechRecognition' in window)
+    ) {
       toast.warning('Speech recognition not supported in your browser');
       return;
     }
@@ -189,60 +209,65 @@ export default function StepThree({
     setIsListening(true);
 
     // @ts-ignore
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    
+
     recognition.lang = 'en-US';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
-    
+
     recognition.start();
-    
+
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setSearchValue(transcript);
-      
+
       // If transcript matches a crop exactly, select it
-      const matchingCrop = commonCrops.find(crop => 
-        crop.name.toLowerCase() === transcript.toLowerCase()
+      const matchingCrop = commonCrops.find(
+        (crop) => crop.name.toLowerCase() === transcript.toLowerCase()
       );
-      
+
       if (matchingCrop) {
         handleCropSelect(matchingCrop.name);
       }
-      
+
       setIsListening(false);
     };
-    
+
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error', event.error);
       setIsListening(false);
-      
+
       toast.error('Could not understand speech', {
-        description: 'Please try again or type your crop name'
+        description: 'Please try again or type your crop name',
       });
     };
-    
+
     recognition.onend = () => {
       setIsListening(false);
     };
   };
-  
+
   const handleSuggestNewCrop = () => {
     if (!newCropName.trim()) {
       toast.warning('Please enter a crop name');
       return;
     }
-    
+
     // Check if crop already exists
-    if (commonCrops.some(crop => crop.name.toLowerCase() === newCropName.toLowerCase())) {
+    if (
+      commonCrops.some(
+        (crop) => crop.name.toLowerCase() === newCropName.toLowerCase()
+      )
+    ) {
       toast.info('This crop already exists', {
-        description: 'Try searching for it in the crop list'
+        description: 'Try searching for it in the crop list',
       });
       setShowSuggestionModal(false);
       return;
     }
-    
+
     // Add the crop to user preferences
     try {
       const savedFields = localStorage.getItem('userCropPreferences');
@@ -250,21 +275,25 @@ export default function StepThree({
       preferences = [newCropName, ...preferences].slice(0, 10);
       localStorage.setItem('userCropPreferences', JSON.stringify(preferences));
     } catch (error) {
-      console.error("Error saving crop suggestion:", error);
+      console.error('Error saving crop suggestion:', error);
     }
-    
+
     // Select the new crop
     onCropTypeChange(newCropName);
-    
+
     toast.success('New crop added!', {
-      description: `${newCropName} has been added to your crops`
+      description: `${newCropName} has been added to your crops`,
     });
-    
+
     setShowSuggestionModal(false);
     setTimeout(() => onNext(), 500);
   };
-  
-  const renderCropIcon = (crop: { name: string; category: string; icon: string }) => {
+
+  const renderCropIcon = (crop: {
+    name: string;
+    category: string;
+    icon: string;
+  }) => {
     // First try to use the icon path
     if (crop.icon) {
       // Check if the icon is an SVG path or a fallback emoji
@@ -272,16 +301,19 @@ export default function StepThree({
         try {
           return (
             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-1">
-              <img 
-                src={crop.icon} 
-                alt={crop.name} 
+              <img
+                src={crop.icon}
+                alt={crop.name}
                 className="w-6 h-6"
                 onError={(e) => {
                   // If image fails to load, use category icon as fallback
                   (e.target as HTMLElement).style.display = 'none';
                   const fallbackEl = e.currentTarget.parentElement;
                   if (fallbackEl) {
-                    fallbackEl.innerHTML = cropCategoryIcons[crop.category as keyof typeof cropCategoryIcons] || '🌱';
+                    fallbackEl.innerHTML =
+                      cropCategoryIcons[
+                        crop.category as keyof typeof cropCategoryIcons
+                      ] || '🌱';
                   }
                 }}
               />
@@ -289,16 +321,27 @@ export default function StepThree({
           );
         } catch (e) {
           // If there's an error loading the image, use the category icon
-          return <div className="text-2xl mb-1">{cropCategoryIcons[crop.category as keyof typeof cropCategoryIcons] || '🌱'}</div>;
+          return (
+            <div className="text-2xl mb-1">
+              {cropCategoryIcons[
+                crop.category as keyof typeof cropCategoryIcons
+              ] || '🌱'}
+            </div>
+          );
         }
       } else {
         // Direct emoji
         return <div className="text-2xl mb-1">{crop.icon}</div>;
       }
     }
-    
+
     // Fallback to category icon
-    return <div className="text-2xl mb-1">{cropCategoryIcons[crop.category as keyof typeof cropCategoryIcons] || '🌱'}</div>;
+    return (
+      <div className="text-2xl mb-1">
+        {cropCategoryIcons[crop.category as keyof typeof cropCategoryIcons] ||
+          '🌱'}
+      </div>
+    );
   };
 
   return (
@@ -310,7 +353,9 @@ export default function StepThree({
           transition={{ duration: 0.4 }}
           className="text-center"
         >
-          <h2 className="text-2xl font-bold mb-2">What are you growing here?</h2>
+          <h2 className="text-2xl font-bold mb-2">
+            What are you growing here?
+          </h2>
           <p className="text-center text-muted-foreground mb-2">
             Select or search for a crop
           </p>
@@ -332,17 +377,17 @@ export default function StepThree({
                 className="pl-9 py-6"
               />
             </div>
-            
+
             <Button
               variant="outline"
               size="icon"
               className={cn(
-                "flex-shrink-0 h-10 w-10",
-                isListening && "bg-primary text-primary-foreground"
+                'flex-shrink-0 h-10 w-10',
+                isListening && 'bg-primary text-primary-foreground'
               )}
               onClick={handleListenForCrop}
             >
-              <Mic className={cn("h-4 w-4", isListening && "animate-pulse")} />
+              <Mic className={cn('h-4 w-4', isListening && 'animate-pulse')} />
             </Button>
           </div>
         </motion.div>
@@ -356,11 +401,17 @@ export default function StepThree({
         >
           <div className="flex space-x-2 min-w-max">
             {categories.map((category) => (
-              <Badge 
+              <Badge
                 key={category.name}
-                variant={activeCategory === category.name ? "default" : "outline"}
+                variant={
+                  activeCategory === category.name ? 'default' : 'outline'
+                }
                 className="cursor-pointer px-3 py-1 text-sm"
-                onClick={() => setActiveCategory(activeCategory === category.name ? null : category.name)}
+                onClick={() =>
+                  setActiveCategory(
+                    activeCategory === category.name ? null : category.name
+                  )
+                }
               >
                 <span className="mr-1">{category.icon}</span>
                 {category.name}
@@ -379,12 +430,13 @@ export default function StepThree({
             <h3 className="text-sm font-medium mb-2">Your Popular Crops:</h3>
             <div className="flex flex-wrap gap-2">
               {popularCrops.map((crop, i) => (
-                <Badge 
+                <Badge
                   key={i}
                   variant="outline"
                   className={cn(
-                    "cursor-pointer text-base py-1.5 px-3",
-                    cropType === crop && "bg-primary text-primary-foreground hover:bg-primary/90"
+                    'cursor-pointer text-base py-1.5 px-3',
+                    cropType === crop &&
+                      'bg-primary text-primary-foreground hover:bg-primary/90'
                   )}
                   onClick={() => handleCropSelect(crop)}
                 >
@@ -404,16 +456,14 @@ export default function StepThree({
         >
           <div className="flex justify-between items-center">
             <h3 className="text-sm font-medium">
-              {filteredCrops.length > 0 ? (
-                `${filteredCrops.length} crop${filteredCrops.length !== 1 ? 's' : ''} available`
-              ) : (
-                'No crops match your search'
-              )}
+              {filteredCrops.length > 0
+                ? `${filteredCrops.length} crop${filteredCrops.length !== 1 ? 's' : ''} available`
+                : 'No crops match your search'}
             </h3>
-            
+
             {filteredCrops.length === 0 && (
-              <Button 
-                variant="link" 
+              <Button
+                variant="link"
                 size="sm"
                 onClick={() => {
                   setShowSuggestionModal(true);
@@ -426,7 +476,7 @@ export default function StepThree({
               </Button>
             )}
           </div>
-          
+
           {filteredCrops.length > 0 ? (
             <div className="grid grid-cols-3 gap-3">
               {filteredCrops.slice(0, 12).map((crop, index) => (
@@ -436,24 +486,28 @@ export default function StepThree({
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.3 + index * 0.05 }}
                 >
-                  <Card 
+                  <Card
                     className={cn(
-                      "p-3 text-center cursor-pointer hover:bg-primary/5 transition-colors",
-                      cropType === crop.name && "bg-primary/10 border-primary"
+                      'p-3 text-center cursor-pointer hover:bg-primary/5 transition-colors',
+                      cropType === crop.name && 'bg-primary/10 border-primary'
                     )}
                     onClick={() => handleCropSelect(crop.name)}
                   >
                     {renderCropIcon(crop)}
-                    <div className="text-sm font-medium truncate">{crop.name}</div>
+                    <div className="text-sm font-medium truncate">
+                      {crop.name}
+                    </div>
                   </Card>
                 </motion.div>
               ))}
             </div>
           ) : (
             <Card className="p-6 text-center bg-muted/50">
-              <p className="text-muted-foreground">No crops match your search</p>
-              <Button 
-                variant="link" 
+              <p className="text-muted-foreground">
+                No crops match your search
+              </p>
+              <Button
+                variant="link"
                 onClick={() => {
                   setShowSuggestionModal(true);
                   setNewCropName(searchValue);
@@ -464,22 +518,23 @@ export default function StepThree({
               </Button>
             </Card>
           )}
-          
+
           {filteredCrops.length > 12 && (
             <div className="text-center">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={() => setSearchValue('')}
               >
-                {filteredCrops.length - 12} more crops available - refine your search
+                {filteredCrops.length - 12} more crops available - refine your
+                search
               </Button>
             </div>
           )}
-          
+
           <div className="text-center pt-2">
-            <Button 
-              variant="link" 
+            <Button
+              variant="link"
               size="sm"
               onClick={() => {
                 setShowSuggestionModal(true);
@@ -493,28 +548,24 @@ export default function StepThree({
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           className="flex justify-between gap-3 mt-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <Button 
-            variant="ghost" 
-            onClick={onBack}
-            className="flex-1"
-          >
+          <Button variant="ghost" onClick={onBack} className="flex-1">
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back
           </Button>
-          
+
           <div className="space-y-2 flex-1">
-            <Button 
+            <Button
               onClick={onNext}
               disabled={!cropType && filteredCrops.length > 0}
               className="w-full"
             >
-              {cropType ? "Continue" : "Select a crop"}
+              {cropType ? 'Continue' : 'Select a crop'}
             </Button>
             <Button
               variant="ghost"
@@ -526,9 +577,12 @@ export default function StepThree({
             </Button>
           </div>
         </motion.div>
-        
+
         {/* Suggest new crop dialog */}
-        <Dialog open={showSuggestionModal} onOpenChange={setShowSuggestionModal}>
+        <Dialog
+          open={showSuggestionModal}
+          onOpenChange={setShowSuggestionModal}
+        >
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Add a new crop</DialogTitle>
@@ -549,9 +603,7 @@ export default function StepThree({
               >
                 Cancel
               </Button>
-              <Button onClick={handleSuggestNewCrop}>
-                Add Crop
-              </Button>
+              <Button onClick={handleSuggestNewCrop}>Add Crop</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

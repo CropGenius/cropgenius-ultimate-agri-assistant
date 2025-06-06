@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC, useState } from 'react';
 import { X } from 'lucide-react';
 
 interface ProUpgradeModalProps {
@@ -7,12 +7,12 @@ interface ProUpgradeModalProps {
   onUpgrade?: () => Promise<void> | void;
 }
 
-const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
+const ProUpgradeModal: FC<ProUpgradeModalProps> = ({
   isOpen,
   onClose,
   onUpgrade,
 }) => {
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleUpgrade = async () => {
     try {
@@ -21,7 +21,7 @@ const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
         await onUpgrade();
       }
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       onClose();
     } catch (error) {
       console.error('Upgrade failed:', error);
@@ -50,23 +50,55 @@ const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
 
           <div className="space-y-6">
             <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="text-lg font-medium text-blue-800">Why upgrade to Pro?</h3>
+              <h3 className="text-lg font-medium text-blue-800">
+                Why upgrade to Pro?
+              </h3>
               <ul className="mt-2 space-y-2 text-sm text-blue-700">
                 <li className="flex items-start">
-                  <svg className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="h-5 w-5 text-green-500 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                   Unlimited field monitoring
                 </li>
                 <li className="flex items-start">
-                  <svg className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="h-5 w-5 text-green-500 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                   Advanced analytics & insights
                 </li>
                 <li className="flex items-start">
-                  <svg className="h-5 w-5 text-green-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="h-5 w-5 text-green-500 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                   Priority support
                 </li>
@@ -76,9 +108,14 @@ const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="text-lg font-medium text-gray-900">Pro Plan</h3>
               <p className="mt-1 text-3xl font-bold text-gray-900">
-                $19<span className="text-base font-normal text-gray-500">/month</span>
+                $19
+                <span className="text-base font-normal text-gray-500">
+                  /month
+                </span>
               </p>
-              <p className="mt-2 text-sm text-gray-500">Billed annually or $24 month-to-month</p>
+              <p className="mt-2 text-sm text-gray-500">
+                Billed annually or $24 month-to-month
+              </p>
             </div>
 
             <div className="space-y-4">

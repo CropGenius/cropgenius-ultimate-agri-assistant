@@ -1,0 +1,71 @@
+# Netlify Configuration for CropGenius Platform
+# Production-grade deployment settings for 100M+ African farmers
+
+[build]
+  # Base directory containing the source code
+  base = "."
+  
+  # Directory with the built project (relative to base)
+  publish = "dist"
+  
+  # Build command to create the production build
+  command = "npm run build:production"
+
+  # Environment variables that should be set during the build
+  environment = { NODE_VERSION = "18.x" }
+
+# Enable SPA redirect for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers to enable PWA functionality, security, and caching
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://*.supabase.co https://api.openweathermap.org https://api.twilio.com wss://*.supabase.co; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.mapbox.com https://openweathermap.org blob:; font-src 'self' data:; worker-src 'self' blob:; manifest-src 'self'"
+    Cache-Control = "public, max-age=3600"
+    X-Content-Type-Options = "nosniff"
+
+# Cache service worker and important PWA assets for longer periods
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"
+
+# Enable prerendering for performance
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Set up edge functions for backend logic
+[functions]
+  directory = "netlify/functions"
+  included_files = ["dist/assets/*"]
+
+# Define build plugin for post-processing and optimization
+[[plugins]]
+  package = "netlify-plugin-inline-critical-css"
+  
+[[plugins]]
+  package = "netlify-plugin-cache"
+  [plugins.inputs]
+    paths = ["node_modules/.cache", "dist", ".eslintcache"]
+
+# Ensure correct caching headers for offline assets
+[[headers]]
+  for = "/offline.html"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"

@@ -34,7 +34,8 @@ class DiagnosticService {
   private errorLog: ErrorLogEntry[] = [];
   private componentHealth: Map<string, ComponentHealth> = new Map();
   private operationLog: OperationLog[] = [];
-  private devMode: boolean = import.meta.env.DEV || localStorage.getItem('DEV_MODE') === 'true';
+  private devMode: boolean =
+    import.meta.env.DEV || localStorage.getItem('DEV_MODE') === 'true';
 
   private constructor() {
     // Load persisted error log if available
@@ -65,11 +66,11 @@ class DiagnosticService {
       timestamp: new Date().toISOString(),
       message: error.message,
       stack: error.stack,
-      context
+      context,
     };
 
     this.errorLog.push(entry);
-    
+
     // Keep log size reasonable
     if (this.errorLog.length > 100) {
       this.errorLog.shift();
@@ -88,7 +89,10 @@ class DiagnosticService {
     try {
       // Only keep 10 most recent errors in localStorage
       const recentErrors = this.errorLog.slice(-10);
-      localStorage.setItem('cropgenius_error_log', JSON.stringify(recentErrors));
+      localStorage.setItem(
+        'cropgenius_error_log',
+        JSON.stringify(recentErrors)
+      );
     } catch (e) {
       // Silent catch
     }
@@ -109,7 +113,7 @@ class DiagnosticService {
     this.componentHealth.set(component, {
       component,
       status: 'healthy',
-      lastChecked: new Date().toISOString()
+      lastChecked: new Date().toISOString(),
     });
 
     if (this.devMode) {
@@ -119,12 +123,12 @@ class DiagnosticService {
 
   public reportComponentError(component: string, error: Error | string): void {
     const errorMessage = typeof error === 'string' ? error : error.message;
-    
+
     this.componentHealth.set(component, {
       component,
       status: 'error',
       lastChecked: new Date().toISOString(),
-      error: errorMessage
+      error: errorMessage,
     });
 
     console.error(`❌ [${component}] Error:`, error);
@@ -137,19 +141,19 @@ class DiagnosticService {
   // ------------- OPERATION LOGGING -------------
 
   public logOperation(
-    operation: string, 
-    status: 'success' | 'error', 
-    details: { payload?: any, error?: string, duration?: number } = {}
+    operation: string,
+    status: 'success' | 'error',
+    details: { payload?: any; error?: string; duration?: number } = {}
   ): void {
     const entry: OperationLog = {
       operation,
       status,
       timestamp: new Date().toISOString(),
-      ...details
+      ...details,
     };
 
     this.operationLog.push(entry);
-    
+
     // Keep log size reasonable
     if (this.operationLog.length > 100) {
       this.operationLog.shift();
@@ -158,9 +162,15 @@ class DiagnosticService {
     // Log to console in dev mode
     if (this.devMode) {
       if (status === 'success') {
-        console.log(`✅ [Operation] ${operation} completed successfully`, details.payload || '');
+        console.log(
+          `✅ [Operation] ${operation} completed successfully`,
+          details.payload || ''
+        );
       } else {
-        console.error(`❌ [Operation] ${operation} failed:`, details.error || '');
+        console.error(
+          `❌ [Operation] ${operation} failed:`,
+          details.error || ''
+        );
       }
     }
   }
@@ -174,10 +184,10 @@ class DiagnosticService {
   }
 
   // ------------- HEALTH CHECK -------------
-  
+
   public runSystemHealthCheck(): Record<string, any> {
     console.log('🔍 [DiagnosticService] Running system health check...');
-    
+
     const report = {
       timestamp: new Date().toISOString(),
       session: {
@@ -193,17 +203,18 @@ class DiagnosticService {
       },
       errors: {
         count: this.errorLog.length,
-        recent: this.errorLog.slice(-3)
+        recent: this.errorLog.slice(-3),
       },
       components: {
         total: this.componentHealth.size,
-        errorCount: Array.from(this.componentHealth.values())
-          .filter(c => c.status === 'error').length
-      }
+        errorCount: Array.from(this.componentHealth.values()).filter(
+          (c) => c.status === 'error'
+        ).length,
+      },
     };
-    
+
     console.log('✅ [DiagnosticService] Health check complete:', report);
-    
+
     return report;
   }
 

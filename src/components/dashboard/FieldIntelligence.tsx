@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { MapPin, Plus, Leaf, CloudRain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,38 +25,48 @@ interface FieldIntelligenceProps {
   loading?: boolean;
 }
 
-export default function FieldIntelligence({ fields = [], loading = false }: FieldIntelligenceProps) {
+export default function FieldIntelligence({
+  fields = [],
+  loading = false,
+}: FieldIntelligenceProps) {
   const navigate = useNavigate();
-  
+
   const getHealthColor = (health: string) => {
-    switch(health) {
+    switch (health) {
       case 'good':
-        return "bg-green-500";
+        return 'bg-green-500';
       case 'warning':
-        return "bg-amber-500";
+        return 'bg-amber-500';
       case 'danger':
-        return "bg-red-500";
+        return 'bg-red-500';
       default:
-        return "bg-gray-500";
+        return 'bg-gray-500';
     }
   };
-  
+
   const getWeatherIcon = (status?: string) => {
     if (!status) return null;
-    
+
     if (status.toLowerCase().includes('rain')) {
       return <CloudRain className="h-4 w-4 text-blue-400" />;
     }
-    
+
     return null;
   };
-  
+
   return (
     <div className="px-4 mt-6">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">My Fields {fields.length > 0 && <span className="text-sm font-normal text-muted-foreground">({fields.length})</span>}</h2>
+        <h2 className="text-lg font-semibold">
+          My Fields{' '}
+          {fields.length > 0 && (
+            <span className="text-sm font-normal text-muted-foreground">
+              ({fields.length})
+            </span>
+          )}
+        </h2>
       </div>
-      
+
       <div className="pb-1 overflow-x-auto -mx-1 px-1 flex gap-3 snap-x scrollbar-hide">
         {fields.map((field, index) => (
           <motion.div
@@ -73,18 +82,23 @@ export default function FieldIntelligence({ fields = [], loading = false }: Fiel
               onClick={() => navigate(`/fields/${field.id}`)}
             >
               <div className="h-28 bg-muted relative">
-                <div className={cn("absolute top-2 right-2 h-2.5 w-2.5 rounded-full animate-pulse", getHealthColor(field.health))}></div>
-                
+                <div
+                  className={cn(
+                    'absolute top-2 right-2 h-2.5 w-2.5 rounded-full animate-pulse',
+                    getHealthColor(field.health)
+                  )}
+                ></div>
+
                 {field.weatherStatus && (
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm text-xs font-normal"
                   >
                     {getWeatherIcon(field.weatherStatus)}
                     {field.weatherStatus}
                   </Badge>
                 )}
-                
+
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 pt-10">
                   <div className="flex items-center text-white">
                     <MapPin className="h-3.5 w-3.5 mr-1 text-white/90" />
@@ -104,7 +118,7 @@ export default function FieldIntelligence({ fields = [], loading = false }: Fiel
                     </Badge>
                   )}
                 </div>
-                
+
                 {field.value && (
                   <div className="bg-green-50 dark:bg-green-900/20 p-1.5 rounded-md mb-2 text-center">
                     <span className="text-green-700 dark:text-green-400 text-sm font-semibold">
@@ -115,19 +129,21 @@ export default function FieldIntelligence({ fields = [], loading = false }: Fiel
                     </span>
                   </div>
                 )}
-                
+
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <div>
                     {field.healthPercent && (
                       <div className="flex items-center gap-1.5">
                         <span className="w-12">Health:</span>
                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden w-20">
-                          <div 
+                          <div
                             className={cn(
-                              "h-full",
-                              field.health === 'good' ? "bg-green-500" :
-                              field.health === 'warning' ? "bg-amber-500" :
-                              "bg-red-500"
+                              'h-full',
+                              field.health === 'good'
+                                ? 'bg-green-500'
+                                : field.health === 'warning'
+                                  ? 'bg-amber-500'
+                                  : 'bg-red-500'
                             )}
                             style={{ width: `${field.healthPercent}%` }}
                           ></div>
@@ -141,15 +157,17 @@ export default function FieldIntelligence({ fields = [], loading = false }: Fiel
             </Card>
           </motion.div>
         ))}
-        
-        <Button 
-          variant="outline" 
+
+        <Button
+          variant="outline"
           className="min-w-[220px] h-[175px] border-dashed flex-col gap-1 flex-shrink-0 snap-start"
           onClick={() => navigate('/manage-fields')}
         >
           <Plus className="h-5 w-5" />
           <span>Add New Field</span>
-          <span className="text-xs text-muted-foreground mt-1">Tap to map your land</span>
+          <span className="text-xs text-muted-foreground mt-1">
+            Tap to map your land
+          </span>
         </Button>
       </div>
     </div>

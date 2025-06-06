@@ -10,12 +10,17 @@ const fixMimeTypes = () => ({
   configureServer(server: any) {
     server.middlewares.use((req: any, res: any, next: () => void) => {
       // Proper MIME types for JavaScript modules
-      if (req.url?.endsWith('.js') || req.url?.endsWith('.mjs') || req.url?.endsWith('.tsx') || req.url?.endsWith('.ts')) {
+      if (
+        req.url?.endsWith('.js') ||
+        req.url?.endsWith('.mjs') ||
+        req.url?.endsWith('.tsx') ||
+        req.url?.endsWith('.ts')
+      ) {
         res.setHeader('Content-Type', 'application/javascript');
       }
       next();
     });
-  }
+  },
 });
 
 export default defineConfig({
@@ -44,7 +49,7 @@ export default defineConfig({
   },
   css: {
     // Optimize CSS for faster loading
-    postcss: {}
+    postcss: {},
   },
   server: {
     port: 3000,

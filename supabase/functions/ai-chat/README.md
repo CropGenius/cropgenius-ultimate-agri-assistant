@@ -1,4 +1,3 @@
-
 # AI Chat Edge Function
 
 This Edge Function provides AI-powered agricultural advice to farmers. It processes user questions and returns expert farming recommendations.
@@ -12,6 +11,7 @@ This Edge Function provides AI-powered agricultural advice to farmers. It proces
 ## Technical Implementation
 
 In production, this function would:
+
 1. Securely store and use API keys for services like Google Gemini and OpenAI
 2. Implement proper rate limiting and error handling
 3. Maintain conversation context for multi-turn discussions

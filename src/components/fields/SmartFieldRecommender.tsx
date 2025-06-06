@@ -1,8 +1,20 @@
-
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Sprout, Lightbulb, ChevronRight, ThumbsUp, ThumbsDown } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Sprout,
+  Lightbulb,
+  ChevronRight,
+  ThumbsUp,
+  ThumbsDown,
+} from 'lucide-react';
 import { Coordinates } from '@/types/field';
 import { useErrorLogging } from '@/hooks/use-error-logging';
 
@@ -19,48 +31,48 @@ export default function SmartFieldRecommender({
   locationName,
   area,
   onClose,
-  onGetTips
+  onGetTips,
 }: SmartFieldRecommenderProps) {
   const { trackOperation } = useErrorLogging('SmartFieldRecommender');
 
   // Get the center point of the field
   const getCenterPoint = () => {
     if (coordinates.length === 0) return null;
-    
+
     const sumLat = coordinates.reduce((sum, coord) => sum + coord.lat, 0);
     const sumLng = coordinates.reduce((sum, coord) => sum + coord.lng, 0);
-    
+
     return {
       lat: sumLat / coordinates.length,
-      lng: sumLng / coordinates.length
+      lng: sumLng / coordinates.length,
     };
   };
-  
+
   // Determine the recommended crop based on location
   // In a real application, this would call an AI service/API
   const getRecommendedCrop = () => {
     const center = getCenterPoint();
-    if (!center) return "maize";
-    
+    if (!center) return 'maize';
+
     // Enhanced AI model simulation - in reality this would be a much more sophisticated AI model
     // using soil data, weather patterns, climate zones, and more
     const lat = center.lat;
     const lng = center.lng;
-    
+
     // Different regions have different optimal crops
     if (lat > 10) {
-      return "cassava";
+      return 'cassava';
     } else if (lng > 30) {
-      return "coffee";
+      return 'coffee';
     } else if (area > 5) {
-      return "wheat";
+      return 'wheat';
     } else {
-      return "maize";
+      return 'maize';
     }
   };
-  
+
   const recommendedCrop = getRecommendedCrop();
-  
+
   return (
     <Card className="border-primary/20 shadow-lg animate-in slide-in-from-bottom duration-300">
       <CardHeader className="bg-primary-50 dark:bg-primary-900/30 pb-2">
@@ -79,15 +91,18 @@ export default function SmartFieldRecommender({
           </div>
           <div>
             <p className="font-medium">
-              Based on your field location in <span className="font-semibold">{locationName}</span>,{" "}
-              <span className="text-primary font-bold">{recommendedCrop}</span> is the optimal crop to plant.
+              Based on your field location in{' '}
+              <span className="font-semibold">{locationName}</span>,{' '}
+              <span className="text-primary font-bold">{recommendedCrop}</span>{' '}
+              is the optimal crop to plant.
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              Our AI analyzed soil conditions, local climate patterns, and upcoming weather for this recommendation.
+              Our AI analyzed soil conditions, local climate patterns, and
+              upcoming weather for this recommendation.
             </p>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-2 my-3">
           <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded">
             <div className="text-xs text-muted-foreground">Expected Yield</div>

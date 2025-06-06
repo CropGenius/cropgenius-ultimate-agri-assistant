@@ -1,5 +1,8 @@
 // src/agents/CropScanAgent.ts
-import { uploadCropImage, UploadedFileResponse } from '../services/storageService';
+import {
+  uploadCropImage,
+  UploadedFileResponse,
+} from '../services/storageService';
 
 /**
  * @file CropScanAgent.ts
@@ -33,7 +36,7 @@ export interface GeminiVisionRequestPayload {
         | { text: string }
         | { inline_data: { mime_type: string; data: string } }
       )[];
-    }
+    },
   ];
   // generationConfig?: { ... }; // Optional: Add generation config if needed
   // safetySettings?: { ... }; // Optional: Add safety settings if needed
@@ -80,19 +83,11 @@ const fileToBase64 = (file: File): Promise<string> => {
         reject(new Error('Failed to read file as base64 string.'));
       }
     };
-    reader.onerror = error => reject(error);
+    reader.onerror = (error) => reject(error);
   });
 };
 
 // Function to convert File to base64 (if needed by API and not handled by SDK)
-
-
-
-
-
-
-
-
 
 // --- Core Agent Functions ---
 
@@ -102,7 +97,7 @@ const fileToBase64 = (file: File): Promise<string> => {
  * The imageBase64 should be provided directly.
  */
 export const analyzeCropImage = async (
-  imageBase64: string, 
+  imageBase64: string,
   mimeType: string = 'image/jpeg', // e.g., 'image/png', 'image/jpeg'
   promptText: string = 'Analyze this crop image for diseases, pests, or nutrient deficiencies. Provide a summary of findings and actionable recommendations for a farmer in East Africa. If multiple issues are present, list them. If no issues are found, state that clearly.'
 ): Promise<GeminiVisionResponse> => {
@@ -145,12 +140,15 @@ export const analyzeCropImage = async (
         const errorData = await response.json();
         console.error('Gemini API Error Response:', errorData);
         // Accessing nested error message if available, common in Google API errors
-        errorDetail = errorData.error?.message || errorData.message || response.statusText;
+        errorDetail =
+          errorData.error?.message || errorData.message || response.statusText;
       } catch (e) {
         // If parsing errorData fails, use the original statusText
         console.error('Failed to parse Gemini API error response:', e);
       }
-      throw new Error(`Gemini API request failed: ${response.status} - ${errorDetail}`);
+      throw new Error(
+        `Gemini API request failed: ${response.status} - ${errorDetail}`
+      );
     }
     return await response.json();
   } catch (error) {
@@ -173,8 +171,10 @@ export const analyzeCropImage = async (
 export const processGeminiResponse = (
   geminiResponse: GeminiVisionResponse
 ): Partial<ProcessedCropScanResult> => {
-  const aiTextResponse = geminiResponse.candidates?.[0]?.content?.parts?.[0]?.text || 'No analysis text found.';
-  
+  const aiTextResponse =
+    geminiResponse.candidates?.[0]?.content?.parts?.[0]?.text ||
+    'No analysis text found.';
+
   // Basic parsing - this needs to be much more sophisticated
   // Ideally, prompt Gemini to return structured JSON or use functions.
   let diseaseDetected: string | null = null;
@@ -182,13 +182,19 @@ export const processGeminiResponse = (
   let nutrientDeficiency: string | null = null;
 
   if (aiTextResponse.toLowerCase().includes('disease:')) {
-    diseaseDetected = aiTextResponse.split('disease:')[1]?.split('\n')[0]?.trim();
+    diseaseDetected = aiTextResponse
+      .split('disease:')[1]
+      ?.split('\n')[0]
+      ?.trim();
   }
   if (aiTextResponse.toLowerCase().includes('pest:')) {
     pestDetected = aiTextResponse.split('pest:')[1]?.split('\n')[0]?.trim();
   }
   if (aiTextResponse.toLowerCase().includes('nutrient deficiency:')) {
-    nutrientDeficiency = aiTextResponse.split('nutrient deficiency:')[1]?.split('\n')[0]?.trim();
+    nutrientDeficiency = aiTextResponse
+      .split('nutrient deficiency:')[1]
+      ?.split('\n')[0]
+      ?.trim();
   }
 
   return {
@@ -204,10 +210,10 @@ export const processGeminiResponse = (
  * Saves the processed crop scan result to Supabase.
  */
 export const saveCropScanResult = async (
-  scanData: Omit<ProcessedCropScanResult, 'scannedAt' | 'rawAiResponse'> & { 
-    farmId: string; 
-    fieldId: string; 
-    userId: string; 
+  scanData: Omit<ProcessedCropScanResult, 'scannedAt' | 'rawAiResponse'> & {
+    farmId: string;
+    fieldId: string;
+    userId: string;
     rawAiResponse: any; // Storing raw response as JSONB
     imageUrl: string; // This MUST be the URL from Supabase Storage
   }
@@ -230,7 +236,10 @@ export const saveCropScanResult = async (
   };
 
   try {
-    const { data, error } = await supabase.from('crop_scans').insert(dbEntry).select();
+    const { data, error } = await supabase
+      .from('crop_scans')
+      .insert(dbEntry)
+      .select();
     if (error) {
       console.error('Supabase error saving crop scan data:', error);
       throw error;
@@ -250,14 +259,26 @@ export const saveCropScanResult = async (
 export const performCropScanAndSave = async (
   input: CropScanInput
 ): Promise<ProcessedCropScanResult & { id: string; imageUrl: string }> => {
-  const { imageFile, imageBase64: inputBase64, userId, farmId, fieldId, latitude, longitude } = input;
+  const {
+    imageFile,
+    imageBase64: inputBase64,
+    userId,
+    farmId,
+    fieldId,
+    latitude,
+    longitude,
+  } = input;
 
   if (!userId || !farmId || !fieldId) {
-    throw new Error('User ID, Farm ID, and Field ID are required to perform a crop scan.');
+    throw new Error(
+      'User ID, Farm ID, and Field ID are required to perform a crop scan.'
+    );
   }
 
   if (!imageFile && !inputBase64) {
-    throw new Error('Either an imageFile or imageBase64 string must be provided.');
+    throw new Error(
+      'Either an imageFile or imageBase64 string must be provided.'
+    );
   }
 
   let uploadedImage: UploadedFileResponse | null = null;
@@ -268,12 +289,17 @@ export const performCropScanAndSave = async (
     // 1. Upload image to Supabase Storage
     try {
       console.log(`Uploading image for user ${userId}, field ${fieldId}...`);
-      uploadedImage = await uploadCropImage(imageFile, userId, { farmId, fieldId });
+      uploadedImage = await uploadCropImage(imageFile, userId, {
+        farmId,
+        fieldId,
+      });
       console.log('Image uploaded successfully:', uploadedImage.publicUrl);
       mimeType = imageFile.type || mimeType; // Get MIME type from file if available
     } catch (uploadError) {
       console.error('Failed to upload crop image:', uploadError);
-      throw new Error(`Image upload failed: ${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
+      throw new Error(
+        `Image upload failed: ${uploadError instanceof Error ? uploadError.message : String(uploadError)}`
+      );
     }
 
     // 2. Convert file to base64 for Gemini API
@@ -281,7 +307,9 @@ export const performCropScanAndSave = async (
       base64ForAnalysis = await fileToBase64(imageFile);
     } catch (base64Error) {
       console.error('Failed to convert image to base64:', base64Error);
-      throw new Error(`Image processing failed: ${base64Error instanceof Error ? base64Error.message : String(base64Error)}`);
+      throw new Error(
+        `Image processing failed: ${base64Error instanceof Error ? base64Error.message : String(base64Error)}`
+      );
     }
   } else if (inputBase64) {
     base64ForAnalysis = inputBase64;
@@ -292,15 +320,18 @@ export const performCropScanAndSave = async (
     // However, our DB schema for crop_scans requires an image_url. So, this path needs careful consideration.
     // For a robust solution, if inputBase64 is primary, we might need to skip upload or require a separate imageUrl.
     // Let's enforce imageFile for now to ensure upload and consistent imageUrl.
-    console.warn('Received base64 input directly. This flow path assumes image is already stored or URL is handled separately.');
-    throw new Error('Direct base64 input without a File object is not fully supported for new scans requiring upload. Please provide an imageFile.');
-  }
-  else {
+    console.warn(
+      'Received base64 input directly. This flow path assumes image is already stored or URL is handled separately.'
+    );
+    throw new Error(
+      'Direct base64 input without a File object is not fully supported for new scans requiring upload. Please provide an imageFile.'
+    );
+  } else {
     throw new Error('Invalid input: No image data provided.'); // Should be caught by earlier check
   }
 
   if (!uploadedImage) {
-      throw new Error('Image URL from storage is missing after upload attempt.');
+    throw new Error('Image URL from storage is missing after upload attempt.');
   }
 
   // 3. Analyze image with Gemini
@@ -309,11 +340,17 @@ export const performCropScanAndSave = async (
     console.log('Sending image to Gemini for analysis...');
     // Consider making the prompt more dynamic or configurable if needed
     const prompt = `Analyze this crop image from a farm in East Africa. Identify potential diseases, pests, or nutrient deficiencies. Provide a concise summary of findings and actionable recommendations for the farmer. If multiple issues are present, list them clearly. If no significant issues are found, state that. Format the key findings (disease, pest, deficiency) clearly, for example: "Disease: Late Blight", "Pest: Aphids".`;
-    geminiResponse = await analyzeCropImage(base64ForAnalysis, mimeType, prompt);
+    geminiResponse = await analyzeCropImage(
+      base64ForAnalysis,
+      mimeType,
+      prompt
+    );
     console.log('Gemini analysis received.');
   } catch (analysisError) {
     console.error('Failed to analyze crop image with Gemini:', analysisError);
-    throw new Error(`AI analysis failed: ${analysisError instanceof Error ? analysisError.message : String(analysisError)}`);
+    throw new Error(
+      `AI analysis failed: ${analysisError instanceof Error ? analysisError.message : String(analysisError)}`
+    );
   }
 
   // 4. Process Gemini response
@@ -333,10 +370,17 @@ export const performCropScanAndSave = async (
       longitude,
     });
     console.log('Crop scan saved successfully, ID:', savedScan.id);
-    return { ...savedScan, ...processedAiData, imageUrl: uploadedImage.publicUrl, scannedAt: new Date(savedScan.scanned_at) };
+    return {
+      ...savedScan,
+      ...processedAiData,
+      imageUrl: uploadedImage.publicUrl,
+      scannedAt: new Date(savedScan.scanned_at),
+    };
   } catch (dbError) {
     console.error('Failed to save crop scan result to Supabase:', dbError);
-    throw new Error(`Database operation failed: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
+    throw new Error(
+      `Database operation failed: ${dbError instanceof Error ? dbError.message : String(dbError)}`
+    );
   }
 };
 
@@ -349,4 +393,7 @@ export const performCropScanAndSave = async (
 // 5. Call processGeminiResponse.
 // 6. Call saveCropScanResult with the processed data and the Supabase image URL.
 
-console.log('CropScanAgent.ts loaded. Gemini API Key available:', !!GEMINI_API_KEY);
+console.log(
+  'CropScanAgent.ts loaded. Gemini API Key available:',
+  !!GEMINI_API_KEY
+);

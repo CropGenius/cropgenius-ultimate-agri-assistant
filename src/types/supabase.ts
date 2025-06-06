@@ -1,4 +1,3 @@
-
 export type Profile = {
   id: string;
   full_name: string | null;
@@ -34,8 +33,17 @@ export type WeatherData = {
   recorded_at: string;
 };
 
-export type FieldInsightSourceType = "agent" | "weather" | "scan" | "user" | "system";
-export type FieldInsightType = "observation" | "suggestion" | "alert" | "summary";
+export type FieldInsightSourceType =
+  | 'agent'
+  | 'weather'
+  | 'scan'
+  | 'user'
+  | 'system';
+export type FieldInsightType =
+  | 'observation'
+  | 'suggestion'
+  | 'alert'
+  | 'summary';
 
 export interface FieldInsight {
   id: string;
@@ -111,7 +119,7 @@ export interface Database {
           soil_type?: string | null;
           irrigation_type?: string | null;
         };
-        Update: Partial<Database["public"]["Tables"]["fields"]["Insert"]>;
+        Update: Partial<Database['public']['Tables']['fields']['Insert']>;
       };
       farms: {
         Row: {
@@ -134,7 +142,7 @@ export interface Database {
           created_at?: string | null;
           updated_at?: string | null;
         };
-        Update: Partial<Database["public"]["Tables"]["farms"]["Insert"]>;
+        Update: Partial<Database['public']['Tables']['farms']['Insert']>;
       };
       field_insights: {
         Row: FieldInsight & {

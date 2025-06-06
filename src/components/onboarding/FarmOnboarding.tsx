@@ -1,22 +1,34 @@
-
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Database } from "@/types/supabase";
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Database } from '@/types/supabase';
 
 const farmSchema = z.object({
-  name: z.string().min(2, "Farm name must be at least 2 characters"),
-  location: z.string().min(2, "Location must be at least 2 characters"),
-  total_size: z.coerce.number().positive("Size must be a positive number"),
-  size_unit: z.string().default("hectares"),
+  name: z.string().min(2, 'Farm name must be at least 2 characters'),
+  location: z.string().min(2, 'Location must be at least 2 characters'),
+  total_size: z.coerce.number().positive('Size must be a positive number'),
+  size_unit: z.string().default('hectares'),
 });
 
 type FarmFormValues = z.infer<typeof farmSchema>;
@@ -28,17 +40,17 @@ export default function FarmOnboarding() {
   const form = useForm<FarmFormValues>({
     resolver: zodResolver(farmSchema),
     defaultValues: {
-      name: "",
-      location: "",
+      name: '',
+      location: '',
       total_size: 1,
-      size_unit: "hectares",
+      size_unit: 'hectares',
     },
   });
 
   const onSubmit = async (values: FarmFormValues) => {
     if (!user) {
-      toast.error("Authentication required", {
-        description: "Please sign in to create a farm",
+      toast.error('Authentication required', {
+        description: 'Please sign in to create a farm',
       });
       return;
     }
@@ -56,7 +68,7 @@ export default function FarmOnboarding() {
       };
 
       const { data, error } = await supabase
-        .from("farms")
+        .from('farms')
         .insert(farmData)
         .select()
         .single();
@@ -67,18 +79,18 @@ export default function FarmOnboarding() {
 
       if (data && data.id) {
         // Store farm ID in localStorage
-        localStorage.setItem("farmId", data.id);
+        localStorage.setItem('farmId', data.id);
         window.location.reload(); // Reload to update auth context
 
-        toast.success("Farm created successfully", {
+        toast.success('Farm created successfully', {
           description: `${values.name} has been set up and is ready to use`,
         });
       }
     } catch (error: any) {
-      toast.error("Failed to create farm", {
-        description: error.message || "An unexpected error occurred",
+      toast.error('Failed to create farm', {
+        description: error.message || 'An unexpected error occurred',
       });
-      console.error("Farm creation error:", error);
+      console.error('Farm creation error:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -150,7 +162,9 @@ export default function FarmOnboarding() {
                       <SelectContent>
                         <SelectItem value="hectares">Hectares</SelectItem>
                         <SelectItem value="acres">Acres</SelectItem>
-                        <SelectItem value="square_meters">Square Meters</SelectItem>
+                        <SelectItem value="square_meters">
+                          Square Meters
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -160,7 +174,7 @@ export default function FarmOnboarding() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating Farm..." : "Create Farm"}
+              {isSubmitting ? 'Creating Farm...' : 'Create Farm'}
             </Button>
           </form>
         </Form>
