@@ -183,7 +183,7 @@ export const db = {
       if (!navigator.onLine) {
         const result = await handleOfflineOperation('insert', table, data);
         if (result.success) {
-          toast.info('Changes will be saved when you're back online');
+          toast.info("Changes will be saved when you're back online");
           return { data: Array.isArray(data) ? data : [data] as T[], error: null, offlineQueued: true };
         } else {
           return { 
