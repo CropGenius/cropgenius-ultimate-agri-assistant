@@ -6,7 +6,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
-import { AppConfig } from '@/config';
+import { AppConfig } from '@/config/index';
 import { diagnostics } from '@/core/services/diagnosticService';
 import { toast } from 'sonner';
 import { offlineSyncService } from '@/services/offlineSyncService';
