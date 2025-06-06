@@ -166,18 +166,19 @@ export const MarketRepository = {
       }
 
       return { data, error: null };
-    } catch (error) {
+    } catch (err) {
       // If RPC isn't available yet, we could fall back to a basic query
       // This is a placeholder for future implementation
       console.warn(
-        'Price trends RPC not implemented, falling back to basic query'
+        'Price trends RPC not implemented, falling back to basic query',
+        err
       );
 
       // Example of a fallback implementation using raw query
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysBack);
 
-      const { data, error } = await db.raw
+      const result = await db.raw
         .from('market_listings')
         .select('listing_date, price_per_unit')
         .or(
@@ -186,16 +187,16 @@ export const MarketRepository = {
         .gte('listing_date', startDate.toISOString())
         .order('listing_date', { ascending: true });
 
-      if (error) {
+      if (result.error) {
         return {
           data: null,
-          error: new Error(`Error fetching price trends: ${error.message}`),
+          error: new Error(`Error fetching price trends: ${result.error.message}`),
         };
       }
 
       // Process raw data into a trend structure
       // This is simplified and would need a more robust implementation
-      if (!data || data.length === 0) {
+      if (!result.data || result.data.length === 0) {
         return { data: null, error: null };
       }
 
@@ -232,9 +233,9 @@ export const MarketRepository = {
       }
 
       return { data, error: null };
-    } catch (error) {
+    } catch (err) {
       // Placeholder for future implementation
-      console.warn('Demand signals RPC not implemented yet');
+      console.warn('Demand signals RPC not implemented yet', err);
       return {
         data: null,
         error: new Error('Demand signal analysis not implemented yet'),
@@ -294,7 +295,6 @@ export const MarketRepository = {
 export const useMarketRepository = () => {
   const { user, state } = useApp();
   const userId = user?.id;
-  const { currentFarmId } = state;
 
   return {
     ...MarketRepository,
