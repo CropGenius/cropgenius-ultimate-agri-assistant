@@ -1,7 +1,7 @@
 import { FC } from 'react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/card';
-import { FarmPlanOutput } from '../agents/AIFarmPlanAgent';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { FarmPlanOutput } from '@/agents/AIFarmPlanAgent';
 
 interface FarmPlanDisplayProps {
   farmPlan: FarmPlanOutput;
