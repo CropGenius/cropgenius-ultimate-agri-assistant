@@ -1,7 +1,7 @@
 // src/pages/FarmPlanningPage.tsx
 
 import { FC } from 'react';
-import FarmPlanner from '../components/FarmPlanner';
+import FarmPlanner from '../features/field-management/components/FarmPlanner';
 // import MainLayout from '../layouts/MainLayout'; // Assuming a MainLayout exists for consistent page structure
 
 const FarmPlanningPage: FC = () => {

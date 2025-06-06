@@ -17,7 +17,13 @@ import {
   YieldPredictionResult,
   StoredYieldPrediction,
 } from '@/agents/YieldPredictorAgent';
-import { diagnostics } from '@/utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
+import { useMemoryStore } from '@/hooks/useMemoryStore';
+import { useWeatherAgent } from './useWeatherAgent';
+import { useSmartMarketAgent } from './useSmartMarketAgent';
+
+const AGENT_NAME = 'YieldPredictor';
+const AGENT_VERSION = '1.2';
 
 export interface YieldPredictorAgentState {
   prediction: YieldPredictionResult | null;

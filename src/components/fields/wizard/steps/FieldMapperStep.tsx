@@ -8,7 +8,7 @@ import MapboxFieldMap from '@/components/fields/MapboxFieldMap';
 import MapSearchInput from '@/components/fields/MapSearchInput';
 import { Boundary, Coordinates } from '@/types/field';
 import { useErrorLogging } from '@/hooks/use-error-logging';
-import { isOnline } from '@/utils/isOnline';
+import { isOnline } from '@/core/network/isOnline';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
 
 interface FieldMapperStepProps {

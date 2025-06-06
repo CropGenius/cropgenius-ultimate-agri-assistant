@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getCurrentUser } from '@/utils/authService';
+import { getCurrentUser } from '@/core/auth/authService';
 import { FieldBrainProvider } from '@/hooks/useFieldBrain';
 
 const ScanPage = () => {

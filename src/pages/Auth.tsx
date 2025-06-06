@@ -28,7 +28,7 @@ import {
   signUpWithEmail,
   signInWithGoogle,
   debugAuthState,
-} from '@/utils/authService';
+} from '@/core/auth/authService';
 import { useAuth } from '@/context/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, RefreshCw, Loader2 } from 'lucide-react';

@@ -7,7 +7,7 @@ import {
   logFieldError,
   isOnline,
   verifyOrCreateFarm,
-} from '@/utils/fieldSanitizer';
+} from '@/features/field-management/utils/fieldSanitizer';
 
 // Local storage keys
 const OFFLINE_FIELDS_KEY = 'cropgenius_offline_fields';

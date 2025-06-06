@@ -21,7 +21,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { isOnline } from '@/utils/fieldSanitizer';
+import { isOnline } from '@/features/field-management/utils/fieldSanitizer';
 
 interface WelcomeBackCardProps {
   onSyncComplete?: () => void;

@@ -24,7 +24,9 @@ import FieldDetail from './pages/FieldDetail';
 import ManageFields from './pages/ManageFields';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import DevDebugPanel from '@/components/debug/DevDebugPanel';
-import { diagnostics } from '@/utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
+import { AppStateProvider } from './context/AppStateContext';
+import { AppModeProvider } from './context/appMode';
 
 // Configure React Query with better error handling
 const queryClient = new QueryClient({

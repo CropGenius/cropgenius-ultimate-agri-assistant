@@ -7,7 +7,11 @@ import React, {
 } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { useAuth } from './useAuth';
-import diagnostics from '../utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import farmService from '@/features/field-management/services/farmService';
+import { Field } from '@/types';
+import { useOfflineMutation } from '@/hooks/offline/useOfflineMutation';
 
 // Farm interface
 export interface Farm {

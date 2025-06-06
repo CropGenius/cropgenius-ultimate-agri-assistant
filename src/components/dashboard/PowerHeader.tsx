@@ -17,9 +17,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
-import { isOnline } from '@/utils/isOnline';
+import { isOnline, addOnlineStatusListener } from '@/core/network/isOnline';
 import { cn } from '@/lib/utils';
-import { addOnlineStatusListener } from '@/utils/isOnline';
 
 interface PowerHeaderProps {
   location?: string;

@@ -29,12 +29,12 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import LiveWeatherPanel from '@/components/weather/LiveWeatherPanel';
-import ForecastPanel from '@/components/weather/ForecastPanel';
-import DisasterAlerts from '@/components/weather/DisasterAlerts';
-import SeasonalPredictions from '@/components/weather/SeasonalPredictions';
-import MarketImpact from '@/components/weather/MarketImpact';
-import FarmActionsList from '@/components/weather/FarmActionsList';
+import LiveWeatherPanel from '@/features/weather/components/weather/LiveWeatherPanel';
+import ForecastPanel from '@/features/weather/components/weather/ForecastPanel';
+import DisasterAlerts from '@/features/weather/components/weather/DisasterAlerts';
+import SeasonalPredictions from '@/features/weather/components/weather/SeasonalPredictions';
+import MarketImpact from '@/features/weather/components/weather/MarketImpact';
+import FarmActionsList from '@/features/weather/components/weather/FarmActionsList';
 import Layout from '@/components/Layout';
 
 export default function Weather() {

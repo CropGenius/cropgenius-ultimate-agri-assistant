@@ -13,7 +13,16 @@ import {
   FarmPlanInput,
   FarmPlanOutput,
 } from '@/agents/AIFarmPlanAgent';
-import { diagnostics } from '@/utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
+import { useMemoryStore } from '@/hooks/useMemoryStore';
+import {
+  FarmPlannerAgent,
+  FarmPlan,
+  FarmPlanResult,
+} from '@/agents/FarmPlannerAgent';
+
+const AGENT_NAME = 'FarmPlanAgent';
+const AGENT_VERSION = '1.0';
 
 export const useFarmPlanAgent = ({
   weatherContext,
@@ -22,6 +31,7 @@ export const useFarmPlanAgent = ({
   const { user, state } = useApp();
   const { currentFarmId } = state;
   const userId = user?.id;
+  const { memory, updateMemory } = useMemoryStore();
 
   const [farmPlan, setFarmPlan] = useState<FarmPlanOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);

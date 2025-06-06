@@ -2,7 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { diagnostics } from '@/utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
 
 interface Props {
   children: ReactNode;

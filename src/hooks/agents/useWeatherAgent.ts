@@ -14,8 +14,13 @@ import {
   getWeatherForecast as getWeatherForecastInternal,
   ProcessedCurrentWeather,
   ProcessedForecast,
+  RealTimeWeather,
+  WeatherForecast,
 } from '@/agents/WeatherAgent';
-import { diagnostics } from '@/utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
+
+const AGENT_NAME = 'WeatherAgent';
+const AGENT_VERSION = '1.0';
 
 export interface WeatherAgentState {
   currentWeather: ProcessedCurrentWeather | null;

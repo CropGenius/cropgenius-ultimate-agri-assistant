@@ -15,9 +15,15 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-import diagnostics from '../utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
 import { useOfflineStatus } from '../hooks/useOfflineStatus';
 import { MarketErrorBoundary } from './ErrorBoundary';
+import {
+  fetchMarketTrends,
+  subscribeToMarketData,
+} from '../services/marketService';
+import { AreaChart, Title } from '@tremor/react';
+import { toast } from 'sonner';
 
 const MarketInsightsDashboard: React.FC = () => {
   // Use the specialized Smart Market Agent hook directly

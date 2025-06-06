@@ -1,8 +1,8 @@
 // src/hooks/useAuth.ts
 import { useState, useEffect, createContext, useContext } from 'react';
-import { supabase } from '../integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import diagnostics from '../utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
 
 // Define the context shape
 interface AuthContextType {

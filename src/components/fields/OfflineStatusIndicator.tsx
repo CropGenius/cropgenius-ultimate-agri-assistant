@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Wifi, WifiOff } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { isOnline } from '@/utils/fieldSanitizer';
+import { isOnline } from '@/features/field-management/utils/fieldSanitizer';
 
 export function OfflineStatusIndicator() {
   const [offline, setOffline] = useState(!isOnline());

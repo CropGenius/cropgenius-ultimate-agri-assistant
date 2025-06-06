@@ -12,7 +12,9 @@ import {
   Database,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { diagnostics } from '@/utils/diagnosticService';
+import { AppConfig } from '@/config';
+import { useMemoryStore } from '@/hooks/useMemoryStore';
+import { diagnostics } from '@/core/services/diagnosticService';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';

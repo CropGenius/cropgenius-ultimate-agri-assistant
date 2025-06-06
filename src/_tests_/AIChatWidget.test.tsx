@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { FormEvent } from 'react';
 
 // Mock the AIChatWidget component
-vi.mock('../components/AIChatWidget', () => ({
+vi.mock('../features/ai-chat/components/AIChatWidget', () => ({
   __esModule: true,
   default: () => {
     const handleSubmit = (e: FormEvent) => {
@@ -32,7 +32,7 @@ vi.mock('../components/AIChatWidget', () => ({
 }));
 
 // Import after mock
-import AIChatWidget from '../components/AIChatWidget';
+import AIChatWidget from '../features/ai-chat/components/AIChatWidget';
 
 describe('AIChatWidget', () => {
   beforeEach(() => {

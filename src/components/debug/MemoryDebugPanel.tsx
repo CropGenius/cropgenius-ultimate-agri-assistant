@@ -9,13 +9,21 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { simulateMemoryScenarios, logCurrentMemory } from '@/utils/devMemory';
+import { simulateMemoryScenarios, logCurrentMemory } from './devMemory';
 import { useMemoryStore } from '@/hooks/useMemoryStore';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const MemoryDebugPanel = () => {
   const { memory, syncMemory, resetMemory } = useMemoryStore();
   const [isVisible, setIsVisible] = useState(false);
   const [memorySnapshot, setMemorySnapshot] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   const refreshMemorySnapshot = async () => {
     const snapshot = await logCurrentMemory();

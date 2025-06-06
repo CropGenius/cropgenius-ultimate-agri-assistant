@@ -1,10 +1,14 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-import { diagnostics } from '@/utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
 
 /**
- * Custom hook for component error logging and health reporting
- * Tracks component lifecycle and logs errors automatically
+ * Custom hook for advanced error logging, component lifecycle tracking, and performance monitoring.
+ *
+ * @param componentName The name of the component using the hook.
+ * @param options Configuration options for the hook.
+ * @param options.showToasts Whether to show toast notifications for errors.
+ * @param options.criticalComponent If true, errors will be logged with high priority.
  */
 export const useErrorLogging = (
   componentName: string,
@@ -18,11 +22,10 @@ export const useErrorLogging = (
   useEffect(() => {
     // Log component mount
     diagnostics.reportComponentMount(componentName);
-    console.log(`✅ [${componentName}] loaded successfully`);
 
-    // Return cleanup function
+    // Return cleanup function for when the component unmounts
     return () => {
-      console.log(`🔄 [${componentName}] unmounted`);
+      diagnostics.reportComponentUnmount(componentName);
     };
   }, [componentName]);
 

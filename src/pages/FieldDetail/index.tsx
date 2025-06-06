@@ -11,7 +11,8 @@ import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { FieldMap } from '@/components/fields/FieldMap';
 import { useOfflineMutation } from '@/hooks';
-import { deleteField, getFieldById, getFieldCrops, getFieldHistory } from '@/services/fieldService';
+import { deleteField, getFieldById } from '@/features/field-management/services/fieldService';
+import { getFieldCrops, getFieldHistory } from '@/features/field-management/services/fieldDetailService';
 import { Field, FieldCrop, FieldHistory } from '@/types/field';
 import { useFieldData } from '@/hooks/useFieldData';
 import { useFieldAIAgents } from '@/hooks/agents/useFieldAIAgents';
@@ -248,164 +249,99 @@ const FieldDetailContent = ({ fieldId }: { fieldId: string }) => {
       {hasPendingChanges() && (
         <Alert>
           <RefreshCw className="h-4 w-4 animate-spin" />
-          <AlertTitle>Changes pending sync</AlertTitle>
-          <p>Your changes will be synced when you're back online.</p>
+          <AlertTitle>Pending Changes</AlertTitle>
+          <AlertDescription>
+            You have pending changes that will be synced when you're back online.
+            <Button 
+              variant="link" 
+              className="p-0 h-auto ml-2" 
+              onClick={() => syncFieldData()}
+            >
+              Sync Now
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 
-      {/* Field Map */}
-      {field.boundaries && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Field Map</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 rounded-md overflow-hidden border">
-              <FieldMap boundaries={field.boundaries} />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Tabs for additional information */}
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+      {/* Main content tabs */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="crops">Crops</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="overview" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Field Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FieldDetailsSection field={field} />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Current Crop</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CropsSection 
-                crops={crops} 
-                isLoading={isLoadingCrops} 
-                error={cropsError} 
-                fieldId={fieldId}
-              />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <HistorySection 
-                history={history.slice(0, 5)} 
-                isLoading={isLoadingHistory} 
-                error={historyError} 
-              />
-            </CardContent>
-          </Card>
+
+        <TabsContent value="overview" className="mt-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Field Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FieldDetailsSection field={field} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Map</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {field.boundary?.coordinates ? (
+                  <FieldMap 
+                    boundary={field.boundary} 
+                    style={{ height: '300px', width: '100%' }} 
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] bg-muted rounded-md">
+                    <p className="text-muted-foreground">No map data available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="crops" className="mt-6">
+          <CropsSection crops={crops} isLoading={isLoadingCrops} error={cropsError} />
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-6">
+          <HistorySection history={history} isLoading={isLoadingHistory} error={historyError} />
         </TabsContent>
         
-        <TabsContent value="crops">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Crop History</CardTitle>
-                <Button 
-                  size="sm" 
-                  onClick={() => navigate(`/fields/${fieldId}/crops/new`)}
-                  disabled={!isOnline}
-                >
-                  Add Crop
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CropsSection 
-                crops={crops} 
-                isLoading={isLoadingCrops} 
-                error={cropsError} 
-                fieldId={fieldId}
-                showAll
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="history">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Field History</CardTitle>
-                <Button 
-                  size="sm" 
-                  onClick={() => navigate(`/fields/${fieldId}/history/new`)}
-                  disabled={!isOnline}
-                >
-                  Add Entry
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <HistorySection 
-                history={history} 
-                isLoading={isLoadingHistory} 
-                error={historyError} 
-                showAll
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="analytics">
-          <AnalyticsSection 
-            fieldId={fieldId} 
-            fieldName={field.name}
-            isOnline={isOnline}
-          />
-        </TabsContent>
-          <AnalyticsSection 
-            cropScan={cropScan}
-            fieldInsights={fieldInsights}
-            fieldRisks={fieldRisks}
-            yieldPrediction={yieldPrediction}
-          />
+        <TabsContent value="analytics" className="mt-6">
+          <AnalyticsSection field={field} />
         </TabsContent>
       </Tabs>
+      
+      {/* AI Agents section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>AI Agents</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>AI agents are not yet implemented.</p>
+          {/* Example of how to use the hook */}
+          {/* <pre>{JSON.stringify(aiAgents.agents, null, 2)}</pre> */}
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-const FieldDetailPage = () => {
-  const { id: fieldId } = useParams<{ id: string }>();
-  const navigate = useNavigate();
 
-  if (!fieldId) {
+const FieldDetailPage = () => {
+  const { id } = useParams<{ id: string }>();
+
+  if (!id) {
     return (
       <Layout>
         <div className="p-4">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription className="space-y-2">
-              <p>Field ID is missing from the URL.</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-2"
-                onClick={() => navigate('/fields')}
-              >
-                Back to Fields
-              </Button>
-            </AlertDescription>
+            <AlertDescription>Invalid field ID provided.</AlertDescription>
           </Alert>
         </div>
       </Layout>
@@ -413,13 +349,27 @@ const FieldDetailPage = () => {
   }
 
   return (
-    <ErrorBoundary>
-      <FieldErrorBoundary fieldId={fieldId}>
-        <Layout>
-          <FieldDetailContent fieldId={fieldId} />
-        </Layout>
+    <Layout>
+      <FieldErrorBoundary
+        fallback={(error, reset) => (
+          <div className="p-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Something went wrong</AlertTitle>
+              <AlertDescription>
+                <p>There was an error loading the field details.</p>
+                <pre className="mt-2 whitespace-pre-wrap text-xs">{error.message}</pre>
+                <Button onClick={reset} className="mt-4">Try Again</Button>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+      >
+        <div className="p-4 md:p-6 lg:p-8">
+          <FieldDetailContent fieldId={id} />
+        </div>
       </FieldErrorBoundary>
-    </ErrorBoundary>
+    </Layout>
   );
 };
 

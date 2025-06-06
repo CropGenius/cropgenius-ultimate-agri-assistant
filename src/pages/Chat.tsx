@@ -36,7 +36,7 @@ import {
   fetchAIResponse,
   availableLanguages,
   translateMessage,
-} from '@/utils/aiChatService';
+} from '@/features/ai-chat/services/aiChatService';
 import {
   Select,
   SelectContent,

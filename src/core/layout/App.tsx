@@ -19,12 +19,14 @@ import Chat from './pages/Chat';
 import Auth from './pages/Auth';
 import AuthCallback from './pages/AuthCallback';
 import Fields from './pages/Fields';
-import FieldDetail from './pages/FieldDetail';
+import FieldDetail from '@/pages/FieldDetail/index';
 import ManageFields from './pages/ManageFields';
 import FarmTestPage from './pages/FarmTestPage';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import DevDebugPanel from '@/components/debug/DevDebugPanel';
-import { diagnostics } from '@/utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
+import WelcomePage from '@/pages/Welcome';
+import OnboardingPage from '@/pages/Onboarding';
 
 // Configure React Query with better error handling
 const queryClient = new QueryClient({

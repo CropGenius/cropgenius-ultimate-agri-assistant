@@ -1,11 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import FieldHistoryTracker, {
-  type HistoryEvent,
-} from '../components/FieldHistoryTracker';
+import FieldHistoryTracker from '../features/field-management/components/FieldHistoryTracker';
+import type { HistoryEvent } from '../features/field-management/types';
 
 // Mock the FieldHistoryTracker component with a simplified version for testing
-vi.mock('../components/FieldHistoryTracker', () => ({
+vi.mock('../features/field-management/components/FieldHistoryTracker', () => ({
   __esModule: true,
   default: ({
     history = [],
@@ -26,7 +25,7 @@ vi.mock('../components/FieldHistoryTracker', () => ({
         <div data-testid="empty-message">No history available</div>
       ) : (
         <div data-testid="history-list">
-          {history.map((item, index) => (
+          {history.map((item) => (
             <div key={item.id} data-testid={`history-event-${item.id}`}>
               <div data-testid={`history-date-${item.id}`}>
                 {new Date(item.date).toISOString()}
@@ -120,4 +119,4 @@ describe('FieldHistoryTracker', () => {
     const { container } = render(<FieldHistoryTracker history={mockHistory} />);
     expect(container).toMatchSnapshot();
   });
-});
+}); 

@@ -18,8 +18,13 @@ import {
   fetchMarketListings as fetchMarketListingsInternal,
   MarketDataInput,
   MarketDataOutput,
+  MarketData,
+  MarketTrend,
 } from '@/agents/SmartMarketAgent';
-import { diagnostics } from '@/utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
+
+const AGENT_NAME = 'SmartMarketAgent';
+const AGENT_VERSION = '1.1';
 
 export interface SmartMarketAgentState {
   marketData: MarketDataOutput | null;

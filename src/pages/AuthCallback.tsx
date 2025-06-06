@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase, logAuthState } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { debugAuthState, exchangeCodeForSession } from '@/utils/authService';
+import { debugAuthState, exchangeCodeForSession } from '@/core/auth/authService';
 
 export default function AuthCallback() {
   const navigate = useNavigate();

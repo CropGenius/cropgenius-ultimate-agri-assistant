@@ -5,10 +5,12 @@ import { toast } from 'sonner';
 import { Field, FieldCrop, FieldHistory } from '@/types/field';
 import {
   getFieldById,
-  getFieldCrops,
-  getFieldHistory,
   deleteField,
-} from '@/services/fieldService';
+} from '@/features/field-management/services/fieldService';
+import { 
+  getFieldCrops, 
+  getFieldHistory 
+} from '@/features/field-management/services/fieldDetailService';
 import { useOfflineMutation } from './offline/useOfflineMutation';
 
 export const useFieldData = () => {
@@ -93,7 +95,7 @@ export const useFieldData = () => {
         'Are you sure you want to delete this field? This action cannot be undone.'
       )
     ) {
-      deleteFieldMutation.mutate();
+      deleteFieldMutation.mutate(undefined);
     }
   }, [fieldId, deleteFieldMutation]);
 

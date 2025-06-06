@@ -18,7 +18,7 @@ import {
   ArrowRight,
   AlertCircle,
 } from 'lucide-react';
-import { analyzeCropImage, type ScanResult } from '@/utils/cropScanService';
+import { analyzeCropImage, type ScanResult } from '@/features/crop-scanner/services/cropScanService';
 
 type ScanState = 'idle' | 'capturing' | 'scanning' | 'results';
 type DiseaseSeverity = 'low' | 'medium' | 'high';

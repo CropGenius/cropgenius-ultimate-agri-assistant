@@ -25,7 +25,7 @@ import StepThree from './steps/StepThree';
 import StepFour from './steps/StepFour';
 import StepFive from './steps/StepFive';
 import FieldMapperStep from './steps/FieldMapperStep';
-import { sanitizeFieldData, isOnline } from '@/utils/fieldSanitizer';
+import { sanitizeFieldData, isOnline } from '@/features/field-management/utils/fieldSanitizer';
 import { Database } from '@/types/supabase';
 import { v4 as uuidv4 } from 'uuid';
 

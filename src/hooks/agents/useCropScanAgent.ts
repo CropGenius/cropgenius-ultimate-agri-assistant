@@ -14,7 +14,16 @@ import {
   CropScanInput,
   ProcessedCropScanResult,
 } from '@/agents/CropScanAgent';
-import { diagnostics } from '@/utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
+import { useMemoryStore } from '@/hooks/useMemoryStore';
+import {
+  CropScanAgent,
+  ScanResult,
+  StoredScanResult,
+} from '@/agents/CropScanAgent';
+
+const AGENT_NAME = 'CropScanAgent';
+const AGENT_VERSION = '1.0';
 
 export interface CropScanAgentState {
   scanResult:
@@ -41,6 +50,8 @@ export const useCropScanAgent = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const [recentScans, setRecentScans] = useState<CropScan[]>([]);
+
+  const { memory, updateMemory } = useMemoryStore();
 
   /**
    * Perform a crop scan analysis

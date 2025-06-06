@@ -7,7 +7,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useMemoryStore } from '@/hooks/useMemoryStore';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
-import { isOnline, addOnlineStatusListener } from '@/utils/isOnline';
+import { isOnline, addOnlineStatusListener } from '@/core/network/isOnline';
 
 // Import our new components
 import PowerHeader from '@/components/dashboard/PowerHeader';

@@ -4,10 +4,15 @@
  * and consistent error handling for all Supabase operations.
  */
 
-import { supabase } from '@/integrations/supabase/client';
-import { diagnostics } from '@/utils/diagnosticService';
+import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/types/supabase';
+import { AppConfig } from '@/config';
+import { diagnostics } from '@/core/services/diagnosticService';
 import { toast } from 'sonner';
 import { offlineSyncService } from '@/services/offlineSyncService';
+
+const supabaseUrl = AppConfig.supabaseUrl;
+const supabaseAnonKey = AppConfig.supabaseAnonKey;
 
 // Error handling for database operations
 export class DatabaseError extends Error {

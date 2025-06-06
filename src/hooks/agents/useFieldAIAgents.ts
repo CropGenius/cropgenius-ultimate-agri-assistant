@@ -1,9 +1,12 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useMemo } from 'react';
 import { useCropScanAgent } from './useCropScanAgent';
 import { useYieldPredictorAgent } from './useYieldPredictorAgent';
 import { useApp } from '@/context/AppContext';
-import { diagnostics } from '@/utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
 import { toast } from 'sonner';
+import { useFarmManagement } from '../useFarmManagement';
+import { useAuth } from '@/context/AuthContext';
+import { useFarmPlanAgent } from './useFarmPlanAgent';
 
 export interface FieldAIAgents {
   // Crop Scan

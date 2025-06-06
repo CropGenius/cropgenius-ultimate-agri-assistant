@@ -25,11 +25,13 @@ import { useState, useEffect } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useWeatherAgent } from '../../hooks/agents/useWeatherAgent';
-import { diagnostics } from '../../utils/diagnosticService';
+import { diagnostics } from '@/core/services/diagnosticService';
 import { WeatherErrorBoundary } from '@/components/ErrorBoundary';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { WifiOff, CloudOff, RefreshCw } from 'lucide-react'; // AlertTriangle is already imported, ensure it's the one for UI
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AppConfig } from '../../config';
+import { useMemoryStore } from '../../hooks/useMemoryStore';
 
 interface WeatherPreview {
   temp: number;

@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 
 // Mock the FieldDashboard component
-vi.mock('../components/FieldDashboard', () => ({
+vi.mock('../features/field-management/components/FieldDashboard', () => ({
   __esModule: true,
   default: ({ fields }: { fields: Array<{ name: string; id: string }> }) => (
     <div data-testid="field-dashboard">
@@ -20,7 +20,7 @@ vi.mock('../components/FieldDashboard', () => ({
 }));
 
 // Import after mock
-import FieldDashboard from '../components/FieldDashboard';
+import FieldDashboard from '../features/field-management/components/FieldDashboard';
 
 describe('FieldDashboard', () => {
   const testFields = [
