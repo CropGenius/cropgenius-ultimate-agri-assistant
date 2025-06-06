@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import CropScanner from '@/components/scanner/CropScanner';
+import CropScanner from '@/features/crop-scanner/components/scanner/CropScanner';
 import FieldBrainAssistant from '@/components/ai/FieldBrainAssistant';
 import {
   Card,
