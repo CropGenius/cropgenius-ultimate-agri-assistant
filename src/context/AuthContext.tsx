@@ -26,25 +26,38 @@ const DEV_USER_ID = "00000000-0000-0000-0000-000000000000"; // Valid UUID format
 const DEV_FARM_ID = "00000000-0000-0000-0000-000000000001"; // Valid UUID format
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // Don't need these individual states as we're using authState
-  // const [user, setUser] = useState<User | null>(null);
-  // const [loading, setLoading] = useState(false);
-  // Always keep loading false to eliminate loading screens
-  const [authState, setAuthState] = useState<AuthState>({
-    // Development bypass: provide mock user and session with proper UUID format
-    user: {
-      id: DEV_USER_ID,
-      email: "dev@cropgenius.ai",
-      app_metadata: {},
-      user_metadata: { full_name: "CropGenius Dev" },
-      aud: "authenticated",
-      created_at: "",
-    } as User,
-    session: { user: {} as User } as Session, // Mock session
-    isLoading: false, // Set to false immediately
-    error: null,
-    farmId: DEV_FARM_ID, // Valid UUID format for farm ID
-    isDevPreview: true,
+  // Initialize with development values by default to prevent loading states
+  const [authState, setAuthState] = useState<AuthState>(() => {
+    // In production, this will be updated by the auth state change listener
+    // before the app renders any protected routes
+    return {
+      user: {
+        id: DEV_USER_ID,
+        email: "dev@cropgenius.ai",
+        app_metadata: {},
+        user_metadata: { full_name: "CropGenius Dev" },
+        aud: "authenticated",
+        created_at: new Date().toISOString(),
+      } as User,
+      session: { 
+        access_token: 'dev-token',
+        refresh_token: 'dev-refresh-token',
+        expires_in: 3600,
+        token_type: 'bearer',
+        user: {
+          id: DEV_USER_ID,
+          email: "dev@cropgenius.ai",
+          app_metadata: {},
+          user_metadata: { full_name: "CropGenius Dev" },
+          aud: "authenticated",
+          created_at: new Date().toISOString(),
+        } as User
+      } as Session,
+      isLoading: false, // No loading state
+      error: null,
+      farmId: DEV_FARM_ID,
+      isDevPreview: true,
+    };
   });
   
   // Mock session refresh function

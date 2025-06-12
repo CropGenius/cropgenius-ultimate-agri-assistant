@@ -15,19 +15,19 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, isLoading, farmId, isDevPreview } = useAuth();
   const location = useLocation();
 
-  if (isLoading && !isDevPreview) { // Don't show loading screen if in dev preview with mock data
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-background z-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p className="text-muted-foreground text-lg">Loading authentication...</p>
-        </div>
-      </div>
-    );
+  // Skip loading state if we're in dev preview mode
+  if (isLoading && !isDevPreview) {
+    // Return null instead of a loading screen to prevent flash of loading UI
+    return null;
   }
 
-  if (!user && !isDevPreview) { // If not loading, and no user (and not in dev preview mode)
-    console.log("ProtectedRoute: No user, redirecting to /auth from", location.pathname);
+  // If not in dev preview and no user, redirect to auth
+  if (!user && !isDevPreview) {
+    // Use window.location for immediate redirect without loading state
+    if (location.pathname !== '/auth') {
+      window.location.href = `/auth?redirect=${encodeURIComponent(location.pathname)}`;
+      return null;
+    }
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 

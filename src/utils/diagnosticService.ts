@@ -34,20 +34,33 @@ class DiagnosticService {
   private errorLog: ErrorLogEntry[] = [];
   private componentHealth: Map<string, ComponentHealth> = new Map();
   private operationLog: OperationLog[] = [];
-  private devMode: boolean = import.meta.env.DEV || localStorage.getItem('DEV_MODE') === 'true';
+  private devMode: boolean;
+  private isBrowser: boolean;
 
   private constructor() {
+    // Safely determine if we're in a browser environment
+    this.isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
+    this.devMode = import.meta.env.DEV || (this.isBrowser && localStorage.getItem('DEV_MODE') === 'true');
+    this.errorLog = [];
+    this.componentHealth = new Map();
+    this.operationLog = [];
+    this.initialize();
+  }
+
+  private initialize() {
     // Load persisted error log if available
-    try {
-      const savedLog = localStorage.getItem('cropgenius_error_log');
-      if (savedLog) {
-        this.errorLog = JSON.parse(savedLog);
+    if (this.isBrowser) {
+      try {
+        const savedLog = localStorage.getItem('cropgenius_error_log');
+        if (savedLog) {
+          this.errorLog = JSON.parse(savedLog);
+        }
+      } catch (e) {
+        console.error('Failed to load error log from storage');
       }
-    } catch (e) {
-      console.error('Failed to load error log from storage');
     }
 
-    // Report service initialized
+    // Report service initialization
     console.log('✅ [DiagnosticService] Initialized');
   }
 
