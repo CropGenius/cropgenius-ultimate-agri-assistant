@@ -1,56 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Fix module loading issues - Must be first script -->
-    <script src="/fix-modules.js"></script>
-    
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CropGenius</title>
-    <meta name="description" content="Smart farming simplified" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>CropGenius - Smart Farming Simplified</title>
+    <meta name="description" content="Smart farming simplified with CropGenius" />
     <meta name="author" content="kimathi" />
     <meta property="og:image" content="/og-image.png" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <link rel="manifest" href="/manifest.json" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
     
-    <!-- Force immediate rendering - No loading screens -->
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#ffffff" />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/main.tsx" as="script">
+    
+    <!-- Critical CSS -->
     <style>
-      /* No loading screens or spinners */
-      body, html { margin: 0; padding: 0; height: 100%; width: 100%; }
-      #root { display: block !important; height: 100%; width: 100%; }
-      .loader, .loading, .spinner { display: none !important; visibility: hidden !important; }
+      /* Critical CSS - Load immediately */
+      body, html { 
+        margin: 0; 
+        padding: 0; 
+        height: 100%; 
+        width: 100%; 
+        overflow-x: hidden;
+      }
+      #root { 
+        display: block !important; 
+        height: 100%; 
+        width: 100%;
+      }
+      /* Hide all loaders by default */
+      [data-loading],
+      .loader, 
+      .loading, 
+      .spinner { 
+        display: none !important; 
+        visibility: hidden !important; 
+      }
     </style>
   </head>
 
   <body>
     <div id="root">
-      <!-- Direct content delivery - No loading screens -->
-      <div id="instant-app"></div>
+      <!-- App will be mounted here -->
     </div>
     
-    <!-- Handle module loading errors and eliminate loading screens -->
-    <script>
-      // Immediately render content
-      document.addEventListener('DOMContentLoaded', function() {
-        // Force module type for all scripts
-        document.querySelectorAll('script[type="text/javascript"]').forEach(script => {
-          script.type = 'module';
-        });
-      });
-      
-      // Eliminate any loading screens
-      const noLoading = setInterval(() => {
-        const loaders = document.querySelectorAll('.loading, .loader, .spinner');
-        if (loaders.length > 0) {
-          loaders.forEach(el => el.remove());
-        }
-      }, 100);
-    </script>
-    
-    <!-- Main application script -->
+    <!-- Load the app -->
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Register service worker after app loads -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('ServiceWorker registration successful');
+            })
+            .catch(error => {
+              console.error('ServiceWorker registration failed:', error);
+            });
+        });
+      }
+      
+      // Remove any loading indicators
+      document.addEventListener('DOMContentLoaded', () => {
+        const loaders = document.querySelectorAll('.loading, .loader, .spinner');
+        loaders.forEach(el => el.remove());
+      });
+    </script>
   </body>
 </html>
