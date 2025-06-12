@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { AuthProvider } from "@/context/AuthContext";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import { WifiOff } from "lucide-react";
@@ -73,48 +73,8 @@ const App = () => {
   const isDev = import.meta.env.MODE === "development";
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Initialize immediately - no loading screens
-  console.log(`✅ [App] CROPGenius initialized (${import.meta.env.MODE} mode)`);
-  
-  // Preload critical assets to prevent any loading screens
+  // Track online/offline status
   useEffect(() => {
-    // Remove any loading elements immediately
-    const possibleLoaders = document.querySelectorAll('.loading, .loader, .spinner, [aria-busy="true"], [data-loading="true"]');
-    possibleLoaders.forEach(el => {
-      if (el instanceof HTMLElement) {
-        el.style.display = 'none';
-        el.remove();
-      }
-    });
-    
-    // Force root element to be visible
-    const root = document.getElementById('root');
-    if (root) {
-      root.style.display = 'block';
-      root.style.opacity = '1';
-    }
-    // Preload essential images and resources
-    const preloadResources = () => {
-      const preloadLinks = [
-        '/icons/icon-192x192.png',
-        '/icons/icon-512x512.png',
-        '/src/pages/Index.tsx',
-        '/src/components/Layout.tsx',
-        '/src/components/home/WeatherPreview.tsx'
-      ];
-      
-      preloadLinks.forEach(link => {
-        const preloadLink = document.createElement('link');
-        preloadLink.rel = 'preload';
-        preloadLink.as = link.endsWith('.png') ? 'image' : 'script';
-        preloadLink.href = link;
-        document.head.appendChild(preloadLink);
-      });
-    };
-    
-    preloadResources();
-
-    // Track online/offline status (non-blocking)
     const handleOnline = () => {
       setIsOnline(true);
       console.log("🌐 [App] Network connection restored");
@@ -128,7 +88,9 @@ const App = () => {
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    
+
+    // Report successful application initialization
+    console.log(`✅ [App] CROPGenius initialized (${import.meta.env.MODE} mode)`);
     diagnostics.reportComponentMount('App');
 
     return () => {
@@ -137,16 +99,15 @@ const App = () => {
     };
   }, []);
 
-  // No loading screens - immediate render
   return (
-    <ErrorBoundary fallback={<div className="p-4">CropGenius is ready</div>}>
+    <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <AuthProvider>
             <Toaster />
             <Sonner position="top-center" closeButton />
             <BrowserRouter>
-              <ErrorBoundary fallback={<div className="p-4">CropGenius is ready</div>}>
+              <ErrorBoundary>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
