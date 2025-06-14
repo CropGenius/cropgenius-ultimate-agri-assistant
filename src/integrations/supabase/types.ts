@@ -40,15 +40,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "farms_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       field_crops: {
         Row: {
@@ -132,13 +124,6 @@ export type Database = {
           notes?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "field_history_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "field_history_field_id_fkey"
             columns: ["field_id"]
@@ -252,50 +237,28 @@ export type Database = {
             referencedRelation: "farms"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "fields_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       profiles: {
         Row: {
-          avatar_url: string | null
-          created_at: string | null
-          farm_size: number | null
-          farm_units: string | null
-          full_name: string | null
+          farm_location: string | null
+          farm_name: string | null
           id: string
-          location: string | null
-          phone_number: string | null
-          preferred_language: string | null
+          primary_crops: string[] | null
           updated_at: string | null
         }
         Insert: {
-          avatar_url?: string | null
-          created_at?: string | null
-          farm_size?: number | null
-          farm_units?: string | null
-          full_name?: string | null
+          farm_location?: string | null
+          farm_name?: string | null
           id: string
-          location?: string | null
-          phone_number?: string | null
-          preferred_language?: string | null
+          primary_crops?: string[] | null
           updated_at?: string | null
         }
         Update: {
-          avatar_url?: string | null
-          created_at?: string | null
-          farm_size?: number | null
-          farm_units?: string | null
-          full_name?: string | null
+          farm_location?: string | null
+          farm_name?: string | null
           id?: string
-          location?: string | null
-          phone_number?: string | null
-          preferred_language?: string | null
+          primary_crops?: string[] | null
           updated_at?: string | null
         }
         Relationships: []
@@ -371,7 +334,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      save_user_onboarding_data: {
+        Args:
+          | { p_farm_name: string; p_primary_crops: string[] }
+          | {
+              p_farm_name: string
+              p_primary_crops: string[]
+              p_farm_location: string
+            }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
