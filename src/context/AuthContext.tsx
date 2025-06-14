@@ -26,61 +26,61 @@ const DEV_USER_ID = "00000000-0000-0000-0000-000000000000"; // Valid UUID format
 const DEV_FARM_ID = "00000000-0000-0000-0000-000000000001"; // Valid UUID format
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // Initialize with development values by default to prevent loading states
+  // Initialize with proper loading state for production
   const [authState, setAuthState] = useState<AuthState>(() => {
-    // In production, this will be updated by the auth state change listener
-    // before the app renders any protected routes
     return {
-      user: {
-        id: DEV_USER_ID,
-        email: "dev@cropgenius.ai",
-        app_metadata: {},
-        user_metadata: { full_name: "CropGenius Dev" },
-        aud: "authenticated",
-        created_at: new Date().toISOString(),
-      } as User,
-      session: { 
-        access_token: 'dev-token',
-        refresh_token: 'dev-refresh-token',
-        expires_in: 3600,
-        token_type: 'bearer',
-        user: {
-          id: DEV_USER_ID,
-          email: "dev@cropgenius.ai",
-          app_metadata: {},
-          user_metadata: { full_name: "CropGenius Dev" },
-          aud: "authenticated",
-          created_at: new Date().toISOString(),
-        } as User
-      } as Session,
-      isLoading: false, // No loading state
+      user: null,
+      session: null,
+      isLoading: true,
       error: null,
-      farmId: DEV_FARM_ID,
-      isDevPreview: true,
+      farmId: null,
+      isDevPreview: false,
     };
   });
   
-  // Mock session refresh function
+  // Real session refresh function
   const refreshSession = async () => {
-    console.log("[DEV] Mocked session refresh");
-    return Promise.resolve();
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error("Session refresh error:", error);
+        throw error;
+      }
+      console.log("Session refreshed successfully");
+      return data;
+    } catch (error) {
+      console.error("Failed to refresh session:", error);
+      throw error;
+    }
   };
 
-  // Mock sign out function
+  // Real sign out function
   const signOut = async () => {
-    console.log("[DEV] Mocked sign out");
-    toast.info("Sign out mocked in dev mode");
-    return Promise.resolve();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Sign out error:", error);
+        throw error;
+      }
+      console.log("Signed out successfully");
+      toast.success("Signed out successfully");
+    } catch (error) {
+      console.error("Failed to sign out:", error);
+      toast.error("Failed to sign out");
+      throw error;
+    }
   };
 
-  // Original useEffect is commented out to bypass auth checks
+  // Set up authentication state management
   useEffect(() => {
-    console.log("[DEV] Authentication bypassed for development");
-    console.log("[DEV] Using mock farmId:", DEV_FARM_ID);
-    
-    // TODO: re-enable auth
-    /*
     console.log("AuthProvider: Setting up auth listener");
+    
+    // Initialize with loading state for production
+    setAuthState(prev => ({
+      ...prev,
+      isLoading: true,
+      isDevPreview: false
+    }));
     
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -91,6 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           user: session?.user || null,
           session: session,
           isLoading: false,
+          isDevPreview: false
         }));
         
         if (event === 'SIGNED_IN') {
@@ -107,6 +108,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log("Auth state: User signed out");
           toast.info("Logged out successfully");
           localStorage.removeItem("farmId");
+          setAuthState(prev => ({
+            ...prev,
+            farmId: null
+          }));
         } else if (event === 'TOKEN_REFRESHED') {
           console.log("Auth state: Token refreshed");
         } else if (event === 'USER_UPDATED') {
@@ -126,6 +131,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             ...prev,
             error: error.message,
             isLoading: false,
+            isDevPreview: false
           }));
           return;
         }
@@ -137,6 +143,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             user: session.user,
             session: session,
             isLoading: false,
+            isDevPreview: false
           }));
           
           // Check if user has a farm (using setTimeout to avoid deadlocks)
@@ -155,6 +162,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setAuthState(prev => ({
             ...prev,
             isLoading: false,
+            isDevPreview: false
           }));
         }
       } catch (error: any) {
@@ -163,6 +171,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           ...prev,
           error: error.message,
           isLoading: false,
+          isDevPreview: false
         }));
       }
     };
@@ -176,13 +185,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
-    */
   }, []);
   
-  // Check if user has a farm and store farmId - mocked for development
+  // Check if user has a farm and store farmId
   const checkUserFarm = async (userId: string) => {
-    // TODO: re-enable auth
-    /*
     try {
       console.log("Checking if user has a farm...");
       const { data: farms, error } = await supabase
@@ -210,8 +216,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error: any) {
       console.error("Error checking farm:", error.message);
     }
-    */
-    console.log("[DEV] Mock farm check for:", userId);
   };
 
   return (

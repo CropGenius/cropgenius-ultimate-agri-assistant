@@ -21,24 +21,6 @@ export interface AuthResponse {
 
 // Sign in with email and password
 export const signInWithEmail = async (email: string, password: string): Promise<AuthResponse> => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock sign in for:", email);
-  return { 
-    data: { 
-      user: {
-        id: "dev-user-id-123456",
-        email: email,
-        app_metadata: {},
-        user_metadata: { full_name: "DEV User" },
-        aud: "authenticated",
-        created_at: ""
-      } as User, 
-      session: {} as Session 
-    }, 
-    error: null 
-  };
-  
-  /* Original implementation
   try {
     console.log("Signing in with email:", email);
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -57,29 +39,10 @@ export const signInWithEmail = async (email: string, password: string): Promise<
     console.error("Error signing in:", error.message);
     return { data: null, error: error.message };
   }
-  */
 };
 
 // Sign up with email and password
 export const signUpWithEmail = async (email: string, password: string, fullName: string): Promise<AuthResponse> => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock sign up for:", email);
-  return { 
-    data: { 
-      user: {
-        id: "dev-user-id-123456",
-        email: email,
-        app_metadata: {},
-        user_metadata: { full_name: fullName },
-        aud: "authenticated",
-        created_at: ""
-      } as User, 
-      session: {} as Session 
-    }, 
-    error: null 
-  };
-  
-  /* Original implementation
   try {
     console.log("Signing up with email:", email);
     const { data, error } = await supabase.auth.signUp({
@@ -103,7 +66,6 @@ export const signUpWithEmail = async (email: string, password: string, fullName:
     console.error("Error signing up:", error.message);
     return { data: null, error: error.message };
   }
-  */
 };
 
 // Sign in with Google

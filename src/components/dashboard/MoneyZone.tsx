@@ -1,132 +1,175 @@
-
-import React, { useState } from 'react';
-import { Sparkles, Zap, ArrowRight, Calendar, TrendingUp, Smartphone } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useMemoryStore } from '@/hooks/useMemoryStore';
-import { useNavigate } from 'react-router-dom';
+import { TrendingUp, DollarSign, Zap, Crown, ArrowRight, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface MoneyZoneProps {
-  onUpgrade?: () => void;
+  onUpgrade: () => void;
 }
 
 export default function MoneyZone({ onUpgrade }: MoneyZoneProps) {
-  const { memory, checkProStatus } = useMemoryStore();
-  const { isActive: isProUser } = checkProStatus();
-  const navigate = useNavigate();
-  const [currentSlide, setCurrentSlide] = useState(0);
-  
-  const slides = [
+  const proFeatures = [
     {
-      title: "AI Planning",
-      description: "Plan your season in minutes",
-      icon: <Calendar className="h-5 w-5 text-primary" />
+      icon: <TrendingUp className="h-5 w-5 text-green-600" />,
+      title: "AI Market Predictions",
+      description: "Get price forecasts 7 days ahead"
     },
     {
-      title: "Market Insight",
-      description: "Sell high, never guess again",
-      icon: <TrendingUp className="h-5 w-5 text-green-500" />
+      icon: <Zap className="h-5 w-5 text-blue-600" />,
+      title: "Weather Alerts",
+      description: "Real-time notifications via WhatsApp"
     },
     {
-      title: "Offline Mode",
-      description: "Access insights anywhere",
-      icon: <Smartphone className="h-5 w-5 text-amber-500" />
+      icon: <DollarSign className="h-5 w-5 text-purple-600" />,
+      title: "Profit Optimizer",
+      description: "Maximize your farm's profitability"
     }
   ];
-  
-  if (isProUser) {
-    return null; // Don't show to Pro users
-  }
-  
-  const handleUpgrade = () => {
-    if (onUpgrade) {
-      onUpgrade();
-    } else {
-      navigate("/referrals");
+
+  const marketInsights = [
+    {
+      crop: "Maize",
+      price: "KSh 45/kg",
+      change: "+12%",
+      trend: "up"
+    },
+    {
+      crop: "Beans",
+      price: "KSh 120/kg", 
+      change: "+8%",
+      trend: "up"
+    },
+    {
+      crop: "Tomatoes",
+      price: "KSh 80/kg",
+      change: "-3%",
+      trend: "down"
     }
-  };
-  
-  const handleSlideChange = (index: number) => {
-    setCurrentSlide(index);
-  };
-  
-  // Calculate time remaining for the free trial (days, hours, minutes)
-  const daysRemaining = 5;
-  const hoursRemaining = 22;
-  const minutesRemaining = 10;
+  ];
 
   return (
-    <div className="px-4 mt-6 pb-5">
-      <Card className="bg-gradient-to-r from-indigo-600 to-violet-500 text-white overflow-hidden relative">
-        {/* Animated glow effect */}
-        <div className="absolute -top-10 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl"></div>
-        <div className="absolute -bottom-8 left-0 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
-        
-        <CardContent className="p-4 relative group" onClick={handleUpgrade}>
-          <div className="mb-2 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-yellow-300 animate-pulse" />
-              <Badge className="bg-white/20 hover:bg-white/30 group-hover:bg-white/40 transition-all">7-day free trial</Badge>
-            </div>
-            
-            <Badge variant="outline" className="bg-black/20 text-white text-xs border-white/40 font-mono">
-              {daysRemaining}d:{hoursRemaining}h:{minutesRemaining}m
-            </Badge>
-          </div>
-              
-          <h3 className="text-lg font-bold mb-1 group-hover:translate-x-0.5 transition-transform">
-            CropGenius Pro = Bigger Yields, Smarter Sales
-          </h3>
-          
-          <div className="mt-3 mb-5 flex space-x-2">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  index === currentSlide ? "bg-white w-4" : "bg-white/40 w-1.5"
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSlideChange(index);
-                }}
-                aria-label={`Go to slide ${index + 1}`}
-              />
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Market Insights */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <TrendingUp className="h-5 w-5 text-green-600" />
+            <span>💰 Market Pulse</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {marketInsights.map((item, index) => (
+              <motion.div
+                key={item.crop}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+              >
+                <div>
+                  <h4 className="font-medium text-gray-900">{item.crop}</h4>
+                  <p className="text-sm text-gray-600">{item.price}</p>
+                </div>
+                <Badge 
+                  className={`${
+                    item.trend === 'up' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  {item.change}
+                </Badge>
+              </motion.div>
             ))}
           </div>
           
-          <motion.div
-            key={currentSlide}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="flex items-center gap-2 mb-3"
-          >
-            <div className="p-2 rounded-full bg-white/20">
-              {slides[currentSlide].icon}
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-900">
+                  Get detailed market analysis
+                </p>
+                <p className="text-xs text-blue-700">
+                  Unlock 7-day price predictions
+                </p>
+              </div>
+              <Button size="sm" onClick={onUpgrade} className="bg-blue-600 hover:bg-blue-700">
+                <Crown className="h-3 w-3 mr-1" />
+                Pro
+              </Button>
             </div>
-            <div>
-              <p className="font-semibold">{slides[currentSlide].title}</p>
-              <p className="text-sm text-white/80">{slides[currentSlide].description}</p>
-            </div>
-          </motion.div>
-          
-          {/* Testimonial */}
-          <div className="bg-white/10 p-2 rounded-md text-sm mb-4 border border-white/10">
-            <p className="font-medium">₦280,000 extra from Pro</p>
-            <p className="text-xs text-white/80">— Ayodele, Enugu</p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Pro Upgrade */}
+      <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Crown className="h-5 w-5 text-purple-600" />
+            <span>🚀 CropGenius Pro</span>
+            <Badge className="bg-purple-100 text-purple-800 text-xs">
+              <Sparkles className="h-3 w-3 mr-1" />
+              Premium
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700 mb-4">
+              Supercharge your farming with AI-powered insights and real-time alerts.
+            </p>
+            
+            <div className="space-y-3">
+              {proFeatures.map((feature, index) => (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="flex items-start space-x-3"
+                >
+                  <div className="mt-0.5">{feature.icon}</div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900">
+                      {feature.title}
+                    </h4>
+                    <p className="text-xs text-gray-600">
+                      {feature.description}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="pt-4 border-t border-purple-200">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-lg font-bold text-purple-900">KSh 500/month</p>
+                  <p className="text-xs text-purple-700">Cancel anytime</p>
+                </div>
+                <Badge className="bg-green-100 text-green-800 text-xs">
+                  Save 30%
+                </Badge>
+              </div>
               
-          <Button 
-            className="w-full bg-white text-violet-700 hover:bg-white/90 flex items-center justify-center gap-2 group-hover:shadow-lg transition-all"
-            onClick={handleUpgrade}
-          >
-            <Zap className="h-4 w-4" />
-            Start My Free Trial Now
-            <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
-          </Button>
+              <Button 
+                onClick={onUpgrade}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              >
+                <Crown className="h-4 w-4 mr-2" />
+                Upgrade to Pro
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+              
+              <p className="text-xs text-center text-gray-600 mt-2">
+                Join 10,000+ farmers already using Pro
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
