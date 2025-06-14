@@ -64,6 +64,25 @@ const DevDebugPanel = () => {
     toast.success("Error log cleared");
   };
 
+  // Safe date formatting helper
+  const formatDate = (dateString: string | number | undefined) => {
+    if (!dateString) return 'N/A';
+    
+    try {
+      const date = typeof dateString === 'number' 
+        ? new Date(dateString * 1000) // Handle Unix timestamp
+        : new Date(dateString);
+      
+      // Check if the date is valid
+      if (isNaN(date.getTime())) return 'Invalid date';
+      
+      return date.toLocaleString();
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
+  };
+
   if (!isVisible) return null;
 
   return (
@@ -136,7 +155,7 @@ const DevDebugPanel = () => {
                 
                 <div className="mb-2">
                   <span className="text-gray-400">Token Expiry:</span>
-                  <div>{session?.expires_at ? new Date(session.expires_at * 1000).toLocaleString() : 'N/A'}</div>
+                  <div>{formatDate(session?.expires_at)}</div>
                 </div>
               </>
             )}
@@ -165,7 +184,7 @@ const DevDebugPanel = () => {
                           <AlertTriangle size={12} className="text-red-400 mt-0.5 flex-shrink-0" />
                           <div>
                             <div className="truncate font-semibold">{error.message}</div>
-                            <div className="text-gray-400 text-[10px]">{new Date(error.timestamp).toLocaleString()}</div>
+                            <div className="text-gray-400 text-[10px]">{formatDate(error.timestamp)}</div>
                           </div>
                         </div>
                       </Card>

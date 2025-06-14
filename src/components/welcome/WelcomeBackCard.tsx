@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,15 +23,23 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
   const formatLastLogin = () => {
     if (!memory.lastLogin) return 'first time';
     
-    const lastLogin = new Date(memory.lastLogin);
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'today';
-    if (diffDays === 1) return 'yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
+    try {
+      const lastLogin = new Date(memory.lastLogin);
+      // Check if the date is valid
+      if (isNaN(lastLogin.getTime())) return 'recently';
+      
+      const now = new Date();
+      const diffDays = Math.floor((now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) return 'today';
+      if (diffDays === 1) return 'yesterday';
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+      return `${Math.floor(diffDays / 30)} months ago`;
+    } catch (error) {
+      console.error('Error formatting last login date:', error);
+      return 'recently';
+    }
   };
   
   // Determine suggested crop based on memory and season
@@ -68,7 +75,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
         // Update memory with last sync attempt
         await updateMemory({
           lastSyncedAt: new Date().toISOString(),
-          syncStatus: 'pending', // Changed from 'offline' to 'pending'
+          syncStatus: 'pending',
           lastUsedFeature: 'ai-sync'
         });
         
@@ -95,7 +102,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
         
         await updateMemory({
           lastSyncedAt: new Date().toISOString(),
-          syncStatus: 'pending', // Changed from 'partial' to 'pending'
+          syncStatus: 'pending',
           lastUsedFeature: 'ai-sync'
         });
       } else {
@@ -107,7 +114,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
         
         await updateMemory({
           lastSyncedAt: new Date().toISOString(),
-          syncStatus: 'synced', // Changed from 'success' to 'synced'
+          syncStatus: 'synced',
           lastUsedFeature: 'ai-sync'
         });
       }
@@ -127,7 +134,7 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
       // Still update memory
       await updateMemory({
         lastSyncedAt: new Date().toISOString(),
-        syncStatus: 'failed', // Changed from 'error' to 'failed'
+        syncStatus: 'failed',
         lastUsedFeature: 'ai-sync'
       });
       
@@ -153,6 +160,22 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
         return "(partial)";
       default:
         return "";
+    }
+  };
+
+  // Safe date formatting for last synced
+  const formatLastSynced = () => {
+    if (!memory.lastSyncedAt) return null;
+    
+    try {
+      const syncDate = new Date(memory.lastSyncedAt);
+      // Check if the date is valid
+      if (isNaN(syncDate.getTime())) return null;
+      
+      return syncDate.toLocaleString();
+    } catch (error) {
+      console.error('Error formatting last synced date:', error);
+      return null;
     }
   };
 
@@ -223,14 +246,14 @@ const WelcomeBackCard = ({ onSyncComplete }: WelcomeBackCardProps) => {
           </div>
         </div>
         
-        {memory.lastSyncedAt && (
+        {memory.lastSyncedAt && formatLastSynced() && (
           <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
             {syncStatus === 'success' || syncStatus === 'idle' ? (
               <Check className="h-3 w-3" />
             ) : syncStatus === 'warning' ? (
               <AlertTriangle className="h-3 w-3 text-amber-500" />
             ) : null}
-            Last synced {new Date(memory.lastSyncedAt).toLocaleString()}
+            Last synced {formatLastSynced()}
             {getSyncStatusText()}
           </div>
         )}

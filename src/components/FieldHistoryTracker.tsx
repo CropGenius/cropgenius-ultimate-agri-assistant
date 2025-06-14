@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Calendar, Clock, Droplet, Thermometer, Sun, Calendar as CalendarIcon, Activity } from 'lucide-react';
 
@@ -53,20 +54,42 @@ const getEventColor = (type: string) => {
 };
 
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  try {
+    const date = new Date(dateString);
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date provided to formatDate:', dateString);
+      return 'Invalid date';
+    }
+    
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch (error) {
+    console.error('Error formatting date:', error, 'Date string:', dateString);
+    return 'Invalid date';
+  }
 };
 
 const formatTime = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  try {
+    const date = new Date(dateString);
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('Invalid date provided to formatTime:', dateString);
+      return 'Invalid time';
+    }
+    
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch (error) {
+    console.error('Error formatting time:', error, 'Date string:', dateString);
+    return 'Invalid time';
+  }
 };
 
 const FieldHistoryTracker: React.FC<FieldHistoryTrackerProps> = ({
@@ -75,14 +98,25 @@ const FieldHistoryTracker: React.FC<FieldHistoryTrackerProps> = ({
   onEventClick,
   showFullHistory = true,
 }) => {
-  // Group events by date
+  // Group events by date with validation
   const groupedEvents = history.reduce<Record<string, HistoryEvent[]>>((acc, event) => {
-    const date = new Date(event.date).toDateString();
-    if (!acc[date]) {
-      acc[date] = [];
+    try {
+      const date = new Date(event.date);
+      if (isNaN(date.getTime())) {
+        console.warn('Skipping event with invalid date:', event);
+        return acc;
+      }
+      
+      const dateString = date.toDateString();
+      if (!acc[dateString]) {
+        acc[dateString] = [];
+      }
+      acc[dateString].push(event);
+      return acc;
+    } catch (error) {
+      console.error('Error processing event date:', error, 'Event:', event);
+      return acc;
     }
-    acc[date].push(event);
-    return acc;
   }, {});
 
   // Sort dates in descending order
@@ -113,7 +147,7 @@ const FieldHistoryTracker: React.FC<FieldHistoryTrackerProps> = ({
       
       <div className="divide-y divide-gray-200">
         {displayDates.map((date) => (
-          <div key={date} className="p-4" data-testid={`history-date-format("${date}")`}>
+          <div key={date} className="p-4" data-testid={`history-date-${date}`}>
             <div className="flex items-center mb-3">
               <div className="h-px bg-gray-200 flex-1"></div>
               <span className="px-3 text-sm font-medium text-gray-500 bg-white">
@@ -124,7 +158,14 @@ const FieldHistoryTracker: React.FC<FieldHistoryTrackerProps> = ({
             
             <ul className="space-y-3">
               {groupedEvents[date]
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .sort((a, b) => {
+                  try {
+                    return new Date(b.date).getTime() - new Date(a.date).getTime();
+                  } catch (error) {
+                    console.error('Error sorting events by date:', error);
+                    return 0;
+                  }
+                })
                 .map((event) => (
                   <li 
                     key={event.id} 
