@@ -1,7 +1,7 @@
-const deploymentVerifier = require('./src/services/deploymentVerificationService').deploymentVerifier;
-const supabase = require('./src/integrations/supabase/client').supabase;
-const systemMonitor = require('./src/services/systemMonitoringService').systemMonitor;
-const analytics = require('./src/integrations/analytics').analytics;
+import { deploymentVerifier } from '../src/services/deploymentVerificationService.mjs';
+import { supabase } from '../src/integrations/supabase/client.mjs';
+import { systemMonitor } from '../src/services/systemMonitoringService.mjs';
+import { analytics } from '../src/integrations/analytics.mjs';
 
 async function verifyCriticalPaths() {
   console.log('Verifying critical paths...');

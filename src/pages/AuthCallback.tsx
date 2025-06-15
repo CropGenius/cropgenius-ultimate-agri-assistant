@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase, logAuthState } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -11,6 +11,44 @@ export default function AuthCallback() {
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper function to check for farm and handle navigation
+  const checkFarmAndNavigate = async (userId: string) => {
+    try {
+      // Check if user has a farm
+      const { data: farmData, error: farmError } = await supabase
+        .from('farms')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1);
+      
+      if (farmError) {
+        console.error("Farm check error:", farmError);
+        // Continue with navigation despite farm check error
+        navigate("/", { replace: true });
+        return;
+      }
+      
+      console.log("Farm check result:", farmData);
+      
+      if (farmData && farmData.length > 0) {
+        // Store farm ID in localStorage
+        localStorage.setItem("farmId", farmData[0].id);
+      } else {
+        // No farm, they'll be shown the onboarding
+        console.log("No farm found, will show onboarding flow");
+        localStorage.removeItem("farmId");
+      }
+      
+      // Redirect to home in both cases
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Error checking farm:", error);
+      // Continue with navigation despite error
+      navigate("/", { replace: true });
+    }
+  };
 
   useEffect(() => {
     console.log("Auth callback: Processing authentication");
@@ -33,6 +71,8 @@ export default function AuthCallback() {
           throw new Error(errorDescription || errorParam);
         }
         
+        let session = null;
+        
         // Exchange code for session if present in URL
         if (searchParams.has('code') || hash.includes('access_token')) {
           console.log("Auth code or token found in URL, exchanging for session");
@@ -44,88 +84,42 @@ export default function AuthCallback() {
           }
           
           if (data?.session) {
-            // Show success toast
-            toast.success("Successfully signed in!", {
-              duration: 3000,
-            });
-            
-            // Check if user has a farm
-            const { data: farmData, error: farmError } = await supabase
-              .from('farms')
-              .select('id')
-              .eq('user_id', data.session.user.id)
-              .limit(1);
-            
-            if (farmError) {
-              console.error("Farm check error:", farmError);
-            }
-            
-            console.log("Farm check result:", farmData);
-            
-            if (farmData && farmData.length > 0) {
-              // Store farm ID in localStorage
-              localStorage.setItem("farmId", farmData[0].id);
-              // Redirect to home
-              navigate("/", { replace: true });
-            } else {
-              // No farm, redirect to home where they'll be shown the onboarding
-              console.log("No farm found, redirecting to onboarding flow");
-              navigate("/", { replace: true });
-            }
-            return;
+            session = data.session;
           }
         }
         
-        // If no code exchange was done, try a regular session check
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Session retrieval error:", error);
-          throw error;
+        // If no session from code exchange, try a regular session check
+        if (!session) {
+          const { data, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error("Session retrieval error:", error);
+            throw error;
+          }
+          
+          console.log("Auth callback session check:", data.session?.user?.id || "No session found");
+          session = data.session;
         }
         
-        console.log("Auth callback session check:", data.session?.user?.id || "No session found");
-        
-        if (data.session) {
+        if (session) {
           // Show success toast
           toast.success("Successfully signed in!", {
             duration: 3000,
           });
           
-          // Check if user has a farm
-          const { data: farmData, error: farmError } = await supabase
-            .from('farms')
-            .select('id')
-            .eq('user_id', data.session.user.id)
-            .limit(1);
-          
-          if (farmError) {
-            console.error("Farm check error:", farmError);
-          }
-          
-          console.log("Farm check result:", farmData);
-          
-          if (farmData && farmData.length > 0) {
-            // Store farm ID in localStorage
-            localStorage.setItem("farmId", farmData[0].id);
-            // Redirect to home
-            navigate("/", { replace: true });
-          } else {
-            // No farm, redirect to home where they'll be shown the onboarding
-            console.log("No farm found, redirecting to onboarding flow");
-            navigate("/", { replace: true });
-          }
+          // Check farm and navigate
+          await checkFarmAndNavigate(session.user.id);
         } else {
           // If no session found but we expect one, try checking again after a delay
           // This is necessary because sometimes sessions aren't immediately available after redirect
           console.log("No session found on initial check. Implementing recovery strategy...");
           
-          setTimeout(async () => {
+          timeoutRef.current = setTimeout(async () => {
             const { data: retryData } = await logAuthState();
             
             if (retryData.session) {
               toast.success("Authentication successful!");
-              navigate("/", { replace: true });
+              await checkFarmAndNavigate(retryData.session.user.id);
             } else {
               // If still no session, redirect to login
               toast.error("Authentication failed", {
@@ -144,7 +138,7 @@ export default function AuthCallback() {
         });
         
         // Redirect to login page after a delay
-        setTimeout(() => {
+        timeoutRef.current = setTimeout(() => {
           navigate("/auth", { replace: true });
         }, 3000);
       } finally {
@@ -153,9 +147,16 @@ export default function AuthCallback() {
     };
 
     // Small delay to ensure the component has mounted
-    setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       processOAuthCallback();
     }, 100);
+    
+    // Cleanup function to clear any pending timeouts
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, [navigate]);
 
   return (

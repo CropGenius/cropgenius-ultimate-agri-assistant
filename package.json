@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "build:scripts": "tsc -p tsconfig.scripts.json",
+    "verify-deployment": "npm run build:scripts && node scripts/verify-deployment.js",
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
@@ -12,9 +14,9 @@
     "test:load": "k6 run loadtest.js",
     "test:stress": "k6 run --out json=stress-test-results.json loadtest.js",
     "test:security": "playwright test security.test.ts",
-    "verify-deployment": "node scripts/verify-deployment.js",
     "emergency-rollback": "node scripts/emergency-rollback.js"
   },
+  "type": "module",
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
     "@mapbox/mapbox-sdk": "^0.16.1",
