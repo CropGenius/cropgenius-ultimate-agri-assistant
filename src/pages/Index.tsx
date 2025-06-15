@@ -11,6 +11,9 @@ import { isOnline, addOnlineStatusListener } from "@/utils/isOnline";
 import { reverseGeocode } from '@/utils/location';
 import { fetchJSON } from '@/utils/network';
 import { RefreshCcw } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
 // Import our new components
 import PowerHeader from "@/components/dashboard/PowerHeader";
@@ -359,23 +362,43 @@ export default function Index() {
   return (
     <Layout>
       {/* POWER HEADER */}
-      <PowerHeader 
-        location={weatherInfo.location}
-        temperature={weatherInfo.temperature}
-        weatherCondition={weatherInfo.condition}
-        farmScore={farmScore}
-        synced={allSynced}
-      />
+      <div className="bg-gradient-to-br from-green-50 to-emerald-100 p-6 rounded-lg mb-6 shadow-sm">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">
+              Good morning, <span className="text-green-600">farmer</span>.
+            </h1>
+            <div className="flex items-center text-gray-600 mb-4">
+              <span className="inline-flex mr-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                  <path d="M20 16.2A4.5 4.5 0 0 0 17.5 8h-1.8A7 7 0 1 0 4 14.9"></path>
+                  <path d="M16 14v2"></path>
+                  <path d="M8 9v2"></path>
+                  <path d="M16 19H8.5a5.5 5.5 0 0 1 0-11H17"></path>
+                </svg>
+              </span>
+              <span>{weatherInfo.location} — {weatherInfo.temperature}°C {weatherInfo.condition}</span>
+            </div>
+          </div>
+          <div className="flex flex-col items-end">
+            <div className={`px-4 py-2 rounded-full text-white font-semibold ${farmScore > 70 ? 'bg-green-500' : farmScore > 50 ? 'bg-amber-500' : 'bg-red-500'}`}>
+              Farm Health: {farmScore}%
+            </div>
+            <div className="mt-2 flex items-center text-sm text-green-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              All fields synced
+            </div>
+          </div>
+        </div>
+      </div>
       
       {/* MISSION CONTROL */}
-      <div className="px-4 py-2">
-        <h2 className="text-xl font-semibold mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full">
-              <RefreshCcw size={18} />
-            </span>
-            Mission Control
-          </div>
+      <div className="px-6 py-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold">Today's Genius Actions</h2>
           <button 
             onClick={() => {
               setActionsLoading(true);
@@ -386,25 +409,180 @@ export default function Index() {
             <RefreshCcw size={14} />
             <span>Refresh</span>
           </button>
-        </h2>
-        <MissionControl
-          title="🧠 Today's Genius Actions"
-          actions={actions}
-          loading={actionsLoading}
-          onComplete={handleCompleteTask}
-        />
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <MissionControl
+            title="Today's Genius Actions"
+            actions={actions}
+            loading={actionsLoading}
+            onComplete={handleCompleteTask}
+          />
+        </div>
       </div>
       
       {/* FIELD INTELLIGENCE */}
-      <FieldIntelligence 
-        fields={fields}
-        loading={fieldsLoading}
-      />
+      <div className="px-6 py-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-green-600">
+              <path d="M12 2a10 10 0 1 0 10 10H12V2Z"></path>
+              <path d="M21 12a9 9 0 0 0-9-9v9h9Z"></path>
+              <path d="M12 12 8 8"></path>
+            </svg>
+            <h2 className="text-2xl font-bold">My Fields</h2>
+          </div>
+          <Button variant="green-outline"
+            onClick={() => navigate('/fields/new')}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+              <path d="M5 12h14"></path>
+              <path d="M12 5v14"></path>
+            </svg>
+            Add Field
+          </Button>
+        </div>
+        
+        {fieldsLoading ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-green-500" />
+          </div>
+        ) : fields.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+            <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                <path d="M12 8v8"></path>
+                <path d="M8 12h8"></path>
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium mb-2">Add your first field</h3>
+            <p className="text-gray-500 mb-4">Track soil health, crop growth and get personalized recommendations</p>
+            <Button variant="green"
+              onClick={() => navigate('/fields/new')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                <path d="M5 12h14"></path>
+                <path d="M12 5v14"></path>
+              </svg>
+              Add New Field
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {fields.map(field => (
+              <div key={field.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-all">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-medium text-lg">{field.name}</h3>
+                  <Badge variant="outline" className={`${field.health === 'good' ? 'border-green-200 bg-green-50 text-green-700' : field.health === 'warning' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                    {field.health === 'good' ? 'Healthy' : field.health === 'warning' ? 'Needs attention' : 'Critical'}
+                  </Badge>
+                </div>
+                <div className="text-sm text-gray-500 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Crop:</span>
+                    <span className="font-medium text-gray-700">{field.crop}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Size:</span>
+                    <span className="font-medium text-gray-700">{field.size} {field.size_unit}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Last rain:</span>
+                    <span className="font-medium text-gray-700">{field.lastRain}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Moisture level:</span>
+                    <span className="font-medium text-gray-700">{field.moistureLevel}%</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       
       {/* MONEY ZONE */}
-      <MoneyZone 
-        onUpgrade={handleShowProUpgrade}
-      />
+      <div className="px-6 py-4 mb-20">
+        <div className="bg-green-800 rounded-xl shadow-md overflow-hidden">
+          <div className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-2">Today's AI Farm Plan</h3>
+                <p className="text-green-100 mb-6">Based on your soil, weather & market conditions</p>
+              </div>
+              <div className="text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h7.5"></path>
+                  <path d="M16 2v4"></path>
+                  <path d="M8 2v4"></path>
+                  <path d="M3 10h18"></path>
+                  <path d="M18 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path>
+                  <path d="m22 22-1.5-1.5"></path>
+                </svg>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-green-700 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                      <path d="M2 12h10"></path>
+                      <path d="M9 4v16"></path>
+                      <path d="M14 9h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v-6z"></path>
+                    </svg>
+                  </div>
+                  <div className="text-white">
+                    <p className="font-medium">Delay watering - rain expected in 36 hours</p>
+                  </div>
+                </div>
+                <div className="w-6 h-6 border-2 border-green-400 rounded-full"></div>
+              </div>
+              
+              <div className="bg-green-700 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                      <path d="M10 2v7.31"></path>
+                      <path d="M14 9.3V1.99"></path>
+                      <path d="M8.5 2h7"></path>
+                      <path d="M14 9.3a6.5 6.5 0 1 1-4 0"></path>
+                      <path d="M5.58 16.5h12.85"></path>
+                    </svg>
+                  </div>
+                  <div className="text-white">
+                    <p className="font-medium">Apply organic pest control - aphids detected</p>
+                  </div>
+                </div>
+                <div className="w-6 h-6 border-2 border-green-400 rounded-full"></div>
+              </div>
+              
+              <div className="bg-green-700 rounded-lg p-4 flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center mr-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                      <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                    </svg>
+                  </div>
+                  <div className="text-white">
+                    <p className="font-medium">Harvest maize by Friday for optimal pricing</p>
+                  </div>
+                </div>
+                <div className="w-6 h-6 border-2 border-green-400 rounded-full"></div>
+              </div>
+            </div>
+            
+            <button className="w-full mt-6 py-3 bg-green-700 hover:bg-green-600 text-white rounded-lg flex items-center justify-center"
+              onClick={() => navigate('/farm-plan')}
+            >
+              <span>View full AI farm plan</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-2">
+                <path d="m9 18 6-6-6-6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
     </Layout>
   );
 }

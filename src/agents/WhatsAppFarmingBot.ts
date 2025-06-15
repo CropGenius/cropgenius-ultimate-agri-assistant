@@ -69,6 +69,9 @@ export interface FarmerProfile {
 /**
  * Send crop advice via WhatsApp
  */
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // 2 seconds
+
 export const sendCropAdvice = async (
   phoneNumber: string,
   cropData: any,
@@ -79,10 +82,45 @@ export const sendCropAdvice = async (
   }
 
   try {
-    console.log(`📱 Sending ${adviceType} advice to ${phoneNumber}...`);
-
     const message = await generatePersonalizedAdvice(cropData, adviceType);
-    
+    const validatedPhone = validatePhoneNumber(phoneNumber);
+
+    // Store message in offline queue before sending
+    await storeMessageInQueue(validatedPhone, message, adviceType);
+
+    // Attempt to send with retries
+    const success = await sendWithRetries(
+      validatedPhone,
+      message,
+      adviceType,
+      MAX_RETRIES
+    );
+
+    return success;
+
+  } catch (error) {
+    console.error('❌ Failed to send WhatsApp message:', error);
+    // Store failed message for retry
+    await storeFailedMessage(phoneNumber, message, error);
+    throw error;
+  }
+};
+
+const validatePhoneNumber = (phone: string): string => {
+  // Basic phone number validation
+  if (!phone || phone.length < 10) {
+    throw new Error('Invalid phone number format');
+  }
+  return phone;
+};
+
+const sendWithRetries = async (
+  phoneNumber: string,
+  message: string,
+  adviceType: string,
+  retriesLeft: number
+): Promise<boolean> => {
+  try {
     const response = await fetch(`${WHATSAPP_API_BASE_URL}/messages`, {
       method: 'POST',
       headers: {
@@ -102,6 +140,17 @@ export const sendCropAdvice = async (
 
     if (!response.ok) {
       const errorData = await response.json();
+      
+      // Handle rate limit specifically
+      if (errorData.error?.code === 400 && errorData.error?.error_subcode === 2008004) {
+        if (retriesLeft > 0) {
+          console.log(`Rate limit hit, retrying in ${RETRY_DELAY}ms...`);
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          return sendWithRetries(phoneNumber, message, adviceType, retriesLeft - 1);
+        }
+        throw new Error('Rate limit exceeded');
+      }
+
       console.error('WhatsApp API error:', errorData);
       throw new Error(`WhatsApp API error: ${response.status}`);
     }
@@ -111,12 +160,60 @@ export const sendCropAdvice = async (
 
     // Log the interaction
     await logFarmerInteraction(phoneNumber, 'outbound', message, adviceType);
-
     return true;
 
   } catch (error) {
-    console.error('❌ Failed to send WhatsApp message:', error);
+    if (retriesLeft > 0) {
+      console.log(`Error sending message, retrying in ${RETRY_DELAY}ms...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      return sendWithRetries(phoneNumber, message, adviceType, retriesLeft - 1);
+    }
     throw error;
+  }
+};
+
+const storeMessageInQueue = async (
+  phoneNumber: string,
+  message: string,
+  adviceType: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from('whatsapp_message_queue')
+    .insert([
+      {
+        phone_number: phoneNumber,
+        message: message,
+        advice_type: adviceType,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      }
+    ]);
+
+  if (error) {
+    console.error('Failed to store message in queue:', error);
+    throw error;
+  }
+};
+
+const storeFailedMessage = async (
+  phoneNumber: string,
+  message: string,
+  error: Error
+): Promise<void> => {
+  const { error: supabaseError } = await supabase
+    .from('whatsapp_failed_messages')
+    .insert([
+      {
+        phone_number: phoneNumber,
+        message: message,
+        error_message: error.message,
+        error_stack: error.stack,
+        created_at: new Date().toISOString()
+      }
+    ]);
+
+  if (supabaseError) {
+    console.error('Failed to store failed message:', supabaseError);
   }
 };
 

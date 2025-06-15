@@ -8,7 +8,12 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:load": "k6 run loadtest.js",
+    "test:stress": "k6 run --out json=stress-test-results.json loadtest.js",
+    "test:security": "playwright test security.test.ts",
+    "verify-deployment": "node scripts/verify-deployment.js",
+    "emergency-rollback": "node scripts/emergency-rollback.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -74,6 +79,7 @@
     "@babel/preset-react": "^7.27.1",
     "@babel/preset-typescript": "^7.27.1",
     "@eslint/js": "^9.9.0",
+    "@playwright/test": "^1.53.0",
     "@tailwindcss/typography": "^0.5.15",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -97,7 +103,9 @@
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
     "jsdom": "^26.1.0",
+    "k6": "^0.0.0",
     "lovable-tagger": "^1.1.7",
+    "playwright": "^1.53.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
     "typescript": "^5.8.3",

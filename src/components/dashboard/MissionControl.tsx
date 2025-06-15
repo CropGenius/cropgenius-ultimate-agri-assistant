@@ -75,16 +75,14 @@ export default function MissionControl({ actions, loading, title = "🧠 Today's
 
   if (loading) {
     return (
-      <Card className="mb-6">
-        <CardHeader className="pb-0">
-          <div className="flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        </CardHeader>
-        <CardContent>
+      <div className="p-4">
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="h-8 w-8 animate-spin text-green-500" />
+        </div>
+        <div className="space-y-3 px-2">
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="p-4 rounded-lg border-2 border-gray-200 bg-gray-50 animate-pulse">
+              <div key={i} className="p-4 rounded-lg border border-gray-100 bg-gray-50 animate-pulse">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3 flex-1">
                     <div className="mt-1">
@@ -99,65 +97,65 @@ export default function MissionControl({ actions, loading, title = "🧠 Today's
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="mb-6">
-      <CardHeader className="pb-0">
-        <div className="flex justify-end">
-          <Badge variant="secondary">{actions.length} actions</Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
+    <div>
+      <div className="flex justify-end px-4 pt-3">
+        <Badge variant="outline" className="bg-gray-50 text-gray-600">{actions.length} actions</Badge>
+      </div>
+      <div className="p-4">
         {actions.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p>No urgent actions needed right now</p>
-            <p className="text-sm">Your farm is running smoothly!</p>
+          <div className="text-center py-10 text-gray-500">
+            <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="h-8 w-8 text-gray-400" />
+            </div>
+            <p className="text-lg font-medium">No actions for today. Great work!</p>
+            <p className="text-sm text-gray-400 mt-1">Your farm is running smoothly!</p>
           </div>
         ) : (
           <div className="space-y-3">
             {actions.map((action, index) => (
               <AnimatePresence key={action.id}>
                 {!completedTaskIds.includes(action.id) ? (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  className={`p-4 rounded-lg border-2 ${getActionColor(action.type, action.urgent)} 
-                             hover:shadow-md transition-all cursor-pointer group`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3 flex-1">
-                      <div className="mt-1">
-                        {getActionIcon(action.type)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="font-semibold text-gray-900">{action.title}</h3>
-                          {action.urgent && (
-                            <Badge variant="destructive" className="text-xs">
-                              URGENT
-                            </Badge>
-                          )}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                    className={`p-4 rounded-xl border ${action.urgent ? 'border-red-200 bg-red-50' : 'border-gray-100'} 
+                               hover:shadow-md transition-all cursor-pointer group`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-3 flex-1">
+                        <div className="mt-1 p-2 rounded-full bg-gray-100">
+                          {getActionIcon(action.type)}
                         </div>
-                        <p className="text-sm text-gray-600">{action.description}</p>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="font-medium text-gray-900">{action.title}</h3>
+                            {action.urgent && (
+                              <Badge variant="destructive" className="text-xs font-normal">
+                                URGENT
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">{action.description}</p>
+                        </div>
                       </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleTaskComplete(action.id)}
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleTaskComplete(action.id)}
-                    >
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </motion.div>
+                  </motion.div>
                 ) : (
                   <motion.div
                     initial={{ opacity: 1, height: 'auto' }}
@@ -178,7 +176,7 @@ export default function MissionControl({ actions, loading, title = "🧠 Today's
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

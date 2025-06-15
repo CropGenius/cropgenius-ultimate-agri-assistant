@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=loadtest
+      - VITE_API_BASE_URL=http://localhost:3000
+      - VITE_MODE=loadtest
+
+  loadtest:
+    build:
+      context: .
+      dockerfile: Dockerfile.loadtest
+    depends_on:
+      - web
+    environment:
+      - VITE_API_BASE_URL=http://web:3000
+    links:
+      - web
+    networks:
+      - loadtest-network
+
+networks:
+  loadtest-network:
+    driver: bridge
