@@ -16,11 +16,4 @@ if (!rootElement) {
   createRoot(rootElement).render(<App />);
 }
 
-// Register service worker without blocking main thread
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(error => {
-      console.error('ServiceWorker registration failed:', error);
-    });
-  });
-}
+// Service worker registration is now handled by Vite PWA plugin

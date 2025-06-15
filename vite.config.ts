@@ -6,16 +6,19 @@ import { resolve } from 'path';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // Set base URL based on environment
-  base: '/', // Always use root path
+  base: '/',
   server: {
-    port: 8080,
-    open: true,
+    port: 3000,
+    host: '0.0.0.0',
     strictPort: true,
+    open: true,
+    cors: true
   },
   preview: {
-    port: 8080,
+    port: 3000,
     strictPort: true,
+    host: '0.0.0.0',
+    cors: true
   },
   resolve: {
     alias: {
