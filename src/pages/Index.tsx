@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -9,6 +8,8 @@ import { useMemoryStore } from '@/hooks/useMemoryStore';
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { isOnline, addOnlineStatusListener } from "@/utils/isOnline";
+import { reverseGeocode } from '@/utils/location';
+import { fetchJSON } from '@/utils/network';
 
 // Import our new components
 import PowerHeader from "@/components/dashboard/PowerHeader";
@@ -59,16 +60,16 @@ export default function Index() {
               });
               
               // Generate simulated location and weather based on coordinates
-              simulateLocationAndWeather(position.coords.latitude, position.coords.longitude);
+              setRealLocationAndWeather(position.coords.latitude, position.coords.longitude);
             },
             () => {
               // Failed to get location, use random location for demo
-              simulateLocationAndWeather(null, null);
+              setRealLocationAndWeather(null, null);
             }
           );
         } else {
           // Use random location for demo if geolocation not available
-          simulateLocationAndWeather(null, null);
+          setRealLocationAndWeather(null, null);
         }
         
         if (user) {
@@ -153,34 +154,29 @@ export default function Index() {
     setActionsLoading(true);
     
     try {
-      // In a real app, these would come from an AI service or database
-      // Generate example actions for now
-      const exampleActions = [
-        {
-          id: '1',
-          title: 'Water Field A — Moisture 17%',
-          description: 'Low soil moisture detected. Irrigation recommended today.',
-          icon: null,
-          type: 'water',
-          urgent: true
-        },
-        {
-          id: '2',
-          title: 'Harvest Alert — Maize ready in 2 fields',
-          description: 'Optimal harvest window in the next 5 days.',
-          icon: null,
-          type: 'harvest'
-        },
-        {
-          id: '3', 
-          title: 'Crop Prices: Beans up +11% this week',
-          description: 'Good time to sell. Local markets showing high demand.',
-          icon: null,
-          type: 'market'
-        }
-      ];
-      
-      setActions(exampleActions);
+      if (!user) {
+        setActions([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('farm_tasks')
+        .select('id,title,description,priority,status')
+        .in('status', ['pending', 'in_progress'])
+        .order('due_date', { ascending: true })
+        .limit(20);
+
+      if (error) throw error;
+
+      const parsedActions = (data || []).map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description || 'No description',
+        type: t.priority === 'high' ? 'alert' : t.title.toLowerCase().includes('harvest') ? 'harvest' : t.title.toLowerCase().includes('water') ? 'water' : 'market',
+        urgent: t.priority === 'high',
+      }));
+
+      setActions(parsedActions);
     } catch (err) {
       console.error("Error loading genius actions:", err);
     } finally {
@@ -203,26 +199,43 @@ export default function Index() {
     }
   };
   
-  // Simulate AI detecting location and generating weather
-  const simulateLocationAndWeather = (lat: number | null, lng: number | null) => {
-    // Generate a realistic location based on Africa
-    const regions = [
-      {name: "Nairobi, Kenya", temp: 22, condition: "Partly Cloudy"},
-      {name: "Kakamega, Kenya", temp: 26, condition: "Light Rain"},
-      {name: "Lagos, Nigeria", temp: 31, condition: "Sunny"},
-      {name: "Kampala, Uganda", temp: 24, condition: "Scattered Showers"},
-      {name: "Dar es Salaam, Tanzania", temp: 29, condition: "Humid"},
-      {name: "Accra, Ghana", temp: 30, condition: "Clear"}
-    ];
-    
-    const region = regions[Math.floor(Math.random() * regions.length)];
-    setDetectedLocation(region.name);
-    
-    setWeatherInfo({
-      location: region.name,
-      temperature: region.temp,
-      condition: region.condition
-    });
+  // === REAL location + weather ===
+  const setRealLocationAndWeather = async (lat: number | null, lng: number | null) => {
+    try {
+      if (lat == null || lng == null) {
+        // fallback random African city if coords unavailable
+        const fallback = [
+          { name: 'Nairobi, Kenya', lat: -1.286389, lng: 36.817223 },
+          { name: 'Lagos, Nigeria', lat: 6.524379, lng: 3.379206 },
+          { name: 'Accra, Ghana', lat: 5.603717, lng: -0.186964 },
+          { name: 'Dar es Salaam, Tanzania', lat: -6.792354, lng: 39.208328 },
+        ];
+        const city = fallback[Math.floor(Math.random() * fallback.length)];
+        setWeatherInfo({ location: city.name, temperature: 0, condition: 'Unknown' });
+        setDetectedLocation(city.name);
+        return;
+      }
+      // 1. Reverse geocode
+      const placeName = await reverseGeocode({ lat, lng });
+      setDetectedLocation(placeName);
+
+      // 2. Fetch current weather via OpenWeather
+      if (!import.meta.env.VITE_OPENWEATHERMAP_API_KEY) {
+        console.warn('[Weather] OPENWEATHERMAP key missing; using placeholder temp');
+        setWeatherInfo({ location: placeName, temperature: 0, condition: 'Unknown' });
+        return;
+      }
+
+      const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=${import.meta.env.VITE_OPENWEATHERMAP_API_KEY}`;
+      const w = await fetchJSON<{ main: { temp: number }; weather: Array<{ description: string }> }>(weatherUrl);
+      setWeatherInfo({
+        location: placeName,
+        temperature: Math.round(w.main.temp),
+        condition: w.weather?.[0]?.description ?? 'Clear',
+      });
+    } catch (err) {
+      console.error('[Index] setRealLocationAndWeather failed', err);
+    }
   };
 
   // Show Pro upgrade modal
