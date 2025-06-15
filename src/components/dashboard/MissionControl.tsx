@@ -52,7 +52,7 @@ export default function MissionControl({ actions, loading }: MissionControlProps
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Mission Control</span>
+            <span>🧠 Today's Genius Actions</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -70,7 +70,7 @@ export default function MissionControl({ actions, loading }: MissionControlProps
     <Card className="mb-6">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>🎯 Mission Control</span>
+          <span>🧠 Today's Genius Actions</span>
           <Badge variant="secondary">{actions.length} actions</Badge>
         </CardTitle>
       </CardHeader>
