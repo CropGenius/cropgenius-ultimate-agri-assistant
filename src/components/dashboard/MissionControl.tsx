@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Droplets, Wheat, TrendingUp, AlertTriangle, ArrowRight, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Droplets, Wheat, TrendingUp, AlertTriangle, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Action {
   id: string;
@@ -16,9 +16,36 @@ interface Action {
 interface MissionControlProps {
   actions: Action[];
   loading: boolean;
+  title?: string;
+  onComplete?: (taskId: string) => void;
 }
 
-export default function MissionControl({ actions, loading }: MissionControlProps) {
+export default function MissionControl({ actions, loading, title = "🧠 Today's Genius Actions", onComplete }: MissionControlProps) {
+  const [completedTaskIds, setCompletedTaskIds] = useState<string[]>([]);
+  
+  const handleTaskComplete = (taskId: string) => {
+    // Add to completed tasks
+    setCompletedTaskIds(prev => [...prev, taskId]);
+    
+    // Call the parent's onComplete handler after a short delay for animation
+    setTimeout(() => {
+      onComplete?.(taskId);
+    }, 800);
+  };
+  
+  // Force loading to false after 5 seconds to prevent infinite loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (loading) {
+        console.log('MissionControl: Force ending loading state after timeout');
+        // This would normally update a state in the parent, but we can't do that from here
+        // Instead, this is just a safety log to help debug if loading gets stuck
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timer);
+  }, [loading]);
+
   const getActionIcon = (type: string) => {
     switch (type) {
       case 'water':
@@ -49,16 +76,27 @@ export default function MissionControl({ actions, loading }: MissionControlProps
   if (loading) {
     return (
       <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span>🧠 Today's Genius Actions</span>
-          </CardTitle>
+        <CardHeader className="pb-0">
+          <div className="flex items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse" />
+              <div key={i} className="p-4 rounded-lg border-2 border-gray-200 bg-gray-50 animate-pulse">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-3 flex-1">
+                    <div className="mt-1">
+                      <div className="h-5 w-5 bg-gray-200 rounded-full" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="h-5 w-32 bg-gray-200 rounded mb-2" />
+                      <div className="h-3 w-48 bg-gray-200 rounded" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </CardContent>
@@ -68,11 +106,10 @@ export default function MissionControl({ actions, loading }: MissionControlProps
 
   return (
     <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>🧠 Today's Genius Actions</span>
+      <CardHeader className="pb-0">
+        <div className="flex justify-end">
           <Badge variant="secondary">{actions.length} actions</Badge>
-        </CardTitle>
+        </div>
       </CardHeader>
       <CardContent>
         {actions.length === 0 ? (
@@ -84,40 +121,60 @@ export default function MissionControl({ actions, loading }: MissionControlProps
         ) : (
           <div className="space-y-3">
             {actions.map((action, index) => (
-              <motion.div
-                key={action.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className={`p-4 rounded-lg border-2 ${getActionColor(action.type, action.urgent)} 
-                           hover:shadow-md transition-all cursor-pointer group`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3 flex-1">
-                    <div className="mt-1">
-                      {getActionIcon(action.type)}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{action.title}</h3>
-                        {action.urgent && (
-                          <Badge variant="destructive" className="text-xs">
-                            URGENT
-                          </Badge>
-                        )}
+              <AnimatePresence key={action.id}>
+                {!completedTaskIds.includes(action.id) ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  className={`p-4 rounded-lg border-2 ${getActionColor(action.type, action.urgent)} 
+                             hover:shadow-md transition-all cursor-pointer group`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3 flex-1">
+                      <div className="mt-1">
+                        {getActionIcon(action.type)}
                       </div>
-                      <p className="text-sm text-gray-600">{action.description}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h3 className="font-semibold text-gray-900">{action.title}</h3>
+                          {action.urgent && (
+                            <Badge variant="destructive" className="text-xs">
+                              URGENT
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{action.description}</p>
+                      </div>
                     </div>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleTaskComplete(action.id)}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 1, height: 'auto' }}
+                    animate={{ opacity: 0, height: 0, marginBottom: 0 }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="overflow-hidden"
                   >
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </motion.div>
+                    <div className="p-4 rounded-lg border-2 border-green-200 bg-green-50 flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <p className="font-medium text-green-800">Task completed!</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             ))}
           </div>
         )}
