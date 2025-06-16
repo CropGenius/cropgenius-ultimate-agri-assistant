@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
 import { AuthProvider } from "@/context/AuthContext";
+import { UserMetaProvider } from "@/context/UserMetaContext";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import { WifiOff } from "lucide-react";
 import Index from "./pages/Index";
@@ -15,6 +16,7 @@ import FarmPlan from "./pages/FarmPlan";
 import YieldPredictor from "./pages/YieldPredictor";
 import Market from "./pages/Market";
 import Weather from "./pages/Weather";
+import MissionControlPage from "./pages/MissionControlPage";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
 import AuthCallback from "./pages/AuthCallback";
@@ -103,7 +105,7 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <AuthProvider>
+          <AuthProvider><UserMetaProvider>
             <Toaster />
             <Sonner position="top-center" closeButton />
             <BrowserRouter>
@@ -124,7 +126,7 @@ const App = () => {
                   <Route path="/fields" element={<ProtectedRoute><Fields /></ProtectedRoute>} />
                   <Route path="/fields/:id" element={<ProtectedRoute><FieldDetail /></ProtectedRoute>} />
                   <Route path="/manage-fields" element={<ProtectedRoute><ManageFields /></ProtectedRoute>} />
-                  <Route path="/alerts" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
+                  <Route path="/missions" element={<ProtectedRoute><MissionControlPage /></ProtectedRoute>} />
                   <Route path="/referrals" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
                   <Route path="/community" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
                   <Route path="/challenges" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
@@ -142,7 +144,7 @@ const App = () => {
                 </div>
               )}
             </BrowserRouter>
-          </AuthProvider>
+          </UserMetaProvider></AuthProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

@@ -7,6 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import LayoutMenu from "@/components/LayoutMenu";
+import GreetingBanner from "@/components/ui/GreetingBanner";
 import { useAuth } from "@/context/AuthContext";
 
 interface LayoutProps {
@@ -25,6 +26,7 @@ const Layout = ({ children }: LayoutProps) => {
   
   return (
     <div className="min-h-screen bg-background">
+      <GreetingBanner className="fixed top-0 left-0 right-0 z-50" />
       {/* Add LayoutMenu at the top of the layout */}
       <LayoutMenu />
       
