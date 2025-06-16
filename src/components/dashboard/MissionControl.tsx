@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlusCircle, Zap, Loader2 } from 'lucide-react';
+import { PlusCircle, Zap, Loader2, Sparkles } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -77,13 +77,15 @@ const MissionControl: React.FC = () => {
       </div>
 
       {tasks.length === 0 ? (
-        <div className="text-center py-20 bg-gray-50/50 rounded-lg border border-dashed">
-          <Zap className="mx-auto h-16 w-16 text-gray-300" />
-          <h3 className="mt-4 text-xl font-semibold text-gray-800">All Clear!</h3>
-          <p className="mt-2 text-base text-gray-500">You have no pending tasks. Ready to plan your next move?</p>
-          <Button className="mt-6">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Your First Task
+        <div className="text-center py-16">
+          <div className="inline-flex items-center justify-center bg-blue-100 rounded-full p-4 mb-4">
+            <Zap className="h-10 w-10 text-blue-500" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-700">Your Yield Engine is Idle</h3>
+          <p className="text-gray-500 mt-2">Generate a new mission plan to maximize your farm's profit.</p>
+          <Button className="mt-6" onClick={() => setCreateModalOpen(true)}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate AI Mission Plan
           </Button>
         </div>
       ) : (

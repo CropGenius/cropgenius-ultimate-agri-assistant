@@ -1,6 +1,8 @@
 export type TaskPriority = 'urgent' | 'important' | 'routine';
 
 export interface Task {
+  estimated_roi: number;
+  roi_currency: string;
   id: string;
   user_id: string;
   farm_id?: string;

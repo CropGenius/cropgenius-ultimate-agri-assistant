@@ -33,9 +33,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { createTask } from '@/core/data/tasks';
-import { TaskPriority } from '../taskTypes';
+import { Task, TaskPriority } from '../taskTypes';
 
 const taskFormSchema = z.object({
+  estimated_roi: z.number().default(0),
+  roi_currency: z.string().default('USD'),
   title: z.string().min(3, 'Title must be at least 3 characters long.'),
   description: z.string().optional(),
   priority: z.enum(['urgent', 'important', 'routine']),
@@ -55,6 +57,8 @@ interface AiTaskResponse {
   description?: string;
   priority: 'urgent' | 'important' | 'routine';
   type: 'planting' | 'irrigation' | 'pest_control' | 'harvesting' | 'soil_testing' | 'other';
+  estimated_roi: number;
+  roi_currency: string;
 }
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onOpenChange }) => {
@@ -69,6 +73,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onOpen
       description: '',
       priority: 'important',
       type: 'other',
+      estimated_roi: 0,
+      roi_currency: 'USD',
     },
   });
 
@@ -115,6 +121,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onOpen
         form.setValue('description', firstTask.description || '');
         form.setValue('priority', firstTask.priority);
         form.setValue('type', firstTask.type);
+        form.setValue('estimated_roi', firstTask.estimated_roi);
+        form.setValue('roi_currency', firstTask.roi_currency);
         toast.success('Task details populated by AI! Review and save.');
         // Here you could handle multiple tasks, e.g., store them in state and show a list
       } else {
