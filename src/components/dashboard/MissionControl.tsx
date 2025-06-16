@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PlusCircle, Zap, Loader2 } from 'lucide-react';
 
@@ -38,7 +38,7 @@ const MissionControl: React.FC = () => {
     updateTask({ taskId, completed });
   };
 
-  const groupedTasks = React.useMemo(() => {
+  const groupedTasks = useMemo(() => {
     return tasks.reduce((acc, task) => {
       const priority = task.priority || 'routine';
       if (!acc[priority]) {
