@@ -1,12 +1,20 @@
+export type TaskPriority = 'urgent' | 'important' | 'routine';
+
 export interface Task {
   id: string;
   user_id: string;
   farm_id?: string;
   title: string;
   description?: string;
-  type: 'water' | 'harvest' | 'market' | 'alert';
-  due_date?: string; // ISO
-  urgent?: boolean;
+  type: 'planting' | 'irrigation' | 'pest_control' | 'harvesting' | 'soil_testing' | 'other';
+  priority: TaskPriority;
+  due_date?: string;
   completed_at?: string;
-  created_at?: string;
+  created_at: string;
+  source: 'user_created' | 'ai_generated' | 'template';
+  recommendation_details?: {
+    weather_icon?: string;
+    weather_summary?: string;
+    market_impact?: string;
+  };
 }

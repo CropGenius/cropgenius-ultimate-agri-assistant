@@ -3,29 +3,66 @@ import { Task } from '@/features/mission-control/taskTypes';
 
 const TABLE = 'tasks';
 
-export async function fetchTasks(userId: string) {
+export async function getTasks(): Promise<Task[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    console.error('No user logged in');
+    return [];
+  }
+
   const { data, error } = await supabase
-    .from<Task>(TABLE)
+    .from(TABLE)
     .select('*')
-    .eq('user_id', userId)
-    .order('due_date', { ascending: true });
-  if (error) throw error;
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching tasks:', error);
+    throw new Error(error.message);
+  }
+
+  return data || [];
+}
+
+export async function createTask(taskData: Omit<Task, 'id' | 'user_id' | 'created_at' | 'completed_at' | 'source' | 'completed'>): Promise<Task> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  const taskToInsert = {
+    ...taskData,
+    user_id: user.id,
+    source: 'user_created' as const,
+    completed: false,
+  };
+
+  const { data, error } = await supabase
+    .from(TABLE)
+    .insert(taskToInsert)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating task:', error);
+    throw new Error(error.message);
+  }
+
   return data;
 }
 
-export async function insertTask(task: Omit<Task, 'id'>) {
-  const { data, error } = await supabase.from<Task>(TABLE).insert(task).select().single();
-  if (error) throw error;
-  return data;
-}
+export async function updateTaskCompletion(taskId: string, completed: boolean): Promise<Task> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .update({ completed_at: completed ? new Date().toISOString() : null })
+    .eq('id', taskId)
+    .select()
+    .single();
 
-export async function updateTask(id: string, partial: Partial<Task>) {
-  const { data, error } = await supabase.from<Task>(TABLE).update(partial).eq('id', id).select().single();
-  if (error) throw error;
-  return data;
-}
+  if (error) {
+    console.error('Error updating task:', error);
+    throw new Error(error.message);
+  }
 
-export async function deleteTask(id: string) {
-  const { error } = await supabase.from<Task>(TABLE).delete().eq('id', id);
-  if (error) throw error;
+  return data;
 }
