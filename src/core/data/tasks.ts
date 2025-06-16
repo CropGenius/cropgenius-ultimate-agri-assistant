@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/services/supabaseClient';
 import { Task } from '@/features/mission-control/taskTypes';
 
 const TABLE = 'tasks';

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useUserMeta } from '@/context/UserMetaContext';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/services/supabaseClient';
 
 export const useWeather = () => {
   const { coords, setWeather } = useUserMeta();
