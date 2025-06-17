@@ -76,6 +76,8 @@ const MissionControl: React.FC = () => {
         </Button>
       </div>
 
+      <CreateTaskModal isOpen={isCreateModalOpen} onOpenChange={setCreateModalOpen} />
+
       {tasks.length === 0 ? (
         <div className="text-center py-16">
           <div className="inline-flex items-center justify-center bg-blue-100 rounded-full p-4 mb-4">
@@ -90,8 +92,6 @@ const MissionControl: React.FC = () => {
         </div>
       ) : (
         <>
-          <CreateTaskModal isOpen={isCreateModalOpen} onOpenChange={setCreateModalOpen} />
-
           <Accordion type="multiple" defaultValue={['urgent', 'important']} className="w-full space-y-4">
         
           {priorityOrder.map((priority) => {
