@@ -1,29 +1,15 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
-import { AuthProvider } from "@/context/AuthContext";
+
 import { UserMetaProvider } from "@/context/UserMetaContext";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
 import { WifiOff } from "lucide-react";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Scan from "./pages/Scan";
-import FarmPlan from "./pages/FarmPlan";
-import YieldPredictor from "./pages/YieldPredictor";
-import Market from "./pages/Market";
-import Weather from "./pages/Weather";
-import MissionControlPage from "./pages/MissionControlPage";
-import Chat from "./pages/Chat";
-import Auth from "./pages/Auth";
-import AuthCallback from "./pages/AuthCallback";
-import Fields from "./pages/Fields";
-import FieldDetail from "./pages/FieldDetail";
-import ManageFields from "./pages/ManageFields";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { AppRoutes } from "./AppRoutes";
 import DevDebugPanel from "@/components/debug/DevDebugPanel";
 import { diagnostics } from "@/utils/diagnosticService";
 
@@ -81,7 +67,6 @@ const App = () => {
       setIsOnline(true);
       console.log("🌐 [App] Network connection restored");
     };
-    
     const handleOffline = () => {
       setIsOnline(false);
       console.log("🌐 [App] Network connection lost");
@@ -91,10 +76,6 @@ const App = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Report successful application initialization
-    console.log(`✅ [App] CROPGenius initialized (${import.meta.env.MODE} mode)`);
-    diagnostics.reportComponentMount('App');
-
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
@@ -102,51 +83,29 @@ const App = () => {
   }, []);
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary
+      fallback={
+        <div className="text-red-500 p-4">Something went wrong.</div>
+      }
+    >
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <AuthProvider><UserMetaProvider>
+          <UserMetaProvider>
             <Toaster />
             <Sonner position="top-center" closeButton />
             <BrowserRouter>
-              <ErrorBoundary>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/auth/callback" element={<AuthCallback />} />
-                  
-                  {/* Protected Routes */}
-                  <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
-                  <Route path="/farm-plan" element={<ProtectedRoute><FarmPlan /></ProtectedRoute>} />
-                  <Route path="/predictions" element={<ProtectedRoute><YieldPredictor /></ProtectedRoute>} />
-                  <Route path="/market" element={<ProtectedRoute><Market /></ProtectedRoute>} />
-                  <Route path="/weather" element={<ProtectedRoute><Weather /></ProtectedRoute>} />
-                  <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-                  <Route path="/ai-assistant" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-                  <Route path="/fields" element={<ProtectedRoute><Fields /></ProtectedRoute>} />
-                  <Route path="/fields/:id" element={<ProtectedRoute><FieldDetail /></ProtectedRoute>} />
-                  <Route path="/manage-fields" element={<ProtectedRoute><ManageFields /></ProtectedRoute>} />
-                  <Route path="/missions" element={<ProtectedRoute><MissionControlPage /></ProtectedRoute>} />
-                  <Route path="/referrals" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
-                  <Route path="/community" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
-                  <Route path="/challenges" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
-                  <Route path="/farm-clans" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </ErrorBoundary>
-              
-              {(isDev || localStorage.getItem('DEV_MODE') === 'true') && <DevDebugPanel />}
-              
-              {!isOnline && (
-                <div className="fixed bottom-4 left-4 bg-yellow-500 text-white px-4 py-2 rounded-md text-sm shadow-lg z-50 flex items-center">
-                  <WifiOff className="h-4 w-4 mr-2" />
-                  You're offline. Some features may be unavailable.
-                </div>
-              )}
+              <AppRoutes />
             </BrowserRouter>
-          </UserMetaProvider></AuthProvider>
+          </UserMetaProvider>
         </TooltipProvider>
       </QueryClientProvider>
+      {(isDev || localStorage.getItem('DEV_MODE') === 'true') && <DevDebugPanel />}
+      {!isOnline && (
+        <div className="fixed bottom-4 left-4 bg-yellow-500 text-white px-4 py-2 rounded-md text-sm shadow-lg z-50 flex items-center">
+          <WifiOff className="h-4 w-4 mr-2" />
+          <span>You're offline. Some features may be unavailable.</span>
+        </div>
+      )}
     </ErrorBoundary>
   );
 };

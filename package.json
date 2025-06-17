@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.9.0",
     "@mapbox/mapbox-sdk": "^0.16.1",
     "@radix-ui/react-accordion": "^1.2.0",
@@ -68,7 +69,8 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^9.0.0",
     "vaul": "^0.9.3",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "^7.27.1",
