@@ -33,8 +33,6 @@ export async function createTask(taskData: Omit<Task, 'id' | 'user_id' | 'create
   const taskToInsert = {
     ...taskData,
     user_id: user.id,
-    source: 'user_created' as const,
-    completed: false,
   };
 
   const { data, error } = await supabase
