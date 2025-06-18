@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthPage } from './features/auth/components/AuthPage';
 import { ProtectedRoute } from './features/auth/components/ProtectedRoute';
 import { useAuth } from './features/auth/context/AuthContext';
@@ -29,7 +29,6 @@ export const AppRoutes = () => {
   }
 
   return (
-    <Router>
       <Routes>
         {/* If user is logged in, redirect from /auth to dashboard */}
         <Route path="/auth" element={user ? <Navigate to="/dashboard" /> : <AuthPage />} />
@@ -37,6 +36,5 @@ export const AppRoutes = () => {
         {/* All other routes are handled by the AppLayout, which includes protection */}
         <Route path="*" element={<AppLayout />} />
       </Routes>
-    </Router>
   );
 };
