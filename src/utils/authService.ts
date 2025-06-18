@@ -8,6 +8,10 @@ export interface AuthState {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
+  profile: Profile | null;
+  error: Error | null;
+}
   error: string | null;
 }
 
@@ -15,8 +19,11 @@ export interface AuthResponse {
   data: {
     user: User | null;
     session: Session | null;
+    profile?: Profile | null;
   } | null;
   error: string | null;
+  status?: number;
+  message?: string;
 }
 
 // Sign in with email and password

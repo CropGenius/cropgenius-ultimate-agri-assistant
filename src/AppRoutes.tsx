@@ -2,12 +2,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthPage } from './features/auth/components/AuthPage';
 import { ProtectedRoute } from './features/auth/components/ProtectedRoute';
 import { useAuth } from './features/auth/context/AuthContext';
-import Dashboard from './pages/Dashboard';
-import FarmDetails from './pages/FarmDetails';
-import FieldDetailPage from './pages/FieldDetailPage';
-import { FarmPlanningPage } from './pages/FarmPlanningPage';
-import { MarketInsightsPage } from './pages/MarketInsightsPage';
-import OnboardingPage from './pages/OnboardingPage';
+import Dashboard from './pages/MissionControlPage'; // Renamed to Dashboard for consistency in routes
+import FieldDetailPage from './pages/FieldDetail';
+import FarmPlanningPage from './pages/FarmPlanningPage';
+import MarketInsightsPage from './pages/MarketInsightsPage';
 
 // A component to handle the main app layout could be introduced here
 const AppLayout = () => {
@@ -15,11 +13,9 @@ const AppLayout = () => {
     return (
         <Routes>
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/farm-details" element={<ProtectedRoute><FarmDetails /></ProtectedRoute>} />
             <Route path="/field/:fieldId" element={<ProtectedRoute><FieldDetailPage /></ProtectedRoute>} />
             <Route path="/farm-plan" element={<ProtectedRoute><FarmPlanningPage /></ProtectedRoute>} />
             <Route path="/market" element={<ProtectedRoute><MarketInsightsPage /></ProtectedRoute>} />
-            <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
             <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
     )
