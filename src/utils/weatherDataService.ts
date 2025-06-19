@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabaseClient";
 import { toast } from "sonner";
 import { WeatherData as AppWeatherData, LocationData } from "./weatherService";
 import { WeatherData as DbWeatherData } from "@/types/supabase";

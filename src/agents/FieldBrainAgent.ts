@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabaseClient";
 import { toast } from "sonner";
 import { AgentMemory, FieldInsight, FieldInsightSourceType, FieldInsightType } from '@/types/supabase';
 

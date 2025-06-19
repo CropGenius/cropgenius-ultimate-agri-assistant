@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabaseClient";
 import { User, Session } from "@supabase/supabase-js";
 import { Database, Profile } from "@/types/supabase";
 import { toast } from "sonner";
@@ -12,8 +12,6 @@ export interface AuthState {
   profile: Profile | null;
   error: Error | null;
 }
-  error: string | null;
-}
 
 export interface AuthResponse {
   data: {
@@ -25,6 +23,14 @@ export interface AuthResponse {
   status?: number;
   message?: string;
 }
+
+export const isSessionValid = (session: Session | null): boolean => {
+  if (!session || !session.expires_at) {
+    return false;
+  }
+  // Check if the token is expired. Supabase times are in seconds.
+  return session.expires_at > (Date.now() / 1000);
+};
 
 // Sign in with email and password
 export const signInWithEmail = async (email: string, password: string): Promise<AuthResponse> => {
@@ -141,12 +147,12 @@ export const signOut = async (): Promise<{ error: string | null }> => {
 };
 
 // Get user profile data
-export const getUserProfile = async (userId: string): Promise<{ data: Profile | null; error: string | null }> => {
+export const getUserProfile = async (id: string): Promise<{ profile: Profile | null; error: string | null }> => {
   // TODO: re-enable auth
-  console.log("[DEV] Mock get user profile for:", userId);
+  console.log("[DEV] Mock get user profile for:", id);
   return { 
-    data: {
-      id: userId,
+    profile: {
+      id,
       full_name: "DEV User",
       avatar_url: null,
       phone_number: null,
@@ -423,14 +429,28 @@ export const exchangeCodeForSession = async () => {
 export const refreshSession = async () => {
   // TODO: re-enable auth
   console.log("[DEV] Mock refresh session");
+  const mockUser: User = {
+    id: "dev-user-id-123456",
+    email: "dev@cropgenius.ai",
+    app_metadata: {},
+    user_metadata: { full_name: "DEV User" },
+    aud: "authenticated",
+    created_at: new Date().toISOString(),
+  };
+
+  const mockSession: Session = {
+    access_token: 'mock-access-token',
+    refresh_token: 'mock-refresh-token',
+    expires_in: 3600,
+    token_type: 'bearer',
+    user: mockUser,
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+  };
+
   return { 
     data: {
-      session: {
-        user: {
-          id: "dev-user-id-123456",
-          email: "dev@cropgenius.ai"
-        }
-      }
+      user: mockUser,
+      session: mockSession,
     }, 
     error: null 
   };
@@ -538,3 +558,176 @@ export const updateProfile = async (updates: Partial<Profile>): Promise<Profile 
     return null;
   }
 };
+
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Loader2, AlertTriangle, CheckCircle } from "lucide-react";
+import { debugAuthState, exchangeCodeForSession } from "@/utils/authService";
+
+export default function AuthCallback() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [errorDetails, setErrorDetails] = useState<string>('');
+  
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      try {
+        setStatus('loading');
+        console.log("🔐 AuthCallback: Starting auth flow...");
+        
+        const urlParams = new URLSearchParams(location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+        
+        // Handle OAuth errors
+        if (error) {
+          console.error("❌ OAuth Error:", { error, errorDescription });
+          setErrorDetails(errorDescription || error);
+          setStatus('error');
+          toast.error(`Authentication failed: ${errorDescription || error}`);
+          
+          // Redirect to auth page after delay
+          setTimeout(() => navigate('/auth', { replace: true }), 3000);
+          return;
+        }
+
+        // Exchange code for session if we have a code
+        if (code) {
+          console.log("🔄 Exchanging code for session...");
+          
+          const { data, error: exchangeError } = await exchangeCodeForSession(code);
+          
+          if (exchangeError) {
+            console.error("❌ Code exchange failed:", exchangeError);
+            setErrorDetails(exchangeError.message || 'Failed to exchange code for session');
+            setStatus('error');
+            toast.error("Authentication failed. Please try again.");
+            setTimeout(() => navigate('/auth', { replace: true }), 3000);
+            return;
+          }
+
+          if (data?.session) {
+            console.log("✅ Session established successfully");
+            setStatus('success');
+            toast.success("Signed in successfully!");
+            
+            // Get intended destination or default to home
+            const from = location.state?.from?.pathname || '/';
+            navigate(from, { replace: true });
+            return;
+          }
+        }
+
+        // Fallback: Check current session state
+        console.log("🔍 Checking current session state...");
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("❌ Session check failed:", sessionError);
+          setErrorDetails(sessionError.message);
+          setStatus('error');
+          toast.error("Session verification failed");
+          setTimeout(() => navigate('/auth', { replace: true }), 3000);
+          return;
+        }
+
+        if (sessionData.session) {
+          console.log("✅ Valid session found");
+          setStatus('success');
+          toast.success("Welcome back!");
+          
+          const from = location.state?.from?.pathname || '/';
+          navigate(from, { replace: true });
+        } else {
+          console.log("❌ No valid session found");
+          
+          // Try one more time with a delay (race condition fix)
+          setTimeout(async () => {
+            const { data: retryData } = await supabase.auth.getSession();
+            
+            if (retryData.session) {
+              toast.success("Authentication successful!");
+              const from = location.state?.from?.pathname || '/';
+              navigate(from, { replace: true });
+            } else {
+              setErrorDetails('No session could be established');
+              setStatus('error');
+              toast.error("Authentication incomplete. Please sign in again.");
+              setTimeout(() => navigate('/auth', { replace: true }), 2000);
+            }
+          }, 1500);
+        }
+
+      } catch (err: any) {
+        console.error("💥 AuthCallback unexpected error:", err);
+        setErrorDetails(err?.message || 'Unexpected authentication error');
+        setStatus('error');
+        toast.error("Authentication error occurred");
+        setTimeout(() => navigate('/auth', { replace: true }), 3000);
+      }
+    };
+
+    handleAuthCallback();
+  }, [location, navigate]);
+
+  const renderContent = () => {
+    switch (status) {
+      case 'loading':
+        return (
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <div className="absolute inset-0 h-12 w-12 rounded-full border-2 border-primary/20"></div>
+            </div>
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-foreground">Signing you in...</h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                Please wait while we complete your authentication
+              </p>
+            </div>
+          </div>
+        );
+        
+      case 'success':
+        return (
+          <div className="flex flex-col items-center gap-4">
+            <CheckCircle className="h-12 w-12 text-green-500" />
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-foreground">Welcome to CropGenius!</h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                Redirecting you to your dashboard...
+              </p>
+            </div>
+          </div>
+        );
+        
+      case 'error':
+        return (
+          <div className="flex flex-col items-center gap-4">
+            <AlertTriangle className="h-12 w-12 text-red-500" />
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-foreground">Authentication Failed</h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                {errorDetails || 'Something went wrong during sign in'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-4">
+                Redirecting to sign in page...
+              </p>
+            </div>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+      <div className="max-w-md w-full mx-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-200">
+          {renderContent()}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabaseClient";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { Field, Farm, FieldCrop, FieldHistory, Boundary } from "@/types/field";

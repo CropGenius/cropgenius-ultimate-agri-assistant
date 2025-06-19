@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { AuthState, refreshSession, getUserProfile, isSessionValid } from '@/utils/authService';
 import { User, Session } from '@supabase/supabase-js';
 import { Profile } from '@/types/supabase';
@@ -38,7 +38,7 @@ export function useAuth() {
       }
 
       // Check if session needs refresh
-      const sessionValid = await isSessionValid();
+      const sessionValid = isSessionValid(data.session);
 
       if (!sessionValid) {
         // Try to refresh the session
@@ -58,8 +58,9 @@ export function useAuth() {
         }
 
         // Use the refreshed session
-        data.session = refreshData.session;
-        data.user = refreshData.user;
+        if (refreshData.session) {
+          data.session = refreshData.session;
+        }
       }
 
       // Fetch user profile if we have a valid user

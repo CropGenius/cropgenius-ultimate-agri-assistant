@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Tractor, Plus, Loader2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabaseClient";
 import { toast } from 'sonner';
 import { Field } from '@/types/field';
 import { useErrorLogging } from '@/hooks/use-error-logging';

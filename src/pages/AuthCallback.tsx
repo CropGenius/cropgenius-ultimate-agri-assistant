@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase, logAuthState } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabaseClient";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { debugAuthState, exchangeCodeForSession } from "@/utils/authService";
@@ -121,7 +121,7 @@ export default function AuthCallback() {
           console.log("No session found on initial check. Implementing recovery strategy...");
           
           setTimeout(async () => {
-            const { data: retryData } = await logAuthState();
+                        const { data: retryData } = await supabase.auth.getSession();
             
             if (retryData.session) {
               toast.success("Authentication successful!");

@@ -1,6 +1,6 @@
 
 import { devMemoryOverride, UserMemory } from '@/hooks/useMemoryStore';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 
 /**
  * Developer utility to simulate different user memory scenarios

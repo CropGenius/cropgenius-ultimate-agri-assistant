@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import {
   exchangeCodeForSession,
   debugAuthState,
@@ -11,7 +11,7 @@ import {
 } from '@/utils/authService';
 
 // Mock supabase client
-vi.mock('@/integrations/supabase/client', () => ({
+vi.mock('@/services/supabaseClient', () => ({
   supabase: {
     auth: {
       getSession: vi.fn(),

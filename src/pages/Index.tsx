@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/services/supabaseClient";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMemoryStore } from '@/hooks/useMemoryStore';
 import { toast } from "sonner";
