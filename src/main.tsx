@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { AuthProvider } from './features/auth/context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 
 // Immediately initialize the app without any async delays
 const rootElement = document.getElementById("root");
