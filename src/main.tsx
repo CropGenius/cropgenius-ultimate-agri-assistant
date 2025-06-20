@@ -7,6 +7,7 @@ import './index.css';
 import { AuthProvider } from './providers/AuthProvider';
 import { Toaster } from '@/components/ui/sonner';
 import { GrowthEngineProvider } from './providers/GrowthEngineProvider';
+import { initAnalytics } from './analytics';
 
 // Create a single instance of QueryClient for the entire application.
 const queryClient = new QueryClient({
@@ -42,3 +43,5 @@ root.render(
 );
 
 // Service worker registration is now handled by Vite PWA plugin
+
+initAnalytics();

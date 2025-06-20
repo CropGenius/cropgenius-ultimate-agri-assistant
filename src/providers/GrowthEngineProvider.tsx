@@ -6,6 +6,7 @@ import OutOfCreditsModal from '@/components/growth/OutOfCreditsModal';
 import LowCreditBanner from '@/components/growth/LowCreditBanner';
 import OverdriveModal from '@/components/growth/OverdriveModal';
 import { useAuthContext } from './AuthProvider';
+import { captureEvent } from '@/analytics';
 
 interface GrowthEngineContextType {
   registerAIUsage: () => void;
@@ -34,6 +35,7 @@ export const GrowthEngineProvider = ({ children }: { children: ReactNode }) => {
   const logEvent = async (event: string, meta: Record<string, any> = {}) => {
     if (!user) return;
     await supabase.from('growth_log').insert({ user_id: user.id, event, meta });
+    captureEvent(event, { user: user.id, ...meta });
   };
 
   const registerAIUsage = () => {
