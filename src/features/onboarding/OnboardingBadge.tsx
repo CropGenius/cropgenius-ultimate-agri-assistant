@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion';
-import { Seedling, Sprout, Leaf, Flower2, Award } from 'lucide-react';
+import { Carrot, Bean, Vegan, Flower, Trophy } from 'lucide-react';
 
 const badgeLevels = [
-  { step: 1, icon: Seedling, title: 'Farm Seedling', color: 'text-green-500' },
-  { step: 2, icon: Sprout, title: 'Crop Sprout', color: 'text-lime-600' },
-  { step: 3, icon: Leaf, title: 'Growth Expert', color: 'text-emerald-600' },
-  { step: 4, icon: Flower2, title: 'Resourceful Farmer', color: 'text-teal-600' },
-  { step: 5, icon: Award, title: 'Harvest Hero', color: 'text-amber-500' },
+  { step: 1, icon: Carrot, title: 'Farm Seedling', color: 'text-green-500' },
+  { step: 2, icon: Bean, title: 'Crop Sprout', color: 'text-lime-600' },
+  { step: 3, icon: Vegan, title: 'Growth Expert', color: 'text-emerald-600' },
+  { step: 4, icon: Flower, title: 'Resourceful Farmer', color: 'text-teal-600' },
+  { step: 5, icon: Trophy, title: 'Harvest Hero', color: 'text-amber-500' },
 ];
 
 interface OnboardingBadgeProps {
