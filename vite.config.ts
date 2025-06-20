@@ -45,7 +45,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'react-confetti', 'react-use'],
+    include: ['react', 'react-dom', 'react-router-dom'],
   },
   esbuild: {
     jsxInject: `import React from 'react'`,
