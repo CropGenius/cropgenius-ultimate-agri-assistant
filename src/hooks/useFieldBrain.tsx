@@ -1,9 +1,10 @@
-
-import { useState, useEffect, useCallback, useContext, createContext, ReactNode } from 'react';
+import { useState, useEffect, useCallback, useContext, createContext, ReactNode, useRef } from 'react';
 import FieldBrainAgent from '@/agents/FieldBrainAgent';
-import { useToast } from '@/hooks/use-toast';
+import { useToast as useSonner } from 'sonner';
 import { FieldInsight } from '@/types/supabase';
 import { useNavigate } from 'react-router-dom';
+import { useCredits } from '@/hooks/useCredits';
+import { useGrowthEngine } from '@/providers/GrowthEngineProvider';
 
 // Define the context type
 interface FieldBrainContextType {
@@ -27,8 +28,11 @@ const FieldBrainContext = createContext<FieldBrainContextType | null>(null);
 // Provider component
 export const FieldBrainProvider = ({ children, userId }: { children: ReactNode; userId: string }) => {
   const agent = FieldBrainAgent.getInstance();
-  const { toast } = useToast();
+  const { toast } = useSonner();
+  const { balance: creditBalance, deductCredits, restoreCredits, isDeducting } = useCredits();
   const navigate = useNavigate();
+  const isAskingRef = useRef(false);
+  const { registerAIUsage } = useGrowthEngine();
   
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,26 +72,46 @@ export const FieldBrainProvider = ({ children, userId }: { children: ReactNode; 
   
   // Ask the agent a question
   const askAgent = useCallback(async (question: string) => {
-    if (!isInitialized) {
-      toast({
-        title: "FieldBrain is still initializing",
-        description: "Please try again in a moment."
-      });
-      return { response: "I'm still waking up. Please try again in a moment." };
+    if (isAskingRef.current || isDeducting) {
+      toast.info("Please wait for the current request to complete.");
+      return { response: "I'm already working on a request. Please wait." };
     }
+
+    const cost = 1; // For now, all questions cost 1 credit
     
-    try {
-      return await agent.ask(question);
-    } catch (err) {
-      console.error("Error asking FieldBrain:", err);
-      toast({
-        variant: "destructive",
-        title: "Something went wrong",
-        description: "FieldBrain couldn't process your question."
+    if (creditBalance < cost) {
+      toast.error("Insufficient Credits", {
+        description: "You don't have enough credits to ask the AI. Please upgrade your plan."
       });
-      return { response: "I'm having trouble thinking right now. Let's try again later." };
+      return { response: "I'm sorry, but it seems you're out of credits." };
     }
-  }, [isInitialized, toast]);
+
+    isAskingRef.current = true;
+
+    try {
+      // Optimistically deduct credits
+      await deductCredits({ amount: cost, description: `AI Question: ${question.substring(0, 30)}...` });
+      
+      const response = await agent.ask(question);
+      registerAIUsage();
+      
+      // The `onSuccess` toast from `useCredits` handles the success message.
+      return response;
+
+    } catch (err: any) {
+      console.error("Error asking FieldBrain, rolling back credits:", err);
+      
+      // Rollback the transaction
+      await restoreCredits({ amount: cost, description: `Failed AI Question: ${err.message}` });
+      
+      toast.error("AI Request Failed", {
+        description: "An error occurred. Your credits for this action have been restored."
+      });
+      return { response: "I'm having trouble thinking right now. Your credits have been returned. Let's try again later." };
+    } finally {
+      isAskingRef.current = false;
+    }
+  }, [isInitialized, toast, creditBalance, deductCredits, restoreCredits, isDeducting, registerAIUsage]);
   
   // Set the field context
   const setFieldContext = useCallback((fieldId: string) => {

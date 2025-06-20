@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tractor, MapPin, ArrowRight, Circle, CheckCircle, Sparkles, AlertTriangle, Loader2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthContext } from '@/providers/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { useErrorLogging } from '@/hooks/use-error-logging';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
@@ -18,6 +18,7 @@ import FieldMapperStep from './steps/FieldMapperStep';
 import { sanitizeFieldData, isOnline } from '@/utils/fieldSanitizer';
 import { Database } from '@/types/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { useCreateField } from '@/features/fields/hooks/useCreateField';
 
 interface AddFieldWizardProps {
   onSuccess?: (field: Field) => void;
@@ -28,9 +29,8 @@ interface AddFieldWizardProps {
 export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }: AddFieldWizardProps) {
   const { logError, logSuccess, trackOperation } = useErrorLogging('AddFieldWizard');
   const navigate = useNavigate();
-  const { user, farmId } = useAuth();
+  const { user } = useAuthContext();
   const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [farmContext, setFarmContext] = useState<{ id: string; name: string } | null>(null);
   const [fieldData, setFieldData] = useState({
@@ -48,6 +48,9 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
   
   // Progress steps
   const totalSteps = 6; // Increased to 6 to include field mapper step
+  
+  // Use the mutation hook
+  const { mutate: createField, isPending: isSubmitting } = useCreateField();
   
   // Get farm context - but NEVER block the flow
   useEffect(() => {
@@ -77,8 +80,8 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
         }
         
         // Try to use the selected farm
-        if (farmId && farms && farms.some(farm => farm.id === farmId)) {
-          const selectedFarm = farms.find(farm => farm.id === farmId);
+        if (farms && farms.some(farm => farm.id === farms[0].id)) {
+          const selectedFarm = farms.find(farm => farm.id === farms[0].id);
           setFarmContext(selectedFarm || null);
           console.log("✅ [AddFieldWizard] Using selected farm:", selectedFarm);
         } 
@@ -128,7 +131,7 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
     };
     
     loadFarmContext();
-  }, [user?.id, farmId, logError]);
+  }, [user?.id, logError]);
   
   const updateFieldData = (partialData: Partial<typeof fieldData>) => {
     setFieldData(prev => ({ ...prev, ...partialData }));
@@ -159,282 +162,25 @@ export default function AddFieldWizard({ onSuccess, onCancel, defaultLocation }:
     handleNext();
   };
   
-  const handleSubmit = trackOperation('submitField', async () => {
-    try {
-      setIsSubmitting(true);
-      
-      // Safety: ensure we have a user context before proceeding
-      if (!user?.id) {
-        // Try to get session one more time
-        const { data } = await supabase.auth.getSession();
-        if (!data.session?.user) {
-          toast.warning("Creating as guest", {
-            description: "Your field will be saved locally until you sign in",
-          });
-          // Continue anyway - we'll save locally
-        }
-      }
-      
-      const userId = user?.id;
-      let targetFarmId = farmId || (farmContext?.id);
-      
-      // Double safety: if no farm context is available, create one
-      if (!targetFarmId && userId) {
-        try {
-          const { data: existingFarms } = await supabase
-            .from('farms')
-            .select('id')
-            .eq('user_id', userId);
-            
-          if (existingFarms && existingFarms.length > 0) {
-            targetFarmId = existingFarms[0].id;
-          } else {
-            const { data: newFarm } = await supabase
-              .from('farms')
-              .insert({
-                name: 'My Farm',
-                user_id: userId
-              })
-              .select()
-              .single();
-              
-            if (newFarm) {
-              targetFarmId = newFarm.id;
-              console.log("✅ [AddFieldWizard] Created emergency farm:", newFarm.id);
-            }
-          }
-        } catch (err) {
-          console.error("❌ [AddFieldWizard] Error in emergency farm creation:", err);
-          // Continue anyway - service layer will handle fallbacks
-        }
-      }
-      
-      console.log("📝 [AddFieldWizard] Creating field with values:", {
-        ...fieldData,
-        userId,
-        farmId: targetFarmId
-      });
-      
-      // Sanitize field data
-      const sanitizedData = sanitizeFieldData(fieldData);
-      
-      // Prepare field data for Supabase
-      const supabaseFieldData: Database["public"]["Tables"]["fields"]["Insert"] = {
-        name: sanitizedData.name,
-        size: sanitizedData.size,
-        size_unit: sanitizedData.size_unit,
-        location_description: sanitizedData.location_description,
-        soil_type: sanitizedData.soil_type,
-        irrigation_type: sanitizedData.irrigation_type,
-        boundary: sanitizedData.boundary,
-        user_id: userId as string,
-        farm_id: targetFarmId as string
-      };
-      
-      console.log("💾 [AddFieldWizard] Inserting field data:", supabaseFieldData);
-      
-      // Insert with fallback handling
-      let fieldResult: Field | null = null;
-      
-      if (userId && targetFarmId && isOnline()) {
-        try {
-          const { data, error } = await supabase
-            .from("fields")
-            .insert(supabaseFieldData)
-            .select()
-            .single();
-          
-          if (error) {
-            console.warn("⚠️ [AddFieldWizard] Supabase insert error:", error);
-            
-            // Try one more time with basic data only
-            const { data: retryData, error: retryError } = await supabase
-              .from("fields")
-              .insert({
-                name: sanitizedData.name || "Untitled Field",
-                user_id: userId,
-                farm_id: targetFarmId
-              })
-              .select()
-              .single();
-              
-            if (retryError) {
-              throw retryError;
-            }
-            
-            fieldResult = retryData;
-            console.log("✅ [AddFieldWizard] Retry insert succeeded:", retryData);
-          } else {
-            fieldResult = data;
-            console.log("✅ [AddFieldWizard] Field created successfully:", data);
-          }
-        } catch (error) {
-          console.error("❌ [AddFieldWizard] Could not create field in database:", error);
-          
-          // Create local field as fallback with generated ID
-          fieldResult = {
-            id: uuidv4(),
-            user_id: userId,
-            farm_id: targetFarmId,
-            name: sanitizedData.name,
-            size: sanitizedData.size || 0,
-            size_unit: sanitizedData.size_unit,
-            boundary: sanitizedData.boundary,
-            location_description: sanitizedData.location_description || "",
-            soil_type: sanitizedData.soil_type || "",
-            irrigation_type: sanitizedData.irrigation_type || "",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            is_shared: false,
-            shared_with: [],
-            offline_id: uuidv4(),
-            is_synced: false
-          };
-          
-          // Save to offline storage
-          const offlineFields = JSON.parse(localStorage.getItem('cropgenius_offline_fields') || '[]');
-          offlineFields.push(fieldResult);
-          localStorage.setItem('cropgenius_offline_fields', JSON.stringify(offlineFields));
-          
-          toast.warning("Saved locally", {
-            description: "Your field was saved offline and will sync when possible",
-          });
-        }
-      } else {
-        // Offline or no auth context - create local field
-        fieldResult = {
-          id: uuidv4(),
-          user_id: userId || "guest",
-          farm_id: targetFarmId || "local-farm",
-          name: sanitizedData.name,
-          size: sanitizedData.size || 0,
-          size_unit: sanitizedData.size_unit,
-          boundary: sanitizedData.boundary,
-          location_description: sanitizedData.location_description || "",
-          soil_type: sanitizedData.soil_type || "",
-          irrigation_type: sanitizedData.irrigation_type || "",
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          is_shared: false,
-          shared_with: [],
-          offline_id: uuidv4(),
-          is_synced: false
-        };
-        
-        // Save to offline storage
-        const offlineFields = JSON.parse(localStorage.getItem('cropgenius_offline_fields') || '[]');
-        offlineFields.push(fieldResult);
-        localStorage.setItem('cropgenius_offline_fields', JSON.stringify(offlineFields));
-        
-        toast.info("Saved locally", {
-          description: "Your field was saved offline",
-        });
-      }
-      
-      // If we have crop data, try to create a crop entry
-      if (fieldData.crop_type && fieldResult?.id) {
-        try {
-          const cropData = {
-            field_id: fieldResult.id,
-            crop_name: fieldData.crop_type,
-            planting_date: fieldData.planting_date?.toISOString() || null,
-            status: 'active'
-          };
-          
-          if (userId) {
-            const { error: cropError } = await supabase
-              .from("field_crops")
-              .insert(cropData);
-              
-            if (cropError) {
-              console.warn("⚠️ [AddFieldWizard] Error creating crop record:", cropError);
-              // Store locally as fallback
-              const offlineCrops = JSON.parse(localStorage.getItem('cropgenius_offline_crops') || '[]');
-              offlineCrops.push({...cropData, id: uuidv4()});
-              localStorage.setItem('cropgenius_offline_crops', JSON.stringify(offlineCrops));
-            }
-          } else {
-            // Store locally
-            const offlineCrops = JSON.parse(localStorage.getItem('cropgenius_offline_crops') || '[]');
-            offlineCrops.push({...cropData, id: uuidv4()});
-            localStorage.setItem('cropgenius_offline_crops', JSON.stringify(offlineCrops));
-          }
-        } catch (error) {
-          console.warn("⚠️ [AddFieldWizard] Error with crop data:", error);
-          // Non-critical error, continue
-        }
-      }
-      
-      logSuccess('field_created', { field_id: fieldResult?.id });
-      
-      // Show success animation and message
-      setCurrentStep(totalSteps + 1); // Show success step
-      
-      // Create confetti effect for success
-      setTimeout(() => {
-        createConfetti();
-        
-        toast.success("Field added successfully!", {
-          description: `${sanitizedData.name} has been added to your farm`,
-          duration: 5000,
-          icon: <Sparkles className="h-5 w-5 text-yellow-500" />,
-        });
-        
-        if (onSuccess && fieldResult) {
-          onSuccess(fieldResult);
-        } else {
-          navigate("/fields");
-        }
-      }, 1000);
-      
-    } catch (error: any) {
-      console.error("❌ [AddFieldWizard] Uncaught error:", error);
-      logError(error, { context: 'fieldCreation' });
-      
-      // NEVER show a failure state to the user - show success with info
-      setCurrentStep(totalSteps + 1); // Show success step
-      
-      toast.info("Field saved with limited data", {
-        description: "Some information couldn't be processed, but your field was saved",
-        icon: <Shield className="h-5 w-5 text-blue-500" />
-      });
-      
-      // Create a minimal field record as last resort
-      const minimalField: Field = {
-        id: uuidv4(),
-        user_id: user?.id || "guest",
-        farm_id: farmId || "local-farm",
-        name: fieldData.name || "Untitled Field",
-        size: 1,
-        size_unit: "hectares",
-        boundary: null,
-        location_description: "",
-        soil_type: "",
-        irrigation_type: "",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        is_shared: false,
-        shared_with: [],
-        offline_id: uuidv4(),
-        is_synced: false
-      };
-      
-      // Save to offline storage
-      const offlineFields = JSON.parse(localStorage.getItem('cropgenius_offline_fields') || '[]');
-      offlineFields.push(minimalField);
-      localStorage.setItem('cropgenius_offline_fields', JSON.stringify(offlineFields));
-      
-      setTimeout(() => {
-        if (onSuccess) {
-          onSuccess(minimalField);
-        } else {
-          navigate("/fields");
-        }
-      }, 2000);
-    } finally {
-      setIsSubmitting(false);
+  const handleSubmit = () => {
+    if (!farmContext?.id) {
+      toast.error("No farm selected", { description: "Cannot create a field without a farm." });
+      return;
     }
-  });
+    
+    // The useCreateField hook handles the rest (user, etc.)
+    createField({
+        ...fieldData,
+      farm_id: farmContext.id,
+    }, {
+      onSuccess: (createdField) => {
+        if (onSuccess) {
+          onSuccess(createdField);
+        }
+        navigate(`/fields/${createdField.id}`);
+      },
+    });
+  };
   
   // Function to create confetti effect
   const createConfetti = () => {

@@ -1,7 +1,8 @@
-import React, { createContext, useContext, ReactNode } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { AuthState, signOut } from '@/utils/authService';
+import React, { createContext, useContext, ReactNode, useCallback } from 'react';
+import { useAuth, AuthState } from '@/hooks/useAuth';
+import { supabase } from '@/services/supabaseClient';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface AuthContextType extends AuthState {
   signOut: () => Promise<void>;
@@ -24,26 +25,28 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const auth = useAuth();
+  const authState = useAuth();
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
+  const handleSignOut = useCallback(async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error('Sign out failed', { description: error.message });
+    } else {
+      toast.success('You have been signed out.');
+    }
+  }, []);
 
   // Provide a loading state while initial auth check happens
-  if (auth.isLoading) {
+  if (authState.isLoading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-background/80">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading your account...</p>
-        </div>
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <AuthContext.Provider value={{ ...auth, signOut: handleSignOut }}>
+    <AuthContext.Provider value={{ ...authState, signOut: handleSignOut }}>
       {children}
     </AuthContext.Provider>
   );

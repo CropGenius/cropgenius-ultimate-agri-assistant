@@ -1,152 +1,51 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/services/supabaseClient';
-import { AuthState, refreshSession, getUserProfile, isSessionValid } from '@/utils/authService';
-import { User, Session } from '@supabase/supabase-js';
-import { Profile } from '@/types/supabase';
-import { toast } from 'sonner';
+import { Session, User } from '@supabase/supabase-js';
 
-export function useAuth() {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    session: null,
-    isLoading: true,
-    isAuthenticated: false,
-    profile: null,
-    error: null
-  });
+export interface AuthState {
+  session: Session | null;
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
 
-  // Check if session is valid and refresh if needed
-  const checkAndRefreshSession = useCallback(async () => {
-    try {
-      setAuthState(prev => ({ ...prev, isLoading: true }));
+export function useAuth(): AuthState {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-      // Get current session
-      const { data, error } = await supabase.auth.getSession();
-
-      if (error) throw error;
-
-      if (!data.session) {
-        setAuthState({
-          user: null,
-          session: null,
-          isLoading: false,
-          isAuthenticated: false,
-          profile: null,
-          error: null
-        });
-        return;
-      }
-
-      // Check if session needs refresh
-      const sessionValid = isSessionValid(data.session);
-
-      if (!sessionValid) {
-        // Try to refresh the session
-        const { data: refreshData, error: refreshError } = await refreshSession();
-
-        if (refreshError || !refreshData?.session) {
-          // Session refresh failed, user needs to login again
-          setAuthState({
-            user: null,
-            session: null,
-            isLoading: false,
-            isAuthenticated: false,
-            profile: null,
-            error: new Error(refreshError || 'Session expired')
-          });
-          return;
-        }
-
-        // Use the refreshed session
-        if (refreshData.session) {
-          data.session = refreshData.session;
-        }
-      }
-
-      // Fetch user profile if we have a valid user
-      let profile = null;
-      if (data.session?.user) {
-        const { profile: userProfile } = await getUserProfile(data.session.user.id);
-        profile = userProfile;
-      }
-
-      // Update auth state with all information
-      setAuthState({
-        user: data.session?.user || null,
-        session: data.session,
-        isLoading: false,
-        isAuthenticated: !!data.session,
-        profile,
-        error: null
-      });
-
-    } catch (err: any) {
-      console.error('Auth state error:', err);
-      setAuthState({
-        user: null,
-        session: null,
-        isLoading: false,
-        isAuthenticated: false,
-        profile: null,
-        error: err instanceof Error ? err : new Error(err?.message || 'Authentication error')
-      });
-    }
-  }, []);
-
-  // Initial auth check
   useEffect(() => {
-    checkAndRefreshSession();
+    // Check for an existing session on initial load.
+    // This is a one-time check to immediately set the user state
+    // without waiting for the onAuthStateChange event to fire.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      // Even with this, we set loading to false in the listener
+      // to ensure we have the most up-to-date auth state.
+    });
 
-    // Subscribe to auth changes
+    // The onAuthStateChange listener is the single source of truth for auth state.
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event);
-
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          let profile = null;
-          if (session?.user) {
-            const { profile: userProfile } = await getUserProfile(session.user.id);
-            profile = userProfile;
-          }
-
-          setAuthState({
-            user: session?.user || null,
-            session,
-            isLoading: false,
-            isAuthenticated: !!session,
-            profile,
-            error: null
-          });
-
-          toast.success('Signed in successfully');
-        } else if (event === 'SIGNED_OUT') {
-          setAuthState({
-            user: null,
-            session: null,
-            isLoading: false,
-            isAuthenticated: false,
-            profile: null,
-            error: null
-          });
-        }
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setIsLoading(false);
       }
     );
 
-    // Set up a session refresh interval
-    const refreshInterval = setInterval(() => {
-      if (authState.isAuthenticated) {
-        checkAndRefreshSession();
-      }
-    }, 10 * 60 * 1000); // Check every 10 minutes
-
+    // Cleanup the listener on component unmount.
     return () => {
-      // Clean up listeners
       authListener.subscription.unsubscribe();
-      clearInterval(refreshInterval);
     };
-  }, [checkAndRefreshSession, authState.isAuthenticated]);
+  }, []);
 
-  return authState;
+  return {
+    session,
+    user,
+    isAuthenticated: !!session,
+    isLoading,
+  };
 }
 
 export default useAuth;

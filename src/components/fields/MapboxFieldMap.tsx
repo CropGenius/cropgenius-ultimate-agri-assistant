@@ -32,6 +32,7 @@ interface MapboxFieldMapProps {
   onLocationChange?: (location: Coordinates) => void;
   readOnly?: boolean;
   defaultLocation?: Coordinates;
+  isSaving?: boolean;
 }
 
 export default function MapboxFieldMap({
@@ -39,38 +40,27 @@ export default function MapboxFieldMap({
   onBoundaryChange,
   onLocationChange,
   readOnly = false,
-  defaultLocation
+  defaultLocation,
+  isSaving = false,
 }: MapboxFieldMapProps) {
   const { logError, logSuccess, trackOperation } = useErrorLogging('MapboxFieldMap');
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [coordinates, setCoordinates] = useState<Coordinates[]>(initialBoundary?.coordinates || []);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
-  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
-  const [searchResults, setSearchResults] = useState<{ name: string; lat: number; lng: number } | null>(null);
   const [locationName, setLocationName] = useState<string>("");
-  const [showRecommender, setShowRecommender] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [mapSnapshot, setMapSnapshot] = useState<string | null>(null);
   const [isCapturingSnapshot, setIsCapturingSnapshot] = useState(false);
 
   // Local storage for caching map data
   const [cachedMapData, setCachedMapData] = useLocalStorage<{
+    snapshot?: string;
     boundary?: Boundary;
     location?: { name: string; coordinates: Coordinates };
-    snapshot?: string;
-    lastUpdated?: number;
-  }>('mapbox-field-map-cache', {});
-
-  const geocodingClient = useRef<any>(null);
-  const drawMarkers = useRef<mapboxgl.Marker[]>([]);
-  const areaPolygon = useRef<any>(null);
-  const flyToLocation = useRef<(lng: number, lat: number, zoom: number) => void>();
-  const locationMarker = useRef<mapboxgl.Marker | null>(null);
-  const markerPulse = useRef<HTMLDivElement | null>(null);
+  }>('mapboxFieldMapData');
 
   // Monitor online/offline status
   useEffect(() => {
@@ -121,52 +111,6 @@ export default function MapboxFieldMap({
       setMapError("Failed to initialize geocoding client");
     }
   }, [isOffline]);
-
-  // Function to capture map snapshot for offline use
-  const captureMapSnapshot = useCallback(() => {
-    if (!map.current || isCapturingSnapshot) return;
-
-    try {
-      console.log("📸 [MapboxFieldMap] Capturing map snapshot for offline use");
-      setIsCapturingSnapshot(true);
-
-      // Use setTimeout to ensure the map has rendered completely
-      setTimeout(() => {
-        if (!map.current) {
-          setIsCapturingSnapshot(false);
-          return;
-        }
-
-        // Get canvas element and convert to base64 image
-        const canvas = map.current.getCanvas();
-        const snapshot = canvas.toDataURL('image/jpeg', 0.7); // Use JPEG with 70% quality for smaller size
-
-        setMapSnapshot(snapshot);
-
-        // Save to cache
-        setCachedMapData(prev => ({
-          ...prev,
-          snapshot,
-          lastUpdated: Date.now(),
-          boundary: coordinates.length > 2 ? { type: 'polygon', coordinates } : prev.boundary,
-          location: locationName ? {
-            name: locationName,
-            coordinates: { 
-              lng: map.current.getCenter().lng,
-              lat: map.current.getCenter().lat
-            }
-          } : prev.location
-        }));
-
-        console.log("✅ [MapboxFieldMap] Map snapshot captured and cached");
-        setIsCapturingSnapshot(false);
-      }, 500);
-    } catch (error) {
-      console.error("❌ [MapboxFieldMap] Failed to capture snapshot:", error);
-      setIsCapturingSnapshot(false);
-      logError(error as Error, { context: 'captureSnapshot' });
-    }
-  }, [coordinates, locationName, isCapturingSnapshot, setCachedMapData, logError]);
 
   // Initialize map
   useEffect(() => {
@@ -392,525 +336,76 @@ export default function MapboxFieldMap({
     }
   }, [defaultLocation, onLocationChange]);
 
-  const handleSearch = trackOperation('searchLocation', async (searchInput: string) => {
-    if (!searchInput.trim()) {
-      toast.warning("Please enter a search term");
-      return;
-    }
-
-    // Check if offline
-    if (isOffline) {
-      toast.warning("Search unavailable offline", { 
-        description: "Location search requires an internet connection" 
-      });
-      return;
-    }
-
-    // Check if geocoding client is available
-    if (!geocodingClient.current) {
-      toast.error("Search service unavailable", { 
-        description: "Please check your connection and try again" 
-      });
-      return;
-    }
-
-    setIsSearching(true);
-    console.log("🔍 [MapboxFieldMap] Searching for:", searchInput);
-
-    try {
-      const response = await geocodingClient.current
-        .forwardGeocode({
-          query: searchInput,
-          limit: 1,
-          countries: ["ng", "gh", "ke", "za", "et", "tz", "ug", "rw"],
-        })
-        .send();
-
-      const features = response.body.features;
-      if (features && features.length > 0) {
-        const [lng, lat] = features[0].center;
-        const placeName = features[0].place_name;
-
-        console.log("✅ [MapboxFieldMap] Location found:", placeName, lng, lat);
-        setLocationName(placeName);
-        setSearchResults({ name: placeName, lat, lng });
-
-        // Cache the search result
-        setCachedMapData(prev => ({
-          ...prev,
-          location: {
-            name: placeName,
-            coordinates: { lng, lat }
-          },
-          lastUpdated: Date.now()
-        }));
-
-        toast.success("Location found!", { 
-          description: placeName,
-          action: {
-            label: "View",
-            onClick: () => {
-              if (flyToLocation.current) {
-                flyToLocation.current(lng, lat, 16);
-              }
-            }
-          }
-        });
-
-        if (flyToLocation.current) {
-          flyToLocation.current(lng, lat, 16);
-        }
-
-        if (onLocationChange) {
-          onLocationChange({ lng, lat });
-        }
-
-        // Capture a snapshot after location change
-        setTimeout(() => {
-          captureMapSnapshot();
-        }, 2000);
-      } else {
-        console.error("❌ [MapboxFieldMap] No location found for:", searchInput);
-        toast.warning("No location found", { description: "Try a different search term or be more specific" });
-      }
-    } catch (error: any) {
-      const errorMessage = error.message || "Search failed";
-      console.error("❌ [MapboxFieldMap] Geocoding error:", errorMessage);
-      logError(error, { context: 'geocoding' });
-
-      // Check if error is due to network connectivity
-      if (!navigator.onLine || errorMessage.includes('network') || errorMessage.includes('connect')) {
-        setIsOffline(true);
-        toast.error("You're offline", { description: "Search requires an internet connection" });
-      } else {
-        toast.error("Search failed", { description: "Please check your connection and try again" });
-      }
-    } finally {
-      setIsSearching(false);
-    }
-  });
-
-  const drawFieldPolygon = (mapInstance: mapboxgl.Map, fieldCoords: Coordinates[]) => {
-    try {
-      if (mapInstance.getSource('field-polygon')) {
-        mapInstance.removeLayer('field-polygon-fill');
-        mapInstance.removeLayer('field-polygon-outline');
-        mapInstance.removeSource('field-polygon');
-      }
-
-      if (fieldCoords.length < 3) return;
-
-      const geojsonCoords = fieldCoords.map(coord => [coord.lng, coord.lat]);
-
-      mapInstance.addSource('field-polygon', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'Polygon',
-            coordinates: [
-              [...geojsonCoords, geojsonCoords[0]]
-            ]
-          }
-        }
-      });
-
-      mapInstance.addLayer({
-        id: 'field-polygon-fill',
-        type: 'fill',
-        source: 'field-polygon',
-        layout: {},
-        paint: {
-          'fill-color': '#4CAF50',
-          'fill-opacity': 0.3
-        }
-      });
-
-      mapInstance.addLayer({
-        id: 'field-polygon-outline',
-        type: 'line',
-        source: 'field-polygon',
-        layout: {},
-        paint: {
-          'line-color': '#4CAF50',
-          'line-width': 2
-        }
-      });
-
-      console.log("✅ [MapboxFieldMap] Field polygon drawn with", fieldCoords.length, "points");
-    } catch (error) {
-      logError(error as Error, { context: 'drawFieldPolygon' });
-    }
-  };
-
-  const handleStartDrawing = (startPoint?: [number, number]) => {
-    if (!map.current || readOnly) return;
-
-    try {
-      setIsDrawing(true);
-      setCoordinates([]);
-
-      console.log("🖌️ [MapboxFieldMap] Drawing mode activated");
-
-      drawMarkers.current.forEach(marker => marker.remove());
-      drawMarkers.current = [];
-
-      if (startPoint) {
-        const [lng, lat] = startPoint;
-        addPoint(lng, lat);
-      }
-
-      toast.info("Drawing mode activated", {
-        description: "Click on the map to add points to your field boundary"
-      });
-    } catch (error) {
-      logError(error as Error, { context: 'startDrawing' });
-    }
-  };
-
-  const addPoint = (lng: number, lat: number) => {
-    if (!map.current || !isDrawing || readOnly) return;
-
-    try {
-      console.log(`📍 [MapboxFieldMap] Adding point at ${lng}, ${lat}`);
-      const newCoords = [...coordinates, { lng, lat }];
-      setCoordinates(newCoords);
-
-      const marker = new mapboxgl.Marker({ color: "#FF5722" })
-        .setLngLat([lng, lat])
-        .addTo(map.current);
-
-      drawMarkers.current.push(marker);
-
-      if (newCoords.length >= 3) {
-        drawFieldPolygon(map.current, newCoords);
-      }
-
-      if (onBoundaryChange) {
-        onBoundaryChange({
-          type: 'polygon',
-          coordinates: newCoords
-        });
-      }
-    } catch (error) {
-      logError(error as Error, { context: 'addPoint' });
-    }
-  };
-
-  const handleMapClick = (e: mapboxgl.MapMouseEvent) => {
-    if (!isDrawing || readOnly) return;
-
-    try {
-      const { lng, lat } = e.lngLat;
-      addPoint(lng, lat);
-    } catch (error) {
-      logError(error as Error, { context: 'mapClick' });
-    }
-  };
-
-  const handleComplete = () => {
-    try {
-      if (coordinates.length < 3) {
-        toast.warning("Need more points", { 
-          description: "Add at least 3 points to create a field boundary" 
-        });
-        return;
-      }
-
-      setIsDrawing(false);
-      console.log("✅ [MapboxFieldMap] Field boundary completed with", coordinates.length, "points");
-
-      if (onBoundaryChange) {
-        onBoundaryChange({
-          type: 'polygon',
-          coordinates
-        });
-      }
-
-      toast.success("Field boundary completed", { 
-        description: `Field mapped with ${coordinates.length} points` 
-      });
-
-      setTimeout(() => {
-        setShowRecommender(true);
-      }, 800);
-    } catch (error) {
-      logError(error as Error, { context: 'completeDrawing' });
-    }
+  const handleStartDrawing = () => {
+    setIsDrawing(true);
+    setCoordinates([]);
+    toast.info("Drawing started. Click on the map to add points.");
   };
 
   const handleUndo = () => {
-    if (coordinates.length === 0) return;
-
-    try {
-      console.log("↩️ [MapboxFieldMap] Undoing last point");
-      const newCoords = coordinates.slice(0, -1);
-      setCoordinates(newCoords);
-
-      if (drawMarkers.current.length > 0) {
-        const marker = drawMarkers.current.pop();
-        if (marker) marker.remove();
-      }
-
-      if (map.current) {
-        if (newCoords.length >= 3) {
-          drawFieldPolygon(map.current, newCoords);
-        } else if (map.current.getSource('field-polygon')) {
-          map.current.removeLayer('field-polygon-fill');
-          map.current.removeLayer('field-polygon-outline');
-          map.current.removeSource('field-polygon');
-        }
-      }
-
-      if (onBoundaryChange) {
-        onBoundaryChange({
-          type: 'polygon',
-          coordinates: newCoords
-        });
-      }
-    } catch (error) {
-      logError(error as Error, { context: 'undoPoint' });
-    }
+    setCoordinates(coords => coords.slice(0, -1));
   };
-
+  
+  const handleComplete = () => {
+    if (coordinates.length < 3) {
+      toast.warning("Please draw at least 3 points.");
+      return;
+    }
+    const newBoundary: Boundary = {
+      type: "polygon",
+      coordinates: [...coordinates, coordinates[0]], // Close polygon
+    };
+    setIsDrawing(false);
+    if (onBoundaryChange) onBoundaryChange(newBoundary);
+  };
+  
   const handleUseCurrentLocation = () => {
-    if (!map.current) return;
-
-    try {
-      console.log("📱 [MapboxFieldMap] Requesting user location");
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          console.log("📍 [MapboxFieldMap] Got user location:", latitude, longitude);
-
-          if (flyToLocation.current) {
-            flyToLocation.current(longitude, latitude, 17);
-          }
-
-          if (isDrawing) {
-            addPoint(longitude, latitude);
-            toast.success("Added current location", {
-              description: "Your current position has been added to the field boundary"
-            });
-          } else {
-            toast.success("Located", {
-              description: "Map centered on your current position"
-            });
-          }
-        },
-        (error) => {
-          console.error("❌ [MapboxFieldMap] Geolocation error:", error.message);
-          logError(new Error(error.message), { context: 'geolocation' });
-          toast.error("Location error", {
-            description: "Could not access your location. Please check permissions."
-          });
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { longitude, latitude } = position.coords;
+        if (map.current) {
+            map.current.flyTo({ center: [longitude, latitude], zoom: 16 });
         }
-      );
-    } catch (error) {
-      logError(error as Error, { context: 'useCurrentLocation' });
-    }
-  };
-
-  const handleReset = () => {
-    if (!map.current) return;
-
-    try {
-      console.log("🧹 [MapboxFieldMap] Resetting field boundary");
-      setCoordinates([]);
-
-      drawMarkers.current.forEach(marker => marker.remove());
-      drawMarkers.current = [];
-
-      if (map.current.getSource('field-polygon')) {
-        map.current.removeLayer('field-polygon-fill');
-        map.current.removeLayer('field-polygon-outline');
-        map.current.removeSource('field-polygon');
-      }
-
-      if (onBoundaryChange) {
-        onBoundaryChange({
-          type: 'polygon',
-          coordinates: []
-        });
-      }
-
-      toast.info("Cleared", { description: "Field boundary has been reset" });
-    } catch (error) {
-      logError(error as Error, { context: 'resetField' });
-    }
-  };
-
-  const calculateArea = (coords: Coordinates[]): number => {
-    if (coords.length < 3) return 0;
-
-    let area = 0;
-    for (let i = 0; i < coords.length; i++) {
-      const j = (i + 1) % coords.length;
-      area += coords[i].lng * coords[j].lat;
-      area -= coords[j].lng * coords[i].lat;
-    }
-
-    area = Math.abs(area) / 2;
-
-    const areaInHectares = area * 111319.9 * 111319.9 / 10000;
-    return parseFloat(areaInHectares.toFixed(2));
-  };
-
-  const handleGetCropTips = () => {
-    setShowRecommender(false);
-    toast.success("Growing tips", {
-      description: "Expert growing tips are now available in your Farm Plan"
-    });
+      },
+      (error) => toast.error("Could not get location", { description: error.message })
+    );
   };
 
   return (
-    <ErrorBoundary>
-      <div className="w-full h-full relative">
-        <div className="absolute top-2 left-2 right-16 z-10 bg-white/95 dark:bg-gray-900/95 rounded-md shadow-md">
-          <MapSearchInput 
-            onSearch={handleSearch}
-            onLocationSelect={(location) => {
-              if (flyToLocation.current) {
-                flyToLocation.current(location.lng, location.lat, 16);
-              }
-            }}
-            isSearching={isSearching}
-            className="px-1"
-          />
-        </div>
+    <ErrorBoundary fallback={<p>Map failed to load.</p>}>
+      <div ref={mapContainer} className="relative w-full h-full min-h-[400px] bg-gray-200">
+        {!mapLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )}
+        {mapError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-destructive/10 z-20">
+                <p className="text-destructive">{mapError}</p>
+            </div>
+        )}
 
         {!readOnly && (
-          <div className="absolute top-16 right-2 z-10">
-            <MapNavigator
-              onComplete={isDrawing ? handleComplete : handleStartDrawing}
-              onUndo={handleUndo}
+          <div className="absolute top-4 right-4 z-10">
+            <MapNavigator 
+              onStartDrawing={handleStartDrawing}
               onUseCurrentLocation={handleUseCurrentLocation}
-              onReset={handleReset}
               isDrawing={isDrawing}
-              hasPoints={coordinates.length > 0}
             />
           </div>
         )}
-
-        {/* Offline mode with cached snapshot */}
-      {isOffline && cachedMapData.snapshot ? (
-        <div className="w-full h-full rounded-md overflow-hidden relative">
-          <img 
-            src={cachedMapData.snapshot} 
-            alt="Cached map view" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute top-2 right-2 bg-yellow-500 text-white px-3 py-1 rounded-full text-xs flex items-center">
-            <WifiOff className="h-3 w-3 mr-1" />
-            Offline Mode
-          </div>
-          {cachedMapData.lastUpdated && (
-            <div className="absolute bottom-2 right-2 bg-background/80 text-xs px-2 py-1 rounded">
-              Last updated: {new Date(cachedMapData.lastUpdated).toLocaleString()}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div 
-          ref={mapContainer} 
-          className="w-full h-full rounded-md overflow-hidden"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        />
-      )}
-
-        {/* Error state */}
-        {mapError && (
-          <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-            <div className="bg-background p-4 rounded-md shadow-md max-w-md text-center">
-              <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-2" />
-              <h3 className="text-lg font-bold mb-2">Map Error</h3>
-              <p className="text-muted-foreground mb-4">{mapError}</p>
-
-              {isOffline && cachedMapData.snapshot ? (
-                <>
-                  <p className="text-sm mb-4">You're currently offline. Using cached map data.</p>
-                  <Button 
-                    onClick={() => {
-                      setMapError(null);
-                      setMapLoaded(true);
-                    }}
-                    className="mx-auto"
-                  >
-                    <Image className="h-4 w-4 mr-2" />
-                    Use Cached Map
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button 
-                    onClick={() => window.location.reload()}
-                    className="mx-auto"
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Retry
-                  </Button>
-                  {!MAPBOX_ACCESS_TOKEN && (
-                    <p className="mt-4 text-xs text-muted-foreground">
-                      Missing VITE_MAPBOX_ACCESS_TOKEN in environment configuration.
-                      Please add it to your .env file.
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {showRecommender && coordinates.length >= 3 && (
-          <div className="absolute bottom-4 left-2 right-2 z-20">
-            <SmartFieldRecommender 
-              coordinates={coordinates}
-              locationName={locationName || "Your Field"}
-              area={calculateArea(coordinates)}
-              onClose={() => setShowRecommender(false)}
-              onGetTips={handleGetCropTips}
-            />
-          </div>
-        )}
-
-        {!showRecommender && coordinates.length >= 3 && searchResults && (
-          <div className="absolute bottom-4 left-2 right-2 z-10">
-            <FieldConfirmationCard
-              locationName={locationName || "Your Field"}
-              coordinates={coordinates}
-              area={calculateArea(coordinates)}
-              areaUnit="hectares"
-            />
-          </div>
-        )}
-
-        {!showRecommender && coordinates.length >= 3 && (
-          <div className="absolute bottom-20 left-2 bg-white/90 dark:bg-gray-900/90 p-2 rounded-md shadow-md text-xs space-y-1 max-w-xs">
-            <div className="font-medium">Field Statistics:</div>
-            <div>Points: {coordinates.length}</div>
-            <div>Area (approx): {calculateArea(coordinates)} hectares</div>
-            <div className="text-muted-foreground">
-              {isDrawing ? "Click to add more points" : "Field boundary complete"}
-            </div>
-          </div>
-        )}
-
-        {!mapLoaded && !mapError && (
-          <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <div className="text-sm font-medium">Loading map...</div>
-            </div>
-          </div>
-        )}
-
+        
         {isDrawing && !readOnly && (
-          <div className="absolute bottom-2 left-2 right-2 bg-background/90 p-2 px-3 rounded text-xs text-center">
-            Click on map to add points. Add at least 3 points to create a field boundary.
-          </div>
+           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-background/80 p-2 rounded-lg shadow-lg flex items-center gap-2">
+             <Button onClick={handleUndo} variant="outline" disabled={coordinates.length === 0 || isSaving}>
+               <Undo className="mr-2 h-4 w-4" />
+               Undo
+             </Button>
+             <Button onClick={handleComplete} disabled={coordinates.length < 3 || isSaving}>
+               {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+               {isSaving ? 'Saving...' : 'Complete Field'}
+             </Button>
+           </div>
         )}
       </div>
     </ErrorBoundary>
