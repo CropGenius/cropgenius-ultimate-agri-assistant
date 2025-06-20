@@ -6,7 +6,7 @@ import Dashboard from './pages/MissionControlPage';
 import FieldDetailPage from './pages/FieldDetail';
 import FarmPlanningPage from './pages/FarmPlanningPage';
 import MarketInsightsPage from './pages/MarketInsightsPage';
-import OnboardingPage from './pages/OnboardingPage';
+import { OnboardingWizard } from './features/onboarding/OnboardingWizard';
 
 const AppLayout = () => (
   <Routes>
@@ -32,7 +32,7 @@ export const AppRoutes = () => {
         if (profile === null) {
             return (
                 <Routes>
-                    <Route path="/onboarding" element={<OnboardingPage />} />
+                    <Route path="/onboarding" element={<OnboardingWizard />} />
                     <Route path="*" element={<Navigate to="/onboarding" replace />} />
                 </Routes>
             );
@@ -43,7 +43,7 @@ export const AppRoutes = () => {
     if (!profile.onboarding_completed) {
       return (
         <Routes>
-          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/onboarding" element={<OnboardingWizard />} />
           <Route path="*" element={<Navigate to="/onboarding" replace />} />
         </Routes>
       );

@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/services/supabaseClient";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ export interface AuthState {
 export interface AuthContextType extends AuthState {
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -57,22 +58,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const checkUserProfile = useCallback(async () => {
+    const userId = authState.user?.id;
+    if (!userId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, onboarding_completed')
+        .eq('id', userId)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      setAuthState(prev => ({ ...prev, profile: data as UserProfile | null }));
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  }, [authState.user?.id]);
+
   useEffect(() => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
-
-    const checkUserProfile = async (userId: string) => {
-      try {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('id, onboarding_completed')
-          .eq('id', userId)
-          .single();
-        if (error && error.code !== 'PGRST116') throw error;
-        setAuthState(prev => ({ ...prev, profile: data as UserProfile | null }));
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
-      }
-    };
 
     const checkUserFarm = async (userId: string) => {
       try {
@@ -97,7 +101,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthState(prev => ({ ...prev, user, session, isLoading: false, profile: user ? prev.profile : null, farmId: user ? prev.farmId : null }));
 
       if (user) {
-        await Promise.all([checkUserProfile(user.id), checkUserFarm(user.id)]);
+        await Promise.all([checkUserProfile(), checkUserFarm(user.id)]);
       }
 
       if (event === 'SIGNED_IN') toast.success(`Logged in as ${user?.email}`);
@@ -115,10 +119,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [checkUserProfile]);
 
   return (
-    <AuthContext.Provider value={{ ...authState, signOut, refreshSession }}>
+    <AuthContext.Provider value={{ ...authState, signOut, refreshSession, refreshProfile: checkUserProfile }}>
       {children}
     </AuthContext.Provider>
   );
