@@ -83,14 +83,6 @@ export const signUpWithEmail = async (email: string, password: string, fullName:
 
 // Sign in with Google
 export const signInWithGoogle = async (): Promise<any> => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock Google sign in");
-  return { 
-    data: {}, 
-    error: null 
-  };
-  
-  /* Original implementation
   try {
     const baseUrl = window.location.origin;
     const callbackUrl = `${baseUrl}/auth/callback`;
@@ -118,16 +110,10 @@ export const signInWithGoogle = async (): Promise<any> => {
     console.error("Error signing in with Google:", error.message);
     return { data: null, error: error.message };
   }
-  */
 };
 
 // Sign out
 export const signOut = async (): Promise<{ error: string | null }> => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock sign out");
-  return { error: null };
-  
-  /* Original implementation
   try {
     console.log("Signing out");
     const { error } = await supabase.auth.signOut({ scope: 'local' });
@@ -143,36 +129,16 @@ export const signOut = async (): Promise<{ error: string | null }> => {
     console.error("Error signing out:", error.message);
     return { error: error.message };
   }
-  */
 };
 
 // Get user profile data
 export const getUserProfile = async (id: string): Promise<{ profile: Profile | null; error: string | null }> => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock get user profile for:", id);
-  return { 
-    profile: {
-      id,
-      full_name: "DEV User",
-      avatar_url: null,
-      phone_number: null,
-      location: null,
-      farm_size: null,
-      farm_units: "hectares",
-      preferred_language: "en",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }, 
-    error: null 
-  };
-  
-  /* Original implementation
   try {
-    console.log("Fetching user profile for:", userId);
+    console.log("Fetching user profile for:", id);
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('id', id)
       .single();
     
     if (error) {
@@ -181,42 +147,23 @@ export const getUserProfile = async (id: string): Promise<{ profile: Profile | n
     }
     
     console.log("User profile fetched:", data);
-    return { data, error: null };
+    return { profile: data, error: null };
   } catch (error: any) {
     console.error("Error fetching user profile:", error.message);
-    return { data: null, error: error.message };
+    return { profile: null, error: error.message };
   }
-  */
 };
 
 // Update user profile
 export const updateUserProfile = async (userId: string, updates: Partial<Profile>): Promise<{ data: Profile | null; error: string | null }> => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock update user profile for:", userId, updates);
-  return { 
-    data: {
-      id: userId,
-      full_name: updates.full_name || "DEV User",
-      avatar_url: updates.avatar_url || null,
-      phone_number: updates.phone_number || null,
-      location: updates.location || null,
-      farm_size: updates.farm_size || null,
-      farm_units: updates.farm_units || "hectares",
-      preferred_language: updates.preferred_language || "en",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }, 
-    error: null 
-  };
-  
-  /* Original implementation
   try {
     console.log("Updating profile for:", userId, updates);
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)
       .eq('id', userId)
-      .select();
+      .select()
+      .single();
     
     if (error) {
       console.error("Profile update error:", error.message);
@@ -224,21 +171,15 @@ export const updateUserProfile = async (userId: string, updates: Partial<Profile
     }
     
     console.log("Profile updated:", data);
-    return { data: data[0] || null, error: null };
+    return { data: data || null, error: null };
   } catch (error: any) {
     console.error("Error updating user profile:", error.message);
     return { data: null, error: error.message };
   }
-  */
 };
 
 // Check if user is authenticated
 export const isAuthenticated = async (): Promise<boolean> => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock auth check: always returns true");
-  return true;
-  
-  /* Original implementation
   try {
     console.log("Checking authentication status");
     const { data } = await supabase.auth.getSession();
@@ -249,26 +190,10 @@ export const isAuthenticated = async (): Promise<boolean> => {
     console.error("Auth check error:", error);
     return false;
   }
-  */
 };
 
 // Get current user
 export const getCurrentUser = async (): Promise<{ user: User | null; error: string | null }> => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock get current user");
-  return { 
-    user: {
-      id: "dev-user-id-123456",
-      email: "dev@cropgenius.ai",
-      app_metadata: {},
-      user_metadata: { full_name: "DEV User" },
-      aud: "authenticated",
-      created_at: ""
-    } as User, 
-    error: null 
-  };
-  
-  /* Original implementation
   try {
     console.log("Getting current user");
     const { data, error } = await supabase.auth.getUser();
@@ -284,28 +209,10 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error: stri
     console.error("Error getting current user:", error.message);
     return { user: null, error: error.message };
   }
-  */
 };
 
 // Get user farms
 export const getUserFarms = async (userId: string): Promise<{ data: any[] | null; error: string | null }> => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock get farms for user:", userId);
-  return { 
-    data: [{
-      id: "dev-farm-id-123456",
-      name: "DEV Test Farm",
-      location: "Test Location",
-      size_hectares: 25,
-      user_id: userId,
-      created_at: new Date().toISOString(),
-      farm_type: "Mixed",
-      region: "West Africa"
-    }], 
-    error: null 
-  };
-  
-  /* Original implementation
   try {
     console.log("Getting farms for user:", userId);
     const { data, error } = await supabase
@@ -324,16 +231,10 @@ export const getUserFarms = async (userId: string): Promise<{ data: any[] | null
     console.error("Error getting user farms:", error.message);
     return { data: null, error: error.message };
   }
-  */
 };
 
 // Reset password
 export const resetPassword = async (email: string): Promise<{ error: string | null }> => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock password reset for:", email);
-  return { error: null };
-  
-  /* Original implementation
   try {
     console.log("Sending password reset for:", email);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -351,16 +252,10 @@ export const resetPassword = async (email: string): Promise<{ error: string | nu
     console.error("Error resetting password:", error.message);
     return { error: error.message };
   }
-  */
 };
 
 // Update password
 export const updatePassword = async (newPassword: string): Promise<{ error: string | null }> => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock password update");
-  return { error: null };
-  
-  /* Original implementation
   try {
     console.log("Updating password");
     const { error } = await supabase.auth.updateUser({
@@ -378,12 +273,10 @@ export const updatePassword = async (newPassword: string): Promise<{ error: stri
     console.error("Error updating password:", error.message);
     return { error: error.message };
   }
-  */
 };
 
 // Debug function to check auth state and URLs
 export const debugAuthState = () => {
-  console.log("[DEV] Auth Debug: Development mode enabled");
   console.log("[Auth Debug] Current URL:", window.location.href);
   console.log("[Auth Debug] Origin:", window.location.origin);
   console.log("[Auth Debug] Has hash params:", window.location.hash.length > 0);
@@ -392,21 +285,6 @@ export const debugAuthState = () => {
 
 // Function to exchange OAuth code for session
 export const exchangeCodeForSession = async () => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock exchange code for session");
-  return { 
-    data: {
-      session: {
-        user: {
-          id: "dev-user-id-123456",
-          email: "dev@cropgenius.ai"
-        }
-      }
-    }, 
-    error: null 
-  };
-  
-  /* Original implementation
   try {
     console.log("[Auth] Exchanging code for session");
     const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
@@ -422,40 +300,10 @@ export const exchangeCodeForSession = async () => {
     console.error("[Auth] Error exchanging code for session:", error.message);
     return { data: null, error: error.message };
   }
-  */
 };
 
 // Function to refresh session
 export const refreshSession = async () => {
-  // TODO: re-enable auth
-  console.log("[DEV] Mock refresh session");
-  const mockUser: User = {
-    id: "dev-user-id-123456",
-    email: "dev@cropgenius.ai",
-    app_metadata: {},
-    user_metadata: { full_name: "DEV User" },
-    aud: "authenticated",
-    created_at: new Date().toISOString(),
-  };
-
-  const mockSession: Session = {
-    access_token: 'mock-access-token',
-    refresh_token: 'mock-refresh-token',
-    expires_in: 3600,
-    token_type: 'bearer',
-    user: mockUser,
-    expires_at: Math.floor(Date.now() / 1000) + 3600,
-  };
-
-  return { 
-    data: {
-      user: mockUser,
-      session: mockSession,
-    }, 
-    error: null 
-  };
-  
-  /* Original implementation
   try {
     console.log("[Auth] Refreshing session");
     const { data, error } = await supabase.auth.refreshSession();
@@ -471,7 +319,6 @@ export const refreshSession = async () => {
     console.error("[Auth] Error refreshing session:", error.message);
     return { data: null, error: error.message };
   }
-  */
 };
 
 // Create a demo profile for testing purposes
@@ -485,36 +332,26 @@ export const createDemoProfile = async (): Promise<Profile | null> => {
       return null;
     }
     
-    // Create a mock profile for demo purposes
-    const newProfile: Profile = {
-      id: user.id,
-      full_name: "Demo Farmer",
-      avatar_url: null,
-      phone_number: null,
-      location: null,
-      farm_size: null,
-      farm_units: "hectares",
-      preferred_language: "en",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
-    // Insert the new profile
+    // Create a profile for the user
     const { data, error } = await supabase
       .from('profiles')
-      .upsert(newProfile)
+      .insert({
+        id: user.id,
+        full_name: user.user_metadata?.full_name || "New User",
+        email: user.email,
+        onboarding_completed: false,
+      })
       .select()
       .single();
-      
+    
     if (error) {
-      console.error("Error creating demo profile:", error);
-      throw error;
+      console.error("Error creating profile:", error.message);
+      return null;
     }
     
-    console.log("Demo profile created:", data);
     return data;
-  } catch (error: any) {
-    console.error("Error in createDemoProfile:", error.message);
+  } catch (error) {
+    console.error("Error in createDemoProfile:", error);
     return null;
   }
 };

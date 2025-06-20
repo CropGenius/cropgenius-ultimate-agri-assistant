@@ -170,7 +170,7 @@ export default function StepThree({
     
     // Play a soft click sound
     try {
-      const audio = new Audio('data:audio/wav;base64,UklGRoQFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YWAFAACAgICAgICAgICAgICAgICAgICAgICAgICAf3hxeIF/gICAf4B+gICAgH+AgICAgICAgICAeHBye4KCgX+Af3+BgoKAgH+AgYKDgH+Af4CBgn98eHR5foKDgoB/gIGDg4J/f4CBg4SCgH+AgYODgH16eXyBhISDgH+AgoSEgn+AgIKEg4F/f4CCg4J+e3p8gIOEg4B/gIKEhIF/f4CCg4OCf3+AgYKAfXt7foGDg4OAf4CCg4OCf4CAgoODgn9/gIGCgH57fH6Bg4SDgH+BgoODgn+AgIKDg4F/f4CBgoF+fHx+gYOEg4F/gYKDg4F/gICCg4KBf3+AgYGAfnx9f4GDhIOBf4GCg4OBf4CAgoOCgX9/gIGBgH58fX+ChIODgX+BgoOCgX+AgIKDgoF/f4CBgYB+fH2AgoSEg4F/gYKDgoF/gICCg4KBf3+AgYGAfnx+gIKEhIOBgIGCg4KBf4CAgoOCgX9/gIGBgH59foCChIODgYCBgoOCgX+AgIKDgoF/f4CBgYB+fX6AgoSDg4GAgYKDgoF/gICCg4KBf3+AgYGAfn1+gIKEg4OBgIGCg4KBf4CAgoOCgX9/gIGBgH59foCChIODgYCBgoOCgX+AgIKDgoJ/f4CBgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEhIOBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gYODg4GAgoODgoGAgIGCgoJ/gICCgYB+fn6Bg4ODgYCCg4OCgYCAgYKCgn+AgIKBgH5+foGDg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+foGDg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+');
+      const audio = new Audio('data:audio/wav;base64,UklGRoQFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YWAFAACAgICAgICAgICAgICAgICAgICAgICAgICAf3hxeIF/gICAf4B+gICAgH+AgICAgICAgICAeHBye4KCgX+Af3+BgoKAgH+AgYKDgH+Af4CBgn98eHR5foKDgoB/gIGDg4J/f4CBg4SCgH+AgYODgH16eXyBhISDgH+AgoSEgn+AgIKEg4F/f4CCg4J+e3p8gIOEg4B/gIKEhIF/f4CCg4OCf3+AgYKAfXt7foGDg4OAf4CCg4OCf4CAgoODgn9/gIGCgH57fH6Bg4SDgH+BgoODgn+AgIKDg4F/f4CBgoF+fHx+gYOEg4F/gYKDg4F/gICCg4KBf3+AgYGAfnx9f4GDhIOBf4GCg4OBf4CAgoOCgX9/gIGBgH58fX+ChIODgX+BgoOCgX+AgIKDgoF/f4CBgYB+fH2AgoSEg4F/gYKDgoF/gICCg4KBf3+AgYGAfnx+gIKEhIOBgIGCg4KBf4CAgoOCgX9/gIGBgH59foCChIODgYCBgoOCgX+AgIKDgoF/f4CBgYB+fX6AgoSDg4GAgYKDgoF/gICCg4KBf3+AgYGAfn1+gIKEg4OBgIGCg4KBf4CAgoOCgX9/gIGBgH59foCChIODgYCBgoOCgX+AgIKDgoJ/f4CBgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEhIOBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBf4CAgoOCgn+AgIKBgH59foCChIODgYCCg4OCgX+AgIKDgoJ/gICCgYB+fX6AgoSDg4GAgoODgoF/gICCg4KCf4CAgoGAfn1+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gIKEg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+gYODg4GAgoODgoGAgIGCgoJ/gICCgYB+fn6Bg4ODgYCCg4OCgYCAgYKCgn+AgIKBgH5+foGDg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+foGDg4OBgIKDg4KBgICBgoKCf4CAgoGAfn5+');
       audio.volume = 0.2;
       audio.play().catch(e => console.log('Audio play prevented by browser'));
     } catch (error) {
@@ -188,9 +188,36 @@ export default function StepThree({
 
     setIsListening(true);
 
-    // @ts-ignore
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
+    // Properly typed SpeechRecognition interface
+    interface SpeechRecognitionEvent extends Event {
+      results: {
+        [index: number]: {
+          [index: number]: {
+            transcript: string;
+            confidence: number;
+          }
+        }
+      }
+    }
+
+    interface SpeechRecognitionErrorEvent extends Event {
+      error: string;
+      message: string;
+    }
+
+    interface SpeechRecognition extends EventTarget {
+      lang: string;
+      interimResults: boolean;
+      maxAlternatives: number;
+      start(): void;
+      stop(): void;
+      onresult: ((event: SpeechRecognitionEvent) => void) | null;
+      onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+      onend: (() => void) | null;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition() as SpeechRecognition;
     
     recognition.lang = 'en-US';
     recognition.interimResults = false;
@@ -198,7 +225,7 @@ export default function StepThree({
     
     recognition.start();
     
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;
       setSearchValue(transcript);
       
@@ -214,7 +241,7 @@ export default function StepThree({
       setIsListening(false);
     };
     
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       console.error('Speech recognition error', event.error);
       setIsListening(false);
       

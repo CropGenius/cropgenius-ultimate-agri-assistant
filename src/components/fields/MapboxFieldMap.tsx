@@ -46,6 +46,14 @@ export default function MapboxFieldMap({
   const { logError, logSuccess, trackOperation } = useErrorLogging('MapboxFieldMap');
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  
+  // Add missing refs that are used in the component
+  const geocodingClient = useRef<any>(null);
+  const drawMarkers = useRef<mapboxgl.Marker[]>([]);
+  const locationMarker = useRef<mapboxgl.Marker | null>(null);
+  const flyToLocation = useRef<((lng: number, lat: number, zoom?: number) => void) | null>(null);
+  const markerPulse = useRef<HTMLElement | null>(null);
+  
   const [isDrawing, setIsDrawing] = useState(false);
   const [coordinates, setCoordinates] = useState<Coordinates[]>(initialBoundary?.coordinates || []);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -60,7 +68,104 @@ export default function MapboxFieldMap({
     snapshot?: string;
     boundary?: Boundary;
     location?: { name: string; coordinates: Coordinates };
-  }>('mapboxFieldMapData');
+  }>('mapboxFieldMapData', {});
+
+  // Add missing functions that are referenced in the component
+  const drawFieldPolygon = useCallback((mapInstance: mapboxgl.Map, coords: Coordinates[]) => {
+    if (!mapInstance || coords.length < 3) return;
+
+    // Clear existing polygon
+    if (mapInstance.getSource('field-polygon')) {
+      mapInstance.removeLayer('field-polygon');
+      mapInstance.removeSource('field-polygon');
+    }
+
+    // Add new polygon
+    const polygonCoords = [...coords, coords[0]].map(coord => [coord.lng, coord.lat]);
+
+    mapInstance.addSource('field-polygon', {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'Polygon',
+          coordinates: [polygonCoords]
+        }
+      }
+    });
+
+    mapInstance.addLayer({
+      id: 'field-polygon',
+      type: 'fill',
+      source: 'field-polygon',
+      paint: {
+        'fill-color': '#4CAF50',
+        'fill-opacity': 0.3
+      }
+    });
+
+    mapInstance.addLayer({
+      id: 'field-polygon-outline',
+      type: 'line',
+      source: 'field-polygon',
+      paint: {
+        'line-color': '#4CAF50',
+        'line-width': 2
+      }
+    });
+  }, []);
+
+  const handleMapClick = useCallback((e: mapboxgl.MapMouseEvent) => {
+    if (!isDrawing || readOnly) return;
+
+    const newCoord: Coordinates = {
+      lat: e.lngLat.lat,
+      lng: e.lngLat.lng,
+    };
+
+    setCoordinates(prev => {
+      const updated = [...prev, newCoord];
+      
+      // Add marker for this point
+      const marker = new mapboxgl.Marker({ color: '#4CAF50' })
+        .setLngLat([newCoord.lng, newCoord.lat])
+        .addTo(map.current!);
+      
+      drawMarkers.current.push(marker);
+
+      // Draw polygon if we have enough points
+      if (updated.length >= 3 && map.current) {
+        drawFieldPolygon(map.current, updated);
+      }
+
+      return updated;
+    });
+  }, [isDrawing, readOnly, drawFieldPolygon]);
+
+  const captureMapSnapshot = useCallback(() => {
+    if (!map.current || isCapturingSnapshot) return;
+
+    setIsCapturingSnapshot(true);
+    
+    try {
+      const canvas = map.current.getCanvas();
+      const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+      setMapSnapshot(dataURL);
+      
+      // Cache the snapshot
+      setCachedMapData(prev => ({
+        ...prev,
+        snapshot: dataURL
+      }));
+      
+      console.log('📸 [MapboxFieldMap] Map snapshot captured');
+    } catch (error) {
+      console.error('Failed to capture map snapshot:', error);
+    } finally {
+      setIsCapturingSnapshot(false);
+    }
+  }, [isCapturingSnapshot, setCachedMapData]);
 
   // Monitor online/offline status
   useEffect(() => {

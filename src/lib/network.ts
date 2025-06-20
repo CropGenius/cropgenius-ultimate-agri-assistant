@@ -5,7 +5,7 @@ export interface NetworkState {
   isOnline: boolean;
   isSlowConnection: boolean;
   lastConnectedAt: Date | null;
-  connectionType: 'wifi' | '4g' | '3g' | '2g' | 'unknown';
+  connectionType: 'wifi' | '4g' | '3g' | '2g' | 'slow-2g' | 'unknown';
 }
 
 export interface QueuedOperation {
@@ -70,8 +70,23 @@ class NetworkManager {
   };
 
   private detectConnectionSpeed(): void {
-    // @ts-ignore - NetworkInformation API
-    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    // Properly typed NetworkInformation interface
+    interface NetworkInformation extends EventTarget {
+      effectiveType: '4g' | '3g' | '2g' | 'slow-2g';
+      downlink: number;
+      rtt: number;
+      addEventListener(type: 'change', listener: () => void): void;
+    }
+    
+    interface NavigatorWithConnection extends Navigator {
+      connection?: NetworkInformation;
+      mozConnection?: NetworkInformation;
+      webkitConnection?: NetworkInformation;
+    }
+    
+    const connection = (navigator as NavigatorWithConnection).connection || 
+                      (navigator as NavigatorWithConnection).mozConnection || 
+                      (navigator as NavigatorWithConnection).webkitConnection;
     
     if (connection) {
       const updateConnectionInfo = () => {
