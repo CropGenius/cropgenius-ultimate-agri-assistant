@@ -27,9 +27,10 @@ export default function OverdriveModal({ onClose }: { onClose: () => void }) {
           2x faster insights, priority queue access, rainfall predictor unlocked — 10 credits only.
           Offer ends in 24h.
         </p>
-        <Button className="w-full" onClick={handleActivate}>Activate Now</Button>
-      </DialogFooter>
+        <DialogFooter>
+          <Button className="w-full" onClick={handleActivate}>Activate Now</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-} 
+}
