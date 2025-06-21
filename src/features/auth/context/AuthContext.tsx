@@ -6,12 +6,14 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({ 
   session: null, 
   user: null, 
-  loading: true 
+  loading: true,
+  refreshProfile: async () => {}
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -40,10 +42,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
+  const refreshProfile = async () => {
+    try {
+      const { data: { session: newSession } } = await supabase.auth.getSession();
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    }
+  };
+
   const value = {
     session,
     user,
     loading,
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

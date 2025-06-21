@@ -71,30 +71,37 @@ export function OnboardingWizard() {
   const handleFinalSubmit = useCallback(async () => {
     console.log('Final onboarding data:', formData);
     try {
-      const { error } = await supabase.rpc('complete_onboarding', {
+      const { data, error } = await supabase.rpc('complete_onboarding', {
         farm_name: formData.farmName,
-        total_area: formData.totalArea,
-        crops: formData.crops,
-        planting_date: formData.plantingDate,
-        harvest_date: formData.harvestDate,
-        primary_goal: formData.primaryGoal,
-        primary_pain_point: formData.primaryPainPoint,
-        has_irrigation: formData.hasIrrigation,
-        has_machinery: formData.hasMachinery,
-        has_soil_test: formData.hasSoilTest,
-        budget_band: formData.budgetBand,
-        preferred_language: formData.preferredLanguage,
-        whatsapp_number: formData.whatsappNumber,
+        total_area: parseFloat(formData.totalArea) || 1, // Ensure number type
+        crops: formData.crops ? JSON.stringify(formData.crops) : null,
+        planting_date: formData.plantingDate || new Date().toISOString(),
+        harvest_date: formData.harvestDate || new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(), // Default to 120 days from now
+        primary_goal: formData.primaryGoal || 'increase_yield',
+        primary_pain_point: formData.primaryPainPoint || 'pests',
+        has_irrigation: Boolean(formData.hasIrrigation),
+        has_machinery: Boolean(formData.hasMachinery),
+        has_soil_test: Boolean(formData.hasSoilTest),
+        budget_band: formData.budgetBand || 'medium',
+        preferred_language: formData.preferredLanguage || 'en',
+        whatsapp_number: formData.whatsappNumber || null,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('RPC Error:', error);
+        throw new Error(error.message || 'Failed to complete onboarding');
+      }
 
-      toast.success("Welcome to CropGenius! Your plan is ready.");
+      console.log('Onboarding completed successfully:', data);
+      toast.success("Welcome to CropGenius! Your farm is all set up.");
+      
+      // Clear onboarding state
       localStorage.removeItem(ONBOARDING_FORM_DATA_KEY);
       localStorage.removeItem(ONBOARDING_STEP_KEY);
       
+      // Refresh user profile and navigate to dashboard
       await refreshProfile();
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
 
     } catch (error: any) {
       console.error('Error completing onboarding:', error);
