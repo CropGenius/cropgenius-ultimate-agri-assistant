@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/react';
 
 let posthog: typeof import('posthog-js') | null = null;
+let Sentry: typeof import('@sentry/react') | null = null;
 
 export const initAnalytics = async () => {
   try {
@@ -14,10 +15,15 @@ export const initAnalytics = async () => {
     console.warn('PostHog analytics disabled:', err);
   }
 
-  Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN || '',
-    tracesSampleRate: 1.0,
-  });
+  try {
+    Sentry = await import('@sentry/react');
+    Sentry.init({
+      dsn: import.meta.env.VITE_SENTRY_DSN || '',
+      tracesSampleRate: 1.0,
+    });
+  } catch (err) {
+    console.warn('Sentry disabled:', err);
+  }
 };
 
 export const captureEvent = (name: string, props: Record<string, any> = {}) => {
@@ -27,5 +33,9 @@ export const captureEvent = (name: string, props: Record<string, any> = {}) => {
 };
 
 export const captureError = (err: any) => {
-  Sentry.captureException(err);
+  if (Sentry) {
+    Sentry.captureException(err);
+  } else {
+    console.error('Captured error (Sentry offline):', err);
+  }
 }; 
