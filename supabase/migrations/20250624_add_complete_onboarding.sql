@@ -2,7 +2,7 @@
 CREATE OR REPLACE FUNCTION public.complete_onboarding(
   farm_name TEXT,
   total_area DECIMAL,
-  crops JSONB,
+  crops TEXT, -- Changed from JSONB to TEXT to handle string input
   planting_date TIMESTAMP WITH TIME ZONE,
   harvest_date TIMESTAMP WITH TIME ZONE,
   primary_goal TEXT,
@@ -22,6 +22,7 @@ DECLARE
   user_id UUID;
   farm_id UUID;
   result JSONB;
+  crops_array JSONB;
 BEGIN
   -- Get the current user's ID
   user_id := auth.uid();
@@ -29,6 +30,13 @@ BEGIN
   IF user_id IS NULL THEN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
+
+  -- Parse the crops JSON string into a JSONB array
+  BEGIN
+    crops_array := crops::JSONB;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE EXCEPTION 'Invalid crops format. Expected JSON array: %', SQLERRM;
+  END;
 
   -- Start a transaction
   BEGIN
@@ -63,17 +71,17 @@ BEGIN
     RETURNING id INTO farm_id;
 
     -- Insert crops if any
-    IF crops IS NOT NULL AND jsonb_array_length(crops) > 0 THEN
-      INSERT INTO public.crop_types (name, description, created_at, updated_at)
+    IF crops_array IS NOT NULL AND jsonb_array_length(crops_array) > 0 THEN
+      -- First, ensure all crop types exist
+      INSERT INTO public.crop_types (name, created_at, updated_at)
       SELECT 
-        crop->>'name', 
-        crop->>'description',
+        value::TEXT, 
         NOW(),
         NOW()
-      FROM jsonb_array_elements(crops) AS crop
+      FROM jsonb_array_elements_text(crops_array) AS value
       ON CONFLICT (name) DO NOTHING;
       
-      -- Create fields for each crop
+      -- Create fields for each crop type
       INSERT INTO public.fields (
         name,
         farm_id,
@@ -86,17 +94,17 @@ BEGIN
         updated_at
       )
       SELECT 
-        ct.name || ' Field',
+        ct.name || ' Field' as field_name,
         farm_id,
         ct.id,
-        (crop->>'area')::DECIMAL,
+        total_area / NULLIF(jsonb_array_length(crops_array), 0) as field_size, -- Divide total area by number of crops
         'hectares',
         planting_date,
         harvest_date,
         NOW(),
         NOW()
-      FROM jsonb_array_elements(crops) AS crop
-      JOIN public.crop_types ct ON ct.name = crop->>'name';
+      FROM jsonb_array_elements_text(crops_array) as crop_name
+      JOIN public.crop_types ct ON ct.name = crop_name::TEXT;
     END IF;
 
     -- Insert user preferences

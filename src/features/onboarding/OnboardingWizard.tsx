@@ -71,10 +71,32 @@ export function OnboardingWizard() {
   const handleFinalSubmit = useCallback(async () => {
     console.log('Final onboarding data:', formData);
     try {
+      // Ensure crops is an array of strings
+      let cropsArray = [];
+      if (Array.isArray(formData.crops)) {
+        cropsArray = formData.crops;
+      } else if (typeof formData.crops === 'string') {
+        try {
+          // Handle case where crops is a JSON string
+          cropsArray = JSON.parse(formData.crops);
+        } catch (e) {
+          // If it's not valid JSON, treat as a single crop name
+          cropsArray = [formData.crops];
+        }
+      } else if (formData.crops) {
+        // Handle case where crops is a single value
+        cropsArray = [formData.crops];
+      }
+
+      // Ensure we have at least one crop
+      if (cropsArray.length === 0) {
+        cropsArray = ['Maize']; // Default crop
+      }
+
       const { data, error } = await supabase.rpc('complete_onboarding', {
-        farm_name: formData.farmName,
+        farm_name: formData.farmName || 'My Farm',
         total_area: parseFloat(formData.totalArea) || 1, // Ensure number type
-        crops: formData.crops ? JSON.stringify(formData.crops) : null,
+        crops: JSON.stringify(cropsArray),
         planting_date: formData.plantingDate || new Date().toISOString(),
         harvest_date: formData.harvestDate || new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(), // Default to 120 days from now
         primary_goal: formData.primaryGoal || 'increase_yield',
