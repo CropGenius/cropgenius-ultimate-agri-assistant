@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Robot Head -->
+  <circle cx="256" cy="256" r="200" fill="#F5F5F5"/>
+  
+  <!-- Eyes -->
+  <circle cx="200" cy="220" r="40" fill="#333333"/>
+  <circle cx="312" cy="220" r="40" fill="#333333"/>
+  
+  <!-- Eye Highlights -->
+  <circle cx="210" cy="210" r="10" fill="#4CAF50"/>
+  <circle cx="302" cy="210" r="10" fill="#4CAF50"/>
+  
+  <!-- Eye Glow -->
+  <circle cx="215" cy="205" r="5" fill="#FFFFFF" style="mix-blend-mode: overlay;"/>
+  <circle cx="307" cy="205" r="5" fill="#FFFFFF" style="mix-blend-mode: overlay;"/>
+  
+  <!-- Green Energy Lines -->
+  <path d="M180 300C180 300 200 280 220 290C240 300 260 290 280 300C300 310 320 300 332 300" stroke="#4CAF50" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Leaf -->
+  <path d="M256 100C256 100 280 80 300 100C320 120 300 140 280 140C260 160 256 180 256 180" stroke="#4CAF50" stroke-width="12" stroke-linecap="round" fill="none"/>
+  
+  <!-- Text: CropGenius -->
+  <text x="256" y="400" font-family="Arial, sans-serif" font-size="36" font-weight="bold" text-anchor="middle" fill="#333333">Crop</text>
+  <text x="256" y="440" font-family="Arial, sans-serif" font-size="36" font-weight="bold" text-anchor="middle" fill="#4CAF50">Genius</text>
+</svg>
