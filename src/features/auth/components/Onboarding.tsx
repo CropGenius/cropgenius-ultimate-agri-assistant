@@ -13,32 +13,43 @@ const Onboarding = () => {
     if (!user || !farmName) return;
 
     setLoading(true);
-    // 1. Create a farm for the user
-    const { data: farm, error: farmError } = await supabase
-      .from('farms')
-      .insert({ name: farmName, user_id: user.id })
-      .select()
-      .single();
+    
+    try {
+      // 1. First, update the user's profile with farm name and mark onboarding as complete
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ 
+          farm_name: farmName,
+          onboarding_completed: true,
+          preferred_language: navigator.language || 'en',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
 
-    if (farmError) {
-      console.error('Error creating farm:', farmError);
-      setLoading(false);
-      return;
-    }
+      if (profileError) throw profileError;
 
-    // 2. Update the user's profile to mark onboarding as complete
-    const { error: profileError } = await supabase
-      .from('user_profiles')
-      .update({ onboarding_completed: true })
-      .eq('id', user.id);
+      // 2. Create a default farm for the user
+      const { data: farm, error: farmError } = await supabase
+        .from('farms')
+        .insert({ 
+          name: farmName, 
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
-    if (profileError) {
-      console.error('Error updating profile:', profileError);
-    } else {
-      // Redirect to dashboard
+      if (farmError) throw farmError;
+
+      // 3. Redirect to dashboard on success
       navigate('/dashboard');
+    } catch (error) {
+      console.error('Error during onboarding:', error);
+      // You might want to show an error message to the user here
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

@@ -40,16 +40,25 @@ export const UserMetaProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data, error } = await supabase
-        .from('user_profiles')
-        .select('first_name, farm_name, farm_lat, farm_lon')
+        .from('profiles')
+        .select('full_name, farm_name, location')
         .eq('id', user.id)
         .single();
       if (!error && data) {
+        // Parse location if it's stored as a string in format 'lat,lng'
+        let coords;
+        if (data.location) {
+          const [lat, lon] = data.location.split(',').map(Number);
+          if (!isNaN(lat) && !isNaN(lon)) {
+            coords = { lat, lon };
+          }
+        }
+        
         setMeta((m) => ({
           ...m,
-          firstName: data.first_name ?? m.firstName,
-          farmName: data.farm_name ?? m.farmName,
-          coords: data.farm_lat && data.farm_lon ? { lat: data.farm_lat, lon: data.farm_lon } : m.coords,
+          firstName: data.full_name?.split(' ')[0] ?? m.firstName,
+          farmName: data.farm_name,
+          ...(coords && { coords })
         }));
       }
     })();
