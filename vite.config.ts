@@ -42,7 +42,7 @@ export default defineConfig({
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
         },
       },
-      external: ['posthog-js']
+      external: ['posthog-js', '@sentry/react']
     },
   },
   optimizeDeps: {
