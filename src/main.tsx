@@ -1,5 +1,5 @@
-import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { StrictMode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from './App.tsx';
@@ -29,7 +29,7 @@ const root = createRoot(rootElement);
 
 // Render the application with all necessary providers.
 root.render(
-  <React.StrictMode>
+  <StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <GrowthEngineProvider>
@@ -39,7 +39,7 @@ root.render(
       </AuthProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
-  </React.StrictMode>
+  </StrictMode>
 );
 
 // Service worker registration is now handled by Vite PWA plugin
