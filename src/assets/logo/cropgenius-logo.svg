@@ -1,0 +1,11 @@
+<svg width="240" height="64" viewBox="0 0 240 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Stylised CropGenius logotype built with accessible system fonts and brand colours. -->
+  <style>
+    .crop { font: 700 40px "Inter", "Helvetica", sans-serif; fill:#F4A52B; }
+    .genius { font: 700 40px "Inter", "Helvetica", sans-serif; fill:#2E8B57; }
+  </style>
+  <text class="crop" x="0" y="44">Crop</text>
+  <text class="genius" x="115" y="44">Genius</text>
+  <!-- Simple leaf element above the “i” to hint at agriculture. -->
+  <path d="M169 6 C172 -2 182 -2 185 6 C182 12 172 12 169 6 Z" fill="#2E8B57"/>
+</svg> 

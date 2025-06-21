@@ -11,7 +11,7 @@ import { uploadCropImage, UploadedFileResponse } from '../services/storageServic
 import { supabase } from '../services/supabaseClient';
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-// TODO: Define the correct Gemini API endpoint for vision models if different from text
+// Gemini Vision API endpoint supporting multimodal (image+text) requests
 const GEMINI_VISION_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${GEMINI_API_KEY}`;
 
 // --- Interface Definitions ---
@@ -339,14 +339,5 @@ export const performCropScanAndSave = async (
     throw new Error(`Database operation failed: ${dbError instanceof Error ? dbError.message : String(dbError)}`);
   }
 };
-
-// TODO: Implement a main orchestrator function e.g., performCropScanAndSave
-// This function would:
-// 1. Take CropScanInput (including the File object)
-// 2. (Future) Upload the image file to Supabase Storage, get the URL.
-// 3. Convert File to base64 (if not already provided as such).
-// 4. Call analyzeCropImage with base64 data.
-// 5. Call processGeminiResponse.
-// 6. Call saveCropScanResult with the processed data and the Supabase image URL.
 
 console.log('CropScanAgent.ts loaded. Gemini API Key available:', !!GEMINI_API_KEY);

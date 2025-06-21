@@ -1,7 +1,7 @@
 {
   "name": "CropGenius",
   "short_name": "CropGenius",
-  "description": "Smart farming simplified",
+  "description": "Smartfarming simplified",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

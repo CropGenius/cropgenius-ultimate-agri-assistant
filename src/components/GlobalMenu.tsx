@@ -19,13 +19,13 @@ import {
   Cloud,
   MessageSquare,
   Layers,
-  Tractor,
   Bell,
   Users,
   Award,
   Settings,
   LogOut
 } from "lucide-react";
+import LogoSVG from '@/assets/logo/cropgenius-logo.svg';
 import { supabase } from "@/services/supabaseClient";
 import { toast } from "sonner";
 
@@ -78,8 +78,7 @@ export default function GlobalMenu() {
       <SheetContent side="left" className="w-72 p-0">
         <SheetHeader className="p-4 border-b">
           <SheetTitle className="flex items-center gap-2">
-            <Tractor className="h-5 w-5 text-primary" />
-            <span>CROPGenius</span>
+            <img src={LogoSVG} alt="CropGenius logo" className="h-8 w-auto" />
           </SheetTitle>
         </SheetHeader>
         <ScrollArea className="h-[calc(100vh-70px)]">

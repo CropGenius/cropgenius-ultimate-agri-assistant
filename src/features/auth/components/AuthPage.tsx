@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LoginPage } from './LoginPage';
 import { SignupPage } from './SignupPage';
+import Logo from '@/assets/logo/cropgenius-logo.svg';
 
 export const AuthPage = () => {
   const [showLogin, setShowLogin] = useState(true);
@@ -10,8 +11,8 @@ export const AuthPage = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <img
           className="mx-auto h-12 w-auto"
-          src="/logo.png" // Assuming you have a logo in the public folder
-          alt="CropGenius"
+          src={Logo}
+          alt="CropGenius logo"
         />
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           {showLogin ? 'Sign in to your account' : 'Create a new account'}

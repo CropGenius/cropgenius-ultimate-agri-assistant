@@ -343,7 +343,7 @@ export const createDemoProfile = async (): Promise<Profile | null> => {
       })
       .select()
       .single();
-    
+      
     if (error) {
       console.error("Error creating profile:", error.message);
       return null;

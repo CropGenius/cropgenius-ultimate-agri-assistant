@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import GlobalMenu from "@/components/GlobalMenu";
-import { Tractor, Layers } from "lucide-react";
+import { Layers } from "lucide-react";
 import { CreditBadge } from "./badges/CreditBadge";
+import LogoSVG from '@/assets/logo/cropgenius-logo.svg';
 
 export default function LayoutMenu() {
   return (
@@ -10,8 +11,7 @@ export default function LayoutMenu() {
       <div className="flex items-center gap-2">
         <GlobalMenu />
         <Link to="/" className="flex items-center gap-2">
-          <Tractor className="h-5 w-5 text-primary" />
-          <span className="font-bold text-lg hidden sm:inline-block">CROPGenius</span>
+          <img src={LogoSVG} alt="CropGenius logo" className="h-8 w-auto" />
         </Link>
       </div>
       

@@ -1,0 +1,6 @@
+<svg width="32" height="32" viewBox="0 0 240 64" xmlns="http://www.w3.org/2000/svg">
+  <style>.leaf{fill:#2E8B57}</style>
+  <rect width="240" height="64" rx="12" fill="#fff"/>
+  <path class="leaf" d="M169 6 C172 -2 182 -2 185 6 C182 12 172 12 169 6 Z"/>
+  <text x="30" y="44" font-family="Inter, Helvetica, sans-serif" font-weight="700" font-size="40" fill="#2E8B57">CG</text>
+</svg> 
