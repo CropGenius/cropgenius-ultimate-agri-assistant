@@ -20,11 +20,12 @@ export default function OutOfCreditsModal({ onClose }: { onClose: () => void }) 
           <DialogTitle>You're out of credits ⚠️</DialogTitle>
         </DialogHeader>
         <p className="mb-4">Help 3 friends map their farm and earn 10 more credits.</p>
-        <Button className="w-full flex items-center gap-2" onClick={handleShare}>
-          <Share2 className="h-4 w-4" /> Share Now
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+        <DialogFooter>
+          <Button className="w-full flex items-center gap-2" onClick={handleShare}>
+            <Share2 className="h-4 w-4" /> Share Now
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
-} 
+}
