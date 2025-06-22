@@ -2,8 +2,8 @@ export type OnboardingData = {
   farmName: string;
   totalArea: number;
   crops: string[];
-  plantingDate: Date;
-  harvestDate: Date;
+  plantingDate: Date | string;
+  harvestDate: Date | string;
   primaryGoal: string;
   primaryPainPoint: string;
   hasIrrigation: boolean;

@@ -17,8 +17,18 @@ export const completeOnboarding = async (data: OnboardingData): Promise<Onboardi
       farm_name: data.farmName.trim(),
       total_area: Number(data.totalArea) || 1,
       crops: JSON.stringify(data.crops),
-      planting_date: data.plantingDate?.toISOString() || new Date().toISOString(),
-      harvest_date: data.harvestDate?.toISOString() || new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(),
+      planting_date: (() => {
+        if (!data.plantingDate) return new Date().toISOString();
+        const dateVal = typeof data.plantingDate === 'string' ? new Date(data.plantingDate) : data.plantingDate;
+        return dateVal.toISOString();
+      })(),
+      harvest_date: (() => {
+        if (!data.harvestDate) {
+          return new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString();
+        }
+        const dateVal = typeof data.harvestDate === 'string' ? new Date(data.harvestDate) : data.harvestDate;
+        return dateVal.toISOString();
+      })(),
       primary_goal: data.primaryGoal || 'increase_yield',
       primary_pain_point: data.primaryPainPoint || 'pests',
       has_irrigation: Boolean(data.hasIrrigation),
