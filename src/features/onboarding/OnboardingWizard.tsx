@@ -83,7 +83,12 @@ export function OnboardingWizard() {
           // Handle different input formats
           if (cropsStr.startsWith('[') && cropsStr.endsWith(']')) {
             // It's already a JSON array string
-            cropsArray = JSON.parse(cropsStr);
+            try {
+              cropsArray = JSON.parse(cropsStr);
+            } catch (e) {
+              // If parsing fails, treat as a single value
+              cropsArray = [cropsStr];
+            }
           } else if (cropsStr.includes(',')) {
             // Comma-separated values
             cropsArray = cropsStr.split(',').map(s => s.trim()).filter(Boolean);
@@ -111,7 +116,12 @@ export function OnboardingWizard() {
       // Ensure all crop values are strings
       cropsArray = cropsArray.map(String);
 
-      console.log('Sending crops data:', cropsArray);
+      // Convert to JSON string without extra escaping
+      const cropsJsonString = JSON.stringify(cropsArray)
+        .replace(/\\"/g, '"') // Remove escaped quotes
+        .replace(/^"|"$/g, ''); // Remove surrounding quotes if any
+
+      console.log('Sending crops data:', cropsJsonString);
       
       // Format dates as ISO strings
       const formatDate = (date: Date | string | null): string => {
@@ -123,7 +133,7 @@ export function OnboardingWizard() {
       const { data, error } = await supabase.rpc('complete_onboarding', {
         farm_name: formData.farmName || 'My Farm',
         total_area: parseFloat(formData.totalArea) || 1, // Ensure number type
-        crops: JSON.stringify(cropsArray),
+        crops: cropsJsonString, // Send as properly formatted JSON string
         planting_date: formatDate(formData.plantingDate),
         harvest_date: formatDate(formData.harvestDate || new Date(Date.now() + 120 * 24 * 60 * 60 * 1000)), // Default to 120 days from now
         primary_goal: formData.primaryGoal || 'increase_yield',
