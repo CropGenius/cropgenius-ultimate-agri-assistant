@@ -5,31 +5,63 @@ import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { OnboardingData } from '@/types/onboarding';
 
-interface StepSixProps {
-  onFinish: () => Promise<void>;
-  onBack: () => void;
-  formData: Partial<OnboardingData>;
-  isLoading: boolean;
-}
+/**
+ * The step can be rendered in two different wizard implementations.
+ * 1) The new wizard passes a `formData` object along with `isLoading`.
+ * 2) The legacy wizard spreads the collected form fields directly as props
+ *    (farmName, crops, etc.) together with the usual `onNext/onBack` props.
+ * To stay compatible with both we declare all OnboardingData keys as optional
+ * props in addition to an optional `formData` object.
+ */
+type StepSixBaseProps = Partial<OnboardingData> & {
+  /** Called when user clicks the final "Enter Mission Control" button */
+  onFinish?: () => Promise<void>;
+  /** Fallback for legacy wizards that still use `onNext` instead of `onFinish` */
+  onNext?: () => void;
+  onBack?: () => void;
+  isLoading?: boolean;
+  /** The collected form data when provided as an object (new wizard) */
+  formData?: Partial<OnboardingData>;
+};
 
-const getFirstTasks = (formData: Partial<OnboardingData>) => [
-  `Analyze satellite imagery for your ${formData.crops && formData.crops.length > 0 ? formData.crops[0] : 'fields'}.`,
+type StepSixProps = StepSixBaseProps;
+
+const getFirstTasks = (crops: string[] | undefined) => [
+  `Analyze satellite imagery for your ${crops && crops.length > 0 ? crops[0] : 'fields'}.`,
   'Generate a 7-day hyper-local weather forecast.',
-  `Recommend top 3 fertilizer blends for ${formData.crops && formData.crops.length > 0 ? formData.crops.join(', ') : 'your chosen crops'}.`,
+  `Recommend top 3 fertilizer blends for ${crops && crops.length > 0 ? crops.join(', ') : 'your chosen crops'}.`,
 ];
 
-export default function StepSixGeniusPlan({ onFinish, onBack, formData, isLoading }: StepSixProps) {
-  const firstTasks = getFirstTasks(formData);
-  const { width, height } = useWindowSize();
-  
-  const handleFinish = async () => {
+export default function StepSixGeniusPlan(props: StepSixProps) {
+  const {
+    onFinish,
+    onNext,
+    onBack,
+    isLoading = false,
+    formData,
+    crops,
+  } = props;
+
+  // Resolve the crop list depending on which props variant we received
+  const resolvedCrops: string[] | undefined = formData?.crops ?? crops;
+
+  const firstTasks = getFirstTasks(resolvedCrops);
+
+  // Prefer onFinish if provided, otherwise fall back to onNext (legacy)
+  const finishHandler = async () => {
     try {
-      await onFinish();
+      if (onFinish) {
+        await onFinish();
+      } else if (onNext) {
+        // Legacy wizard signature doesn't return a promise
+        onNext();
+      }
     } catch (error) {
       console.error('Error completing onboarding:', error);
     }
   };
 
+  const { width, height } = useWindowSize();
 
   return (
     <motion.div
@@ -62,7 +94,7 @@ export default function StepSixGeniusPlan({ onFinish, onBack, formData, isLoadin
 
       <div className="flex flex-col space-y-3">
         <Button 
-          onClick={handleFinish} 
+          onClick={finishHandler} 
           disabled={isLoading}
           className="w-full bg-gradient-to-r from-emerald-500 to-lime-600 text-white font-bold py-3 rounded-lg hover:scale-105 transition-transform text-lg disabled:opacity-70 disabled:cursor-not-allowed"
         >

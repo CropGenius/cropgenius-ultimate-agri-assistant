@@ -20,6 +20,9 @@ type StepComponent = React.FC<StepComponentProps & {
   onNext: (data: Partial<OnboardingData>) => void;
   onBack: () => void;
   isLastStep: boolean;
+  // Optional props used by the final Genius Plan step
+  onFinish?: () => Promise<void>;
+  isLoading?: boolean;
 }>;
 
 const ONBOARDING_FORM_DATA_KEY = 'onboardingFormData';
@@ -262,14 +265,22 @@ export function OnboardingWizard() {
           >
             {(() => {
               const StepComponent = steps[step - 1]?.component;
-              return StepComponent ? (
+              if (!StepComponent) return null;
+
+              // If this is the final step (Genius Plan), provide onFinish and loading state
+              const isFinalStep = step === steps.length;
+
+              return (
                 <StepComponent
                   {...formData as any}
+                  // Generic wizard props
                   onNext={handleNext}
                   onBack={handleBack}
-                  isLastStep={step === steps.length}
+                  isLastStep={isFinalStep}
+                  // Finalize props – StepSixGeniusPlan will pick these up if available
+                  {...(isFinalStep ? { onFinish: handleFinalSubmit, isLoading: isSubmitting } : {})}
                 />
-              ) : null;
+              );
             })()}
           </motion.div>
         </AnimatePresence>
