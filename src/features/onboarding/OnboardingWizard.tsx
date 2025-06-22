@@ -112,13 +112,20 @@ export function OnboardingWizard() {
       cropsArray = cropsArray.map(String);
 
       console.log('Sending crops data:', cropsArray);
+      
+      // Format dates as ISO strings
+      const formatDate = (date: Date | string | null): string => {
+        if (!date) return new Date().toISOString();
+        if (date instanceof Date) return date.toISOString();
+        return new Date(date).toISOString();
+      };
 
       const { data, error } = await supabase.rpc('complete_onboarding', {
         farm_name: formData.farmName || 'My Farm',
         total_area: parseFloat(formData.totalArea) || 1, // Ensure number type
         crops: JSON.stringify(cropsArray),
-        planting_date: formData.plantingDate || new Date().toISOString(),
-        harvest_date: formData.harvestDate || new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(), // Default to 120 days from now
+        planting_date: formatDate(formData.plantingDate),
+        harvest_date: formatDate(formData.harvestDate || new Date(Date.now() + 120 * 24 * 60 * 60 * 1000)), // Default to 120 days from now
         primary_goal: formData.primaryGoal || 'increase_yield',
         primary_pain_point: formData.primaryPainPoint || 'pests',
         has_irrigation: Boolean(formData.hasIrrigation),

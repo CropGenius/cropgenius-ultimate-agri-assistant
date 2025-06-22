@@ -3,8 +3,8 @@ CREATE OR REPLACE FUNCTION public.complete_onboarding(
   farm_name TEXT,
   total_area DECIMAL,
   crops TEXT, -- Changed from JSONB to TEXT to handle string input
-  planting_date TIMESTAMP WITH TIME ZONE,
-  harvest_date TIMESTAMP WITH TIME ZONE,
+  planting_date TEXT, -- Changed to TEXT to handle different date formats
+  harvest_date TEXT,  -- Changed to TEXT to handle different date formats
   primary_goal TEXT,
   primary_pain_point TEXT,
   has_irrigation BOOLEAN,
@@ -23,6 +23,8 @@ DECLARE
   farm_id UUID;
   result JSONB;
   crops_array JSONB;
+  v_planting_date TIMESTAMP WITH TIME ZONE;
+  v_harvest_date TIMESTAMP WITH TIME ZONE;
 BEGIN
   -- Get the current user's ID
   user_id := auth.uid();
@@ -56,6 +58,28 @@ BEGIN
     IF jsonb_array_length(crops_array) = 0 THEN
       crops_array := '["Maize"]'::JSONB;
     END IF;
+    
+    -- Parse planting date with better error handling
+    BEGIN
+      IF planting_date IS NULL OR planting_date = '' THEN
+        v_planting_date := NOW();
+      ELSE
+        v_planting_date := (planting_date::TIMESTAMP WITH TIME ZONE);
+      END IF;
+    EXCEPTION WHEN OTHERS THEN
+      v_planting_date := NOW();
+    END;
+    
+    -- Parse harvest date with better error handling
+    BEGIN
+      IF harvest_date IS NULL OR harvest_date = '' THEN
+        v_harvest_date := (NOW() + INTERVAL '120 days');
+      ELSE
+        v_harvest_date := (harvest_date::TIMESTAMP WITH TIME ZONE);
+      END IF;
+    EXCEPTION WHEN OTHERS THEN
+      v_harvest_date := (NOW() + INTERVAL '120 days');
+    END;
 
   -- Start a transaction
   BEGIN
@@ -118,8 +142,8 @@ BEGIN
         ct.id,
         total_area / NULLIF(jsonb_array_length(crops_array), 0) as field_size, -- Divide total area by number of crops
         'hectares',
-        planting_date,
-        harvest_date,
+        v_planting_date,  -- Use the parsed planting date
+        v_harvest_date,   -- Use the parsed harvest date
         NOW(),
         NOW()
       FROM jsonb_array_elements_text(crops_array) as crop_name

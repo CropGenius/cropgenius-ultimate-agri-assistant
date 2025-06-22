@@ -28,6 +28,5 @@ export interface AuthContextType extends AuthState {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 export const AuthProvider = RootAuthProvider;
 export const useAuth = useAuthContext;
