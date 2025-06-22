@@ -18,12 +18,26 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-interface StepFourProps {
-  onNext: (data: FormData) => void;
-  defaultValues: Partial<FormData>;
+export interface StepFourProps {
+  hasIrrigation?: boolean;
+  hasMachinery?: boolean;
+  hasSoilTest?: boolean;
+  budgetBand?: 'low' | 'medium' | 'high';
+  onNext: (data: Partial<FormData>) => void;
+  onBack?: () => void;
+  isLastStep?: boolean;
 }
 
-export default function StepFourResources({ onNext, defaultValues }: StepFourProps) {
+export default function StepFourResources({ 
+  hasIrrigation = false, 
+  hasMachinery = false, 
+  hasSoilTest = false, 
+  budgetBand = 'medium',
+  onNext, 
+  onBack,
+  isLastStep = false 
+}: StepFourProps) {
+  const defaultValues = { hasIrrigation, hasMachinery, hasSoilTest, budgetBand };
   const {
     control,
     handleSubmit,
@@ -104,9 +118,26 @@ export default function StepFourResources({ onNext, defaultValues }: StepFourPro
           />
         </div>
 
-        <Button type="submit" disabled={!isValid} className="w-full bg-gradient-to-r from-emerald-500 to-lime-600 text-white font-bold py-3 rounded-lg hover:scale-105 transition-transform">
-          Almost There... ➜
-        </Button>
+        <div className="flex flex-col space-y-3">
+          <Button 
+            type="submit" 
+            disabled={!isValid} 
+            className="w-full bg-gradient-to-r from-emerald-500 to-lime-600 text-white font-bold py-3 rounded-lg hover:scale-105 transition-transform"
+          >
+            {isLastStep ? 'Complete Setup' : 'Next Genius Tip'} {!isLastStep && '➜'}
+          </Button>
+          
+          {onBack && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onBack}
+              className="w-full"
+            >
+              ← Back
+            </Button>
+          )}
+        </div>
       </form>
     </motion.div>
   );

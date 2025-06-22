@@ -26,12 +26,29 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-interface StepTwoProps {
-  onNext: (data: FormData) => void;
-  defaultValues: Partial<FormData>;
+export interface StepTwoProps {
+  crops?: string[];
+  plantingDate?: Date | null;
+  harvestDate?: Date | null;
+  onNext: (data: Partial<FormData>) => void;
+  onBack?: () => void;
+  isLastStep?: boolean;
 }
 
-export default function StepTwoCropSeasons({ onNext, defaultValues }: StepTwoProps) {
+export default function StepTwoCropSeasons({ 
+  crops = [], 
+  plantingDate, 
+  harvestDate, 
+  onNext, 
+  onBack,
+  isLastStep = false 
+}: StepTwoProps) {
+  const defaultValues = { 
+    crops: Array.isArray(crops) ? crops : [],
+    plantingDate: plantingDate || undefined,
+    harvestDate: harvestDate || undefined
+  };
+
   const {
     control,
     handleSubmit,
@@ -124,9 +141,26 @@ export default function StepTwoCropSeasons({ onNext, defaultValues }: StepTwoPro
           />
         </div>
 
-        <Button type="submit" disabled={!isValid} className="w-full bg-gradient-to-r from-emerald-500 to-lime-600 text-white font-bold py-3 rounded-lg hover:scale-105 transition-transform">
-          Next Genius Tip ➜
-        </Button>
+        <div className="flex flex-col space-y-3">
+          <Button 
+            type="submit" 
+            disabled={!isValid} 
+            className="w-full bg-gradient-to-r from-emerald-500 to-lime-600 text-white font-bold py-3 rounded-lg hover:scale-105 transition-transform"
+          >
+            {isLastStep ? 'Complete Setup' : 'Next Genius Tip'} {!isLastStep && '➜'}
+          </Button>
+          
+          {onBack && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onBack}
+              className="w-full"
+            >
+              ← Back
+            </Button>
+          )}
+        </div>
       </form>
     </motion.div>
   );

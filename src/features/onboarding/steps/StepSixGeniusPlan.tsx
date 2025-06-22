@@ -1,22 +1,35 @@
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
+import { OnboardingData } from '@/types/onboarding';
 
 interface StepSixProps {
-  onFinish: () => void;
-  formData: any;
+  onFinish: () => Promise<void>;
+  onBack: () => void;
+  formData: Partial<OnboardingData>;
+  isLoading: boolean;
 }
 
-const firstTasks = (formData: any) => [
+const getFirstTasks = (formData: Partial<OnboardingData>) => [
   `Analyze satellite imagery for your ${formData.crops && formData.crops.length > 0 ? formData.crops[0] : 'fields'}.`,
   'Generate a 7-day hyper-local weather forecast.',
   `Recommend top 3 fertilizer blends for ${formData.crops && formData.crops.length > 0 ? formData.crops.join(', ') : 'your chosen crops'}.`,
 ];
 
-export default function StepSixGeniusPlan({ onFinish, formData }: StepSixProps) {
+export default function StepSixGeniusPlan({ onFinish, onBack, formData, isLoading }: StepSixProps) {
+  const firstTasks = getFirstTasks(formData);
   const { width, height } = useWindowSize();
+  
+  const handleFinish = async () => {
+    try {
+      await onFinish();
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+    }
+  };
+
 
   return (
     <motion.div
@@ -33,7 +46,7 @@ export default function StepSixGeniusPlan({ onFinish, formData }: StepSixProps) 
       <p className="text-gray-500 mt-2">You've unlocked personalized intelligence. Here's what CropGenius will do first:</p>
 
       <div className="text-left bg-gray-50 p-4 rounded-lg space-y-2">
-        {firstTasks(formData).map((task, index) => (
+        {firstTasks.map((task, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, x: -20 }}
@@ -47,9 +60,31 @@ export default function StepSixGeniusPlan({ onFinish, formData }: StepSixProps) 
         ))}
       </div>
 
-      <Button onClick={onFinish} className="w-full bg-gradient-to-r from-emerald-500 to-lime-600 text-white font-bold py-3 rounded-lg hover:scale-105 transition-transform text-lg">
-        Enter Mission Control 🚀
-      </Button>
+      <div className="flex flex-col space-y-3">
+        <Button 
+          onClick={handleFinish} 
+          disabled={isLoading}
+          className="w-full bg-gradient-to-r from-emerald-500 to-lime-600 text-white font-bold py-3 rounded-lg hover:scale-105 transition-transform text-lg disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Finalizing...
+            </>
+          ) : (
+            'Enter Mission Control 🚀'
+          )}
+        </Button>
+        
+        <Button 
+          onClick={onBack}
+          variant="outline"
+          className="w-full mt-2"
+          disabled={isLoading}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back
+        </Button>
+      </div>
     </motion.div>
   );
 }

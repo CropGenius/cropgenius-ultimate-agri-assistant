@@ -16,12 +16,22 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-interface StepFiveProps {
-  onNext: (data: FormData) => void;
-  defaultValues: Partial<FormData>;
+export interface StepFiveProps {
+  preferredLanguage?: string;
+  whatsappNumber?: string;
+  onNext: (data: Partial<FormData>) => void;
+  onBack?: () => void;
+  isLastStep?: boolean;
 }
 
-export default function StepFiveProfile({ onNext, defaultValues }: StepFiveProps) {
+export default function StepFiveProfile({ 
+  preferredLanguage = 'en', 
+  whatsappNumber = '', 
+  onNext, 
+  onBack,
+  isLastStep = false 
+}: StepFiveProps) {
+  const defaultValues = { preferredLanguage, whatsappNumber };
   const {
     control,
     register,
@@ -75,9 +85,26 @@ export default function StepFiveProfile({ onNext, defaultValues }: StepFiveProps
           <Input id="whatsapp" {...register('whatsappNumber')} placeholder="+234... (Optional)" />
         </div>
 
-        <Button type="submit" disabled={!isValid} className="w-full bg-gradient-to-r from-emerald-500 to-lime-600 text-white font-bold py-3 rounded-lg hover:scale-105 transition-transform">
-          Generate My Genius Plan! 🚀
-        </Button>
+        <div className="flex flex-col space-y-3">
+          <Button 
+            type="submit" 
+            disabled={!isValid} 
+            className="w-full bg-gradient-to-r from-emerald-500 to-lime-600 text-white font-bold py-3 rounded-lg hover:scale-105 transition-transform"
+          >
+            {isLastStep ? 'Complete Setup' : 'Next Genius Tip'} {!isLastStep && '➜'}
+          </Button>
+          
+          {onBack && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onBack}
+              className="w-full"
+            >
+              ← Back
+            </Button>
+          )}
+        </div>
       </form>
     </motion.div>
   );
