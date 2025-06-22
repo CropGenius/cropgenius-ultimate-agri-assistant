@@ -9,7 +9,12 @@ const Dashboard = lazy(() => import('./pages/MissionControlPage'));
 const FieldDetailPage = lazy(() => import('./pages/FieldDetail'));
 const FarmPlanningPage = lazy(() => import('./pages/FarmPlanningPage'));
 const MarketInsightsPage = lazy(() => import('./pages/MarketInsightsPage'));
-const OnboardingWizard = lazy(() => import('./features/onboarding/OnboardingWizard'));
+// Onboarding wizard is a named export (no default), so map it to `default` for React.lazy
+const OnboardingWizard = lazy(() =>
+  import('./features/onboarding/OnboardingWizard').then((m) => ({
+    default: m.OnboardingWizard,
+  }))
+);
 
 const AppLayout = () => (
   <Routes>

@@ -11,7 +11,6 @@ import { WifiOff } from "lucide-react";
 import { AppRoutes } from "./AppRoutes";
 import DevDebugPanel from "@/components/debug/DevDebugPanel";
 import { diagnostics } from "@/utils/diagnosticService";
-import { OnboardingWizard } from './features/onboarding/OnboardingWizard';
 
 // Configure React Query with better error handling
 const queryClient = new QueryClient({
