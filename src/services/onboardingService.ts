@@ -16,7 +16,7 @@ export const completeOnboarding = async (data: OnboardingData): Promise<Onboardi
     const payload = {
       farm_name: data.farmName.trim(),
       total_area: Number(data.totalArea) || 1,
-      crops: JSON.stringify(data.crops),
+      crops: data.crops,
       planting_date: (() => {
         if (!data.plantingDate) return new Date().toISOString();
         const dateVal = typeof data.plantingDate === 'string' ? new Date(data.plantingDate) : data.plantingDate;
