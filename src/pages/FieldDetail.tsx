@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { supabase } from "@/services/supabaseClient";
@@ -12,8 +12,10 @@ import { toast } from "sonner";
 import { getFieldById, deleteField } from "@/services/fieldService";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Loader2, MapPin, Trash2, Edit, ArrowLeft, Calendar, Droplets, Tractor, Leaf, History, Check, AlertCircle, RefreshCw, Zap } from "lucide-react";
-import FieldMap from "@/components/fields/FieldMap";
 import { analyzeField, getFieldRecommendations, checkFieldRisks } from "@/services/fieldAIService";
+
+// Lazy load FieldMap so leaflet isn't fetched unless the user opens a field
+const FieldMap = lazy(() => import("@/components/fields/FieldMap"));
 
 const FieldDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -250,7 +252,14 @@ const FieldDetail = () => {
           
           <div className="border rounded-md overflow-hidden h-[300px]">
             {field?.boundary ? (
-              <FieldMap initialBoundary={field.boundary} readOnly />
+              <Suspense fallback={<div className="h-full flex items-center justify-center bg-muted/30">
+                <div className="text-center text-muted-foreground">
+                  <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <div>No boundary data available</div>
+                </div>
+              </div>}>
+                <FieldMap initialBoundary={field.boundary} readOnly />
+              </Suspense>
             ) : (
               <div className="h-full flex items-center justify-center bg-muted/30">
                 <div className="text-center text-muted-foreground">

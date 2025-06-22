@@ -1,16 +1,17 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import MapboxFieldMap from '@/components/fields/MapboxFieldMap';
 import MapSearchInput from '@/components/fields/MapSearchInput';
 import { Boundary, Coordinates } from '@/types/field';
 import { useErrorLogging } from '@/hooks/use-error-logging';
 import { isOnline } from '@/utils/isOnline';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
+
+// Lazy load Mapbox map
+const MapboxFieldMap = lazy(() => import('@/components/fields/MapboxFieldMap'));
 
 interface FieldMapperStepProps {
   defaultLocation?: Coordinates;
@@ -106,13 +107,15 @@ export default function FieldMapperStep({
         <Card>
           <CardContent className="p-0 overflow-hidden">
             <div className="h-[350px] md:h-[450px] lg:h-[500px] w-full relative">
-              <MapboxFieldMap
-                onBoundaryChange={handleBoundaryChange}
-                onLocationChange={handleMapLocation}
-                initialBoundary={boundary}
-                defaultLocation={location || undefined}
-                readOnly={false}
-              />
+              <Suspense fallback={<div>Loading map...</div>}>
+                <MapboxFieldMap
+                  onBoundaryChange={handleBoundaryChange}
+                  onLocationChange={handleMapLocation}
+                  initialBoundary={boundary}
+                  defaultLocation={location || undefined}
+                  readOnly={false}
+                />
+              </Suspense>
               
               {!isOnlineStatus && (
                 <div className="absolute bottom-3 left-3 right-3 bg-background/90 text-xs p-2 rounded">

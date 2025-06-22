@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -8,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
-import MapboxFieldMap from "./MapboxFieldMap";
 import { toast } from "sonner";
 import { supabase } from "@/services/supabaseClient";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +18,9 @@ import { FieldFormProps } from "./types";
 import { Database } from "@/types/supabase";
 
 const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+
+// Lazy load to keep mapbox-gl out of initial chunks
+const MapboxFieldMap = lazy(() => import("./MapboxFieldMap"));
 
 const formSchema = z.object({
   name: z.string().min(2, "Field name must be at least 2 characters"),
@@ -203,11 +204,13 @@ export default function AddFieldForm({
               </CardHeader>
               <CardContent className="p-0">
                 <div className="h-[350px] md:h-[450px] w-full">
-                  <MapboxFieldMap 
-                    onBoundaryChange={setBoundary}
-                    onLocationChange={handleLocationChange}
-                    defaultLocation={defaultLocation}
-                  />
+                  <Suspense fallback={<div>Loading map...</div>}>
+                    <MapboxFieldMap 
+                      onBoundaryChange={setBoundary}
+                      onLocationChange={handleLocationChange}
+                      defaultLocation={defaultLocation}
+                    />
+                  </Suspense>
                 </div>
               </CardContent>
               <CardContent className="pt-4">

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { FaGoogle } from 'react-icons/fa';
+import GoogleIcon from '@/components/icons/GoogleIcon';
 import { PasswordStrengthMeter } from './PasswordStrengthMeter';
 
 interface SignupPageProps {
@@ -93,7 +93,7 @@ export const SignupPage = ({ onToggle }: SignupPageProps) => {
       </div>
       <div>
         <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={loading}>
-          <FaGoogle className="mr-2 h-4 w-4" /> Google
+          <GoogleIcon className="mr-2 h-4 w-4" /> Google
         </Button>
       </div>
       <p className="mt-2 text-center text-sm text-gray-600">

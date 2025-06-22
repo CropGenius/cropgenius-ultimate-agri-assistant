@@ -1,10 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Generate bundle visualization when ANALYZE=1 vite build
+    ...(process.env.ANALYZE ? [visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true })] : []),
+  ],
   base: '/',
   server: {
     port: 3000,
@@ -39,6 +44,11 @@ export default defineConfig({
         manualChunks: {
           react: ['react', 'react-dom', 'react-router-dom'],
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+          supabase: ['@supabase/supabase-js'],
+          mapbox: ['mapbox-gl', '@mapbox/mapbox-sdk'],
+          analytics: ['posthog-js', '@sentry/react'],
+          leaflet: ['leaflet', 'react-leaflet'],
+          icons: ['lucide-react'],
         },
       },
       external: []

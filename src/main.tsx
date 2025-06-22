@@ -1,7 +1,6 @@
 import { createRoot } from 'react-dom/client';
-import { StrictMode } from 'react';
+import React, { StrictMode, Suspense, lazy } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import App from './App.tsx';
 import './index.css';
 import { AuthProvider } from './providers/AuthProvider';
@@ -25,6 +24,15 @@ if (!rootElement) {
   throw new Error("Fatal Error: Root element with id 'root' not found in document.");
 }
 
+const Devtools = import.meta.env.DEV
+  ? lazy(() =>
+      import('@tanstack/react-query-devtools').then((m) => ({
+        default: m.ReactQueryDevtools,
+      })),
+    )
+  // eslint-disable-next-line react/display-name
+  : () => null;
+
 const root = createRoot(rootElement);
 
 // Render the application with all necessary providers.
@@ -36,8 +44,10 @@ root.render(
           <App />
         </GrowthEngineProvider>
         <Toaster />
+        <Suspense fallback={null}>
+          <Devtools initialIsOpen={false} />
+        </Suspense>
       </AuthProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </StrictMode>
 );

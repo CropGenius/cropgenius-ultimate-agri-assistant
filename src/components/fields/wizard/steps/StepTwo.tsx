@@ -1,12 +1,13 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Target, Map as MapIcon, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import MapboxFieldMap from '@/components/fields/MapboxFieldMap';
 import { Boundary, Coordinates } from '@/types/field';
 import { toast } from 'sonner';
+
+// Lazy load Mapbox map to defer heavy libraries
+const MapboxFieldMap = lazy(() => import('@/components/fields/MapboxFieldMap'));
 
 interface StepTwoProps {
   location: Coordinates | null;
@@ -155,12 +156,14 @@ export default function StepTwo({
         <Card className="overflow-hidden border shadow-md">
           <CardContent className="p-0">
             <div className="h-[300px] md:h-[400px] w-full">
-              <MapboxFieldMap
-                onBoundaryChange={onBoundaryChange}
-                onLocationChange={handleLocationChange}
-                defaultLocation={location || undefined}
-                initialBoundary={boundary}
-              />
+              <Suspense fallback={<div>Loading map...</div>}>
+                <MapboxFieldMap
+                  onBoundaryChange={onBoundaryChange}
+                  onLocationChange={handleLocationChange}
+                  defaultLocation={location || undefined}
+                  initialBoundary={boundary}
+                />
+              </Suspense>
             </div>
           </CardContent>
           
