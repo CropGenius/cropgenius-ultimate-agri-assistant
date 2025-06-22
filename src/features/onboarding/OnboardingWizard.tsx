@@ -180,3 +180,6 @@ export function OnboardingWizard() {
     </div>
   );
 }
+
+// Provide default export for compatibility with older imports
+export default OnboardingWizard;
