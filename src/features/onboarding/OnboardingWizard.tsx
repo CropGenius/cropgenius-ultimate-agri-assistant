@@ -3,19 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { useAuth } from '@/context/AuthContext';
 import { OnboardingData } from '@/types/onboarding';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
-import StepOneFarmVitals, { StepOneProps } from './steps/StepOneFarmVitals';
-import StepTwoCropSeasons, { StepTwoProps } from './steps/StepTwoCropSeasons';
-import StepThreeGoals, { StepThreeProps } from './steps/StepThreeGoals';
-import StepFourResources, { StepFourProps } from './steps/StepFourResources';
-import StepFiveProfile, { StepFiveProps } from './steps/StepFiveProfile';
+import StepOneFarmVitals from './steps/StepOneFarmVitals';
+import StepTwoCropSeasons from './steps/StepTwoCropSeasons';
+import StepThreeGoals from './steps/StepThreeGoals';
+import StepFourResources from './steps/StepFourResources';
+import StepFiveProfile from './steps/StepFiveProfile';
 import StepSixGeniusPlan from './steps/StepSixGeniusPlan';
-import { useAuth } from '@/context/AuthContext';
 
-type StepComponentProps = StepOneProps | StepTwoProps | StepThreeProps | StepFourProps | StepFiveProps;
+type StepOneProps = React.ComponentProps<typeof StepOneFarmVitals>;
+type StepTwoProps = React.ComponentProps<typeof StepTwoCropSeasons>;
+type StepThreeProps = React.ComponentProps<typeof StepThreeGoals>;
+type StepFourProps = React.ComponentProps<typeof StepFourResources>;
+type StepFiveProps = React.ComponentProps<typeof StepFiveProfile>;
+type StepSixProps = React.ComponentProps<typeof StepSixGeniusPlan>;
+
+type StepComponentProps = StepOneProps | StepTwoProps | StepThreeProps | StepFourProps | StepFiveProps | StepSixProps;
 type StepComponent = React.FC<StepComponentProps & {
   onNext: (data: Partial<OnboardingData>) => void;
   onBack: () => void;
@@ -38,13 +45,38 @@ const steps: { id: number; component: StepComponent }[] = [
 ];
 
 export function OnboardingWizard() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<number>(1);
   const [formData, setFormData] = useState<Partial<OnboardingData>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const { completeOnboarding } = useOnboarding();
+  
+  // Load saved form data and step from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedFormData = localStorage.getItem(ONBOARDING_FORM_DATA_KEY);
+      const savedStep = localStorage.getItem(ONBOARDING_STEP_KEY);
+      
+      if (savedFormData) {
+        setFormData(JSON.parse(savedFormData));
+      }
+      
+      if (savedStep) {
+        const stepNum = parseInt(savedStep, 10);
+        if (!isNaN(stepNum) && stepNum >= 1 && stepNum <= 6) {
+          setStep(stepNum);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved form data:', error);
+      // Clear corrupted data
+      localStorage.removeItem(ONBOARDING_FORM_DATA_KEY);
+      localStorage.removeItem(ONBOARDING_STEP_KEY);
+    }
+  }, []);
 
   // Load saved state from localStorage
   useEffect(() => {
@@ -93,7 +125,10 @@ export function OnboardingWizard() {
   }, [step]);
 
   const handleFinalSubmit = useCallback(async () => {
-    if (isSubmitting) return false;
+    if (isSubmitting || !user?.id) {
+      toast.error('Please sign in to continue');
+      return false;
+    }
 
     setIsSubmitting(true);
     setSubmitError(null);
