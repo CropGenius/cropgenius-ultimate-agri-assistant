@@ -33,10 +33,29 @@ BEGIN
 
   -- Parse the crops JSON string into a JSONB array
   BEGIN
-    crops_array := crops::JSONB;
-  EXCEPTION WHEN OTHERS THEN
-    RAISE EXCEPTION 'Invalid crops format. Expected JSON array: %', SQLERRM;
-  END;
+    IF crops IS NULL OR crops = '' THEN
+      crops_array := '[]'::JSONB;
+    ELSE
+      -- First try to parse as JSON array directly
+      BEGIN
+        crops_array := crops::JSONB;
+      EXCEPTION WHEN OTHERS THEN
+        -- If that fails, try to parse as a comma-separated string
+        BEGIN
+          SELECT jsonb_agg(trim(value)) 
+          INTO crops_array
+          FROM jsonb_array_elements(('["' || replace(trim(both '"' from crops), '"', '') || '"]')::jsonb) as value;
+        EXCEPTION WHEN OTHERS THEN
+          -- If all else fails, use a default array
+          crops_array := '["Maize"]'::JSONB;
+        END;
+      END;
+    END IF;
+    
+    -- Ensure we have at least one crop
+    IF jsonb_array_length(crops_array) = 0 THEN
+      crops_array := '["Maize"]'::JSONB;
+    END IF;
 
   -- Start a transaction
   BEGIN

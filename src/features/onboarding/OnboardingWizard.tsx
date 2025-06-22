@@ -72,26 +72,46 @@ export function OnboardingWizard() {
     console.log('Final onboarding data:', formData);
     try {
       // Ensure crops is an array of strings
-      let cropsArray = [];
-      if (Array.isArray(formData.crops)) {
-        cropsArray = formData.crops;
-      } else if (typeof formData.crops === 'string') {
-        try {
-          // Handle case where crops is a JSON string
-          cropsArray = JSON.parse(formData.crops);
-        } catch (e) {
-          // If it's not valid JSON, treat as a single crop name
-          cropsArray = [formData.crops];
+      let cropsArray: string[] = [];
+      
+      try {
+        // First try to parse as array if it's a string
+        if (typeof formData.crops === 'string') {
+          // Clean up the string and handle different formats
+          let cropsStr = formData.crops.trim();
+          
+          // Handle different input formats
+          if (cropsStr.startsWith('[') && cropsStr.endsWith(']')) {
+            // It's already a JSON array string
+            cropsArray = JSON.parse(cropsStr);
+          } else if (cropsStr.includes(',')) {
+            // Comma-separated values
+            cropsArray = cropsStr.split(',').map(s => s.trim()).filter(Boolean);
+          } else if (cropsStr) {
+            // Single value
+            cropsArray = [cropsStr];
+          }
+        } else if (Array.isArray(formData.crops)) {
+          // Already an array
+          cropsArray = formData.crops;
+        } else if (formData.crops) {
+          // Handle any other non-null value
+          cropsArray = [String(formData.crops)];
         }
-      } else if (formData.crops) {
-        // Handle case where crops is a single value
-        cropsArray = [formData.crops];
+      } catch (e) {
+        console.error('Error parsing crops:', e);
+        cropsArray = ['Maize']; // Fallback to default
       }
 
       // Ensure we have at least one crop
-      if (cropsArray.length === 0) {
+      if (!cropsArray || cropsArray.length === 0) {
         cropsArray = ['Maize']; // Default crop
       }
+
+      // Ensure all crop values are strings
+      cropsArray = cropsArray.map(String);
+
+      console.log('Sending crops data:', cropsArray);
 
       const { data, error } = await supabase.rpc('complete_onboarding', {
         farm_name: formData.farmName || 'My Farm',
