@@ -81,7 +81,7 @@ export const completeOnboarding = async (data: OnboardingData): Promise<Onboardi
     const payload = {
       farm_name: data.farmName.trim(),
       total_area: Number(data.totalArea) || 1,
-      crops: JSON.stringify(normalizedCrops), // Stringify the array for the RPC
+      crops: normalizedCrops.join(','), // Comma-separated string for RPC parsing
       planting_date: normalizeDate(data.plantingDate, now),
       harvest_date: normalizeDate(data.harvestDate, defaultHarvestDate),
       primary_goal: data.primaryGoal || 'increase_yield',
