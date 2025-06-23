@@ -15,11 +15,16 @@ export default function OutOfCreditsModal({ onClose }: { onClose: () => void }) 
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md text-center">
+      <DialogContent
+        className="max-w-md text-center"
+        aria-describedby="out-of-credits-description"
+      >
         <DialogHeader>
           <DialogTitle>You're out of credits ⚠️</DialogTitle>
         </DialogHeader>
-        <p className="mb-4">Help 3 friends map their farm and earn 10 more credits.</p>
+        <p id="out-of-credits-description" className="mb-4">
+          Help 3 friends map their farm and earn 10 more credits.
+        </p>
         <DialogFooter>
           <Button className="w-full flex items-center gap-2" onClick={handleShare}>
             <Share2 className="h-4 w-4" /> Share Now

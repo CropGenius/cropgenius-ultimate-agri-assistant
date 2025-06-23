@@ -78,10 +78,13 @@ export const completeOnboarding = async (data: OnboardingData): Promise<Onboardi
     
     const normalizedCrops = normalizeCrops(data.crops);
     
+    // Postgres expects array literals in the form "{item1,item2}" for text[] inputs
+    const postgresArrayLiteral = `{${normalizedCrops.join(',')}}`;
+
     const payload = {
       farm_name: data.farmName.trim(),
       total_area: Number(data.totalArea) || 1,
-      crops: normalizedCrops.join(','), // Comma-separated string for RPC parsing
+      crops: postgresArrayLiteral, // Proper array literal to satisfy RPC expectations
       planting_date: normalizeDate(data.plantingDate, now),
       harvest_date: normalizeDate(data.harvestDate, defaultHarvestDate),
       primary_goal: data.primaryGoal || 'increase_yield',

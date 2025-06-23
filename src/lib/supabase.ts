@@ -1,12 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase as enhancedSupabase } from '@/services/supabaseClient';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+// Re-export the shared singleton so existing imports continue to work
+export { enhancedSupabase as supabase };
