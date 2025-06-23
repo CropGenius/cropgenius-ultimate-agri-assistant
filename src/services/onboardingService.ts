@@ -1,34 +1,89 @@
 import { supabase } from '@/lib/supabase';
 import { OnboardingData, OnboardingResponse, OnboardingError } from '@/types/onboarding';
 
+/**
+ * Validates the onboarding data before submission
+ */
+const validateOnboardingData = (data: Partial<OnboardingData>): string | null => {
+  if (!data.farmName?.trim()) {
+    return 'Farm name is required';
+  }
+  
+  if (!data.crops?.length) {
+    return 'At least one crop is required';
+  }
+  
+  if (data.totalArea && (isNaN(Number(data.totalArea)) || Number(data.totalArea) <= 0)) {
+    return 'Total area must be a positive number';
+  }
+  
+  return null;
+};
+
+/**
+ * Normalizes the crops data to ensure it's in the correct format
+ */
+const normalizeCrops = (crops: any): string[] => {
+  if (!crops) return [];
+  
+  // If it's already an array of strings, return it
+  if (Array.isArray(crops) && crops.every(item => typeof item === 'string')) {
+    return crops;
+  }
+  
+  // If it's a string, try to parse it as JSON or split by comma
+  if (typeof crops === 'string') {
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(crops);
+      if (Array.isArray(parsed)) {
+        return parsed.map(String);
+      }
+      return [String(parsed)];
+    } catch (e) {
+      // If not valid JSON, try splitting by comma
+      return crops.split(',').map((s: string) => s.trim()).filter(Boolean);
+    }
+  }
+  
+  // If it's a single value, wrap it in an array
+  return [String(crops)];
+};
+
+/**
+ * Normalizes a date to ISO string format
+ */
+const normalizeDate = (date: Date | string | null | undefined, fallback: Date): string => {
+  if (!date) return fallback.toISOString();
+  const dateObj = date instanceof Date ? date : new Date(date);
+  return isNaN(dateObj.getTime()) ? fallback.toISOString() : dateObj.toISOString();
+};
+
 export const completeOnboarding = async (data: OnboardingData): Promise<OnboardingResponse> => {
   try {
     // Validate required fields
-    if (!data.farmName?.trim()) {
-      throw { message: 'Farm name is required', code: 'VALIDATION_ERROR' };
-    }
-    
-    if (!data.crops?.length) {
-      throw { message: 'At least one crop is required', code: 'VALIDATION_ERROR' };
+    const validationError = validateOnboardingData(data);
+    if (validationError) {
+      throw { 
+        message: validationError, 
+        code: 'VALIDATION_ERROR',
+        details: 'Invalid form data'
+      };
     }
 
-    // Prepare the payload
+    // Normalize and prepare the payload
+    const now = new Date();
+    const defaultHarvestDate = new Date();
+    defaultHarvestDate.setDate(now.getDate() + 120); // 120 days from now
+    
+    const normalizedCrops = normalizeCrops(data.crops);
+    
     const payload = {
       farm_name: data.farmName.trim(),
       total_area: Number(data.totalArea) || 1,
-      crops: data.crops,
-      planting_date: (() => {
-        if (!data.plantingDate) return new Date().toISOString();
-        const dateVal = typeof data.plantingDate === 'string' ? new Date(data.plantingDate) : data.plantingDate;
-        return dateVal.toISOString();
-      })(),
-      harvest_date: (() => {
-        if (!data.harvestDate) {
-          return new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString();
-        }
-        const dateVal = typeof data.harvestDate === 'string' ? new Date(data.harvestDate) : data.harvestDate;
-        return dateVal.toISOString();
-      })(),
+      crops: JSON.stringify(normalizedCrops), // Stringify the array for the RPC
+      planting_date: normalizeDate(data.plantingDate, now),
+      harvest_date: normalizeDate(data.harvestDate, defaultHarvestDate),
       primary_goal: data.primaryGoal || 'increase_yield',
       primary_pain_point: data.primaryPainPoint || 'pests',
       has_irrigation: Boolean(data.hasIrrigation),
@@ -39,41 +94,59 @@ export const completeOnboarding = async (data: OnboardingData): Promise<Onboardi
       whatsapp_number: data.whatsappNumber?.trim() || null,
     };
 
-    // Log the payload for debugging (remove in production)
-    console.debug('Sending onboarding payload:', JSON.stringify(payload, null, 2));
+    console.debug('Sending onboarding payload:', payload);
 
     // Make the RPC call
-    const { data: response, error } = await supabase
-      .rpc('complete_onboarding', payload)
-      .select()
-      .single();
+    const { data: response, error } = await supabase.rpc('complete_onboarding', payload);
 
     if (error) {
       console.error('RPC Error:', error);
       throw {
         message: error.message || 'Failed to complete onboarding',
-        code: error.code,
-        details: error.details
+        code: error.code || 'RPC_ERROR',
+        details: error.details || 'An error occurred during the RPC call'
       };
     }
 
-    // Ensure we got a valid response
-    if (!response) {
-      throw { message: 'No response received from server', code: 'NO_RESPONSE' };
+    // The RPC should return a JSON object with success, user_id, and farm_id
+    if (!response || typeof response !== 'object' || !('success' in response)) {
+      throw { 
+        message: 'Invalid response from server', 
+        code: 'INVALID_RESPONSE',
+        details: 'The server returned an unexpected response format'
+      };
+    }
+
+    // Type assertion to handle the response shape
+    const result = response as { success: boolean; user_id?: string; farm_id?: string };
+    
+    if (!result.success) {
+      throw {
+        message: 'Failed to complete onboarding',
+        code: 'ONBOARDING_FAILED',
+        details: 'The server indicated that onboarding was not successful'
+      };
     }
 
     return {
       success: true,
       message: 'Onboarding completed successfully',
-      user_id: response.user_id || '',
-      farm_id: response.farm_id || ''
+      user_id: result.user_id || '',
+      farm_id: result.farm_id || ''
     };
   } catch (error) {
     console.error('Error in completeOnboarding:', error);
+    
+    // If it's already an OnboardingError, just rethrow it
+    if (error && typeof error === 'object' && 'message' in error) {
+      throw error;
+    }
+    
+    // Otherwise, create a new error object
     throw {
-      message: error.message || 'An unexpected error occurred',
-      code: error.code || 'UNKNOWN_ERROR',
-      details: error.details
+      message: error instanceof Error ? error.message : 'An unexpected error occurred',
+      code: 'UNKNOWN_ERROR',
+      details: error instanceof Error ? error.stack : String(error)
     };
   }
 };

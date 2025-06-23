@@ -59,41 +59,42 @@ export function OnboardingWizard() {
     try {
       const savedFormData = localStorage.getItem(ONBOARDING_FORM_DATA_KEY);
       const savedStep = localStorage.getItem(ONBOARDING_STEP_KEY);
-      
+
       if (savedFormData) {
-        setFormData(JSON.parse(savedFormData));
+        try {
+          const parsedData = JSON.parse(savedFormData);
+          
+          // Ensure required fields have defaults
+          const withDefaults = {
+            farmName: '',
+            totalArea: 1,
+            crops: [],
+            primaryGoal: 'increase_yield',
+            hasIrrigation: false,
+            hasMachinery: false,
+            hasSoilTest: false,
+            budgetBand: 'medium',
+            preferredLanguage: 'en',
+            whatsappNumber: '',
+            ...parsedData
+          };
+          
+          setFormData(withDefaults);
+        } catch (error) {
+          console.error('Error parsing saved form data:', error);
+          // Clear corrupted data
+          localStorage.removeItem(ONBOARDING_FORM_DATA_KEY);
+        }
       }
-      
+
       if (savedStep) {
         const stepNum = parseInt(savedStep, 10);
-        if (!isNaN(stepNum) && stepNum >= 1 && stepNum <= 6) {
+        if (!isNaN(stepNum) && stepNum >= 1 && stepNum <= steps.length) {
           setStep(stepNum);
         }
       }
     } catch (error) {
-      console.error('Error loading saved form data:', error);
-      // Clear corrupted data
-      localStorage.removeItem(ONBOARDING_FORM_DATA_KEY);
-      localStorage.removeItem(ONBOARDING_STEP_KEY);
-    }
-  }, []);
-
-  // Load saved state from localStorage
-  useEffect(() => {
-    try {
-      const savedData = localStorage.getItem(ONBOARDING_FORM_DATA_KEY);
-      const savedStep = localStorage.getItem(ONBOARDING_STEP_KEY);
-
-      if (savedData) {
-        setFormData(JSON.parse(savedData));
-      }
-      if (savedStep) {
-        setStep(parseInt(savedStep, 10));
-      }
-    } catch (error) {
-      console.error("Failed to load onboarding state from localStorage", error);
-      localStorage.removeItem(ONBOARDING_FORM_DATA_KEY);
-      localStorage.removeItem(ONBOARDING_STEP_KEY);
+      console.error('Error loading saved state:', error);
     }
   }, []);
 
@@ -134,43 +135,12 @@ export function OnboardingWizard() {
     setSubmitError(null);
 
     try {
-      // Process crops data
-      let cropsArray: string[] = [];
-      const cropsData = formData.crops as unknown;
-      
-      if (cropsData) {
-        if (Array.isArray(cropsData)) {
-          cropsArray = cropsData.map(String);
-        } else if (typeof cropsData === 'string') {
-          const cropsStr = cropsData.trim();
-          if (cropsStr.startsWith('[') && cropsStr.endsWith(']')) {
-            try {
-              const parsed = JSON.parse(cropsStr);
-              cropsArray = Array.isArray(parsed) ? parsed.map(String) : [String(parsed)];
-            } catch (e) {
-              console.error('Error parsing crops array:', e);
-              cropsArray = [cropsStr];
-            }
-          } else if (cropsStr.includes(',')) {
-            cropsArray = cropsStr.split(',').map(s => s.trim()).filter(Boolean);
-          } else if (cropsStr) {
-            cropsArray = [cropsStr];
-          }
-        }
-      }
-
-      // Ensure we have at least one crop
-      if (cropsArray.length === 0) {
-        cropsArray = ['Maize']; // Default crop
-      }
-
       // Prepare the submission data with proper types
       const submissionData: OnboardingData = {
         ...formData,
-        userId: user?.id || '',
         farmName: formData.farmName || 'My Farm',
-        totalArea: formData.totalArea || 1,
-        crops: cropsArray,
+        totalArea: Number(formData.totalArea) || 1,
+        crops: formData.crops || [],
         primaryGoal: formData.primaryGoal || 'increase_yield',
         primaryPainPoint: formData.primaryPainPoint || 'pests',
         hasIrrigation: Boolean(formData.hasIrrigation),
@@ -179,21 +149,16 @@ export function OnboardingWizard() {
         budgetBand: formData.budgetBand || 'medium',
         preferredLanguage: formData.preferredLanguage || 'en',
         whatsappNumber: formData.whatsappNumber || '',
-        plantingDate: formData.plantingDate ? new Date(formData.plantingDate).toISOString() : null,
-        harvestDate: formData.harvestDate ? new Date(formData.harvestDate).toISOString() : null,
-        createdAt: new Date().toISOString(),
+        plantingDate: formData.plantingDate || new Date(),
+        harvestDate: formData.harvestDate || new Date(Date.now() + 120 * 24 * 60 * 60 * 1000), // 120 days from now
       };
 
       console.log('Submitting onboarding data:', submissionData);
 
       // Call the onboarding service
       const result = await completeOnboarding(submissionData);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to complete onboarding');
-      }
       
-      console.log('Onboarding completed successfully');
+      console.log('Onboarding completed successfully:', result);
       
       // Refresh user profile to get updated onboarding status
       if (refreshUser) {
@@ -215,9 +180,17 @@ export function OnboardingWizard() {
       return true;
     } catch (error) {
       console.error('Error in onboarding submission:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      const errorMessage = error?.message || 'An unknown error occurred';
+      const errorDetails = error?.details || error?.toString() || 'No additional details';
+      
+      console.error('Error details:', errorDetails);
       setSubmitError(`Error: ${errorMessage}`);
-      toast.error(`Failed to save: ${errorMessage}`);
+      
+      toast.error(`Failed to save: ${errorMessage}`, {
+        description: errorDetails,
+        duration: 5000,
+      });
+      
       return false;
     } finally {
       setIsSubmitting(false);
