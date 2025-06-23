@@ -51,7 +51,7 @@ export default function StepSixGeniusPlan(props: StepSixProps) {
   const finishHandler = async () => {
     try {
       if (onFinish) {
-        await onFinish();
+      await onFinish();
       } else if (onNext) {
         // Legacy wizard signature doesn't return a promise
         onNext();
