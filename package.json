@@ -102,7 +102,6 @@
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.0.0",
-    "@testing-library/react-hooks-testing-library": "^8.0.1",
     "@types/faker": "^5.5.9",
     "@types/geojson": "^7946.0.16",
     "@types/jest": "^29.5.14",
