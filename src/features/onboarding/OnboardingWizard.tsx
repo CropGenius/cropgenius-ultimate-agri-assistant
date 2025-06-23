@@ -50,7 +50,7 @@ export function OnboardingWizard() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
-  const { user, refreshUser } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { completeOnboarding } = useOnboarding();
   
@@ -161,8 +161,8 @@ export function OnboardingWizard() {
       console.log('Onboarding completed successfully:', result);
       
       // Refresh user profile to get updated onboarding status
-      if (refreshUser) {
-        await refreshUser();
+      if (refreshProfile) {
+        await refreshProfile();
       }
       
       // Clear form data from localStorage
@@ -195,7 +195,7 @@ export function OnboardingWizard() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, user?.id, navigate, refreshUser, completeOnboarding, isSubmitting]);
+  }, [formData, user?.id, navigate, refreshProfile, completeOnboarding, isSubmitting]);
 
   // Get the current step component
   const CurrentStep = steps[step - 1]?.component;
