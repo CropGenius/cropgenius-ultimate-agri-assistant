@@ -1,4 +1,5 @@
 import { fetchJSON } from '@/utils/network';
+import * as Sentry from "@sentry/react"; // Or appropriate Sentry SDK for the environment
 
 export interface GeoLocation {
   lat: number;
@@ -38,7 +39,11 @@ function evaluatePixel(sample) {
  * Coordinates should be in EPSG:4326 (lat/lng pairs) and form a closed polygon (first == last).
  */
 export async function analyzeField(coordinates: GeoLocation[], farmerId?: string): Promise<FieldHealthAnalysis> {
-  if (!SENTINEL_TOKEN) throw new Error('Sentinel Hub token not configured');
+  if (!SENTINEL_TOKEN) {
+    const err = new Error('Sentinel Hub token not configured');
+    Sentry.captureException(err);
+    throw err;
+  }
 
   // Ensure polygon is closed
   const closed = [...coordinates];
@@ -76,7 +81,9 @@ export async function analyzeField(coordinates: GeoLocation[], farmerId?: string
 
   if (!resp.ok) {
     const errTxt = await resp.text();
-    throw new Error(`Sentinel API error: ${resp.status} ${resp.statusText} – ${errTxt}`);
+    const err = new Error(`Sentinel API error (Process API): ${resp.status} ${resp.statusText} – ${errTxt}`);
+    Sentry.captureException(err, { extra: { farmerId, coordinatesCount: coordinates.length, requestBody: payload } });
+    throw err;
   }
 
   // We receive a binary TIFF. For simplicity, compute average NDVI via sentinel statistical API instead.

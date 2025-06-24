@@ -3,6 +3,13 @@
 // Fetches current temperature and weather code from Open-Meteo API (free, no key required)
 
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
+import * as Sentry from "https://deno.land/x/sentry/index.mjs";
+
+// Initialize Sentry if DSN is available
+const sentryDsn = Deno.env.get("SENTRY_DSN");
+if (sentryDsn) {
+  Sentry.init({ dsn: sentryDsn });
+}
 
 interface OpenMeteoResponse {
   current_weather: {
@@ -47,6 +54,10 @@ serve(async (req: Request) => {
       },
     );
   } catch (e) {
+    console.error("Error in weather function:", e);
+    if (sentryDsn) {
+      Sentry.captureException(e);
+    }
     return new Response(JSON.stringify({ error: "fetch_failed", message: String(e) }), { status: 500 });
   }
 });

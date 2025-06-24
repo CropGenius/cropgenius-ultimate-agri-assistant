@@ -1,6 +1,13 @@
 
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts"; // Required for Supabase client if not polyfilled
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import * as Sentry from "https://deno.land/x/sentry/index.mjs";
+
+// Initialize Sentry if DSN is available
+const sentryDsn = Deno.env.get("SENTRY_DSN");
+if (sentryDsn) {
+  Sentry.init({ dsn: sentryDsn });
+}
 
 // Define common crop diseases by crop type for more realistic response generation
 const cropDiseases = {
@@ -173,11 +180,13 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Error in crop scan function:", error);
-    
+    if (sentryDsn) {
+      Sentry.captureException(error);
+    }
     return new Response(
       JSON.stringify({
-        error: error.message || "An unexpected error occurred",
-        message: "Failed to analyze crop image. Please try again."
+        error: error.message || "An unexpected error occurred during crop scan.",
+        // message: "Failed to analyze crop image. Please try again." // Redundant if error is descriptive
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
