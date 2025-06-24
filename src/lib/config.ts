@@ -1,32 +1,27 @@
 // Environment validation and configuration
 interface Environment {
-  VITE_SUPABASE_URL: string;
-  VITE_SUPABASE_ANON_KEY: string;
-  VITE_MAPBOX_ACCESS_TOKEN: string;
+  VITE_SUPABASE_URL?: string;
+  VITE_SUPABASE_ANON_KEY?: string;
+  VITE_MAPBOX_ACCESS_TOKEN?: string;
   VITE_SENTRY_DSN?: string;
   VITE_POSTHOG_API_KEY?: string;
   VITE_ENVIRONMENT: 'development' | 'staging' | 'production';
 }
 
-const validateEnv = (): Environment => {
-  const env = import.meta.env;
-  
-  if (!env.VITE_SUPABASE_URL) {
-    throw new Error('VITE_SUPABASE_URL is required in environment variables');
-  }
-  
-  if (!env.VITE_SUPABASE_ANON_KEY) {
-    throw new Error('VITE_SUPABASE_ANON_KEY is required in environment variables');
-  }
-  
-  if (!env.VITE_MAPBOX_ACCESS_TOKEN) {
-    throw new Error('VITE_MAPBOX_ACCESS_TOKEN is required in environment variables');
-  }
+const DEFAULTS = {
+  VITE_SUPABASE_URL: 'https://bapqlyvfwxsichlyjxpd.supabase.co',
+  // Public anon key – safe to expose client-side. Replace with your own if needed.
+  VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo-anon-key',
+  // Public demo Mapbox token – replace with your own for production maps.
+  VITE_MAPBOX_ACCESS_TOKEN: 'pk.eyJ1IjoidGVzdCIsImEiOiJjanR1eHZqc2owMGpxMnhxYjRlYzFscjRmIn0.demo-token'
+};
 
+const validateEnv = (): Required<Environment> => {
+  const env = import.meta.env;
   return {
-    VITE_SUPABASE_URL: env.VITE_SUPABASE_URL,
-    VITE_SUPABASE_ANON_KEY: env.VITE_SUPABASE_ANON_KEY,
-    VITE_MAPBOX_ACCESS_TOKEN: env.VITE_MAPBOX_ACCESS_TOKEN,
+    VITE_SUPABASE_URL: env.VITE_SUPABASE_URL || DEFAULTS.VITE_SUPABASE_URL,
+    VITE_SUPABASE_ANON_KEY: env.VITE_SUPABASE_ANON_KEY || DEFAULTS.VITE_SUPABASE_ANON_KEY,
+    VITE_MAPBOX_ACCESS_TOKEN: env.VITE_MAPBOX_ACCESS_TOKEN || DEFAULTS.VITE_MAPBOX_ACCESS_TOKEN,
     VITE_SENTRY_DSN: env.VITE_SENTRY_DSN,
     VITE_POSTHOG_API_KEY: env.VITE_POSTHOG_API_KEY,
     VITE_ENVIRONMENT: (env.VITE_ENVIRONMENT as Environment['VITE_ENVIRONMENT']) || 'development',
