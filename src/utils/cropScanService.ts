@@ -1,100 +1,120 @@
-
 import { supabase } from "@/services/supabaseClient";
+import { z } from "zod";
 
-export interface ScanResult {
-  diseaseDetected: string;
-  confidenceLevel: number;
-  severity: "low" | "medium" | "high";
-  affectedArea: number;
-  recommendedTreatments: string[];
-  preventiveMeasures: string[];
-  similarCasesNearby: number;
-  estimatedYieldImpact: number;
-  treatmentProducts: {
-    name: string;
-    price: string;
-    effectiveness: number;
-    availability: string;
-  }[];
-  source?: string;
-  timestamp?: string;
-  additionalInfo?: string;
-  usingFallback?: boolean;
-}
+// Zod schema for validating the ScanResult from the API
+const treatmentProductSchema = z.object({
+  name: z.string(),
+  price: z.string(), // Assuming price might include currency symbols or text
+  effectiveness: z.number(),
+  availability: z.string(),
+});
+
+export const scanResultSchema = z.object({
+  diseaseDetected: z.string(),
+  confidenceLevel: z.number(),
+  severity: z.enum(["low", "medium", "high", "critical"]), // Added "critical"
+  affectedArea: z.number(),
+  recommendedTreatments: z.array(z.string()),
+  preventiveMeasures: z.array(z.string()),
+  similarCasesNearby: z.number().optional(), // Made optional as it might not always be available
+  estimatedYieldImpact: z.number().optional(), // Made optional
+  treatmentProducts: z.array(treatmentProductSchema).optional(), // Made optional
+  source: z.string().optional(),
+  timestamp: z.string().datetime({ offset: true }).optional(), // Validate as ISO datetime string
+  additionalInfo: z.string().optional(),
+  usingFallback: z.boolean().optional(),
+  locationContext: z.object({ // Added locationContext
+    region: z.string(),
+    riskLevel: z.string(),
+    spreadPotential: z.string(),
+  }).optional(), // Made optional as fallback might not provide it
+});
+
+export type ScanResult = z.infer<typeof scanResultSchema>;
+
 
 export const analyzeCropImage = async (
-  imageFile: File, 
+  imageFile: File,
   cropId?: string,
   location?: { lat: number; lng: number }
 ): Promise<ScanResult> => {
   try {
-    // Convert image to base64 for API processing
     const base64Image = await fileToBase64(imageFile);
-    
-    // Get current user
     const { data: { user } } = await supabase.auth.getUser();
     const userId = user?.id;
 
-    // Call the Supabase Edge Function for analysis
-    console.log("Calling crop-scan edge function");
-    const { data, error } = await supabase.functions.invoke('crop-scan', {
-      body: { 
+    console.log("Calling crop-scan edge function with payload:", { userId, cropId, location: location ? `${location.lat},${location.lng}`: undefined });
+    const { data: apiResponse, error } = await supabase.functions.invoke('crop-scan', {
+      body: {
         image: base64Image,
-        userId,
-        cropId,
-        location
+        userId, // Pass userId for RLS or logging if needed by function
+        cropId, // Optional: pass cropId if available
+        location: location ? `${location.lat},${location.lng}` : undefined, // Pass location as string "lat,lng"
       }
     });
-    
+
     if (error) {
       console.error("Error calling crop-scan function:", error);
-      throw new Error(error.message);
+      // Attempt to parse Supabase Edge Function error for better message
+      let detailedError = error.message;
+      if (error.context && typeof error.context.body === 'string') {
+        try {
+            const parsedBody = JSON.parse(error.context.body);
+            if(parsedBody.error) detailedError = parsedBody.error;
+        } catch(e) { /* ignore parsing error */ }
+      }
+      throw new Error(detailedError);
+    }
+
+    console.log("Raw crop scan response from function:", apiResponse);
+    const validationResult = scanResultSchema.safeParse(apiResponse);
+
+    if (!validationResult.success) {
+      console.error("Invalid scan result data from API:", validationResult.error.flatten());
+      throw new Error("Invalid data structure received from crop scan API. Please contact support.");
     }
     
-    console.log("Crop scan response:", data);
-    
-    // Return the scan result
-    return data as ScanResult;
+    return validationResult.data;
+
   } catch (error) {
     console.error("Error analyzing crop image:", error);
-    
-    // If the edge function fails, fall back to a local implementation
-    console.log("Using fallback crop analysis method");
-    
-    // Create a simulated delay to represent AI processing time
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    
-    // Return a simulated detection result as fallback
-    return {
-      diseaseDetected: "Late Blight (Phytophthora infestans)",
-      confidenceLevel: 96.8,
+    // If Zod validation fails or any other error occurs during the primary attempt, use fallback.
+    // The console will show the specific error (API error or Zod validation error).
+    // if (error instanceof Error && error.message.startsWith("Invalid data structure")) {
+    //     // Decide if this specific error should prevent fallback. For now, let it fallback.
+    //     // throw error;
+    // }
+
+    console.warn("Using fallback crop analysis method due to error: ", error.message);
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Shorter fallback delay
+
+    // Fallback data should also conform to the schema
+    const fallbackData: ScanResult = {
+      diseaseDetected: "Late Blight (Simulated Fallback)",
+      confidenceLevel: 95.0,
       severity: "medium",
-      affectedArea: 35,
+      affectedArea: 30,
       recommendedTreatments: [
-        "Apply copper-based fungicide within 24 hours",
-        "Remove and destroy affected leaves to prevent spread",
-        "Increase plant spacing to improve air circulation"
+        "Apply generic fungicide.",
+        "Remove affected parts.",
       ],
       preventiveMeasures: [
-        "Use disease-resistant tomato varieties in next planting",
-        "Rotate crops - avoid planting tomatoes in the same location for 2 years",
-        "Apply preventive fungicide during wet seasons"
+        "Ensure good air circulation.",
+        "Use certified seeds next season.",
       ],
-      similarCasesNearby: 8,
-      estimatedYieldImpact: 28,
-      treatmentProducts: [
-        {name: "Agro-Copper Fungicide", price: "1,200 KES", effectiveness: 92, availability: "Available at Kilimo Stores (2.3km away)"},
-        {name: "Organic Neem Extract", price: "850 KES", effectiveness: 76, availability: "Available at Green Farmer Market (4.1km away)"},
-        {name: "Bio-Protection Spray", price: "1,450 KES", effectiveness: 88, availability: "Available online - delivery in 2 days"}
-      ],
+      similarCasesNearby: 0, // Optional, so can be omitted or set to 0
+      estimatedYieldImpact: 25, // Optional
+      treatmentProducts: [], // Optional
       source: "AI Crop Analysis (Fallback Mode)",
       timestamp: new Date().toISOString(),
-      usingFallback: true
+      usingFallback: true,
     };
+    // Ensure fallback data is valid (optional, but good for dev)
+    // scanResultSchema.parse(fallbackData);
+    return fallbackData;
   }
 };
 
-// Helper function to convert a file to base64
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

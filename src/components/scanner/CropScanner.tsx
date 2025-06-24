@@ -1,5 +1,4 @@
-
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react"; // Added useEffect
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -296,6 +295,20 @@ const CropScanner: React.FC = () => {
       description: "8 farmers in your area will be alerted about this disease"
     });
   };
+
+  // Effect for cleaning up resources on unmount
+  useEffect(() => {
+    // Store capturedImage in a ref to access the latest value in cleanup
+    const capturedImageRef = React.useRef(capturedImage);
+    capturedImageRef.current = capturedImage;
+
+    return () => {
+      stopCamera(); // Ensure camera stream is stopped
+      if (capturedImageRef.current) {
+        URL.revokeObjectURL(capturedImageRef.current); // Ensure object URL is revoked
+      }
+    };
+  }, [stopCamera]); // capturedImage is not in dependency array to avoid re-running effect on its change, only on unmount. stopCamera is stable.
 
   return (
     <div className="p-5 pb-24 animate-fade-in">

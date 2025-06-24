@@ -5,6 +5,13 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import * as Sentry from "https://deno.land/x/sentry/index.mjs";
+
+// Initialize Sentry if DSN is available
+const sentryDsn = Deno.env.get("SENTRY_DSN");
+if (sentryDsn) {
+  Sentry.init({ dsn: sentryDsn });
+}
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -92,7 +99,9 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error("Error in whatsapp-notification function:", error);
-    
+    if (sentryDsn) {
+      Sentry.captureException(error, { extra: { phone: req.headers.get("X-User-Phone") } }); // Example extra data
+    }
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
