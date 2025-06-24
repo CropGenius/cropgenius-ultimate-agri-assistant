@@ -39,13 +39,11 @@ const FieldMap: React.FC<FieldMapProps> = ({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         <Polygon 
-          pathOptions={{ 
-            fillColor: '#10b981',
-            fillOpacity: 0.4,
-            color: '#059669',
-            weight: 2
-          }} 
-          positions={[polygonCoords]}
+          fillColor="#10b981"
+          fillOpacity={0.4}
+          color="#059669"
+          weight={2}
+          positions={polygonCoords}
         >
           <Popup>{fieldName}</Popup>
         </Polygon>

@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthPage } from './features/auth/components/AuthPage';
 import { ProtectedRoute } from './features/auth/components/ProtectedRoute';
 import { useAuth } from './context/AuthContext';
@@ -20,7 +20,11 @@ const OnboardingWizard = lazy(() =>
 );
 
 // Create a component that wraps routes with ResponsiveLayout
-const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
+interface LayoutWrapperProps {
+  children: React.ReactNode;
+}
+
+const LayoutWrapper: React.FC<LayoutWrapperProps> = ({ children }) => {
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   return (
     <ResponsiveLayout isMobile={isMobile}>
@@ -35,7 +39,11 @@ const AppLayout = () => {
   return (
     <Routes>
       {/* Wrap all routes that need the layout */}
-      <Route element={<LayoutWrapper />}>
+      <Route element={
+        <LayoutWrapper>
+          <Outlet />
+        </LayoutWrapper>
+      }>
         {/* Mobile-specific routes */}
         {isMobile && (
           <Route path="/home" element={<ProtectedRoute><MobileHomePage /></ProtectedRoute>} />

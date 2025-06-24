@@ -3,14 +3,25 @@ import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense, lazy } from "react";
+import { Loader2 } from "lucide-react";
+
+// Lazy load PWA components
+const UpdateNotification = lazy(() => import("@/components/UpdateNotification"));
+const NetworkStatus = lazy(() => import("@/components/NetworkStatus"));
 
 import { UserMetaProvider } from "@/context/UserMetaContext";
 import ErrorBoundary from "@/components/error/ErrorBoundary";
-import { WifiOff } from "lucide-react";
 import { AppRoutes } from "./AppRoutes";
 import DevDebugPanel from "@/components/debug/DevDebugPanel";
 import { diagnostics } from "@/utils/diagnosticService";
+
+// Loading component for Suspense
+const PWAComponentsLoader = () => (
+  <div className="fixed inset-0 flex items-center justify-center bg-white/50 dark:bg-gray-900/50 z-50">
+    <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+  </div>
+);
 
 // Configure React Query with better error handling
 const queryClient = new QueryClient({
@@ -55,12 +66,13 @@ if (typeof window !== 'undefined') {
   });
 }
 
-const App = () => {
+function App() {
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [isOnline, setIsOnline] = useState(true); // Default to true to avoid hydration mismatch
+
   // Development environment detection
   const isDev = import.meta.env.MODE === "development";
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Track online/offline status
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -82,31 +94,31 @@ const App = () => {
   }, []);
 
   return (
-    <ErrorBoundary
-      fallback={
-        <div className="text-red-500 p-4">Something went wrong.</div>
-      }
-    >
+    <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <UserMetaProvider>
-            <Toaster />
-            <Sonner position="top-center" closeButton />
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </UserMetaProvider>
-        </TooltipProvider>
+        <UserMetaProvider>
+          <BrowserRouter>
+            <TooltipProvider>
+              <div className="min-h-screen bg-background text-foreground flex flex-col">
+                <AppRoutes />
+                <Toaster />
+                <Sonner position="top-right" />
+                
+                {/* PWA Components */}
+                <Suspense fallback={<PWAComponentsLoader />}>
+                  <UpdateNotification />
+                  <NetworkStatus />
+                </Suspense>
+                
+                {/* Debug Panel */}
+                {process.env.NODE_ENV === 'development' && showDebugPanel && <DevDebugPanel />}
+              </div>
+            </TooltipProvider>
+          </BrowserRouter>
+        </UserMetaProvider>
       </QueryClientProvider>
-      {(isDev || localStorage.getItem('DEV_MODE') === 'true') && <DevDebugPanel />}
-      {!isOnline && (
-        <div className="fixed bottom-4 left-4 bg-yellow-500 text-white px-4 py-2 rounded-md text-sm shadow-lg z-50 flex items-center">
-          <WifiOff className="h-4 w-4 mr-2" />
-          <span>You're offline. Some features may be unavailable.</span>
-        </div>
-      )}
     </ErrorBoundary>
   );
-};
+}
 
 export default App;

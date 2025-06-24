@@ -7,22 +7,28 @@ import { resolve } from 'path';
 export default defineConfig({
   plugins: [
     react(),
-    // Generate bundle visualization when ANALYZE=1 vite build
     ...(process.env.ANALYZE ? [visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true })] : []),
   ],
-  base: '/',
+  base: './',
   server: {
     port: 3000,
     host: '0.0.0.0',
     strictPort: true,
     open: true,
-    cors: true
+    cors: true,
+    headers: {
+      'Content-Type': 'text/javascript; charset=utf-8',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    }
   },
   preview: {
     port: 3000,
     strictPort: true,
     host: '0.0.0.0',
-    cors: true
+    cors: true,
+    headers: {
+      'Cache-Control': 'public, max-age=600',
+    }
   },
   resolve: {
     alias: {
@@ -38,9 +44,9 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
       },
       output: {
-        entryFileNames: 'assets/[name].[hash].js',
-        chunkFileNames: 'assets/[name].[hash].js',
-        assetFileNames: 'assets/[name].[hash][extname]',
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
         manualChunks: {
           react: ['react', 'react-dom', 'react-router-dom'],
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
@@ -56,8 +62,12 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
+    esbuildOptions: {
+      target: 'es2020',
+    },
   },
   esbuild: {
     jsxInject: `import React from 'react'`,
+    target: 'es2020',
   },
 });
