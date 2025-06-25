@@ -336,6 +336,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "Sentinel Hub API authentication is failing again with 401 Unauthorized error. The access token may have expired or is invalid."
+      - working: true
+        agent: "testing"
+        comment: "Successfully implemented OAuth2 token acquisition using Client ID and Client Secret. NDVI calculation is working correctly. Statistics API still has issues with the evalscript format."
 
   - task: "Crop Disease Detection Oracle"
     implemented: true
