@@ -173,10 +173,34 @@ def test_sentinel_hub_api():
     function setup() {
       return {
         input: ['B08', 'B04'],
-        output: { bands: 1, sampleType: 'FLOAT32' }
+        output: { 
+          bands: 1, 
+          sampleType: 'FLOAT32'
+        }
       };
     }
     function evaluatePixel(sample) {
+      const ndvi = (sample.B08 - sample.B04) / (sample.B08 + sample.B04);
+      return [ndvi];
+    }
+    """
+    
+    # Statistics evalscript with dataMask
+    stats_evalscript = """
+    //VERSION=3
+    function setup() {
+      return {
+        input: ['B08', 'B04', 'dataMask'],
+        output: { 
+          bands: 1, 
+          sampleType: 'FLOAT32'
+        }
+      };
+    }
+    function evaluatePixel(sample) {
+      if (sample.dataMask == 0) {
+        return [0];
+      }
       const ndvi = (sample.B08 - sample.B04) / (sample.B08 + sample.B04);
       return [ndvi];
     }
