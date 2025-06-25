@@ -392,6 +392,28 @@ def test_supabase_database():
     except Exception as e:
         log_test("market", "Market Listings API", False, 
                 f"Error: {str(e)}")
+                
+    # Test market_listings table with crop_type filter
+    url = f"{SUPABASE_URL}/rest/v1/market_listings?select=*&crop_type=eq.Maize&limit=5"
+    headers = {
+        "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            log_test("market", "Market Listings Filter API", True, 
+                    f"Successfully retrieved {len(data)} Maize market listings", 
+                    json.dumps(data))
+        else:
+            log_test("market", "Market Listings Filter API", False, 
+                    f"Error: {response.status_code} - {response.text}")
+    except Exception as e:
+        log_test("market", "Market Listings Filter API", False, 
+                f"Error: {str(e)}")
 
 def print_summary():
     """Print summary of test results"""
