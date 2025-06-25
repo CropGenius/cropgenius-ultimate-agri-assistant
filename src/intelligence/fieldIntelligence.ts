@@ -1,5 +1,10 @@
 import { fetchJSON } from '@/utils/network';
-import * as Sentry from "@sentry/react"; // Or appropriate Sentry SDK for the environment
+import * as Sentry from "@sentry/react";
+import { 
+  initializeSentinelHubAuth, 
+  getSentinelHubAuthenticatedFetch, 
+  isSentinelHubAuthConfigured 
+} from '@/utils/sentinelHubAuth';
 
 export interface GeoLocation {
   lat: number;
@@ -15,10 +20,16 @@ export interface FieldHealthAnalysis {
 }
 
 const SENTINEL_API = 'https://services.sentinel-hub.com/api/v1/process';
-const SENTINEL_TOKEN = import.meta.env.VITE_SENTINEL_ACCESS_TOKEN;
+const SENTINEL_CLIENT_ID = import.meta.env.VITE_SENTINEL_CLIENT_ID;
+const SENTINEL_CLIENT_SECRET = import.meta.env.VITE_SENTINEL_CLIENT_SECRET;
 
-if (!SENTINEL_TOKEN) {
-  console.warn('[Sentinel] VITE_SENTINEL_ACCESS_TOKEN not set. Field analysis will be disabled.');
+// Initialize Sentinel Hub authentication if credentials are available
+if (SENTINEL_CLIENT_ID && SENTINEL_CLIENT_SECRET) {
+  initializeSentinelHubAuth(SENTINEL_CLIENT_ID, SENTINEL_CLIENT_SECRET);
+  console.log('✅ Sentinel Hub authentication initialized');
+} else {
+  console.warn('⚠️ Sentinel Hub credentials not configured. Field analysis will be disabled.');
+  console.warn('   Required: VITE_SENTINEL_CLIENT_ID and VITE_SENTINEL_CLIENT_SECRET');
 }
 
 // Evalscript calculating NDVI and returning single band image (0-1)
