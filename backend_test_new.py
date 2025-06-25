@@ -240,8 +240,8 @@ def test_sentinel_hub_api():
         "input": payload["input"],
         "aggregation": {
             "timeRange": {
-                "from": (datetime.now().replace(day=1)).isoformat(),
-                "to": datetime.now().isoformat()
+                "from": "2025-01-01T00:00:00Z",
+                "to": "2025-06-30T23:59:59Z"
             },
             "aggregationInterval": {"of": "P1D"},
             "evalscript": evalscript
