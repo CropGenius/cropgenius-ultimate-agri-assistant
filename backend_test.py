@@ -894,6 +894,7 @@ def main():
     test_sentinel_hub_api()
     test_supabase_functions()
     test_crop_disease_detection()
+    test_gemini_ai_treatment_advice()  # Added new test
     test_market_intelligence()
     test_supabase_database()
     
