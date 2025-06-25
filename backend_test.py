@@ -574,6 +574,7 @@ def main():
     test_sentinel_hub_api()
     test_supabase_functions()
     test_crop_disease_detection()
+    test_market_intelligence()
     test_supabase_database()
     
     # Print summary
