@@ -391,6 +391,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Confirmed Sentinel Hub API integration is working. Successfully obtained OAuth2 token and retrieved NDVI image. Statistics API has an issue with the evalscript format (missing dataMask in function setup)."
+      - working: true
+        agent: "testing"
+        comment: "Fixed the Sentinel Hub Statistics API issue by properly configuring the evalscript with dataMask output. All Sentinel Hub API features are now working correctly."
 
   - task: "Crop Disease Detection Oracle"
     implemented: true
