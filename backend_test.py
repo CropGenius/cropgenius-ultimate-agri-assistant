@@ -125,6 +125,39 @@ def test_sentinel_hub_api():
     """Test Sentinel Hub API integration"""
     print("\n=== Testing Sentinel Hub API Integration ===")
     
+    # Get OAuth2 token using client credentials
+    oauth_url = "https://services.sentinel-hub.com/oauth/token"
+    client_id = "bd594b72-e9c9-4e81-83da-a8968852be3e"
+    client_secret = "IFsW66iSQnFFlFGYxVftPOvNr8FduWHk"
+    
+    oauth_headers = {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    
+    oauth_payload = {
+        "grant_type": "client_credentials",
+        "client_id": client_id,
+        "client_secret": client_secret
+    }
+    
+    try:
+        oauth_response = requests.post(oauth_url, headers=oauth_headers, data=oauth_payload)
+        oauth_response.raise_for_status()
+        oauth_data = oauth_response.json()
+        
+        if "access_token" in oauth_data:
+            access_token = oauth_data["access_token"]
+            log_test("satellite", "Sentinel Hub OAuth2", True, 
+                    f"Successfully obtained OAuth2 token")
+        else:
+            log_test("satellite", "Sentinel Hub OAuth2", False, 
+                    f"Failed to obtain OAuth2 token: {oauth_response.text}")
+            return
+    except Exception as e:
+        log_test("satellite", "Sentinel Hub OAuth2", False, 
+                f"Error obtaining OAuth2 token: {str(e)}")
+        return
+    
     # Test NDVI calculation with Sentinel Hub
     url = "https://services.sentinel-hub.com/api/v1/process"
     
@@ -173,7 +206,7 @@ def test_sentinel_hub_api():
     }
     
     headers = {
-        "Authorization": f"Bearer {SENTINEL_ACCESS_TOKEN}",
+        "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
     }
     
