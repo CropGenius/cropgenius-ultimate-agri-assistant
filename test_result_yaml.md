@@ -13,15 +13,18 @@ backend:
 
   - task: "Satellite Field Intelligence"
     implemented: true
-    working: false
+    working: true
     file: "/app/src/intelligence/fieldIntelligence.ts"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "Sentinel Hub API authentication failed with 401 Unauthorized error. The provided access token 'PLAKf8ef59c5c29246ec8959cac23b207187' is not being accepted by the API."
+      - working: true
+        agent: "testing"
+        comment: "OAuth2 authentication now working with new Client ID and Client Secret. Successfully retrieved NDVI data from Sentinel Hub API."
 
   - task: "Crop Disease Detection Oracle"
     implemented: true
@@ -29,7 +32,7 @@ backend:
     file: "/app/src/agents/CropDiseaseOracle.ts"
     stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: false
         agent: "testing"
@@ -41,7 +44,7 @@ backend:
     file: "/app/src/agents/SmartMarketAgent.ts"
     stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: false
         agent: "testing"
@@ -74,19 +77,15 @@ frontend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.0"
-  test_sequence: 1
+  version: "1.1"
+  test_sequence: 2
   run_ui: false
 
 test_plan:
   current_focus:
-    - "Weather Prophecy Engine"
-    - "Satellite Field Intelligence"
     - "Crop Disease Detection Oracle"
     - "Market Intelligence Oracle"
-    - "Supabase Backend Operations"
   stuck_tasks:
-    - "Satellite Field Intelligence"
     - "Crop Disease Detection Oracle"
     - "Market Intelligence Oracle"
   test_all: false
@@ -95,3 +94,5 @@ test_plan:
 agent_communication:
   - agent: "testing"
     message: "Completed backend API testing. The OpenWeatherMap API and Supabase authentication are working correctly. However, there are issues with the Sentinel Hub API authentication, Supabase Edge Functions for crop disease detection, and the market_listings table in the database. The main agent should focus on fixing these issues."
+  - agent: "testing"
+    message: "Sentinel Hub OAuth2 authentication is now working correctly with the new Client ID and Client Secret. The NDVI calculation API is returning valid data. The remaining issues are related to missing Supabase Edge Functions and database tables."
