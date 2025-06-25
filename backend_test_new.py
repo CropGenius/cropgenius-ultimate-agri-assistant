@@ -236,6 +236,24 @@ def test_sentinel_hub_api():
     # Test Sentinel Hub statistics API for average NDVI
     stats_url = "https://services.sentinel-hub.com/api/v1/statistics"
     
+    # NDVI evalscript with dataMask for statistics
+    stats_evalscript = """
+    //VERSION=3
+    function setup() {
+      return {
+        input: ['B08', 'B04', 'dataMask'],
+        output: { bands: 1, sampleType: 'FLOAT32' }
+      };
+    }
+    function evaluatePixel(sample) {
+      if (sample.dataMask == 0) {
+        return [0];
+      }
+      const ndvi = (sample.B08 - sample.B04) / (sample.B08 + sample.B04);
+      return [ndvi];
+    }
+    """
+    
     stats_payload = {
         "input": payload["input"],
         "aggregation": {
@@ -244,7 +262,7 @@ def test_sentinel_hub_api():
                 "to": "2025-06-30T23:59:59Z"
             },
             "aggregationInterval": {"of": "P1D"},
-            "evalscript": evalscript
+            "evalscript": stats_evalscript
         },
         "calculations": {
             "default": {
