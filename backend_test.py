@@ -192,7 +192,8 @@ def test_sentinel_hub_api():
       return {
         input: ['B08', 'B04', 'dataMask'],
         output: { 
-          bands: 1, 
+          id: "default",
+          bands: 1,
           sampleType: 'FLOAT32'
         }
       };
