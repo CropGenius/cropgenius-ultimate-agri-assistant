@@ -406,4 +406,6 @@ agent_communication:
     message: "Attempted to test the Market Intelligence Oracle but the 'market_listings' table does not exist in the Supabase database. Tried to create the table using REST API but received 404 errors. The SmartMarketAgent has a fallback mechanism that should work without the actual table, but the Edge Functions for market analysis and selling opportunities are not deployed (404 errors)."
   - agent: "testing"
     message: "Sentinel Hub API authentication is failing again with 401 Unauthorized error. The access token may have expired or is invalid."
+  - agent: "testing"
+    message: "Successfully implemented OAuth2 token acquisition using Client ID and Client Secret for Sentinel Hub API. NDVI calculation is working correctly. Statistics API still has issues with the evalscript format."
 ```
