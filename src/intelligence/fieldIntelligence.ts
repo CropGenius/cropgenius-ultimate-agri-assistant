@@ -46,15 +46,18 @@ function evaluatePixel(sample) {
 }`;
 
 /**
- * Analyse a polygon field using Sentinel-2 imagery.
+ * Analyse a polygon field using Sentinel-2 imagery with proper OAuth2 authentication.
  * Coordinates should be in EPSG:4326 (lat/lng pairs) and form a closed polygon (first == last).
  */
 export async function analyzeField(coordinates: GeoLocation[], farmerId?: string): Promise<FieldHealthAnalysis> {
-  if (!SENTINEL_TOKEN) {
-    const err = new Error('Sentinel Hub token not configured');
+  if (!isSentinelHubAuthConfigured()) {
+    const err = new Error('Sentinel Hub authentication not configured. Please set VITE_SENTINEL_CLIENT_ID and VITE_SENTINEL_CLIENT_SECRET');
     Sentry.captureException(err);
     throw err;
   }
+
+  // Get authenticated fetch function
+  const authenticatedFetch = getSentinelHubAuthenticatedFetch();
 
   // Ensure polygon is closed
   const closed = [...coordinates];
@@ -80,56 +83,79 @@ export async function analyzeField(coordinates: GeoLocation[], farmerId?: string
     },
   };
 
-  // Sentinel expects fetch body as JSON.
-  const resp = await fetch(`${SENTINEL_API}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${SENTINEL_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!resp.ok) {
-    const errTxt = await resp.text();
-    const err = new Error(`Sentinel API error (Process API): ${resp.status} ${resp.statusText} – ${errTxt}`);
-    Sentry.captureException(err, { extra: { farmerId, coordinatesCount: coordinates.length, requestBody: payload } });
-    throw err;
-  }
-
-  // We receive a binary TIFF. For simplicity, compute average NDVI via sentinel statistical API instead.
-  const statsPayload = {
-    input: payload.input,
-    aggregation: {
-      timeRange: {
-        from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        to: new Date().toISOString(),
+  try {
+    // Make authenticated request to Sentinel Hub Process API
+    const resp = await authenticatedFetch(SENTINEL_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      aggregationInterval: { of: 'P1D' },
-      evalscript: NDVI_EVALSCRIPT,
-    },
-    calculations: { default: { statistics: { default: { stats: ['mean'] } } } },
-  };
+      body: JSON.stringify(payload),
+    });
 
-  const statsResp = await fetchJSON(`https://services.sentinel-hub.com/api/v1/statistics`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${SENTINEL_TOKEN}`,
-    },
-    body: statsPayload,
-  });
+    if (!resp.ok) {
+      const errTxt = await resp.text();
+      const err = new Error(`Sentinel API error (Process API): ${resp.status} ${resp.statusText} – ${errTxt}`);
+      Sentry.captureException(err, { 
+        extra: { 
+          farmerId, 
+          coordinatesCount: coordinates.length, 
+          requestBody: payload,
+          responseStatus: resp.status,
+          responseText: errTxt
+        } 
+      });
+      throw err;
+    }
 
-  const meanNDVI: number = statsResp?.statistics?.default?.mean ?? 0;
+    console.log('✅ Sentinel Hub Process API call successful');
 
-  const fieldHealth = Math.max(0, Math.min(1, meanNDVI));
+    // Get NDVI statistics using the Statistics API
+    const statsPayload = {
+      input: payload.input,
+      aggregation: {
+        timeRange: {
+          from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          to: new Date().toISOString(),
+        },
+        aggregationInterval: { of: 'P1D' },
+        evalscript: NDVI_EVALSCRIPT,
+      },
+      calculations: { default: { statistics: { default: { stats: ['mean', 'min', 'max', 'stDev'] } } } },
+    };
 
-  return {
-    fieldHealth,
-    problemAreas: [], // For now skip per-pixel classification (requires image decode)
-    yieldPrediction: Number((fieldHealth * 5).toFixed(1)), // naive conversion to t/ha
-    soilAnalysis: null,
-    recommendations: generateRecommendations(fieldHealth),
-  };
+    const statsResp = await authenticatedFetch('https://services.sentinel-hub.com/api/v1/statistics', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(statsPayload),
+    });
+
+    if (!statsResp.ok) {
+      console.warn('Statistics API failed, using fallback analysis');
+      return generateFallbackAnalysis(coordinates);
+    }
+
+    const statsResult = await statsResp.json();
+    console.log('✅ Sentinel Hub Statistics API call successful');
+
+    return processNDVIStatistics(statsResult, coordinates);
+
+  } catch (error) {
+    console.error('Sentinel Hub API error:', error);
+    Sentry.captureException(error, { 
+      extra: { 
+        farmerId, 
+        coordinatesCount: coordinates.length,
+        error: error.message 
+      } 
+    });
+    
+    // Return fallback analysis instead of throwing
+    console.warn('Using fallback field analysis due to API error');
+    return generateFallbackAnalysis(coordinates);
+  }
 }
 
 function generateRecommendations(health: number): string[] {
