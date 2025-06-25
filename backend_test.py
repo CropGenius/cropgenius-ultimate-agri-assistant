@@ -227,12 +227,16 @@ def test_sentinel_hub_api():
     # Test Sentinel Hub statistics API for average NDVI
     stats_url = "https://services.sentinel-hub.com/api/v1/statistics"
     
+    # Format dates in ISO 8601 format with timezone
+    from_date = datetime.now().replace(day=1).strftime("%Y-%m-%dT00:00:00Z")
+    to_date = datetime.now().strftime("%Y-%m-%dT23:59:59Z")
+    
     stats_payload = {
         "input": payload["input"],
         "aggregation": {
             "timeRange": {
-                "from": (datetime.now().replace(day=1)).isoformat(),
-                "to": datetime.now().isoformat()
+                "from": from_date,
+                "to": to_date
             },
             "aggregationInterval": {"of": "P1D"},
             "evalscript": evalscript
