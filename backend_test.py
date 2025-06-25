@@ -190,20 +190,32 @@ def test_sentinel_hub_api():
     //VERSION=3
     function setup() {
       return {
-        input: ['B08', 'B04', 'dataMask'],
-        output: { 
-          id: "default",
-          bands: 1,
-          sampleType: 'FLOAT32'
-        }
+        input: [{
+            bands: ["B08", "B04", "dataMask"]
+        }],
+        output: [{
+            id: "default",
+            bands: 1,
+            sampleType: "FLOAT32"
+        }, {
+            id: "dataMask",
+            bands: 1,
+            sampleType: "UINT8"
+        }]
       };
     }
     function evaluatePixel(sample) {
       if (sample.dataMask == 0) {
-        return [0];
+        return {
+          default: [0],
+          dataMask: [sample.dataMask]
+        };
       }
       const ndvi = (sample.B08 - sample.B04) / (sample.B08 + sample.B04);
-      return [ndvi];
+      return {
+        default: [ndvi],
+        dataMask: [sample.dataMask]
+      };
     }
     """
     
