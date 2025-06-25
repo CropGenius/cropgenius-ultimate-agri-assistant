@@ -333,6 +333,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "OAuth2 authentication now working with new Client ID and Client Secret. Successfully retrieved NDVI data."
+      - working: false
+        agent: "testing"
+        comment: "Sentinel Hub API authentication is failing again with 401 Unauthorized error. The access token may have expired or is invalid."
 
   - task: "Crop Disease Detection Oracle"
     implemented: true
@@ -345,18 +348,24 @@ backend:
       - working: false
         agent: "testing"
         comment: "Supabase Edge Function for crop disease detection was not found (404 error)."
+      - working: false
+        agent: "testing"
+        comment: "Supabase Edge Function for crop disease detection is still not deployed (404 error)."
 
   - task: "Market Intelligence Oracle"
     implemented: true
     working: false
     file: "/src/agents/SmartMarketAgent.ts"
-    stuck_count: 1
+    stuck_count: 2
     priority: "medium"
     needs_retesting: true
     status_history:
       - working: false
         agent: "testing"
         comment: "The 'market_listings' table does not exist in the Supabase database."
+      - working: false
+        agent: "testing"
+        comment: "The 'market_listings' table still does not exist in the Supabase database. Attempted to create the table using REST API but received 404 errors. The SmartMarketAgent has a fallback mechanism that should work without the actual table, but the Edge Functions for market analysis and selling opportunities are not deployed (404 errors)."
 
   - task: "Supabase Backend Operations"
     implemented: true
@@ -372,21 +381,27 @@ backend:
 
 metadata:
   created_by: "testing_agent"
-  version: "1.1"
-  test_sequence: 1
+  version: "1.2"
+  test_sequence: 2
   run_ui: false
 
 test_plan:
   current_focus:
     - "Crop Disease Detection Oracle"
     - "Market Intelligence Oracle"
+    - "Satellite Field Intelligence"
   stuck_tasks:
     - "Crop Disease Detection Oracle"
     - "Market Intelligence Oracle"
+    - "Satellite Field Intelligence"
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "testing"
     message: "Sentinel Hub OAuth2 authentication is now working correctly with the new Client ID and Client Secret. The NDVI calculation API is returning valid data. The remaining issues are related to missing Supabase Edge Functions and database tables."
+  - agent: "testing"
+    message: "Attempted to test the Market Intelligence Oracle but the 'market_listings' table does not exist in the Supabase database. Tried to create the table using REST API but received 404 errors. The SmartMarketAgent has a fallback mechanism that should work without the actual table, but the Edge Functions for market analysis and selling opportunities are not deployed (404 errors)."
+  - agent: "testing"
+    message: "Sentinel Hub API authentication is failing again with 401 Unauthorized error. The access token may have expired or is invalid."
 ```
