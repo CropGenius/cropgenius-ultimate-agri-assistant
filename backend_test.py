@@ -263,7 +263,7 @@ def test_sentinel_hub_api():
                 "to": to_date
             },
             "aggregationInterval": {"of": "P1D"},
-            "evalscript": evalscript
+            "evalscript": stats_evalscript
         },
         "calculations": {
             "default": {
