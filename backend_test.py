@@ -337,6 +337,136 @@ def test_crop_disease_detection():
         log_test("disease", "Crop Disease Detection Function", False, 
                 f"Error: {str(e)}")
 
+def test_market_intelligence():
+    """Test Market Intelligence Oracle"""
+    print("\n=== Testing Market Intelligence Oracle ===")
+    
+    # Test market analysis endpoint
+    location = AFRICAN_COORDINATES["nairobi"]
+    url = f"{SUPABASE_URL}/functions/v1/market-analysis/maize?lat={location['lat']}&lng={location['lng']}"
+    headers = {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            log_test("market", "Market Analysis API", True, 
+                    f"Successfully retrieved market analysis for maize", 
+                    json.dumps(data))
+        else:
+            # Check if it's a 404 error (function not deployed)
+            if response.status_code == 404:
+                log_test("market", "Market Analysis API", False, 
+                        "Market Analysis Edge Function not deployed (404 error)")
+            else:
+                log_test("market", "Market Analysis API", False, 
+                        f"Error: {response.status_code} - {response.text}")
+    except Exception as e:
+        log_test("market", "Market Analysis API", False, 
+                f"Error: {str(e)}")
+    
+    # Test selling opportunities endpoint
+    url = f"{SUPABASE_URL}/functions/v1/selling-opportunities"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g"
+    }
+    payload = {
+        "farmer_location": {"lat": location['lat'], "lng": location['lng']},
+        "farmer_crops": ["maize", "beans", "tomato"]
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        
+        if response.status_code == 200:
+            data = response.json()
+            log_test("market", "Selling Opportunities API", True, 
+                    f"Successfully retrieved selling opportunities", 
+                    json.dumps(data))
+        else:
+            # Check if it's a 404 error (function not deployed)
+            if response.status_code == 404:
+                log_test("market", "Selling Opportunities API", False, 
+                        "Selling Opportunities Edge Function not deployed (404 error)")
+            else:
+                log_test("market", "Selling Opportunities API", False, 
+                        f"Error: {response.status_code} - {response.text}")
+    except Exception as e:
+        log_test("market", "Selling Opportunities API", False, 
+                f"Error: {str(e)}")
+    
+    # Test direct database access for market listings
+    # This tests the SmartMarketAgent functionality through the database
+    
+    # Test market listings by location
+    url = f"{SUPABASE_URL}/rest/v1/market_listings?select=*&location_lat=gt.-2&location_lat=lt.0&location_lng=gt.36&location_lng=lt.38&limit=5"
+    headers = {
+        "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            log_test("market", "Market Listings by Location", True, 
+                    f"Successfully retrieved {len(data)} market listings near Nairobi", 
+                    json.dumps(data))
+        else:
+            log_test("market", "Market Listings by Location", False, 
+                    f"Error: {response.status_code} - {response.text}")
+    except Exception as e:
+        log_test("market", "Market Listings by Location", False, 
+                f"Error: {str(e)}")
+                
+    # Test market listings by price range
+    url = f"{SUPABASE_URL}/rest/v1/market_listings?select=*&price_per_unit=gt.0.5&price_per_unit=lt.2.0&limit=5"
+    headers = {
+        "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            log_test("market", "Market Listings by Price Range", True, 
+                    f"Successfully retrieved {len(data)} market listings in price range 0.5-2.0", 
+                    json.dumps(data))
+        else:
+            log_test("market", "Market Listings by Price Range", False, 
+                    f"Error: {response.status_code} - {response.text}")
+    except Exception as e:
+        log_test("market", "Market Listings by Price Range", False, 
+                f"Error: {str(e)}")
+                
+    # Test market listings by quality rating
+    url = f"{SUPABASE_URL}/rest/v1/market_listings?select=*&quality_rating=gte.4&limit=5"
+    headers = {
+        "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g"
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            log_test("market", "Market Listings by Quality", True, 
+                    f"Successfully retrieved {len(data)} high-quality market listings", 
+                    json.dumps(data))
+        else:
+            log_test("market", "Market Listings by Quality", False, 
+                    f"Error: {response.status_code} - {response.text}")
+    except Exception as e:
+        log_test("market", "Market Listings by Quality", False, 
+                f"Error: {str(e)}")
 def test_supabase_database():
     """Test Supabase Database Operations"""
     print("\n=== Testing Supabase Database Operations ===")
