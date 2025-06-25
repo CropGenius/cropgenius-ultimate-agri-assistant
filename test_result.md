@@ -217,8 +217,40 @@ CropGenius is a sophisticated AI-powered agricultural intelligence platform buil
 - Established testing protocols
 - Application successfully running in development mode
 
+## 📊 Backend Testing Results (2025-06-25)
+
+### 1. Weather Prophecy Engine
+- **Status**: ✅ WORKING
+- **Test Results**: Successfully tested OpenWeatherMap API integration with real African coordinates (Nairobi, Lagos). Both current weather and 5-day forecast APIs returned valid data.
+- **Response Time**: <500ms for both endpoints
+- **Issues**: None detected
+
+### 2. Satellite Field Intelligence
+- **Status**: ❌ NOT WORKING
+- **Test Results**: Sentinel Hub API authentication failed with 401 Unauthorized error.
+- **Issue**: The provided access token 'PLAKf8ef59c5c29246ec8959cac23b207187' is not being accepted by the API.
+- **Recommendation**: Verify and update the Sentinel Hub API token.
+
+### 3. Crop Disease Detection Oracle
+- **Status**: ❌ NOT WORKING
+- **Test Results**: Supabase Edge Function for crop disease detection was not found (404 error).
+- **Issue**: The function may not be deployed or the endpoint URL is incorrect.
+- **Recommendation**: Deploy the fn-crop-disease Edge Function to Supabase.
+
+### 4. Market Intelligence Oracle
+- **Status**: ❌ NOT WORKING
+- **Test Results**: The 'market_listings' table does not exist in the Supabase database.
+- **Issue**: Error: relation "public.market_listings" does not exist
+- **Recommendation**: Create the market_listings table in the Supabase database.
+
+### 5. Supabase Backend Operations
+- **Status**: ✅ WORKING (PARTIALLY)
+- **Test Results**: Supabase authentication API is working correctly. The API correctly rejected invalid credentials with a 400 error.
+- **Issues**: Supabase Edge Functions for weather and field-analysis are not deployed or not accessible.
+- **Recommendation**: Deploy the required Edge Functions to Supabase.
+
 ---
 
-**🎯 READY FOR PHASE 1 BACKEND TESTING**
+**🎯 BACKEND TESTING COMPLETED - CRITICAL ISSUES IDENTIFIED**
 
 *This document serves as the single source of truth for CropGenius debugging and optimization progress. All testing agents and development activities should reference and update this document.*
