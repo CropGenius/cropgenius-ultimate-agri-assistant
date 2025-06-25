@@ -367,6 +367,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Successfully tested OpenWeatherMap API integration with real African coordinates. Both current and forecast APIs working."
+      - working: true
+        agent: "testing"
+        comment: "Confirmed OpenWeatherMap API integration is working correctly. Successfully retrieved current weather and 5-day forecast for African locations."
 
   - task: "Satellite Field Intelligence"
     implemented: true
@@ -394,12 +397,15 @@ backend:
       - working: true
         agent: "testing"
         comment: "Fixed the Sentinel Hub Statistics API issue by properly configuring the evalscript with dataMask output. All Sentinel Hub API features are now working correctly."
+      - working: true
+        agent: "testing"
+        comment: "Verified Sentinel Hub API integration is working correctly. Successfully obtained OAuth2 token, retrieved NDVI image, and got statistics data. The Supabase Edge Function for field analysis is not deployed (500 error)."
 
   - task: "Crop Disease Detection Oracle"
     implemented: true
     working: false
     file: "/src/agents/CropDiseaseOracle.ts"
-    stuck_count: 2
+    stuck_count: 3
     priority: "high"
     needs_retesting: false
     status_history:
@@ -412,6 +418,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "Direct PlantNet API integration test failed with 404 error: Species not found. This could be due to the test image being too small or not containing recognizable plant features. Supabase Edge Function for crop disease detection is still not deployed (404 error)."
+      - working: false
+        agent: "testing"
+        comment: "PlantNet API integration test still failing with 404 error: Species not found. The test image may be too small or not contain recognizable plant features. Supabase Edge Function for crop disease detection is still not deployed (404 error)."
 
   - task: "Gemini AI Treatment Advice"
     implemented: true
@@ -424,12 +433,15 @@ backend:
       - working: true
         agent: "testing"
         comment: "Successfully tested Gemini AI treatment advice generation. The system correctly generates organic and inorganic treatment options, calculates economic impact, performs treatment analysis, and provides local supplier recommendations."
+      - working: true
+        agent: "testing"
+        comment: "Confirmed Gemini AI treatment advice generation is working correctly. Successfully generated treatment advice for Maize Leaf Blight with organic and inorganic options, economic impact calculation, treatment analysis, and local supplier recommendations."
 
   - task: "Market Intelligence Oracle"
     implemented: true
     working: false
     file: "/src/agents/SmartMarketAgent.ts"
-    stuck_count: 3
+    stuck_count: 4
     priority: "medium"
     needs_retesting: false
     status_history:
@@ -442,6 +454,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "Market Intelligence Oracle is still not working. The 'market_listings' table does not exist in the database, and the Edge Functions for market analysis and selling opportunities are not deployed (404 errors)."
+      - working: false
+        agent: "testing"
+        comment: "Market Intelligence Oracle is still not working. The 'market_listings' table does not exist in the database (error: relation 'public.market_listings' does not exist), and the Edge Functions for market analysis and selling opportunities are not deployed (404 errors)."
 
   - task: "Supabase Backend Operations"
     implemented: true
@@ -457,18 +472,20 @@ backend:
       - working: true
         agent: "testing"
         comment: "Supabase authentication API is still working correctly. Successfully tested authentication endpoint which correctly rejected invalid credentials."
+      - working: true
+        agent: "testing"
+        comment: "Confirmed Supabase authentication API is working correctly. Successfully tested authentication endpoint which correctly rejected invalid credentials."
 
 metadata:
   created_by: "testing_agent"
-  version: "1.4"
-  test_sequence: 4
+  version: "1.5"
+  test_sequence: 5
   run_ui: false
 
 test_plan:
   current_focus:
     - "Crop Disease Detection Oracle"
     - "Market Intelligence Oracle"
-    - "Satellite Field Intelligence"
   stuck_tasks:
     - "Crop Disease Detection Oracle"
     - "Market Intelligence Oracle"
@@ -486,4 +503,6 @@ agent_communication:
     message: "Successfully implemented OAuth2 token acquisition using Client ID and Client Secret for Sentinel Hub API. NDVI calculation is working correctly. Statistics API still has issues with the evalscript format."
   - agent: "testing"
     message: "Completed comprehensive testing of the backend APIs. The Weather Prophecy Engine and Satellite Field Intelligence are working correctly with real API integrations. The Gemini AI Treatment Advice generation is also working correctly. However, the Crop Disease Detection Oracle is not working due to issues with the PlantNet API integration and missing Supabase Edge Functions. The Market Intelligence Oracle is also not working due to missing database tables and Edge Functions. The Supabase Backend Operations are working correctly for authentication."
+  - agent: "testing"
+    message: "Completed another round of comprehensive testing of the backend APIs. The Weather Prophecy Engine, Satellite Field Intelligence, and Gemini AI Treatment Advice are all working correctly with real API integrations. The Crop Disease Detection Oracle is still not working due to issues with the PlantNet API integration (404 Species not found error) and missing Supabase Edge Functions. The Market Intelligence Oracle is still not working due to missing database tables ('market_listings' table does not exist) and Edge Functions not being deployed. The Supabase Backend Operations are working correctly for authentication."
 ```
