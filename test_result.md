@@ -396,7 +396,6 @@ test_plan:
   stuck_tasks:
     - "Crop Disease Detection Oracle"
     - "Market Intelligence Oracle"
-    - "Satellite Field Intelligence"
   test_all: false
   test_priority: "high_first"
 
