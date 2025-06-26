@@ -37,8 +37,8 @@
     "@sentry/react": "^9.30.0",
     "@supabase/supabase-js": "^2.38.1",
     "@tanstack/react-query": "^5.56.2",
-    "@tanstack/react-virtual": "^3.0.0",
     "@tanstack/react-query-devtools": "^5.56.2",
+    "@tanstack/react-virtual": "^3.0.0",
     "@types/leaflet": "^1.9.18",
     "@types/mapbox__mapbox-sdk": "^0.16.1",
     "class-variance-authority": "^0.7.0",
@@ -105,10 +105,10 @@
     "@typescript-eslint/parser": "^8.10.0",
     "@vitejs/plugin-react": "^4.4.1",
     "@vitejs/plugin-react-swc": "^3.5.0",
-    "@vitest/coverage-v8": "^0.34.1",
-    "@vitest/ui": "^0.34.1",
+    "@vitest/coverage-v8": "^3.2.4",
     "@vitest/runner": "^0.34.1",
     "@vitest/snapshot": "^0.34.1",
+    "@vitest/ui": "^3.2.4",
     "@vitest/utils": "^0.34.1",
     "dotenv": "^16.5.0",
     "eslint": "^8.57.0",
@@ -124,7 +124,6 @@
     "jest-environment-jsdom": "^29.7.0",
     "jest-fetch-mock": "^3.0.3",
     "jsdom": "^25.0.0",
-    
     "lovable-tagger": "^1.1.7",
     "msw": "^2.2.1",
     "postcss": "^8.4.47",
@@ -139,6 +138,6 @@
     "typescript": "^5.8.3",
     "vite": "^5.4.1",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^0.34.1"
+    "vitest": "^3.2.4"
   }
 }
