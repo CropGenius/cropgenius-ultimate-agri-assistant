@@ -3,10 +3,10 @@
 
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import path from 'path';
-import url from 'url';
+import { fileURLToPath } from 'url';
+import { URL } from 'url';
 
-const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
@@ -19,31 +19,19 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: ['node_modules', 'src/**/*.d.ts', 'src/**/*.tsx']
-    }
-    deps: {
-      inline: ['@testing-library/user-event', '@testing-library/react', '@testing-library/jest-dom'],
     },
-    // Add type definitions
+    deps: {
+      inline: ['@testing-library/user-event', '@testing-library/react', '@testing-library/jest-dom']
+    },
     typeCheck: true,
     esm: {
-      namedExport: true,
+      namedExport: true
     },
-    css: false,
+    css: false
   },
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-        replacement: fileURLToPath(new URL('./src/$1', import.meta.url)),
-      },
-    ],
-    // Add support for React Testing Library
-    deps: {
-      inline: ['@testing-library/user-event'],
-    },
-  },
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-    },
-  },
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    }
+  }
 });
