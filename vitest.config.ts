@@ -10,8 +10,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './src/test/setup.ts',
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}'],
     coverage: {
       reporter: ['text', 'json', 'html'],
       exclude: [
@@ -22,10 +22,23 @@ export default defineConfig({
         '**/types.ts',
       ],
     },
-    // Fix for React 18 compatibility
-    alias: [
-      {
-        find: /^@\/(.*)/,
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+    // Add support for React Testing Library and Vitest types
+    deps: {
+      inline: ['@testing-library/user-event', '@testing-library/react', '@testing-library/jest-dom'],
+    },
+    // Add type definitions
+    typeCheck: true,
+    esm: {
+      namedExport: true,
+    },
+    css: false,
+  },
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
         replacement: fileURLToPath(new URL('./src/$1', import.meta.url)),
       },
     ],

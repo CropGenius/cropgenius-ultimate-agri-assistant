@@ -73,6 +73,7 @@
     "zxcvbn": "^4.4.2"
   },
   "scripts": {
+    "test:integration": "vitest run --environment jsdom --include=\"**/*.{test,spec}.{js,jsx,ts,tsx}\"",
     "dev": "vite",
     "build": "npm run generate-pwa-assets && vite build",
     "build:dev": "vite build --mode development",
@@ -99,8 +100,6 @@
     "@eslint/js": "^9.9.0",
     "@faker-js/faker": "^8.4.1",
     "@tailwindcss/typography": "^0.5.15",
-    "canvas": "^2.11.2",
-    "sharp": "^0.33.3",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",
@@ -113,15 +112,17 @@
     "@types/react": "^18.3.21",
     "@types/react-dom": "^18.3.7",
     "@types/supertest": "^6.0.2",
-    "@types/testing-library__jest-dom": "^5.14.9",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.10.0",
     "@typescript-eslint/parser": "^8.10.0",
     "@vitejs/plugin-react": "^4.4.1",
     "@vitejs/plugin-react-swc": "^3.5.0",
-    "@vitest/coverage-v8": "^3.1.3",
-    "@vitest/ui": "^3.1.3",
-    "autoprefixer": "^10.4.20",
+    "@vitest/coverage-v8": "^0.34.1",
+    "@vitest/ui": "^0.34.1",
+    "@vitest/runner": "^0.34.1",
+    "@vitest/snapshot": "^0.34.1",
+    "@vitest/utils": "^0.34.1",
+    "canvas": "^2.11.2",
     "dotenv": "^16.5.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
@@ -141,6 +142,7 @@
     "postcss": "^8.4.47",
     "prettier": "^3.2.4",
     "rollup-plugin-visualizer": "^5.9.0",
+    "sharp": "^0.33.3",
     "supertest": "^6.3.3",
     "tailwindcss": "^3.4.11",
     "ts-jest": "^29.1.2",
@@ -149,6 +151,6 @@
     "typescript": "^5.8.3",
     "vite": "^5.4.1",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.1.3"
+    "vitest": "^0.34.1"
   }
 }

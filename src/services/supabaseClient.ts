@@ -9,7 +9,7 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '../types/supabase';
+import { Database } from '../types/supabase';
 import { APP_CONFIG } from '../lib/config';
 import { AppError, ErrorCode, reportError, reportWarning } from '../lib/errors';
 import { networkManager } from '../lib/network';
@@ -30,7 +30,7 @@ interface SupabaseClientOptions {
   retryDelay: number;
 }
 
-class EnhancedSupabaseClient {
+export class EnhancedSupabaseClient {
   private client: SupabaseClient<Database>;
   private options: SupabaseClientOptions;
 
