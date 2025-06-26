@@ -37,7 +37,7 @@
     "@sentry/react": "^9.30.0",
     "@supabase/supabase-js": "^2.38.1",
     "@tanstack/react-query": "^5.56.2",
-    "@tanstack/react-virtual": "^1.0.0",
+    "@tanstack/react-virtual": "^1.1.0",
     "@tanstack/react-query-devtools": "^5.56.2",
     "@types/leaflet": "^1.9.18",
     "@types/mapbox__mapbox-sdk": "^0.16.1",
