@@ -43,7 +43,8 @@ vi.mock('@/services/supabaseClient', () => {
     processQueue: vi.fn(),
     handleNetworkError: vi.fn(),
     setupAuthMonitoring: vi.fn(),
-    clearOfflineCache: vi.fn()
+    clearOfflineCache: vi.fn(),
+    client: {} as any
   } as EnhancedSupabaseClient;
 
   return {

@@ -1,31 +1,25 @@
 /// <reference types="vitest" />
 /// <reference types="vite/client" />
 
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import { fileURLToPath, URL } from 'url';
+import path from 'path';
+import url from 'url';
+
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}'],
+    setupFiles: ['./src/tests/setupTests.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     coverage: {
+      provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'src/test/**',
-        '**/*.d.ts',
-        '**/*.test.{ts,tsx}',
-        '**/types.ts',
-      ],
-    },
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
-    },
-    // Add support for React Testing Library and Vitest types
+      exclude: ['node_modules', 'src/**/*.d.ts', 'src/**/*.tsx']
+    }
     deps: {
       inline: ['@testing-library/user-event', '@testing-library/react', '@testing-library/jest-dom'],
     },
