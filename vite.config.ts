@@ -1,13 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { visualizer } from 'rollup-plugin-visualizer';
 import { resolve } from 'path';
+import { fileURLToPath } from 'url';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
-    ...(process.env.ANALYZE ? [visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true })] : []),
+    react()
   ],
   base: './',
   server: {
@@ -16,23 +15,10 @@ export default defineConfig({
     strictPort: true,
     open: true,
     cors: true,
-    headers: {
-      'Content-Type': 'text/javascript; charset=utf-8',
-      'Cache-Control': 'public, max-age=31536000, immutable',
-    }
-  },
-  preview: {
-    port: 3000,
-    strictPort: true,
-    host: '0.0.0.0',
-    cors: true,
-    headers: {
-      'Cache-Control': 'public, max-age=600',
-    }
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   build: {
@@ -41,30 +27,17 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
       },
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
-        manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
-          supabase: ['@supabase/supabase-js'],
-          mapbox: ['mapbox-gl', '@mapbox/mapbox-sdk'],
-          analytics: ['posthog-js', '@sentry/react'],
-          leaflet: ['leaflet', 'react-leaflet'],
-          icons: ['lucide-react'],
-        },
-      },
-      external: []
+      }
     },
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom'],
-    esbuildOptions: {
-      target: 'es2020',
-    },
   },
   esbuild: {
     jsxInject: `import React from 'react'`,
