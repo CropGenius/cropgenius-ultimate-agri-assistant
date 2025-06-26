@@ -110,6 +110,7 @@
     "@vitest/snapshot": "^0.34.1",
     "@vitest/ui": "^3.2.4",
     "@vitest/utils": "^0.34.1",
+    "autoprefixer": "^10.4.21",
     "dotenv": "^16.5.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
