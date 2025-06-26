@@ -277,16 +277,22 @@ export function useServiceWorker(config: ServiceWorkerConfig = {}): ServiceWorke
  */
 export function useServiceWorkerUpdateNotification() {
   const { updateAvailable, applyUpdate } = useServiceWorker();
-  
+  const [showNotification, setShowNotification] = useState(false);
+
   useEffect(() => {
     if (updateAvailable) {
-      // You can integrate with your notification system here
-      const shouldUpdate = window.confirm('A new version is available. Would you like to update now?');
-      if (shouldUpdate) {
-        applyUpdate().catch(console.error);
-      }
+      setShowNotification(true);
     }
-  }, [updateAvailable, applyUpdate]);
-  
-  return null;
+  }, [updateAvailable]);
+
+  const handleUpdate = () => {
+    applyUpdate().catch(console.error);
+    setShowNotification(false);
+  };
+
+  const dismissNotification = () => {
+    setShowNotification(false);
+  };
+
+  return { showNotification, handleUpdate, dismissNotification };
 }
