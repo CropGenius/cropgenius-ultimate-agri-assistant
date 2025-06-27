@@ -1,12 +1,14 @@
 /// <reference types="node" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import viteMimeFixPlugin from './vite-plugin-mime-fix.js';
 import { fileURLToPath } from 'url';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react()
+    react(),
+    viteMimeFixPlugin()
   ],
   base: './',
   server: {

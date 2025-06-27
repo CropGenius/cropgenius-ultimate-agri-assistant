@@ -1,6 +1,5 @@
 -- Create the complete_onboarding function in the public schema
 CREATE OR REPLACE FUNCTION public.complete_onboarding(
-    user_id UUID,
     farm_name TEXT,
     total_area NUMERIC,
     crops TEXT[],
@@ -18,9 +17,10 @@ CREATE OR REPLACE FUNCTION public.complete_onboarding(
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS $$
+AS $
 DECLARE
     result JSON;
+    current_user_id UUID := auth.uid(); -- Get the user ID from the authenticated session
 BEGIN
     -- Insert into the farms table
     INSERT INTO public.farms (
@@ -39,18 +39,18 @@ BEGIN
         preferred_language,
         whatsapp_number
     ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+        current_user_id, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
     )
     RETURNING json_build_object(
         'success', true,
-        'user_id', user_id,
+        'user_id', current_user_id,
         'farm_id', id
     ) INTO result;
 
     -- Return the result
     RETURN result;
 END;
-$$;
+$;
 
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION public.complete_onboarding TO authenticated;
