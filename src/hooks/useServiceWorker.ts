@@ -174,7 +174,19 @@ export function useServiceWorker(config: ServiceWorkerConfig = {}): ServiceWorke
     }
 
     if (process.env.NODE_ENV !== 'production') {
-      console.log('[useServiceWorker] Skipping registration in development mode');
+      console.log('[useServiceWorker] Running in development mode, providing mock implementation.');
+      // In development, we can provide a mock implementation to avoid breaking the app
+      // This allows the UI components to render without a real service worker
+      const mockUpdateState = {
+        registration: null,
+        updateAvailable: false, // Set to true to test the notification UI
+        error: null,
+        isUpdating: false,
+        isSupported: true,
+        isActive: true,
+        isOnline: true,
+      };
+      updateState(mockUpdateState);
       return;
     }
 
@@ -277,16 +289,14 @@ export function useServiceWorker(config: ServiceWorkerConfig = {}): ServiceWorke
  */
 export function useServiceWorkerUpdateNotification() {
   const { updateAvailable, applyUpdate } = useServiceWorker();
-  const [showNotification, setShowNotification] = useState(false);
+  const [showNotification, setShowNotification] = useState(updateAvailable);
 
   useEffect(() => {
-    if (updateAvailable) {
-      setShowNotification(true);
-    }
+    setShowNotification(updateAvailable);
   }, [updateAvailable]);
 
   const handleUpdate = () => {
-    applyUpdate().catch(console.error);
+    applyUpdate().catch(err => console.error('Failed to apply update', err));
     setShowNotification(false);
   };
 

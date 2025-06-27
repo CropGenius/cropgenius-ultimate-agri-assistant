@@ -74,9 +74,17 @@ describe('authService', () => {
       const mockResponse = { data: { user: { id: 'user-id' }, session: { user: { id: 'user-id' } } }, error: null };
       vi.mocked(supabase.auth.exchangeCodeForSession).mockResolvedValue(mockResponse);
 
+      Object.defineProperty(window, 'location', {
+        value: {
+          search: '?code=test-code',
+          href: 'http://localhost/?code=test-code',
+        },
+        writable: true,
+      });
+
       const result = await exchangeCodeForSession();
 
-      expect(supabase.auth.exchangeCodeForSession).toHaveBeenCalledWith('?code=test-code');
+      expect(supabase.auth.exchangeCodeForSession).toHaveBeenCalledWith(window.location.href);
       expect(result.data).toEqual(mockResponse.data);
       expect(result.error).toBeNull();
     });
@@ -116,6 +124,20 @@ describe('authService', () => {
         }
       };
       vi.mocked(supabase.auth.getSession).mockResolvedValue({ data: mockSession, error: null });
+
+      Object.defineProperty(window, 'location', {
+        value: {
+          hash: '#test-hash',
+          search: '?test=param',
+          href: 'http://localhost/#test-hash?test=param',
+          origin: 'http://localhost',
+          assign: vi.fn(),
+          replace: vi.fn(),
+          reload: vi.fn(),
+        },
+        writable: true,
+        configurable: true,
+      });
 
       const result = await debugAuthState();
 

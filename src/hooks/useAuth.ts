@@ -143,62 +143,263 @@ export const useAuth = (): AuthState & AuthActions => {
   // Initialize auth state and set up listeners
   useEffect(() => {
     let mounted = true;
-    let retryCount = 0;
 
-    const initializeAuth = async () => {
-      try {
-        // Load cached profile immediately for faster startup
-        const cachedProfile = loadCachedProfile();
-        if (cachedProfile) {
-          setState(prev => ({ ...prev, profile: cachedProfile }));
-        }
+    // Immediately load cached profile for faster UI rendering
+    const cachedProfile = loadCachedProfile();
+    if (cachedProfile) {
+      setState(prev => ({ ...prev, profile: cachedProfile, hasProfile: true }));
+    }
 
-        // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          throw new AppError(
-            ErrorCode.AUTH_SESSION_EXPIRED,
-            error.message,
-            'Your session has expired. Please log in again.',
-            { error }
-          );
-        }
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
 
-        if (mounted) {
-          setState(prev => ({
-            ...prev,
-            session,
-            user: session?.user || null,
-            isLoading: false,
-            error: null,
-          }));
+      console.log(`[useAuth] Auth event: ${event}`, { session });
 
-          // Fetch fresh profile if user is authenticated
-          if (session?.user) {
-            setState(prev => ({ ...prev, isLoadingProfile: true }));
+      setState(prev => ({ 
+        ...prev, 
+        session,
+        user: session?.user ?? null,
+        isLoading: false,
+        error: null,
+      }));
+
+      // Fetch profile when user is authenticated
+      if (session?.user) {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          setState(prev => ({ ...prev, isLoadingProfile: true }));
+          try {
             const profile = await fetchProfile(session.user.id);
-            
-            if (mounted && profile) {
-              setState(prev => ({ ...prev, profile, isLoadingProfile: false }));
+            if (mounted) {
+              setState(prev => ({ 
+                ...prev, 
+                profile, 
+                isLoadingProfile: false, 
+                profileError: null 
+              }));
               cacheProfile(profile);
-            } else if (mounted) {
+            }
+          } catch (error) {
+            // Error is already handled and reported in fetchProfile
+            if (mounted) {
               setState(prev => ({ ...prev, isLoadingProfile: false }));
             }
           }
         }
-      } catch (error) {
-        if (mounted) {
-          const appError = error instanceof AppError 
-            ? error 
-            : AppError.fromError(error as Error, ErrorCode.AUTH_SESSION_EXPIRED);
-          
-          setState(prev => ({ 
-            ...prev, 
-            error: appError, 
-            isLoading: false,
-            isLoadingProfile: false,
-          }));
+      } else {
+        // Clear profile on sign out
+        setState(prev => ({ ...prev, profile: null, isLoadingProfile: false }));
+        cacheProfile(null);
+      }
+    });
+
+    // Initial check in case the listener doesn't fire immediately
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted && !state.session) {
+        setState(prev => ({ ...prev, session, user: session?.user ?? null, isLoading: false }));
+        if (session?.user) {
+          fetchProfile(session.user.id).then(profile => {
+            if (mounted) {
+              setState(prev => ({ ...prev, profile, isLoadingProfile: false }));
+              cacheProfile(profile);
+            }
+          });
+        }
+      }
+    });
+
+    return () => {
+      mounted = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, [fetchProfile, loadCachedProfile, cacheProfile]);
+
+  // Actions
+  const signIn = useCallback(async (email: string, password: string) => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      // The onAuthStateChange listener will handle the rest
+    } catch (error) {
+      const appError = new AppError(
+        ErrorCode.AUTH_SIGNIN_FAILED,
+        'Sign in failed',
+        (error as AuthError).message || 'An unexpected error occurred.',
+        { error },
+        true
+      );
+      setState(prev => ({ ...prev, error: appError, isLoading: false }));
+      reportError(appError);
+      toast.error(appError.userMessage, { description: appError.message });
+    }
+  }, []);
+
+  const signUp = useCallback(async (email: string, password: string, metadata: Record<string, any> = {}) => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata,
+        },
+      });
+      if (error) throw error;
+      if (!data.session) {
+        toast.info('Check your email!', { description: 'Please click the confirmation link in your email to complete registration.' });
+      }
+      // The onAuthStateChange listener will handle the rest
+    } catch (error) {
+      const appError = new AppError(
+        ErrorCode.AUTH_SIGNUP_FAILED,
+        'Sign up failed',
+        (error as AuthError).message || 'An unexpected error occurred.',
+        { error },
+        true
+      );
+      setState(prev => ({ ...prev, error: appError, isLoading: false }));
+      reportError(appError);
+      toast.error(appError.userMessage, { description: appError.message });
+    }
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try {
+      setState(prev => ({ ...prev, isRefreshing: true })); // Visual feedback for signout
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      // onAuthStateChange will clear the state
+      toast.success('Successfully signed out');
+    } catch (error) {
+      const appError = new AppError(
+        ErrorCode.AUTH_SIGNOUT_FAILED,
+        'Sign out failed',
+        (error as AuthError).message || 'Could not sign you out.',
+        { error },
+        true
+      );
+      setState(prev => ({ ...prev, error: appError, isRefreshing: false }));
+      reportError(appError);
+      toast.error(appError.userMessage, { description: appError.message });
+    }
+  }, []);
+
+  const refreshSession = useCallback(async () => {
+    try {
+      setState(prev => ({ ...prev, isRefreshing: true, error: null }));
+      const { error } = await supabase.auth.refreshSession();
+      if (error) throw error;
+      // onAuthStateChange will update the session
+    } catch (error) {
+      const appError = new AppError(
+        ErrorCode.AUTH_SESSION_EXPIRED,
+        'Session refresh failed',
+        'Your session has expired. Please sign in again.',
+        { error },
+        true
+      );
+      setState(prev => ({ ...prev, error: appError }));
+      reportError(appError);
+      // Force sign out if refresh fails
+      await signOut();
+    } finally {
+      if (mounted) {
+        setState(prev => ({ ...prev, isRefreshing: false }));
+      }
+    }
+  }, []);
+
+  const refreshProfile = useCallback(async () => {
+    if (!state.user) {
+      reportWarning('refreshProfile called without a user');
+      return;
+    }
+    try {
+      setState(prev => ({ ...prev, isLoadingProfile: true, profileError: null }));
+      const profile = await fetchProfile(state.user.id);
+      if (mounted) {
+        setState(prev => ({ ...prev, profile, isLoadingProfile: false }));
+        cacheProfile(profile);
+      }
+    } catch (error) {
+      // Error is handled in fetchProfile
+      if (mounted) {
+        setState(prev => ({ ...prev, isLoadingProfile: false }));
+      }
+    }
+  }, [state.user, fetchProfile, cacheProfile]);
+
+  const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
+    if (!state.user) {
+      throw new AppError(ErrorCode.UNAUTHORIZED, 'No user is signed in.', 'You must be signed in to update your profile.');
+    }
+    try {
+      setState(prev => ({ ...prev, isLoadingProfile: true, profileError: null }));
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', state.user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (mounted) {
+        setState(prev => ({ ...prev, profile: data, isLoadingProfile: false }));
+        cacheProfile(data);
+        toast.success('Profile updated successfully!');
+      }
+    } catch (error) {
+      const appError = new AppError(
+        ErrorCode.DB_UPDATE_FAILED,
+        'Failed to update profile',
+        'Your profile could not be saved. Please try again.',
+        { error, updates },
+        true
+      );
+      setState(prev => ({ ...prev, profileError: appError, isLoadingProfile: false }));
+      reportError(appError);
+      toast.error(appError.userMessage, { description: appError.message });
+    }
+  }, [state.user, cacheProfile]);
+
+  const resetPassword = useCallback(async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+      if (error) throw error;
+      toast.success('Password reset email sent!', { description: 'Check your inbox for instructions.' });
+    } catch (error) {
+      const appError = new AppError(
+        ErrorCode.AUTH_PASSWORD_RESET_FAILED,
+        'Password reset failed',
+        (error as AuthError).message || 'Could not send reset email.',
+        { error, email },
+        true
+      );
+      reportError(appError);
+      toast.error(appError.userMessage, { description: appError.message });
+    }
+  }, []);
+
+  const clearError = useCallback(() => {
+    setState(prev => ({ ...prev, error: null, profileError: null }));
+  }, []);
+
+  return {
+    ...state,
+    ...derivedState,
+    signIn,
+    signUp,
+    signOut,
+    refreshSession,
+    refreshProfile,
+    updateProfile,
+    resetPassword,
+    clearError,
+  };
+};          }));
           
           reportError(appError);
 
