@@ -29,9 +29,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for profiles
-CREATE POLICY "Public profiles are viewable by everyone." 
+CREATE POLICY "Users can view their own profile." 
   ON public.profiles FOR SELECT 
-  USING (true);
+  USING (auth.uid() = id);
 
 CREATE POLICY "Users can update their own profile." 
   ON public.profiles FOR UPDATE 
@@ -54,9 +54,9 @@ CREATE TABLE IF NOT EXISTS public.farms (
 ALTER TABLE public.farms ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for farms
-CREATE POLICY "Farms are viewable by everyone." 
+CREATE POLICY "Users can view their own farms." 
   ON public.farms FOR SELECT 
-  USING (true);
+  USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can manage their own farms." 
   ON public.farms 
@@ -224,7 +224,7 @@ BEGIN
     
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY INVOKER;
 
 -- Create a trigger to handle new user signups
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
@@ -261,7 +261,10 @@ END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 -- Grant necessary permissions
-GRANTANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
+
+-- Allow authenticated users to insert into their own profile
+GRANT INSERT ON public.profiles TO authenticated;

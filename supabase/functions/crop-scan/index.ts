@@ -54,8 +54,31 @@ serve(async (req) => {
   }
 
   try {
-    const { image, userId, cropType = "unknown", location } = await req.json();
-    console.log(`Processing crop scan for user ${userId || "anonymous"}, crop type: ${cropType}`);
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing authorization header.' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Invalid token.' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const userId = user.id;
+
+    const { image, cropType = "unknown", location, cropId } = await req.json();
+    console.log(`Processing crop scan for user ${userId}, crop type: ${cropType}`);
     
     if (!image) {
       return new Response(
@@ -170,6 +193,30 @@ serve(async (req) => {
     };
 
     console.log(`Scan result generated: ${scanResult.diseaseDetected} with ${scanResult.confidenceLevel}% confidence`);
+
+    const { error: dbError } = await supabase.from('crop_scans').insert([{
+      user_id: userId,
+      crop_id: cropId,
+      image_url: image, // Assuming image is a URL
+      disease_detected: scanResult.diseaseDetected,
+      confidence_level: scanResult.confidenceLevel,
+      severity: scanResult.severity,
+      affected_area: scanResult.affectedArea,
+      recommended_treatments: scanResult.recommendedTreatments,
+      preventive_measures: scanResult.preventiveMeasures,
+      similar_cases_nearby: scanResult.similarCasesNearby,
+      estimated_yield_impact: scanResult.estimatedYieldImpact,
+      treatment_products: scanResult.treatmentProducts,
+      scan_date: scanResult.timestamp,
+    }]);
+
+    if (dbError) {
+      console.error('Error saving scan result:', dbError);
+      if (sentryDsn) {
+        Sentry.captureException(dbError);
+      }
+      // Do not block user response for db error, just log it
+    }
     
     return new Response(
       JSON.stringify(scanResult),
