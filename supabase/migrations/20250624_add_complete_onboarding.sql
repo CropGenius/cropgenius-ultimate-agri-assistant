@@ -183,7 +183,8 @@ BEGIN
         planted_at,
         harvest_date,
         created_at,
-        updated_at
+        updated_at,
+        user_id
       )
       SELECT 
         ct.name || ' Field' as field_name,
@@ -194,7 +195,8 @@ BEGIN
         v_planting_date,
         v_harvest_date,
         v_now,
-        v_now
+        v_now,
+        v_user_id
       FROM jsonb_array_elements_text(v_crops_array) as crop_name
       JOIN public.crop_types ct ON ct.name = trim(crop_name::TEXT);
     END IF;
