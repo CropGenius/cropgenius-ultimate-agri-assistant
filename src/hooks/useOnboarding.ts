@@ -22,7 +22,7 @@ export const useOnboarding = () => {
     setError(null);
     
     try {
-      const result = await onboardingService.completeOnboarding(data, user?.id || '');
+      const result = await onboardingService.completeOnboarding(data);
       
       if (result.success) {
         toast.success('Onboarding completed successfully!');

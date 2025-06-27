@@ -59,14 +59,8 @@ const normalizeDate = (date: Date | string | null | undefined, fallback: Date): 
   return isNaN(dateObj.getTime()) ? fallback.toISOString() : dateObj.toISOString();
 };
 
-export const completeOnboarding = async (data: OnboardingData, userId: string): Promise<OnboardingResponse> => {
-  if (!userId) {
-    throw {
-      message: 'User not authenticated',
-      code: 'AUTH_ERROR',
-      details: 'User must be logged in to complete onboarding'
-    };
-  }
+export const completeOnboarding = async (data: OnboardingData): Promise<OnboardingResponse> => {
+  
   try {
     // Validate required fields
     const validationError = validateOnboardingData(data);
@@ -89,7 +83,7 @@ export const completeOnboarding = async (data: OnboardingData, userId: string): 
     const postgresArrayLiteral = `{${normalizedCrops.join(',')}}`;
 
     const payload = {
-      user_id: userId,
+      
       farm_name: data.farmName.trim(),
       total_area: Number(data.totalArea) || 1,
       crops: postgresArrayLiteral, // Proper array literal to satisfy RPC expectations
