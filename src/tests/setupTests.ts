@@ -1,6 +1,26 @@
 import '@testing-library/jest-dom';
 import '@testing-library/user-event';
 
+vi.stubGlobal('navigator', {
+  clipboard: {
+    writeText: vi.fn(() => Promise.resolve()),
+  },
+});
+
+vi.stubGlobal('window', {
+  location: {
+    hash: '',
+    search: '',
+    href: 'http://localhost/',
+    origin: 'http://localhost',
+    assign: vi.fn(),
+    replace: vi.fn(),
+    reload: vi.fn(),
+  },
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+});
+
 // Mock Supabase client
 vi.mock('@/services/supabaseClient', () => ({
   supabase: {
@@ -9,10 +29,10 @@ vi.mock('@/services/supabaseClient', () => ({
     select: vi.fn().mockReturnThis(),
     rpc: vi.fn().mockReturnThis(),
     auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true,
-      flowType: 'pkce'
+      getSession: vi.fn(),
+      exchangeCodeForSession: vi.fn(),
+      refreshSession: vi.fn(),
+      signOut: vi.fn(),
     },
     storage: {},
     functions: {},
@@ -38,21 +58,3 @@ vi.mock('@/services/supabaseClient', () => ({
     client: {} as any
   }
 }));
-
-
-
-Object.defineProperty(window, 'location', {
-  value: {
-    hash: '',
-    search: '',
-    href: 'http://localhost/',
-    origin: 'http://localhost',
-    assign: vi.fn(),
-    replace: vi.fn(),
-    reload: vi.fn(),
-  },
-  writable: true,
-  configurable: true,
-});
-
-

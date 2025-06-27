@@ -41,11 +41,20 @@ vi.stubGlobal('console', {
 });
 
 // Mock window.location
-vi.stubGlobal('window', {
-  location: {
-    search: '?code=test-code'
-  }
-});
+beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubGlobal('window', {
+      location: {
+        hash: '',
+        search: '?code=test-code',
+        href: 'http://localhost/?code=test-code',
+        origin: 'http://localhost',
+        assign: vi.fn(),
+        replace: vi.fn(),
+        reload: vi.fn(),
+      },
+    });
+  });
 
 // Mock toast
 vi.mock('sonner', () => ({
