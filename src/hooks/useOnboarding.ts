@@ -22,10 +22,7 @@ export const useOnboarding = () => {
     setError(null);
     
     try {
-      if (!user?.id) {
-        throw { message: 'User not authenticated', code: 'AUTH_ERROR' };
-      }
-      const result = await onboardingService.completeOnboarding({ ...data, user_id: user.id });
+      const result = await onboardingService.completeOnboarding(data);
       
       if (result.success) {
         toast.success('Onboarding completed successfully!');

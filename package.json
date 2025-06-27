@@ -40,6 +40,7 @@
     "@tanstack/react-query-devtools": "^5.56.2",
     "@tanstack/react-virtual": "^3.0.0",
     "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/user-event": "^14.6.1",
     "@types/leaflet": "^1.9.18",
     "@types/mapbox__mapbox-sdk": "^0.16.1",
     "class-variance-authority": "^0.7.0",

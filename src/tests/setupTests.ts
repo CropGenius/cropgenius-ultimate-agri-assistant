@@ -1,5 +1,5 @@
-require('@testing-library/jest-dom');
-require('@testing-library/user-event');
+import '@testing-library/jest-dom';
+import '@testing-library/user-event';
 
 // Mock Supabase client
 vi.mock('@/services/supabaseClient', () => ({
