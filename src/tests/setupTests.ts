@@ -38,3 +38,21 @@ vi.mock('@/services/supabaseClient', () => ({
     client: {} as any
   }
 }));
+
+
+
+Object.defineProperty(window, 'location', {
+  value: {
+    hash: '',
+    search: '',
+    href: 'http://localhost/',
+    origin: 'http://localhost',
+    assign: vi.fn(),
+    replace: vi.fn(),
+    reload: vi.fn(),
+  },
+  writable: true,
+  configurable: true,
+});
+
+

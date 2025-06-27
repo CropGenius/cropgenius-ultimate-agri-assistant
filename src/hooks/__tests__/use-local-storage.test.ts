@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react-hooks';
+import { renderHook, act } from '@testing-library/react';
 import { useLocalStorage } from '../use-local-storage';
 
 // Mock localStorage
@@ -6,14 +6,14 @@ const mockLocalStorage = (() => {
   let store: Record<string, string> = {};
   
   return {
-    getItem: jest.fn((key: string) => store[key] || null),
-    setItem: jest.fn((key: string, value: string) => {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
       store[key] = String(value);
     }),
-    removeItem: jest.fn((key: string) => {
+    removeItem: vi.fn((key: string) => {
       delete store[key];
     }),
-    clear: jest.fn(() => {
+    clear: vi.fn(() => {
       store = {};
     }),
   };
@@ -28,7 +28,7 @@ Object.defineProperty(window, 'localStorage', {
 describe('useLocalStorage', () => {
   beforeEach(() => {
     // Clear all mocks and localStorage before each test
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     localStorage.clear();
   });
 
@@ -118,9 +118,9 @@ describe('useLocalStorage', () => {
 
   it('should handle errors when parsing invalid JSON', () => {
     // Mock getItem to return invalid JSON
-    (localStorage.getItem as jest.Mock).mockImplementationOnce(() => '{invalid json');
+    (localStorage.getItem as vi.Mock).mockImplementationOnce(() => '{invalid json');
     
-    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     const { result } = renderHook(() => 
       useLocalStorage('invalidKey', 'default')

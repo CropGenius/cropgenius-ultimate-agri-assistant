@@ -11,17 +11,17 @@ import {
 } from '@/test-utils/onboarding-test-utils';
 
 // Mock the supabase client
-jest.mock('@/lib/supabase', () => ({
+vi.mock('@/lib/supabase', () => ({
   supabase: {
-    rpc: jest.fn().mockResolvedValue({ data: { user_id: 'test-user-id' }, error: null }),
+    rpc: vi.fn().mockResolvedValue({ data: { user_id: 'test-user-id' }, error: null }),
   },
 }));
 
 // Mock the useAuth hook
-jest.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth', () => ({
   useAuth: () => ({
     user: { id: 'test-user-id', email: 'test@example.com' },
-    signOut: jest.fn(),
+    signOut: vi.fn(),
   }),
 }));
 
@@ -38,7 +38,7 @@ describe('OnboardingWizard', () => {
     });
     
     // Clear all mocks before each test
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Clear localStorage
     localStorage.clear();
