@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button, ButtonProps } from '@/components/ui/button';
 import { Plus, MapPin, Sparkles } from 'lucide-react';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Field } from '@/types/field';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -80,6 +80,12 @@ export default function AddFieldWizardButton({
         onOpenChange={setDialogOpen}
       >
         <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>Add New Field</DialogTitle>
+            <DialogDescription>
+              Follow the steps to map your field and get started with CropGenius.
+            </DialogDescription>
+          </DialogHeader>
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
