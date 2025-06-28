@@ -2,11 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Create enum types
-CREATE TYPE user_role AS ENUM ('admin', 'farmer', 'agronomist', 'viewer');
-CREATE TYPE farm_size_unit AS ENUM ('hectares', 'acres');
-CREATE TYPE task_status AS ENUM ('pending', 'in_progress', 'completed', 'cancelled');
-CREATE TYPE alert_severity AS ENUM ('info', 'warning', 'critical');
+
 
 -- Create tables
 CREATE TABLE IF NOT EXISTS public.profiles (

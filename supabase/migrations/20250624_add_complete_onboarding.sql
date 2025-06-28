@@ -18,7 +18,7 @@ RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, auth, extensions;
-AS $
+$
 DECLARE
   v_user_id UUID;
   v_farm_id UUID;
