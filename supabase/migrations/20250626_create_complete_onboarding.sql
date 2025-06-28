@@ -17,7 +17,8 @@ CREATE OR REPLACE FUNCTION public.complete_onboarding(
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS $$
+SET search_path = public, auth, extensions;
+AS $
 DECLARE
     result JSON;
     current_user_id UUID := auth.uid(); -- Get the user ID from the authenticated session

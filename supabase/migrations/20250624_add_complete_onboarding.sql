@@ -17,7 +17,8 @@ CREATE OR REPLACE FUNCTION public.complete_onboarding(
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS $$
+SET search_path = public, auth, extensions;
+AS $
 DECLARE
   v_user_id UUID;
   v_farm_id UUID;

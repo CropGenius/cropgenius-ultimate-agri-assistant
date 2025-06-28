@@ -62,8 +62,8 @@ export class EnhancedSupabaseClient {
             headers: {
               'X-Client-Version': APP_CONFIG.version,
               'X-Client-Name': APP_CONFIG.name,
-              'apikey': APP_CONFIG.api.supabase.anonKey,
-              'Authorization': `Bearer ${APP_CONFIG.api.supabase.anonKey}`,
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g',
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g`,
             },
           },
         }
@@ -95,6 +95,8 @@ export class EnhancedSupabaseClient {
         newOptions.headers = {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'apikey': APP_CONFIG.api.supabase.anonKey,
+          'Authorization': `Bearer ${APP_CONFIG.api.supabase.anonKey}`,
           ...(options?.headers || {}), // Merge existing headers
           ...(newOptions.headers || {}),
         };
