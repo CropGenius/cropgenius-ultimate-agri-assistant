@@ -1,5 +1,6 @@
 -- Create the complete_onboarding function in the public schema
 CREATE OR REPLACE FUNCTION public.complete_onboarding(
+    p_user_id UUID, -- Explicitly pass user_id
     farm_name TEXT,
     total_area NUMERIC,
     crops TEXT[],
@@ -21,11 +22,10 @@ SET search_path = public, auth, extensions;
 AS $
 DECLARE
     result JSON;
-    current_user_id UUID := auth.uid(); -- Get the user ID from the authenticated session
 BEGIN
     -- Insert into the farms table
     INSERT INTO public.farms (
-        user_id, -- Use the user ID from the session
+        user_id, -- Use the passed user_id
         name,
         total_area,
         crops,
@@ -40,11 +40,11 @@ BEGIN
         preferred_language,
         whatsapp_number
     ) VALUES (
-        current_user_id, farm_name, total_area, crops, planting_date, harvest_date, primary_goal, primary_pain_point, has_irrigation, has_machinery, has_soil_test, budget_band, preferred_language, whatsapp_number
+        p_user_id, farm_name, total_area, crops, planting_date, harvest_date, primary_goal, primary_pain_point, has_irrigation, has_machinery, has_soil_test, budget_band, preferred_language, whatsapp_number
     )
     RETURNING json_build_object(
         'success', true,
-        'user_id', current_user_id,
+        'user_id', p_user_id,
         'farm_id', id
     ) INTO result;
 

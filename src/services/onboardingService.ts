@@ -93,6 +93,7 @@ export const completeOnboarding = async (data: OnboardingData): Promise<Onboardi
     }
 
     const payload = {
+      p_user_id: user.id, // Pass the authenticated user's ID
       farm_name: data.farmName.trim(),
       total_area: Number(data.totalArea) || 1,
       crops: postgresArrayLiteral, // Proper array literal to satisfy RPC expectations
