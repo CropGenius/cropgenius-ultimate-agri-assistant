@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useServiceWorkerUpdateNotification as useUpdateNotification, isServiceWorkerSupported } from '../hooks/useServiceWorker';
+import { useServiceWorkerNotification as useUpdateNotification, isServiceWorkerSupported } from '../hooks/useServiceWorker';
 
 const UpdateNotification = () => {
   if (!isServiceWorkerSupported()) {
