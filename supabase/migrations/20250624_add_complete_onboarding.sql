@@ -177,26 +177,26 @@ BEGIN
       INSERT INTO public.fields (
         name,
         farm_id,
+        user_id,
         crop_type_id,
         size,
         size_unit,
         planted_at,
         harvest_date,
         created_at,
-        updated_at,
-        user_id
+        updated_at
       )
       SELECT 
         ct.name || ' Field' as field_name,
         v_farm_id,
+        v_user_id,
         ct.id,
         total_area / NULLIF(jsonb_array_length(v_crops_array), 0) as field_size,
         'hectares',
         v_planting_date,
         v_harvest_date,
         v_now,
-        v_now,
-        v_user_id
+        v_now
       FROM jsonb_array_elements_text(v_crops_array) as crop_name
       JOIN public.crop_types ct ON ct.name = trim(crop_name::TEXT);
     END IF;
