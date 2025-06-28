@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useServiceWorker } from '../hooks/useServiceWorker';
+import { useServiceWorker, isServiceWorkerSupported } from '../hooks/useServiceWorker';
 
 const NetworkStatus = () => {
   if (!isServiceWorkerSupported()) {

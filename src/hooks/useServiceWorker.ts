@@ -1,4 +1,4 @@
-export { isServiceWorkerSupported };
+import { useState, useEffect, useCallback, useRef } from 'react';
 import register, {
   unregister as unregisterSW,
   isRegistered,
@@ -274,7 +274,7 @@ export function useServiceWorker(config: ServiceWorkerConfig = {}): ServiceWorke
 /**
  * Custom hook to show a toast notification when an update is available
  */
-export function useServiceWorkerUpdateNotification() {
+export { isServiceWorkerSupported };
   const { updateAvailable, applyUpdate } = useServiceWorker();
   const [showNotification, setShowNotification] = useState(updateAvailable);
 
