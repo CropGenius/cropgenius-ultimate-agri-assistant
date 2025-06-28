@@ -194,7 +194,7 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Create a function to handle new user signups
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER AS $
 BEGIN
   INSERT INTO public.profiles (
     id, 
