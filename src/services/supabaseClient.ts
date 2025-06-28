@@ -62,7 +62,8 @@ export class EnhancedSupabaseClient {
             headers: {
               'X-Client-Version': APP_CONFIG.version,
               'X-Client-Name': APP_CONFIG.name,
-              'apikey': APP_CONFIG.api.supabase.anonKey, // Ensure API key is always sent
+              'apikey': APP_CONFIG.api.supabase.anonKey,
+              'Authorization': `Bearer ${APP_CONFIG.api.supabase.anonKey}`,
             },
           },
         }
