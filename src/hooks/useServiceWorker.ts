@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+export { isServiceWorkerSupported };
 import register, {
   unregister as unregisterSW,
   isRegistered,
@@ -38,6 +38,15 @@ interface ServiceWorkerHookReturn {
  * Custom hook to manage service worker registration, updates, and lifecycle
  */
 export function useServiceWorker(config: ServiceWorkerConfig = {}): ServiceWorkerHookReturn {
+  const [state, setState] = useState<ServiceWorkerState>(() => ({
+    registration: null,
+    updateAvailable: false,
+    error: null,
+    isUpdating: false,
+    isSupported: isServiceWorkerSupported(),
+    isActive: false,
+    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+  }));
   
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 

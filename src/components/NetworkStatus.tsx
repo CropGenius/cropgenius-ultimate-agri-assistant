@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useServiceWorker } from '../hooks/useServiceWorker';
 
 const NetworkStatus = () => {
+  if (!isServiceWorkerSupported()) {
+    return null;
+  }
   const { isOnline } = useServiceWorker();
   const [isVisible, setIsVisible] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
