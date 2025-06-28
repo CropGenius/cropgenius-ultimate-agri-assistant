@@ -11,7 +11,7 @@ interface Environment {
 const DEFAULTS = {
   VITE_SUPABASE_URL: 'https://bapqlyvfwxsichlyjxpd.supabase.co',
   // Public anon key – safe to expose client-side. Replace with your own if needed.
-  VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo-anon-key',
+  VITE_SUPABASE_ANON_KEY: undefined,
   // Public demo Mapbox token – replace with your own for production maps.
   VITE_MAPBOX_ACCESS_TOKEN: 'pk.eyJ1IjoidGVzdCIsImEiOiJjanR1eHZqc2owMGpxMnhxYjRlYzFscjRmIn0.demo-token'
 };
