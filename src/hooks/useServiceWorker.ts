@@ -274,7 +274,7 @@ export function useServiceWorker(config: ServiceWorkerConfig = {}): ServiceWorke
 /**
  * Custom hook to show a toast notification when an update is available
  */
-export { isServiceWorkerSupported };
+export function useServiceWorkerNotification() {
   const { updateAvailable, applyUpdate } = useServiceWorker();
   const [showNotification, setShowNotification] = useState(updateAvailable);
 
@@ -293,3 +293,5 @@ export { isServiceWorkerSupported };
 
   return { showNotification, handleUpdate, dismissNotification };
 }
+
+export { isServiceWorkerSupported };
