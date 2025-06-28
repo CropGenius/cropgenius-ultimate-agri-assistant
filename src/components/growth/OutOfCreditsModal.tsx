@@ -1,11 +1,11 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Share2 } from 'lucide-react';
-import { useAuthContext } from '@/providers/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { useGrowthEngine } from '@/providers/GrowthEngineProvider';
 
 export default function OutOfCreditsModal({ onClose }: { onClose: () => void }) {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { trigger_referral_funnel } = useGrowthEngine();
 
   const handleShare = () => {

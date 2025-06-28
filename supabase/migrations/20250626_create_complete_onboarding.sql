@@ -17,14 +17,14 @@ CREATE OR REPLACE FUNCTION public.complete_onboarding(
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS $
+AS $$
 DECLARE
     result JSON;
     current_user_id UUID := auth.uid(); -- Get the user ID from the authenticated session
 BEGIN
     -- Insert into the farms table
     INSERT INTO public.farms (
-        user_id,
+        user_id, -- Use the user ID from the session
         name,
         total_area,
         crops,
@@ -39,7 +39,7 @@ BEGIN
         preferred_language,
         whatsapp_number
     ) VALUES (
-        current_user_id, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+        current_user_id, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12 -- Adjust parameter indices
     )
     RETURNING json_build_object(
         'success', true,
@@ -50,7 +50,7 @@ BEGIN
     -- Return the result
     RETURN result;
 END;
-$;
+$$;
 
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION public.complete_onboarding TO authenticated;

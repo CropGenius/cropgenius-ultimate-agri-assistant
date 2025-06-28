@@ -174,19 +174,6 @@ export function useServiceWorker(config: ServiceWorkerConfig = {}): ServiceWorke
     }
 
     if (process.env.NODE_ENV !== 'production') {
-      console.log('[useServiceWorker] Running in development mode, providing mock implementation.');
-      // In development, we can provide a mock implementation to avoid breaking the app
-      // This allows the UI components to render without a real service worker
-      const mockUpdateState = {
-        registration: null,
-        updateAvailable: false, // Set to true to test the notification UI
-        error: null,
-        isUpdating: false,
-        isSupported: true,
-        isActive: true,
-        isOnline: true,
-      };
-      updateState(mockUpdateState);
       return;
     }
 

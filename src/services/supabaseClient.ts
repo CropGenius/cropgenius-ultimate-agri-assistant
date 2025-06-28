@@ -70,7 +70,7 @@ export class EnhancedSupabaseClient {
       // Set up auth state change monitoring
       this.setupAuthMonitoring();
       
-      reportWarning('Supabase client initialized successfully');
+      
     } catch (error) {
       const appError = new AppError(
         ErrorCode.UNKNOWN_ERROR,

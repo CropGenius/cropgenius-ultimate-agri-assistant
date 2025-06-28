@@ -82,7 +82,18 @@ export const completeOnboarding = async (data: OnboardingData): Promise<Onboardi
     // Postgres expects array literals in the form "{item1,item2}" for text[] inputs
     const postgresArrayLiteral = `{${normalizedCrops.join(',')}}`;
 
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw {
+        message: 'User not authenticated',
+        code: 'AUTH_ERROR',
+        details: 'Cannot complete onboarding without a logged-in user'
+      };
+    }
+
     const payload = {
+      user_id: user.id,
       
       farm_name: data.farmName.trim(),
       total_area: Number(data.totalArea) || 1,
