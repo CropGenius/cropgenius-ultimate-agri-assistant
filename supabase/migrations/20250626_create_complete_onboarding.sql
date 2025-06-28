@@ -39,7 +39,7 @@ BEGIN
         preferred_language,
         whatsapp_number
     ) VALUES (
-        current_user_id, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12 -- Adjust parameter indices
+        current_user_id, farm_name, total_area, crops, planting_date, harvest_date, primary_goal, primary_pain_point, has_irrigation, has_machinery, has_soil_test, budget_band, preferred_language, whatsapp_number
     )
     RETURNING json_build_object(
         'success', true,
