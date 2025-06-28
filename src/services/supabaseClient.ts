@@ -87,7 +87,17 @@ export class EnhancedSupabaseClient {
     url: RequestInfo | URL,
     options?: RequestInit
   ): Promise<Response> {
-    const operation = () => fetch(url, options);
+    const operation = () => {
+      const newOptions = { ...options };
+      if (newOptions.method === 'POST') {
+        newOptions.headers = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(newOptions.headers || {}),
+        };
+      }
+      return fetch(url, newOptions);
+    };
 
     try {
       if (this.options.enableOfflineQueue) {
