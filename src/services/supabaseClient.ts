@@ -95,6 +95,7 @@ export class EnhancedSupabaseClient {
         newOptions.headers = {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          ...(options?.headers || {}), // Merge existing headers
           ...(newOptions.headers || {}),
         };
       }
