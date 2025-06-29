@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS public.crops (
   -- updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() -- REMOVED
 );
 
--- Create scan results table
+-- Create crop scans table (moved before market_listings and farm_tasks)
 CREATE TABLE IF NOT EXISTS public.crop_scans (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL, -- REMOVED REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -449,24 +449,22 @@ GRANT ALL ON TABLE public.tasks TO authenticated;
 
 
 -- Add real-time replication for all tables to enable subscriptions
-ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.crops;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.crop_scans;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.farm_plans;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.farm_tasks;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.market_listings;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.weather_data;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_history;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.user_memory;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.whatsapp_messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.user_credits;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.credit_transactions;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.growth_log;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.referrals;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.user_preferences;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.fields;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.tasks;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.crop_types;
+DO $$
+DECLARE
+    table_name TEXT;
+BEGIN
+    FOREACH table_name IN ARRAY ARRAY[
+        'profiles', 'crops', 'crop_scans', 'farm_plans', 'farm_tasks',
+        'market_listings', 'weather_data', 'chat_history', 'user_memory',
+        'farm_insights', 'whatsapp_messages', 'user_credits', 'credit_transactions',
+        'growth_log', 'referrals', 'user_preferences', 'fields', 'tasks', 'crop_types'
+    ]
+    LOOP
+        IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = table_name) THEN
+            EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.' || quote_ident(table_name);
+        END IF;
+    END LOOP;
+END $$;
 
 
 -- Ensure all tables have complete row data for realtime updates
