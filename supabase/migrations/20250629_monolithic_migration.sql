@@ -283,7 +283,7 @@ CREATE TABLE IF NOT EXISTS public.referrals (
   referred_id UUID UNIQUE, -- REMOVED REFERENCES auth.users(id) ON DELETE CASCADE,
   reward_issued BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-  -- rewarded_at TIMESTAMPTZ -- REMOVED
+  -- rewarded_at TIMESTamptz -- REMOVED
 );
 
 -- Create user_preferences table
@@ -434,7 +434,6 @@ GRANT ALL ON TABLE public.market_listings TO authenticated;
 GRANT ALL ON TABLE public.weather_data TO authenticated;
 GRANT ALL ON TABLE public.chat_history TO authenticated;
 GRANT ALL ON TABLE public.user_memory TO authenticated;
-GRANT ALL ON TABLE public.farm_insights TO authenticated;
 GRANT ALL ON TABLE public.whatsapp_messages TO authenticated;
 GRANT ALL ON TABLE public.user_credits TO authenticated;
 GRANT ALL ON TABLE public.credit_transactions TO authenticated;
@@ -459,7 +458,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.market_listings;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.weather_data;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_history;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.user_memory;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.farm_insights;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.whatsapp_messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.user_credits;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.credit_transactions;
@@ -481,7 +479,6 @@ ALTER TABLE public.market_listings REPLICA IDENTITY FULL;
 ALTER TABLE public.weather_data REPLICA IDENTITY FULL;
 ALTER TABLE public.chat_history REPLICA IDENTITY FULL;
 ALTER TABLE public.user_memory REPLICA IDENTITY FULL;
-ALTER TABLE public.farm_insights REPLICA IDENTITY FULL;
 ALTER TABLE public.whatsapp_messages REPLICA IDENTITY FULL;
 ALTER TABLE public.user_credits REPLICA IDENTITY FULL;
 ALTER TABLE public.credit_transactions REPLICA IDENTITY FULL;
@@ -498,34 +495,3 @@ NOTIFY pgrst, 'reload schema';
 
 -- End the transaction
 COMMIT;
-
-</final_file_content>
-
-IMPORTANT: For any future changes to this file, use the final_file_content shown above as your reference. This content reflects the current state of the file, including any auto-formatting (e.g., if you used single quotes but the formatter converted them to double quotes). Always base your SEARCH/REPLACE operations on this final version to ensure accuracy.
-
-<environment_details>
-# VSCode Visible Files
-supabase/migrations/20250629_monolithic_migration.sql
-
-# VSCode Open Tabs
-docs/ONBOARDING-FLOW.md
-backend_test_new.py
-env.template
-.gemini/settings.json
-supabase/migrations/20250626_create_complete_onboarding.sql
-scripts/run-migrations.ts
-supabase/migrations/20250629_monolithic_migration.sql
-.env.local
-.env
-supabase/migrations/20250624_add_complete_onboarding.sql
-../AppData/Roaming/Code/User/settings.json
-
-# Current Time
-6/29/2025, 2:02:40 PM (Africa/Nairobi, UTC+3:00)
-
-# Context Window Usage
-579,617 / 1,048.576K tokens used (55%)
-
-# Current Mode
-ACT MODE
-</environment_details>
