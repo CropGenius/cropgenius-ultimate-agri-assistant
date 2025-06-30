@@ -2,7 +2,11 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-
+-- Create enum types
+CREATE TYPE user_role AS ENUM ('admin', 'farmer', 'agronomist', 'viewer');
+CREATE TYPE farm_size_unit AS ENUM ('hectares', 'acres');
+CREATE TYPE task_status AS ENUM ('pending', 'in_progress', 'completed', 'cancelled');
+CREATE TYPE alert_severity AS ENUM ('info', 'warning', 'critical');
 
 -- Create tables
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -32,10 +36,6 @@ CREATE POLICY "Users can view their own profile."
 CREATE POLICY "Users can update their own profile." 
   ON public.profiles FOR UPDATE 
   USING (auth.uid() = id);
-
-CREATE POLICY "Users can insert their own profile." 
-  ON public.profiles FOR INSERT 
-  WITH CHECK (auth.uid() = id);
 
 -- Create farms table
 CREATE TABLE IF NOT EXISTS public.farms (
@@ -194,7 +194,7 @@ FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Create a function to handle new user signups
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (
     id, 
@@ -224,7 +224,7 @@ BEGIN
     
   RETURN NEW;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY INVOKER;
 
 -- Create a trigger to handle new user signups
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
@@ -235,13 +235,13 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Create a function to handle user deletion
 CREATE OR REPLACE FUNCTION public.handle_user_deleted()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
   -- Delete related data
   DELETE FROM public.profiles WHERE id = OLD.id;
   RETURN OLD;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY INVOKER;
 
 -- Create a trigger to handle user deletion
 DROP TRIGGER IF EXISTS on_auth_user_deleted ON auth.users;
@@ -252,13 +252,13 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_user_deleted();
 
 -- Create a function to get user's farms
 CREATE OR REPLACE FUNCTION public.get_user_farms(user_id UUID)
-RETURNS SETOF public.farms AS $
+RETURNS SETOF public.farms AS $$
 BEGIN
   RETURN QUERY
   SELECT * FROM public.farms
   WHERE farms.user_id = get_user_farms.user_id;
 END;
-$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 -- Grant necessary permissions
 GRANT USAGE ON SCHEMA public TO anon, authenticated;

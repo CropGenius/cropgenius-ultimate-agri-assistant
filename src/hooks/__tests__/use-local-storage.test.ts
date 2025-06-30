@@ -118,7 +118,7 @@ describe('useLocalStorage', () => {
 
   it('should handle errors when parsing invalid JSON', () => {
     // Mock getItem to return invalid JSON
-    (localStorage.getItem as vi.Mock).mockImplementationOnce(() => '{invalid json');
+    mockLocalStorage.getItem.mockImplementationOnce(() => '{invalid json');
     
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     

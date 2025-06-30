@@ -79,7 +79,7 @@
     "zxcvbn": "^4.4.2"
   },
   "scripts": {
-    "test:integration": "vitest run --environment jsdom --include=\"**/*.{test,spec}.{js,jsx,ts,tsx}\"",
+    "test:integration": "vitest run --environment jsdom",
     "dev": "npx vite",
     "build": "npx vite build",
     "build:dev": "npx vite build --mode development",
@@ -129,7 +129,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "jest-fetch-mock": "^3.0.3",
-    "jsdom": "^25.0.0",
+    "jsdom": "^26.1.0",
     "lovable-tagger": "^1.1.7",
     "msw": "^2.2.1",
     "postcss": "^8.4.47",

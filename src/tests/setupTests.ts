@@ -1,10 +1,21 @@
+import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import '@testing-library/user-event';
 
+// Mock user-event
+vi.mock('@testing-library/user-event', () => ({
+  default: {
+    setup: () => ({}),
+  },
+}));
+
+// Mock the global objects
 vi.stubGlobal('navigator', {
   clipboard: {
     writeText: vi.fn(() => Promise.resolve()),
+    readText: vi.fn(() => Promise.resolve('')),
   },
+  onLine: true,
+  userAgent: 'Test Agent',
 });
 
 vi.stubGlobal('window', {
@@ -17,20 +28,32 @@ vi.stubGlobal('window', {
     replace: vi.fn(),
     reload: vi.fn(),
   },
+  history: {
+    pushState: vi.fn(),
+    replaceState: vi.fn(),
+  },
   addEventListener: vi.fn(),
   removeEventListener: vi.fn(),
+  matchMedia: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // Deprecated
+    removeListener: vi.fn(), // Deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }),
+  localStorage: {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+  },
+  document: {
+    execCommand: vi.fn(),
+  },
 });
-
-vi.stubGlobal('matchMedia', (query: string) => ({
-  matches: false,
-  media: query,
-  onchange: null,
-  addListener: vi.fn(), // Deprecated
-  removeListener: vi.fn(), // Deprecated
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  dispatchEvent: vi.fn(),
-}));
 
 // Mock Supabase client
 vi.mock('@/services/supabaseClient', () => ({
@@ -44,6 +67,7 @@ vi.mock('@/services/supabaseClient', () => ({
       exchangeCodeForSession: vi.fn(),
       refreshSession: vi.fn(),
       signOut: vi.fn(),
+      getUser: vi.fn(() => Promise.resolve({ data: { user: { id: '123' } } }))
     },
     storage: {},
     functions: {},
@@ -69,3 +93,8 @@ vi.mock('@/services/supabaseClient', () => ({
     client: {} as any
   }
 }));
+
+// Clean up after each test
+afterEach(() => {
+  cleanup();
+});

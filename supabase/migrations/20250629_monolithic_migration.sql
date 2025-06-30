@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS public.farms (
   user_id UUID, -- REMOVED REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   -- updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(), -- REMOVED
-  total_area NUMERIC,
+  total_area NUMERIC, -- ADDED BACK
   crops TEXT[],
   planting_date DATE,
   harvest_date DATE,
