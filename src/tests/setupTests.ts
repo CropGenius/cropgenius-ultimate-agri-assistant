@@ -8,6 +8,12 @@ vi.mock('@testing-library/user-event', () => ({
   },
 }));
 
+// Polyfill for requestAnimationFrame
+global.requestAnimationFrame = (callback) => {
+  setTimeout(callback, 0);
+  return 0;
+};
+
 // Mock the global objects
 vi.stubGlobal('navigator', {
   clipboard: {
