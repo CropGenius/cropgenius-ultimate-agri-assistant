@@ -42,31 +42,105 @@ import {
   Leaf
 } from 'lucide-react';
 
-// Import our new components
+// Import our enhanced components
 import { HealthOrb } from '@/components/dashboard/mobile/HealthOrb';
 import FeatureCard from '@/components/dashboard/mobile/FeatureCard';
 import ProSwipeBanner from '@/components/dashboard/mobile/ProSwipeBanner';
 import ChatbotAvatar from '@/components/dashboard/mobile/ChatbotAvatar';
 
-// Sample data - in a real app, this would come from your data layer
+// Enhanced farming data with psychological triggers
+const farmingProfile = {
+  name: 'John Doe',
+  level: 12,
+  streak: 7,
+  totalScore: 2847,
+  region: 'Nairobi, Kenya',
+  achievements: 18,
+  farmRank: 'Gold Farmer',
+  nextMilestone: 3000,
+  communityRank: 156,
+  totalFarmers: 12847
+};
+
 const sampleFields = [
-  { id: 1, name: 'North Field', crop: 'Maize', health: 85, size: '2.5', unit: 'acres' },
-  { id: 2, name: 'South Field', crop: 'Beans', health: 72, size: '1.8', unit: 'acres' },
-  { id: 3, name: 'East Field', crop: 'Tomatoes', health: 64, size: '0.8', unit: 'acres' },
+  { 
+    id: 1, 
+    name: 'North Field', 
+    crop: 'Maize', 
+    health: 85, 
+    size: '2.5', 
+    unit: 'acres',
+    trend: 'improving',
+    lastCheck: '2 hours ago',
+    issues: 0,
+    yieldPrediction: 4.2
+  },
+  { 
+    id: 2, 
+    name: 'South Field', 
+    crop: 'Beans', 
+    health: 72, 
+    size: '1.8', 
+    unit: 'acres',
+    trend: 'stable',
+    lastCheck: '5 hours ago',
+    issues: 1,
+    yieldPrediction: 2.8
+  },
+  { 
+    id: 3, 
+    name: 'East Field', 
+    crop: 'Tomatoes', 
+    health: 64, 
+    size: '0.8', 
+    unit: 'acres',
+    trend: 'declining',
+    lastCheck: '1 day ago',
+    issues: 2,
+    yieldPrediction: 15.5
+  },
 ];
 
-const upcomingTasks = [
-  { id: 1, title: 'Fertilize Maize', due: 'Today', priority: 'high' },
-  { id: 2, title: 'Irrigation Check', due: 'Tomorrow', priority: 'medium' },
-  { id: 3, title: 'Pest Control', due: 'In 2 days', priority: 'high' },
+const urgentTasks = [
+  { 
+    id: 1, 
+    title: 'Fertilize Maize - Critical Window', 
+    due: 'Today', 
+    priority: 'critical',
+    timeLeft: '4 hours',
+    impact: '+25% yield potential',
+    category: 'nutrition'
+  },
+  { 
+    id: 2, 
+    title: 'Pest Alert - Tomato Field', 
+    due: 'Now', 
+    priority: 'urgent',
+    timeLeft: 'Immediate',
+    impact: 'Prevent $150 loss',
+    category: 'protection'
+  },
+  { 
+    id: 3, 
+    title: 'Irrigation Check', 
+    due: 'Tomorrow', 
+    priority: 'medium',
+    timeLeft: '18 hours',
+    impact: 'Maintain health',
+    category: 'irrigation'
+  },
 ];
 
-const weatherData = {
+const weatherInsights = {
   temp: 26,
   condition: 'Partly Cloudy',
   precipitation: 15,
   humidity: 65,
   wind: 12,
+  forecast: 'Perfect for planting',
+  farmingAdvice: 'Optimal conditions for field work',
+  uvIndex: 6,
+  soilTemp: 23
 };
 
 const MobileHomePage: React.FC = () => {
