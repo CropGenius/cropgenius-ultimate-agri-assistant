@@ -284,8 +284,6 @@ const MobileHomePage: React.FC = () => {
         )}
       </AnimatePresence>
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-green-50">
       {/* Revolutionary Header with Gamification */}
       <header className="relative z-10 pt-2">
         {/* Status Bar */}
