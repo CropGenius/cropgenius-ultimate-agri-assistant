@@ -148,16 +148,51 @@ const MobileHomePage: React.FC = () => {
   const location = useLocation();
   const [showChatbot, setShowChatbot] = useState(false);
   const [hasNewMessage, setHasNewMessage] = useState(true);
+  const [isOnline, setIsOnline] = useState(true);
+  const [selectedField, setSelectedField] = useState<number | null>(null);
+  const [showAchievement, setShowAchievement] = useState(false);
   const activeTab = location.pathname;
   
-  // Calculate overall farm health (average of all fields)
+  // Calculate dynamic metrics
   const farmHealth = Math.round(
     sampleFields.reduce((sum, field) => sum + field.health, 0) / sampleFields.length
   );
+  
+  const totalYieldPrediction = sampleFields.reduce((sum, field) => sum + field.yieldPrediction, 0);
+  const criticalIssues = sampleFields.reduce((sum, field) => sum + field.issues, 0);
+  const progressToNextLevel = ((farmingProfile.totalScore % 500) / 500) * 100;
 
-  // No need for tab state management here anymore - handled by router
+  // Network status effect
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
-  // Toggle chatbot visibility
+  // Achievement trigger simulation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowAchievement(true);
+      setTimeout(() => setShowAchievement(false), 4000);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Chatbot message simulation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setHasNewMessage(true);
+    }, 30000);
+    return () => clearTimeout(timer);
+  }, [hasNewMessage]);
+
   const toggleChatbot = () => {
     if (showChatbot && hasNewMessage) {
       setHasNewMessage(false);
@@ -165,13 +200,89 @@ const MobileHomePage: React.FC = () => {
     setShowChatbot(!showChatbot);
   };
 
-  // Simulate new message after 30 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setHasNewMessage(true);
-    }, 30000);
-    return () => clearTimeout(timer);
-  }, [hasNewMessage]);
+  const getHealthColor = (health: number) => {
+    if (health >= 80) return 'from-emerald-400 via-green-500 to-teal-600';
+    if (health >= 60) return 'from-yellow-400 via-amber-500 to-orange-600';
+    return 'from-red-400 via-pink-500 to-rose-600';
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'critical': return 'from-red-500 to-red-600';
+      case 'urgent': return 'from-orange-500 to-orange-600';
+      case 'medium': return 'from-blue-500 to-blue-600';
+      default: return 'from-gray-500 to-gray-600';
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute -top-1/2 -right-1/2 w-96 h-96 bg-gradient-to-br from-green-400/20 to-emerald-600/20 rounded-full blur-3xl"
+          animate={{
+            scale: [1, 1.2, 1],
+            rotate: [0, 180, 360],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+        <motion.div
+          className="absolute -bottom-1/2 -left-1/2 w-96 h-96 bg-gradient-to-tr from-blue-400/20 to-cyan-600/20 rounded-full blur-3xl"
+          animate={{
+            scale: [1.2, 1, 1.2],
+            rotate: [360, 180, 0],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+      </div>
+
+      {/* Network Status Bar */}
+      <AnimatePresence>
+        {!isOnline && (
+          <motion.div
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            className="fixed top-0 left-0 right-0 bg-gradient-to-r from-red-500 to-orange-500 text-white text-center py-2 z-50"
+          >
+            <div className="flex items-center justify-center space-x-2">
+              <WifiOff className="h-4 w-4" />
+              <span className="text-sm font-medium">Working Offline - Data will sync when connected</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Achievement Toast */}
+      <AnimatePresence>
+        {showAchievement && (
+          <motion.div
+            initial={{ x: 400, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 400, opacity: 0 }}
+            className="fixed top-20 right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-4 rounded-2xl shadow-2xl z-50 max-w-xs"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-white/20 rounded-full">
+                <Award className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="font-bold text-sm">Achievement Unlocked!</p>
+                <p className="text-xs opacity-90">7-Day Streak Master</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-green-50">
