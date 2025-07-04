@@ -22,7 +22,24 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Home as HomeIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Target,
+  TrendingUp,
+  Shield,
+  Award,
+  Users,
+  Flame,
+  Camera,
+  Smartphone,
+  Wifi,
+  WifiOff,
+  Activity,
+  Heart,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  MapPin,
+  Leaf
 } from 'lucide-react';
 
 // Import our new components
