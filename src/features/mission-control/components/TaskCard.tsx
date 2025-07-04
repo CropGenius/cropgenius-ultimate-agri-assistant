@@ -17,7 +17,7 @@ const priorityStyles: Record<TaskPriority, { icon: React.ElementType; color: str
   3: { icon: Info, color: 'border-blue-500', label: 'Low' },      // Low priority
 };
 
-export const TaskCard: React.FC<TaskCardProps> = React.memo(({ task, onToggleStatus }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggleStatus }) => {
   // Get style based on task.priority, default to medium if somehow undefined
   const styleInfo = priorityStyles[task.priority] || priorityStyles[2];
   const isCompleted = task.status === 'completed';
@@ -74,4 +74,5 @@ export const TaskCard: React.FC<TaskCardProps> = React.memo(({ task, onToggleSta
       </CardContent>
     </Card>
   );
-});
+};
+
