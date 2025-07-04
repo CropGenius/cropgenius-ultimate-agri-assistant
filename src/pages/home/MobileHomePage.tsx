@@ -286,21 +286,138 @@ const MobileHomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-green-50">
-      {/* Header */}
-      <header className="glass-morph sticky top-0 z-10 p-4 backdrop-blur-md">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Welcome back! 👋</h1>
-            <p className="text-sm text-gray-600">Tuesday, 24 Oct 2023</p>
+      {/* Revolutionary Header with Gamification */}
+      <header className="relative z-10 pt-2">
+        {/* Status Bar */}
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
+              <div className={`h-2 w-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="text-xs text-gray-600">{isOnline ? 'Live' : 'Offline'}</span>
+            </div>
+            <div className="text-xs text-gray-500">•</div>
+            <div className="text-xs text-gray-600">{new Date().toLocaleDateString()}</div>
           </div>
           <div className="flex items-center space-x-3">
-            <button className="p-2 rounded-full bg-white/80 shadow-sm">
+            <motion.button 
+              whileTap={{ scale: 0.95 }}
+              className="relative p-2"
+            >
               <Bell className="h-5 w-5 text-gray-600" />
-            </button>
-            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-teal-400 flex items-center justify-center text-white font-bold">
-              JD
-            </div>
+              {criticalIssues > 0 && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center"
+                >
+                  {criticalIssues}
+                </motion.div>
+              )}
+            </motion.button>
+            <motion.div
+              whileTap={{ scale: 0.95 }}
+              className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold shadow-lg"
+            >
+              {farmingProfile.name.charAt(0)}
+            </motion.div>
           </div>
+        </div>
+
+        {/* Enhanced Welcome Section with Psychology */}
+        <div className="px-4 py-6 space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
+                  <span>Welcome back, {farmingProfile.name.split(' ')[0]}!</span>
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                  >
+                    👋
+                  </motion.div>
+                </h1>
+                <div className="flex items-center space-x-3 mt-1">
+                  <p className="text-sm text-gray-600">{farmingProfile.region}</p>
+                  <div className="flex items-center space-x-1">
+                    <div className="h-1 w-1 bg-gray-400 rounded-full" />
+                    <span className="text-xs text-emerald-600 font-semibold">{farmingProfile.farmRank}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="flex items-center space-x-1">
+                  <Flame className="h-5 w-5 text-orange-500" />
+                  <span className="text-lg font-bold text-orange-600">{farmingProfile.streak}</span>
+                </div>
+                <p className="text-xs text-gray-500">day streak</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Level Progress & Social Proof */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white/70 backdrop-blur-md rounded-2xl p-4 border border-white/30 shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg">
+                  <Star className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">Level {farmingProfile.level}</p>
+                  <p className="text-xs text-gray-600">{farmingProfile.totalScore} points</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-medium text-gray-900">#{farmingProfile.communityRank}</p>
+                <p className="text-xs text-gray-500">of {farmingProfile.totalFarmers.toLocaleString()} farmers</p>
+              </div>
+            </div>
+            
+            {/* Progress Bar with Psychological Trigger */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-600">Progress to Level {farmingProfile.level + 1}</span>
+                <span className="text-xs font-semibold text-emerald-600">
+                  {farmingProfile.nextMilestone - farmingProfile.totalScore} points to go
+                </span>
+              </div>
+              <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressToNextLevel}%` }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
+                  className="h-full bg-gradient-to-r from-emerald-400 to-green-500 rounded-full relative"
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full" />
+                </motion.div>
+              </div>
+              
+              {/* Achievement Badges Preview */}
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center space-x-1">
+                  <Award className="h-4 w-4 text-yellow-500" />
+                  <span className="text-xs text-gray-600">{farmingProfile.achievements} achievements</span>
+                </div>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  className="text-xs text-emerald-600 font-medium flex items-center space-x-1"
+                  onClick={() => navigate('/achievements')}
+                >
+                  <span>View all</span>
+                  <ChevronRight className="h-3 w-3" />
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </header>
 
