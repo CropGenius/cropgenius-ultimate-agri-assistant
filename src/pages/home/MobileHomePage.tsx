@@ -694,76 +694,113 @@ const MobileHomePage: React.FC = () => {
           </div>
         </motion.section>
 
-        {/* Fields Overview */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">Your Fields</h2>
-            <button 
-              onClick={() => navigate('/fields')}
-              className="text-sm text-blue-600 flex items-center"
-            >
-              View all <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="space-y-3">
-            {sampleFields.map((field) => (
-              <div 
-                key={field.id}
-                onClick={() => navigate(`/fields/${field.id}`)}
-                className="glass-morph p-4 rounded-xl flex items-center justify-between cursor-pointer hover:shadow-md transition-all"
-              >
-                <div>
-                  <h3 className="font-medium text-gray-900">{field.name}</h3>
-                  <p className="text-sm text-gray-600">{field.crop} • {field.size} {field.unit}</p>
-                </div>
-                <div className="flex items-center">
-                  <div className="h-3 w-3 rounded-full mr-2" 
-                    style={{
-                      backgroundColor: 
-                        field.health > 70 ? '#10B981' : 
-                        field.health > 40 ? '#F59E0B' : '#EF4444'
-                    }}
-                  />
-                  <span className="text-sm font-medium">{field.health}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Upcoming Tasks */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">Upcoming Tasks</h2>
-            <button 
+        {/* Urgent Tasks with Psychological Urgency */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
+              <Clock className="h-5 w-5 text-red-500" />
+              <span>Urgent Actions</span>
+              {urgentTasks.filter(t => t.priority === 'critical' || t.priority === 'urgent').length > 0 && (
+                <motion.div
+                  animate={{ pulse: [1, 1.1, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                  className="px-2 py-1 bg-red-500 text-white text-xs rounded-full"
+                >
+                  {urgentTasks.filter(t => t.priority === 'critical' || t.priority === 'urgent').length}
+                </motion.div>
+              )}
+            </h2>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/tasks')}
-              className="text-sm text-blue-600 flex items-center"
+              className="text-sm text-emerald-600 font-medium flex items-center space-x-1"
             >
-              View all <ChevronRight className="h-4 w-4" />
-            </button>
+              <span>View all</span>
+              <ChevronRight className="h-4 w-4" />
+            </motion.button>
           </div>
+
           <div className="space-y-3">
-            {upcomingTasks.map((task) => (
-              <div 
+            {urgentTasks.map((task, index) => (
+              <motion.div
                 key={task.id}
-                className="glass-morph p-4 rounded-xl flex items-start space-x-3"
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.3 + index * 0.1 }}
+                whileTap={{ scale: 0.98 }}
+                className="relative overflow-hidden bg-white/80 backdrop-blur-md rounded-2xl border border-white/30 shadow-lg cursor-pointer"
               >
-                <div className={`h-8 w-1 rounded-full ${
-                  task.priority === 'high' ? 'bg-red-500' : 'bg-yellow-500'
-                }`} />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900">{task.title}</h3>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-sm text-gray-500">{task.due}</span>
-                    <button className="text-xs text-blue-600 hover:underline">
-                      Mark as done
-                    </button>
+                {/* Priority Strip */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${getPriorityColor(task.priority)}`} />
+                
+                <div className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <div className={`p-1.5 rounded-lg bg-gradient-to-br ${getPriorityColor(task.priority)}`}>
+                          {task.category === 'nutrition' && <Leaf className="h-3 w-3 text-white" />}
+                          {task.category === 'protection' && <Shield className="h-3 w-3 text-white" />}
+                          {task.category === 'irrigation' && <Droplets className="h-3 w-3 text-white" />}
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          task.priority === 'critical' ? 'bg-red-100 text-red-700' :
+                          task.priority === 'urgent' ? 'bg-orange-100 text-orange-700' :
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {task.priority.toUpperCase()}
+                        </span>
+                      </div>
+                      
+                      <h3 className="font-semibold text-gray-900 mb-1">{task.title}</h3>
+                      <p className="text-xs text-gray-600 mb-2">{task.impact}</p>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Clock className="h-3 w-3 text-gray-400" />
+                          <span className="text-xs text-gray-600">{task.timeLeft}</span>
+                        </div>
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          className="px-3 py-1.5 bg-emerald-500 text-white text-xs rounded-lg font-medium"
+                        >
+                          {task.priority === 'critical' ? 'Do Now' : 'Schedule'}
+                        </motion.button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                {/* Urgency Pulse for Critical Tasks */}
+                {task.priority === 'critical' && (
+                  <motion.div
+                    className="absolute inset-0 border-2 border-red-400 rounded-2xl"
+                    animate={{ opacity: [0, 0.6, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                )}
+              </motion.div>
             ))}
           </div>
-        </section>
+
+          {/* Psychological Nudge */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.8 }}
+            className="mt-4 p-3 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-200"
+          >
+            <div className="flex items-center space-x-2">
+              <Heart className="h-4 w-4 text-emerald-600" />
+              <p className="text-sm text-emerald-700">
+                <span className="font-semibold">Pro tip:</span> Complete urgent tasks to boost your farm score by up to 15%!
+              </p>
+            </div>
+          </motion.div>
+        </motion.section>
 
         {/* Weather & Pro Upgrade */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
