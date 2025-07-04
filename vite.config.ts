@@ -17,7 +17,6 @@ export default defineConfig({
     open: true,
     cors: true,
     headers: {
-      'Content-Type': 'text/javascript; charset=utf-8',
       'Cache-Control': 'public, max-age=31536000, immutable',
     }
   },
