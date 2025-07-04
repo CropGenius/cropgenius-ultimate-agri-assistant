@@ -576,44 +576,123 @@ const MobileHomePage: React.FC = () => {
           </div>
         </motion.section>
 
-        {/* Quick Actions */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
-            <button className="text-sm text-blue-600 flex items-center">
-              See all <ChevronRight className="h-4 w-4" />
-            </button>
+        {/* Revolutionary Quick Actions with Psychological Triggers */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
+              <Zap className="h-5 w-5 text-yellow-500" />
+              <span>Smart Actions</span>
+            </h2>
+            <div className="flex items-center space-x-1 text-xs text-gray-500">
+              <Clock className="h-3 w-3" />
+              <span>Real-time</span>
+            </div>
           </div>
-          <div className="grid grid-cols-4 gap-3">
-            <button 
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* AI Scan Action - Primary CTA */}
+            <motion.button
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => navigate('/scan')}
-              className="flex flex-col items-center justify-center p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-all"
+              className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-green-500 to-teal-600 rounded-2xl p-4 text-white shadow-lg col-span-2"
             >
-              <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-1">
-                <PlusIcon className="h-6 w-6" />
+              {/* Animated background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+                animate={{ x: [-200, 400] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              />
+              
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <Camera className="h-6 w-6" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-bold text-lg">AI Crop Scan</h3>
+                    <p className="text-emerald-100 text-sm">Instant disease detection</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="text-right">
+                    <p className="text-xs text-emerald-100">99.2% accurate</p>
+                    <p className="text-xs text-white/80">Trusted by 12K+ farmers</p>
+                  </div>
+                  <ArrowUpRight className="h-5 w-5" />
+                </div>
               </div>
-              <span className="text-xs font-medium text-gray-700">New Scan</span>
-            </button>
-            <button className="flex flex-col items-center justify-center p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-all">
-              <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-1">
-                <Droplet className="h-5 w-5" />
-              </div>
-              <span className="text-xs font-medium text-gray-700">Irrigate</span>
-            </button>
-            <button className="flex flex-col items-center justify-center p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-all">
-              <div className="h-10 w-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 mb-1">
-                <Sun className="h-5 w-5" />
-              </div>
-              <span className="text-xs font-medium text-gray-700">Weather</span>
-            </button>
-            <button className="flex flex-col items-center justify-center p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-all">
-              <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mb-1">
-                <BarChart2Icon className="h-5 w-5" />
-              </div>
-              <span className="text-xs font-medium text-gray-700">Insights</span>
-            </button>
+            </motion.button>
+
+            {/* Secondary Actions Grid */}
+            {[
+              {
+                icon: <Sun className="h-5 w-5" />,
+                title: 'Weather',
+                subtitle: 'Perfect for planting',
+                color: 'from-orange-400 to-yellow-500',
+                action: () => navigate('/weather'),
+                delay: 0.8
+              },
+              {
+                icon: <Droplet className="h-5 w-5" />,
+                title: 'Irrigation',
+                subtitle: 'Check needed',
+                color: 'from-blue-400 to-cyan-500',
+                action: () => navigate('/irrigation'),
+                delay: 0.9
+              },
+              {
+                icon: <BarChart2Icon className="h-5 w-5" />,
+                title: 'Market',
+                subtitle: 'Prices rising',
+                color: 'from-purple-400 to-pink-500',
+                action: () => navigate('/market'),
+                delay: 1.0
+              },
+              {
+                icon: <Shield className="h-5 w-5" />,
+                title: 'Protection',
+                subtitle: 'All good',
+                color: 'from-green-400 to-emerald-500',
+                action: () => navigate('/protection'),
+                delay: 1.1
+              }
+            ].map((action, index) => (
+              <motion.button
+                key={action.title}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: action.delay }}
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={action.action}
+                className="relative overflow-hidden bg-white/80 backdrop-blur-md rounded-2xl p-4 border border-white/30 shadow-lg"
+              >
+                <div className="flex flex-col items-center space-y-3">
+                  <div className={`p-3 bg-gradient-to-br ${action.color} rounded-xl text-white shadow-md`}>
+                    {action.icon}
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold text-gray-900 text-sm">{action.title}</p>
+                    <p className="text-xs text-gray-600 mt-1">{action.subtitle}</p>
+                  </div>
+                </div>
+                
+                {/* Hover glow effect */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 hover:opacity-5 transition-opacity rounded-2xl`} />
+              </motion.button>
+            ))}
           </div>
-        </section>
+        </motion.section>
 
         {/* Fields Overview */}
         <section>
