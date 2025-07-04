@@ -52,21 +52,12 @@ verify_jwt = false
 
 [functions.whatsapp-notification]
 verify_jwt = false
-import_map = [
-  "https://deno.land/std@0.190.0/http/server.ts",
-  "https://esm.sh/@supabase/supabase-js@2"
-]
 
 [functions.check-ai-insights]
 verify_jwt = false
-import_map = [
-  "https://deno.land/std@0.190.0/http/server.ts",
-  "https://esm.sh/@supabase/supabase-js@2"
-]
 
 [functions.create_farm_tasks_policy_if_not_exists]
 verify_jwt = false
-import_map = [
-  "https://deno.land/std@0.190.0/http/server.ts",
-  "https://esm.sh/@supabase/supabase-js@2"
-]
+
+[functions.weather]
+verify_jwt = false

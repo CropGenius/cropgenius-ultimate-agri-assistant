@@ -2,11 +2,13 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { resolve } from 'path';
+import mimeTypeFix from './vite-plugin-mime-fix.js';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    mimeTypeFix(),
     ...(process.env.ANALYZE ? [visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true })] : []),
   ],
   base: './',

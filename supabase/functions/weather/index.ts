@@ -36,11 +36,29 @@ function getConditionSymbol(code: number): string {
 }
 
 serve(async (req: Request) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      },
+    });
+  }
+
   const url = new URL(req.url);
   const lat = url.searchParams.get("lat");
   const lon = url.searchParams.get("lon");
   if (!lat || !lon) {
-    return new Response(JSON.stringify({ error: "lat and lon required" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "lat and lon required" }), { 
+      status: 400,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      }
+    });
   }
   try {
     const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
@@ -50,7 +68,10 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ tempC: temperature, condition: getConditionSymbol(weathercode) }),
       {
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Access-Control-Allow-Origin': '*',
+        },
       },
     );
   } catch (e) {
@@ -58,6 +79,12 @@ serve(async (req: Request) => {
     if (sentryDsn) {
       Sentry.captureException(e);
     }
-    return new Response(JSON.stringify({ error: "fetch_failed", message: String(e) }), { status: 500 });
+    return new Response(JSON.stringify({ error: "fetch_failed", message: String(e) }), { 
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      }
+    });
   }
 });
