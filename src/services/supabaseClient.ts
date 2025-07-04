@@ -9,7 +9,7 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '../types/supabase';
+import { Database } from '../types/supabase';
 import { APP_CONFIG } from '../lib/config';
 import { AppError, ErrorCode, reportError, reportWarning } from '../lib/errors';
 import { networkManager } from '../lib/network';
@@ -30,7 +30,7 @@ interface SupabaseClientOptions {
   retryDelay: number;
 }
 
-class EnhancedSupabaseClient {
+export class EnhancedSupabaseClient {
   private client: SupabaseClient<Database>;
   private options: SupabaseClientOptions;
 
@@ -62,6 +62,8 @@ class EnhancedSupabaseClient {
             headers: {
               'X-Client-Version': APP_CONFIG.version,
               'X-Client-Name': APP_CONFIG.name,
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g',
+              'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g`,
             },
           },
         }
@@ -70,7 +72,7 @@ class EnhancedSupabaseClient {
       // Set up auth state change monitoring
       this.setupAuthMonitoring();
       
-      reportWarning('Supabase client initialized successfully');
+      
     } catch (error) {
       const appError = new AppError(
         ErrorCode.UNKNOWN_ERROR,
@@ -87,7 +89,20 @@ class EnhancedSupabaseClient {
     url: RequestInfo | URL,
     options?: RequestInit
   ): Promise<Response> {
-    const operation = () => fetch(url, options);
+    const operation = () => {
+      const newOptions = { ...options };
+      if (newOptions.method === 'POST') {
+        newOptions.headers = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'apikey': APP_CONFIG.api.supabase.anonKey,
+          'Authorization': `Bearer ${APP_CONFIG.api.supabase.anonKey}`,
+          ...(options?.headers || {}), // Merge existing headers
+          ...(newOptions.headers || {}),
+        };
+      }
+      return fetch(url, newOptions);
+    };
 
     try {
       if (this.options.enableOfflineQueue) {

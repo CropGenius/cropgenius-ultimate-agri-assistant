@@ -1,11 +1,11 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Share2 } from 'lucide-react';
-import { useAuthContext } from '@/providers/AuthProvider';
+import { useAuth } from '@/hooks/useAuth';
 import { useGrowthEngine } from '@/providers/GrowthEngineProvider';
 
 export default function OutOfCreditsModal({ onClose }: { onClose: () => void }) {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { trigger_referral_funnel } = useGrowthEngine();
 
   const handleShare = () => {
@@ -21,10 +21,11 @@ export default function OutOfCreditsModal({ onClose }: { onClose: () => void }) 
       >
         <DialogHeader>
           <DialogTitle>You're out of credits ⚠️</DialogTitle>
+          <DialogDescription id="out-of-credits-description">
+            Help 3 friends map their farm and earn 10 more credits.
+          </DialogDescription>
         </DialogHeader>
-        <p id="out-of-credits-description" className="mb-4">
-          Help 3 friends map their farm and earn 10 more credits.
-        </p>
+        
         <DialogFooter>
           <Button className="w-full flex items-center gap-2" onClick={handleShare}>
             <Share2 className="h-4 w-4" /> Share Now

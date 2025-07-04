@@ -29,9 +29,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for profiles
-CREATE POLICY "Public profiles are viewable by everyone." 
+CREATE POLICY "Users can view their own profile." 
   ON public.profiles FOR SELECT 
-  USING (true);
+  USING (auth.uid() = id);
 
 CREATE POLICY "Users can update their own profile." 
   ON public.profiles FOR UPDATE 
@@ -54,9 +54,9 @@ CREATE TABLE IF NOT EXISTS public.farms (
 ALTER TABLE public.farms ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for farms
-CREATE POLICY "Farms are viewable by everyone." 
+CREATE POLICY "Users can view their own farms." 
   ON public.farms FOR SELECT 
-  USING (true);
+  USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can manage their own farms." 
   ON public.farms 
@@ -224,7 +224,7 @@ BEGIN
     
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY INVOKER;
 
 -- Create a trigger to handle new user signups
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
@@ -241,7 +241,7 @@ BEGIN
   DELETE FROM public.profiles WHERE id = OLD.id;
   RETURN OLD;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY INVOKER;
 
 -- Create a trigger to handle user deletion
 DROP TRIGGER IF EXISTS on_auth_user_deleted ON auth.users;
@@ -261,7 +261,28 @@ END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 -- Grant necessary permissions
-GRANTANT USAGE ON SCHEMA public TO anon, authenticated;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+
+-- Grant permissions for profiles table
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO authenticated;
+
+-- Grant permissions for farms table
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.farms TO authenticated;
+
+-- Grant permissions for fields table
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.fields TO authenticated;
+
+-- Grant permissions for tasks table
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.tasks TO authenticated;
+
+-- Grant permissions for crop_types table
+GRANT SELECT ON public.crop_types TO authenticated;
+
+-- Grant permissions for weather_data table
+GRANT SELECT, INSERT ON public.weather_data TO authenticated;
+
+-- Grant execute on functions
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.handle_user_deleted() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_user_farms(user_id UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_updated_at_column() TO authenticated;

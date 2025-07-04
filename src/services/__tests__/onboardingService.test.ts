@@ -3,15 +3,15 @@ import { supabase } from '@/lib/supabase';
 import { mockOnboardingData } from '@/test-utils/onboarding-test-utils';
 
 // Mock the supabase client
-jest.mock('@/lib/supabase', () => ({
+vi.mock('@/lib/supabase', () => ({
   supabase: {
-    rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
   },
 }));
 
 describe('onboardingService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('completeOnboarding', () => {
@@ -21,7 +21,7 @@ describe('onboardingService', () => {
         data: { user_id: 'test-user-id', farm_id: 'test-farm-id' },
         error: null,
       };
-      (supabase.rpc as jest.Mock).mockResolvedValueOnce(mockResponse);
+      (supabase.rpc as vi.Mock).mockResolvedValueOnce(mockResponse);
 
       // Call the function
       const result = await completeOnboarding(mockOnboardingData);
@@ -90,7 +90,7 @@ describe('onboardingService', () => {
         data: { user_id: 'test-user-id', farm_id: 'test-farm-id' },
         error: null,
       };
-      (supabase.rpc as jest.Mock).mockResolvedValueOnce(mockResponse);
+      (supabase.rpc as vi.Mock).mockResolvedValueOnce(mockResponse);
 
       // Create data with Date objects
       const dataWithDates = {

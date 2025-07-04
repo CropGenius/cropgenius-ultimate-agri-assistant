@@ -396,6 +396,7 @@ export const updateProfile = async (updates: Partial<Profile>): Promise<Profile 
   }
 };
 
+/*
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Loader2, AlertTriangle, CheckCircle } from "lucide-react";
@@ -568,3 +569,4 @@ export default function AuthCallback() {
     </div>
   );
 }
+*/
