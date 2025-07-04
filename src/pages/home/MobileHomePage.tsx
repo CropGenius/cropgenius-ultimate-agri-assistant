@@ -421,29 +421,160 @@ const MobileHomePage: React.FC = () => {
         </div>
       </header>
 
-      <main className="p-4 space-y-6">
-        {/* Farm Health Overview */}
-        <section className="glass-morph rounded-2xl p-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-medium text-gray-600 mb-1">Farm Health</h2>
-            <p className="text-3xl font-bold text-gray-900 mb-2">{farmHealth}%</p>
-            <div className="flex items-center">
-              <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full ${
-                    farmHealth > 70 ? 'bg-green-500' : 
-                    farmHealth > 40 ? 'bg-yellow-500' : 'bg-red-500'
-                  }`} 
-                  style={{ width: `${farmHealth}%` }}
-                />
+      <main className="relative z-10 px-4 space-y-6">
+        {/* Revolutionary Farm Health Dashboard */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="relative overflow-hidden">
+            {/* Gradient Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-green-50/80 to-emerald-100/80 backdrop-blur-xl rounded-3xl" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-green-200/20 to-emerald-300/30 rounded-3xl" />
+            
+            {/* Content */}
+            <div className="relative p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
+                    <Activity className="h-5 w-5 text-emerald-600" />
+                    <span>Farm Health Score</span>
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {farmHealth >= 80 ? '🌟 Excellent performance!' : 
+                     farmHealth >= 60 ? '📈 Good, with room to grow' : 
+                     '⚠️ Needs attention'}
+                  </p>
+                </div>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/fields')}
+                  className="p-2 bg-emerald-100 rounded-xl"
+                >
+                  <TrendingUp className="h-5 w-5 text-emerald-600" />
+                </motion.button>
               </div>
-              <span className="ml-2 text-xs text-gray-500">
-                {farmHealth > 70 ? 'Excellent' : farmHealth > 40 ? 'Needs Attention' : 'Critical'}
-              </span>
+
+              <div className="flex items-center space-x-6">
+                {/* Enhanced Health Orb */}
+                <div className="relative">
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                  >
+                    <HealthOrb score={farmHealth} size={120} />
+                  </motion.div>
+                  
+                  {/* Floating particles around orb */}
+                  {[...Array(6)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute w-2 h-2 bg-green-400 rounded-full"
+                      style={{
+                        top: '50%',
+                        left: '50%',
+                      }}
+                      animate={{
+                        x: [0, Math.cos(i * 60 * Math.PI / 180) * 80],
+                        y: [0, Math.sin(i * 60 * Math.PI / 180) * 80],
+                        opacity: [0, 1, 0],
+                        scale: [0, 1, 0],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        delay: i * 0.5,
+                        ease: "easeInOut"
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Stats Grid */}
+                <div className="flex-1 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <motion.div
+                      whileTap={{ scale: 0.95 }}
+                      className="bg-white/60 backdrop-blur-sm rounded-xl p-3 border border-white/30"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Target className="h-4 w-4 text-blue-600" />
+                        <span className="text-xs font-medium text-gray-700">Yield Est.</span>
+                      </div>
+                      <p className="text-lg font-bold text-gray-900 mt-1">
+                        {totalYieldPrediction.toFixed(1)}T
+                      </p>
+                      <p className="text-xs text-gray-500">+12% vs last season</p>
+                    </motion.div>
+
+                    <motion.div
+                      whileTap={{ scale: 0.95 }}
+                      className="bg-white/60 backdrop-blur-sm rounded-xl p-3 border border-white/30"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Shield className="h-4 w-4 text-emerald-600" />
+                        <span className="text-xs font-medium text-gray-700">Fields</span>
+                      </div>
+                      <p className="text-lg font-bold text-gray-900 mt-1">{sampleFields.length}</p>
+                      <p className="text-xs text-emerald-600">All monitored</p>
+                    </motion.div>
+                  </div>
+
+                  {/* Trust Indicator */}
+                  <div className="bg-gradient-to-r from-emerald-500/10 to-green-500/10 rounded-xl p-3 border border-emerald-200/50">
+                    <div className="flex items-center space-x-2">
+                      <div className="p-1 bg-emerald-500 rounded-full">
+                        <CheckCircle2 className="h-3 w-3 text-white" />
+                      </div>
+                      <span className="text-xs font-medium text-emerald-700">AI-Verified Data</span>
+                    </div>
+                    <p className="text-xs text-emerald-600 mt-1">
+                      Last updated {sampleFields[0].lastCheck} • 99.7% accuracy
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Health Breakdown */}
+              <div className="mt-6 space-y-3">
+                <h3 className="text-sm font-semibold text-gray-800">Field Performance</h3>
+                {sampleFields.map((field, index) => (
+                  <motion.div
+                    key={field.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 + index * 0.1 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate(`/field/${field.id}`)}
+                    className="flex items-center justify-between p-3 bg-white/50 backdrop-blur-sm rounded-xl border border-white/30 cursor-pointer"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="relative">
+                        <div className={`h-3 w-3 rounded-full bg-gradient-to-r ${getHealthColor(field.health)}`} />
+                        {field.trend === 'improving' && (
+                          <TrendingUp className="h-2 w-2 text-green-500 absolute -top-1 -right-1" />
+                        )}
+                        {field.trend === 'declining' && (
+                          <AlertTriangle className="h-2 w-2 text-orange-500 absolute -top-1 -right-1" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{field.name}</p>
+                        <p className="text-xs text-gray-600">{field.crop} • {field.size} {field.unit}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-sm text-gray-900">{field.health}%</p>
+                      <p className="text-xs text-gray-500">{field.lastCheck}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
-          <HealthOrb score={farmHealth} size={100} />
-        </section>
+        </motion.section>
 
         {/* Quick Actions */}
         <section>
