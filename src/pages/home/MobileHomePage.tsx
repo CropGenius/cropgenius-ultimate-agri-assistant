@@ -47,6 +47,16 @@ import { HealthOrb } from '@/components/dashboard/mobile/HealthOrb';
 import FeatureCard from '@/components/dashboard/mobile/FeatureCard';
 import ProSwipeBanner from '@/components/dashboard/mobile/ProSwipeBanner';
 import ChatbotAvatar from '@/components/dashboard/mobile/ChatbotAvatar';
+import { GamificationSystem } from '@/components/dashboard/mobile/GamificationSystem';
+import { TrustIndicators } from '@/components/dashboard/mobile/TrustIndicators';
+import { PsychologyTriggers } from '@/components/dashboard/mobile/PsychologyTriggers';
+import { GodModeLayout } from '@/components/dashboard/mobile/GodModeLayout';
+import { 
+  MorphingButton,
+  LiquidProgress,
+  MagneticCard,
+  TypewriterText
+} from '@/components/dashboard/mobile/PremiumAnimations';
 
 // Enhanced farming data with psychological triggers
 const farmingProfile = {
@@ -151,7 +161,46 @@ const MobileHomePage: React.FC = () => {
   const [isOnline, setIsOnline] = useState(true);
   const [selectedField, setSelectedField] = useState<number | null>(null);
   const [showAchievement, setShowAchievement] = useState(false);
+  const [showGamification, setShowGamification] = useState(false);
+  const [showSuccessCelebration, setShowSuccessCelebration] = useState(false);
   const activeTab = location.pathname;
+  
+  // Sample achievements data
+  const sampleAchievements = [
+    {
+      id: '1',
+      title: 'First Scan Master',
+      description: 'Complete your first crop disease scan',
+      icon: <Camera className="h-5 w-5 text-white" />,
+      progress: 1,
+      maxProgress: 1,
+      unlocked: true,
+      rarity: 'common' as const,
+      reward: '+50 XP'
+    },
+    {
+      id: '2', 
+      title: 'Week Warrior',
+      description: 'Maintain a 7-day streak',
+      icon: <Flame className="h-5 w-5 text-white" />,
+      progress: 7,
+      maxProgress: 7,
+      unlocked: true,
+      rarity: 'rare' as const,
+      reward: '+15% XP Bonus'
+    },
+    {
+      id: '3',
+      title: 'Yield Optimizer',
+      description: 'Achieve 90% farm health score',
+      icon: <Target className="h-5 w-5 text-white" />,
+      progress: farmHealth,
+      maxProgress: 90,
+      unlocked: false,
+      rarity: 'epic' as const,
+      reward: 'Premium AI Insights'
+    }
+  ];
   
   // Calculate dynamic metrics
   const farmHealth = Math.round(
@@ -216,7 +265,13 @@ const MobileHomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden">
+    <GodModeLayout
+      showParticles={true}
+      particleCount={20}
+      showStatusBar={true}
+      showNavigation={true}
+      backgroundGradient="from-green-50 via-emerald-50 to-teal-50"
+    >
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -420,6 +475,21 @@ const MobileHomePage: React.FC = () => {
       </header>
 
       <main className="relative z-10 px-4 space-y-6">
+        {/* Psychology Triggers */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <PsychologyTriggers
+            farmHealth={farmHealth}
+            tasksCompleted={urgentTasks.filter(t => t.priority === 'critical').length}
+            totalTasks={urgentTasks.length}
+            streak={farmingProfile.streak}
+            communityRank={farmingProfile.communityRank}
+          />
+        </motion.section>
+
         {/* Revolutionary Farm Health Dashboard */}
         <motion.section
           initial={{ opacity: 0, y: 30 }}
@@ -447,10 +517,10 @@ const MobileHomePage: React.FC = () => {
                 </div>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate('/fields')}
+                  onClick={() => setShowGamification(!showGamification)}
                   className="p-2 bg-emerald-100 rounded-xl"
                 >
-                  <TrendingUp className="h-5 w-5 text-emerald-600" />
+                  <Trophy className="h-5 w-5 text-emerald-600" />
                 </motion.button>
               </div>
 
@@ -462,32 +532,15 @@ const MobileHomePage: React.FC = () => {
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ duration: 1, ease: "easeOut" }}
                   >
-                    <HealthOrb score={farmHealth} size={120} />
-                  </motion.div>
-                  
-                  {/* Floating particles around orb */}
-                  {[...Array(6)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute w-2 h-2 bg-green-400 rounded-full"
-                      style={{
-                        top: '50%',
-                        left: '50%',
-                      }}
-                      animate={{
-                        x: [0, Math.cos(i * 60 * Math.PI / 180) * 80],
-                        y: [0, Math.sin(i * 60 * Math.PI / 180) * 80],
-                        opacity: [0, 1, 0],
-                        scale: [0, 1, 0],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        delay: i * 0.5,
-                        ease: "easeInOut"
-                      }}
+                    <HealthOrb 
+                      score={farmHealth} 
+                      size={120} 
+                      trend={sampleFields[0]?.trend as any}
+                      showTrustIndicators={true}
+                      lastUpdated={sampleFields[0]?.lastCheck}
+                      accuracy={99.7}
                     />
-                  ))}
+                  </motion.div>
                 </div>
 
                 {/* Stats Grid */}
@@ -573,6 +626,50 @@ const MobileHomePage: React.FC = () => {
             </div>
           </div>
         </motion.section>
+
+        {/* Gamification System Modal */}
+        <AnimatePresence>
+          {showGamification && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+              onClick={() => setShowGamification(false)}
+            >
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: "spring", damping: 25 }}
+                className="w-full bg-white rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-gray-900">Your Progress</h2>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowGamification(false)}
+                    className="p-2 bg-gray-100 rounded-xl"
+                  >
+                    <XIcon className="h-5 w-5 text-gray-600" />
+                  </motion.button>
+                </div>
+                <GamificationSystem
+                  level={farmingProfile.level}
+                  totalScore={farmingProfile.totalScore}
+                  streak={farmingProfile.streak}
+                  communityRank={farmingProfile.communityRank}
+                  totalFarmers={farmingProfile.totalFarmers}
+                  achievements={sampleAchievements}
+                  onAchievementClick={(achievement) => {
+                    console.log('Achievement clicked:', achievement);
+                  }}
+                />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Revolutionary Quick Actions with Psychological Triggers */}
         <motion.section
@@ -854,11 +951,28 @@ const MobileHomePage: React.FC = () => {
           </motion.div>
         </motion.section>
 
-        {/* AI Insights - Trust Builder */}
+        {/* Trust Indicators */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.6 }}
+        >
+          <TrustIndicators
+            accuracy={99.7}
+            totalUsers={farmingProfile.totalFarmers}
+            successRate={94.2}
+            lastUpdated="2 minutes ago"
+            verificationLevel="verified"
+            showTestimonials={true}
+            showLiveStats={true}
+          />
+        </motion.section>
+
+        {/* AI Insights - Trust Builder */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.8 }}
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
@@ -882,7 +996,7 @@ const MobileHomePage: React.FC = () => {
                 key={insight.title}
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 1.7 + i * 0.1 }}
+                transition={{ delay: 1.9 + i * 0.1 }}
                 whileTap={{ scale: 0.95 }}
                 className="bg-white/80 backdrop-blur-md rounded-xl p-3 border border-white/30"
               >
@@ -985,7 +1099,7 @@ const MobileHomePage: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </GodModeLayout>
   );
 };
 
