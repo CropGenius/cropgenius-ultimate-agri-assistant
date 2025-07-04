@@ -21,5 +21,315 @@ export const FloatingParticles: React.FC<{ count?: number; color?: string }> = (
   color = 'emerald' 
 }) => {
   return (
-    <div className=\"absolute inset-0 overflow-hidden pointer-events-none\">
-      {[...Array(count)].map((_, i) => (\n        <motion.div\n          key={i}\n          className={`absolute w-1 h-1 bg-${color}-400 rounded-full opacity-60`}\n          style={{\n            left: `${Math.random() * 100}%`,\n            top: `${Math.random() * 100}%`,\n          }}\n          animate={{\n            y: [0, -30, 0],\n            x: [0, Math.random() * 20 - 10, 0],\n            opacity: [0.6, 1, 0.6],\n            scale: [1, 1.5, 1],\n          }}\n          transition={{\n            duration: 3 + Math.random() * 2,\n            repeat: Infinity,\n            delay: Math.random() * 2,\n            ease: \"easeInOut\"\n          }}\n        />\n      ))}\n    </div>\n  );\n};\n\n// Success Celebration Animation\nexport const SuccessCelebration: React.FC<{ \n  show: boolean; \n  onComplete?: () => void;\n  title?: string;\n  subtitle?: string;\n}> = ({ show, onComplete, title = \"Success!\", subtitle = \"Great job!\" }) => {\n  useEffect(() => {\n    if (show && onComplete) {\n      const timer = setTimeout(onComplete, 3000);\n      return () => clearTimeout(timer);\n    }\n  }, [show, onComplete]);\n\n  return (\n    <AnimatePresence>\n      {show && (\n        <motion.div\n          initial={{ opacity: 0 }}\n          animate={{ opacity: 1 }}\n          exit={{ opacity: 0 }}\n          className=\"fixed inset-0 flex items-center justify-center z-50 pointer-events-none\"\n        >\n          {/* Confetti */}\n          <div className=\"absolute inset-0\">\n            {[...Array(30)].map((_, i) => (\n              <motion.div\n                key={i}\n                className=\"absolute w-3 h-3 rounded-full\"\n                style={{\n                  backgroundColor: ['#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'][i % 5],\n                  left: '50%',\n                  top: '50%',\n                }}\n                initial={{ scale: 0, x: 0, y: 0 }}\n                animate={{\n                  scale: [0, 1, 0],\n                  x: [0, (Math.random() - 0.5) * 400],\n                  y: [0, (Math.random() - 0.5) * 400],\n                  rotate: [0, 360 * (Math.random() > 0.5 ? 1 : -1)]\n                }}\n                transition={{\n                  duration: 2,\n                  delay: i * 0.05,\n                  ease: \"easeOut\"\n                }}\n              />\n            ))}\n          </div>\n\n          {/* Success Message */}\n          <motion.div\n            initial={{ scale: 0, rotate: -10 }}\n            animate={{ scale: 1, rotate: 0 }}\n            exit={{ scale: 0, rotate: 10 }}\n            transition={{ type: \"spring\", stiffness: 200, damping: 15 }}\n            className=\"bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl text-center max-w-sm mx-4\"\n          >\n            <motion.div\n              animate={{ \n                rotate: [0, 10, -10, 0],\n                scale: [1, 1.1, 1]\n              }}\n              transition={{ duration: 0.5, repeat: 2 }}\n              className=\"text-6xl mb-4\"\n            >\n              🎉\n            </motion.div>\n            <h2 className=\"text-2xl font-bold text-gray-900 mb-2\">{title}</h2>\n            <p className=\"text-gray-600\">{subtitle}</p>\n          </motion.div>\n        </motion.div>\n      )}\n    </AnimatePresence>\n  );\n};\n\n// Morphing Button Animation\nexport const MorphingButton: React.FC<{\n  children: React.ReactNode;\n  onClick?: () => void;\n  variant?: 'primary' | 'secondary' | 'success' | 'warning';\n  loading?: boolean;\n  disabled?: boolean;\n  className?: string;\n}> = ({ \n  children, \n  onClick, \n  variant = 'primary', \n  loading = false, \n  disabled = false,\n  className = ''\n}) => {\n  const [isPressed, setIsPressed] = useState(false);\n  const controls = useAnimation();\n\n  const variants = {\n    primary: 'from-emerald-500 to-green-600',\n    secondary: 'from-blue-500 to-cyan-600',\n    success: 'from-green-500 to-emerald-600',\n    warning: 'from-orange-500 to-red-500'\n  };\n\n  const handlePress = () => {\n    setIsPressed(true);\n    controls.start({\n      scale: [1, 0.95, 1.05, 1],\n      transition: { duration: 0.3 }\n    });\n    setTimeout(() => setIsPressed(false), 300);\n    onClick?.();\n  };\n\n  return (\n    <motion.button\n      animate={controls}\n      whileHover={{ scale: disabled ? 1 : 1.02 }}\n      whileTap={{ scale: disabled ? 1 : 0.98 }}\n      onClick={disabled ? undefined : handlePress}\n      disabled={disabled || loading}\n      className={`\n        relative overflow-hidden px-6 py-3 rounded-2xl font-semibold text-white\n        bg-gradient-to-r ${variants[variant]} shadow-lg transition-all duration-300\n        ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl'}\n        ${className}\n      `}\n    >\n      {/* Shimmer Effect */}\n      <motion.div\n        className=\"absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent\"\n        animate={{\n          x: loading ? [-200, 200] : [-200, -200]\n        }}\n        transition={{\n          duration: 1.5,\n          repeat: loading ? Infinity : 0,\n          ease: \"linear\"\n        }}\n      />\n\n      {/* Content */}\n      <div className=\"relative flex items-center justify-center space-x-2\">\n        {loading ? (\n          <motion.div\n            animate={{ rotate: 360 }}\n            transition={{ duration: 1, repeat: Infinity, ease: \"linear\" }}\n            className=\"w-5 h-5 border-2 border-white/30 border-t-white rounded-full\"\n          />\n        ) : (\n          children\n        )}\n      </div>\n\n      {/* Ripple Effect */}\n      <AnimatePresence>\n        {isPressed && (\n          <motion.div\n            initial={{ scale: 0, opacity: 0.5 }}\n            animate={{ scale: 4, opacity: 0 }}\n            exit={{ opacity: 0 }}\n            transition={{ duration: 0.5 }}\n            className=\"absolute inset-0 bg-white/20 rounded-full\"\n            style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}\n          />\n        )}\n      </AnimatePresence>\n    </motion.button>\n  );\n};\n\n// Liquid Progress Bar\nexport const LiquidProgress: React.FC<{\n  progress: number;\n  height?: number;\n  color?: string;\n  animated?: boolean;\n}> = ({ progress, height = 8, color = 'emerald', animated = true }) => {\n  return (\n    <div \n      className=\"relative bg-gray-200 rounded-full overflow-hidden\"\n      style={{ height }}\n    >\n      <motion.div\n        className={`absolute inset-y-0 left-0 bg-gradient-to-r from-${color}-400 to-${color}-600 rounded-full`}\n        initial={{ width: 0 }}\n        animate={{ width: `${progress}%` }}\n        transition={{ duration: animated ? 1.5 : 0, ease: \"easeOut\" }}\n      >\n        {/* Liquid Wave Effect */}\n        {animated && (\n          <motion.div\n            className=\"absolute inset-0 opacity-30\"\n            animate={{\n              backgroundPosition: ['0% 0%', '100% 0%']\n            }}\n            transition={{\n              duration: 2,\n              repeat: Infinity,\n              ease: \"linear\"\n            }}\n            style={{\n              background: `linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)`,\n              backgroundSize: '200% 100%'\n            }}\n          />\n        )}\n      </motion.div>\n    </div>\n  );\n};\n\n// Magnetic Card Effect\nexport const MagneticCard: React.FC<{\n  children: React.ReactNode;\n  className?: string;\n  intensity?: number;\n}> = ({ children, className = '', intensity = 0.1 }) => {\n  const x = useMotionValue(0);\n  const y = useMotionValue(0);\n  const rotateX = useTransform(y, [-100, 100], [30, -30]);\n  const rotateY = useTransform(x, [-100, 100], [-30, 30]);\n\n  const handleMouse = (event: React.MouseEvent) => {\n    const rect = event.currentTarget.getBoundingClientRect();\n    const centerX = rect.left + rect.width / 2;\n    const centerY = rect.top + rect.height / 2;\n    x.set((event.clientX - centerX) * intensity);\n    y.set((event.clientY - centerY) * intensity);\n  };\n\n  const handleMouseLeave = () => {\n    x.set(0);\n    y.set(0);\n  };\n\n  return (\n    <motion.div\n      className={`transform-gpu ${className}`}\n      style={{ rotateX, rotateY }}\n      onMouseMove={handleMouse}\n      onMouseLeave={handleMouseLeave}\n      whileHover={{ scale: 1.02 }}\n      transition={{ type: \"spring\", stiffness: 300, damping: 30 }}\n    >\n      {children}\n    </motion.div>\n  );\n};\n\n// Pulse Ring Animation\nexport const PulseRing: React.FC<{\n  size?: number;\n  color?: string;\n  intensity?: number;\n}> = ({ size = 100, color = 'emerald', intensity = 3 }) => {\n  return (\n    <div className=\"relative\" style={{ width: size, height: size }}>\n      {[...Array(intensity)].map((_, i) => (\n        <motion.div\n          key={i}\n          className={`absolute inset-0 border-2 border-${color}-400 rounded-full`}\n          animate={{\n            scale: [1, 2, 1],\n            opacity: [0.7, 0, 0.7],\n          }}\n          transition={{\n            duration: 2,\n            repeat: Infinity,\n            delay: i * 0.7,\n            ease: \"easeInOut\"\n          }}\n        />\n      ))}\n    </div>\n  );\n};\n\n// Typewriter Effect\nexport const TypewriterText: React.FC<{\n  text: string;\n  speed?: number;\n  className?: string;\n  onComplete?: () => void;\n}> = ({ text, speed = 50, className = '', onComplete }) => {\n  const [displayText, setDisplayText] = useState('');\n  const [currentIndex, setCurrentIndex] = useState(0);\n\n  useEffect(() => {\n    if (currentIndex < text.length) {\n      const timer = setTimeout(() => {\n        setDisplayText(prev => prev + text[currentIndex]);\n        setCurrentIndex(prev => prev + 1);\n      }, speed);\n      return () => clearTimeout(timer);\n    } else if (onComplete) {\n      onComplete();\n    }\n  }, [currentIndex, text, speed, onComplete]);\n\n  return (\n    <span className={className}>\n      {displayText}\n      <motion.span\n        animate={{ opacity: [1, 0] }}\n        transition={{ duration: 0.5, repeat: Infinity }}\n        className=\"inline-block w-0.5 h-5 bg-current ml-1\"\n      />\n    </span>\n  );\n};\n\n// Stagger Animation Container\nexport const StaggerContainer: React.FC<{\n  children: React.ReactNode;\n  staggerDelay?: number;\n  className?: string;\n}> = ({ children, staggerDelay = 0.1, className = '' }) => {\n  return (\n    <motion.div\n      className={className}\n      initial=\"hidden\"\n      animate=\"visible\"\n      variants={{\n        hidden: { opacity: 0 },\n        visible: {\n          opacity: 1,\n          transition: {\n            staggerChildren: staggerDelay\n          }\n        }\n      }}\n    >\n      {React.Children.map(children, (child, index) => (\n        <motion.div\n          variants={{\n            hidden: { opacity: 0, y: 20 },\n            visible: { opacity: 1, y: 0 }\n          }}\n        >\n          {child}\n        </motion.div>\n      ))}\n    </motion.div>\n  );\n};\n\n// Glitch Effect\nexport const GlitchText: React.FC<{\n  text: string;\n  className?: string;\n  trigger?: boolean;\n}> = ({ text, className = '', trigger = false }) => {\n  return (\n    <motion.div\n      className={`relative ${className}`}\n      animate={trigger ? {\n        x: [0, -2, 2, 0],\n        textShadow: [\n          '0 0 0 transparent',\n          '2px 0 0 #ff0000, -2px 0 0 #00ff00',\n          '0 0 0 transparent'\n        ]\n      } : {}}\n      transition={{ duration: 0.3, repeat: trigger ? 3 : 0 }}\n    >\n      {text}\n    </motion.div>\n  );\n};\n\nexport default {\n  FloatingParticles,\n  SuccessCelebration,\n  MorphingButton,\n  LiquidProgress,\n  MagneticCard,\n  PulseRing,\n  TypewriterText,\n  StaggerContainer,\n  GlitchText\n};
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {[...Array(count)].map((_, i) => (
+        <motion.div
+          key={i}
+          className={`absolute w-1 h-1 bg-${color}-400 rounded-full opacity-60`}
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            y: [0, -30, 0],
+            x: [0, Math.random() * 20 - 10, 0],
+            opacity: [0.6, 1, 0.6],
+            scale: [1, 1.5, 1],
+          }}
+          transition={{
+            duration: 3 + Math.random() * 2,
+            repeat: Infinity,
+            delay: Math.random() * 2,
+            ease: "easeInOut"
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// Success Celebration Animation
+export const SuccessCelebration: React.FC<{ 
+  show: boolean; 
+  onComplete?: () => void;
+  title?: string;
+  subtitle?: string;
+}> = ({ show, onComplete, title = "Success!", subtitle = "Great job!" }) => {
+  useEffect(() => {
+    if (show && onComplete) {
+      const timer = setTimeout(onComplete, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [show, onComplete]);
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+        >
+          <div className="absolute inset-0">
+            {[...Array(30)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-3 h-3 rounded-full"
+                style={{
+                  backgroundColor: ['#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'][i % 5],
+                  left: '50%',
+                  top: '50%',
+                }}
+                initial={{ scale: 0, x: 0, y: 0 }}
+                animate={{
+                  scale: [0, 1, 0],
+                  x: [0, (Math.random() - 0.5) * 400],
+                  y: [0, (Math.random() - 0.5) * 400],
+                  rotate: [0, 360 * (Math.random() > 0.5 ? 1 : -1)]
+                }}
+                transition={{
+                  duration: 2,
+                  delay: i * 0.05,
+                  ease: "easeOut"
+                }}
+              />
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ scale: 0, rotate: -10 }}
+            animate={{ scale: 1, rotate: 0 }}
+            exit={{ scale: 0, rotate: 10 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            className="bg-white/95 backdrop-blur-xl rounded-3xl p-8 shadow-2xl text-center max-w-sm mx-4"
+          >
+            <motion.div
+              animate={{ 
+                rotate: [0, 10, -10, 0],
+                scale: [1, 1.1, 1]
+              }}
+              transition={{ duration: 0.5, repeat: 2 }}
+              className="text-6xl mb-4"
+            >
+              🎉
+            </motion.div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{title}</h2>
+            <p className="text-gray-600">{subtitle}</p>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+// Morphing Button Animation
+export const MorphingButton: React.FC<{
+  children: React.ReactNode;
+  onClick?: () => void;
+  variant?: 'primary' | 'secondary' | 'success' | 'warning';
+  loading?: boolean;
+  disabled?: boolean;
+  className?: string;
+}> = ({ 
+  children, 
+  onClick, 
+  variant = 'primary', 
+  loading = false, 
+  disabled = false,
+  className = ''
+}) => {
+  const [isPressed, setIsPressed] = useState(false);
+  const controls = useAnimation();
+
+  const variants = {
+    primary: 'from-emerald-500 to-green-600',
+    secondary: 'from-blue-500 to-cyan-600',
+    success: 'from-green-500 to-emerald-600',
+    warning: 'from-orange-500 to-red-500'
+  };
+
+  const handlePress = () => {
+    setIsPressed(true);
+    controls.start({
+      scale: [1, 0.95, 1.05, 1],
+      transition: { duration: 0.3 }
+    });
+    setTimeout(() => setIsPressed(false), 300);
+    onClick?.();
+  };
+
+  return (
+    <motion.button
+      animate={controls}
+      whileHover={{ scale: disabled ? 1 : 1.02 }}
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
+      onClick={disabled ? undefined : handlePress}
+      disabled={disabled || loading}
+      className={`
+        relative overflow-hidden px-6 py-3 rounded-2xl font-semibold text-white
+        bg-gradient-to-r ${variants[variant]} shadow-lg transition-all duration-300
+        ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl'}
+        ${className}
+      `}
+    >
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+        animate={{
+          x: loading ? [-200, 200] : [-200, -200]
+        }}
+        transition={{
+          duration: 1.5,
+          repeat: loading ? Infinity : 0,
+          ease: "linear"
+        }}
+      />
+
+      <div className="relative flex items-center justify-center space-x-2">
+        {loading ? (
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+          />
+        ) : (
+          children
+        )}
+      </div>
+
+      <AnimatePresence>
+        {isPressed && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0.5 }}
+            animate={{ scale: 4, opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 bg-white/20 rounded-full"
+            style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
+          />
+        )}
+      </AnimatePresence>
+    </motion.button>
+  );
+};
+
+// Liquid Progress Bar
+export const LiquidProgress: React.FC<{
+  progress: number;
+  height?: number;
+  color?: string;
+  animated?: boolean;
+}> = ({ progress, height = 8, color = 'emerald', animated = true }) => {
+  return (
+    <div 
+      className="relative bg-gray-200 rounded-full overflow-hidden"
+      style={{ height }}
+    >
+      <motion.div
+        className={`absolute inset-y-0 left-0 bg-gradient-to-r from-${color}-400 to-${color}-600 rounded-full`}
+        initial={{ width: 0 }}
+        animate={{ width: `${progress}%` }}
+        transition={{ duration: animated ? 1.5 : 0, ease: "easeOut" }}
+      >
+        {animated && (
+          <motion.div
+            className="absolute inset-0 opacity-30"
+            animate={{
+              backgroundPosition: ['0% 0%', '100% 0%']
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+            style={{
+              background: `linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%)`,
+              backgroundSize: '200% 100%'
+            }}
+          />
+        )}
+      </motion.div>
+    </div>
+  );
+};
+
+// Magnetic Card Effect
+export const MagneticCard: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+  intensity?: number;
+}> = ({ children, className = '', intensity = 0.1 }) => {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useTransform(y, [-100, 100], [30, -30]);
+  const rotateY = useTransform(x, [-100, 100], [-30, 30]);
+
+  const handleMouse = (event: React.MouseEvent) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    x.set((event.clientX - centerX) * intensity);
+    y.set((event.clientY - centerY) * intensity);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      className={`transform-gpu ${className}`}
+      style={{ rotateX, rotateY }}
+      onMouseMove={handleMouse}
+      onMouseLeave={handleMouseLeave}
+      whileHover={{ scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+// Typewriter Effect
+export const TypewriterText: React.FC<{
+  text: string;
+  speed?: number;
+  className?: string;
+  onComplete?: () => void;
+}> = ({ text, speed = 50, className = '', onComplete }) => {
+  const [displayText, setDisplayText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timer = setTimeout(() => {
+        setDisplayText(prev => prev + text[currentIndex]);
+        setCurrentIndex(prev => prev + 1);
+      }, speed);
+      return () => clearTimeout(timer);
+    } else if (onComplete) {
+      onComplete();
+    }
+  }, [currentIndex, text, speed, onComplete]);
+
+  return (
+    <span className={className}>
+      {displayText}
+      <motion.span
+        animate={{ opacity: [1, 0] }}
+        transition={{ duration: 0.5, repeat: Infinity }}
+        className="inline-block w-0.5 h-5 bg-current ml-1"
+      />
+    </span>
+  );
+};
+
+export default {
+  FloatingParticles,
+  SuccessCelebration,
+  MorphingButton,
+  LiquidProgress,
+  MagneticCard,
+  TypewriterText
+};
