@@ -802,130 +802,186 @@ const MobileHomePage: React.FC = () => {
           </motion.div>
         </motion.section>
 
-        {/* Weather & Pro Upgrade */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="glass-morph p-4 rounded-2xl">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Weather Now</h3>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="text-4xl font-bold text-gray-900">{weatherData.temp}°</div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium">{weatherData.condition}</p>
-                  <p className="text-xs text-gray-500">Feels like {weatherData.temp + 2}°</p>
+        {/* Weather & Market Intelligence - Dual Power Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.4 }}
+          className="grid grid-cols-2 gap-4"
+        >
+          {/* Weather Oracle */}
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/weather')}
+            className="relative overflow-hidden bg-gradient-to-br from-blue-500/90 to-indigo-600/90 backdrop-blur-xl rounded-2xl p-4 text-white cursor-pointer"
+          >
+            <div className="absolute inset-0 bg-white/10" />
+            <div className="relative space-y-3">
+              <div className="flex items-center justify-between">
+                <Sun className="h-6 w-6" />
+                <span className="text-xs bg-white/20 px-2 py-1 rounded-full">Live</span>
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{weatherInsights.temp}°</p>
+                <p className="text-sm opacity-90">{weatherInsights.condition}</p>
+              </div>
+              <div className="text-xs opacity-80">
+                <p>💧 {weatherInsights.precipitation}% rain</p>
+                <p className="text-green-200 font-medium">{weatherInsights.farmingAdvice}</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Market Pulse */}
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/market')}
+            className="relative overflow-hidden bg-gradient-to-br from-emerald-500/90 to-green-600/90 backdrop-blur-xl rounded-2xl p-4 text-white cursor-pointer"
+          >
+            <div className="absolute inset-0 bg-white/10" />
+            <div className="relative space-y-3">
+              <div className="flex items-center justify-between">
+                <TrendingUp className="h-6 w-6" />
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-xs">Rising</span>
                 </div>
               </div>
-              <div className="text-right">
-                <CloudRain className="h-10 w-10 text-blue-500 mx-auto" />
-                <p className="text-xs mt-1">{weatherData.precipitation}% rain</p>
+              <div>
+                <p className="text-xl font-bold">$45/bag</p>
+                <p className="text-sm opacity-90">Maize prices</p>
               </div>
+              <p className="text-xs text-green-200 font-medium">+12% this week</p>
             </div>
-            <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between text-center">
-              <div>
-                <p className="text-xs text-gray-500">Humidity</p>
-                <p className="text-sm font-medium">{weatherData.humidity}%</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Wind</p>
-                <p className="text-sm font-medium">{weatherData.wind} km/h</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">UV</p>
-                <p className="text-sm font-medium">5.2</p>
-              </div>
-            </div>
-          </div>
-          
-          <ProSwipeBanner 
-            onUpgrade={() => navigate('/pro')}
-            className="h-full"
-          />
-        </section>
+          </motion.div>
+        </motion.section>
 
-        {/* AI Insights */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">AI Insights</h2>
-            <button className="text-sm text-blue-600 flex items-center">
-              See more <ChevronRight className="h-4 w-4" />
-            </button>
+        {/* AI Insights - Trust Builder */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.6 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
+              <Sparkles className="h-5 w-5 text-purple-500" />
+              <span>AI Insights</span>
+            </h2>
+            <div className="flex items-center space-x-2 text-xs text-gray-500">
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
+              <span>Processing</span>
+            </div>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
-            <FeatureCard
-              icon={<Zap className="h-5 w-5" />}
-              title="Pest Alert"
-              description="Low risk of pests in your area"
-              variant="success"
-              onClick={() => navigate('/alerts/pests')}
-            />
-            <FeatureCard
-              icon={<Droplet className="h-5 w-5" />}
-              title="Irrigation"
-              description="Watering recommended tomorrow"
-              variant="primary"
-              onClick={() => navigate('/irrigation')}
-            />
+            {[
+              { icon: Shield, title: 'Pest Risk', value: 'Low', color: 'emerald', desc: '3 days protected' },
+              { icon: Droplets, title: 'Irrigation', value: 'Perfect', color: 'blue', desc: 'Optimal moisture' },
+              { icon: Target, title: 'Yield Boost', value: '+15%', color: 'purple', desc: 'vs last season' },
+              { icon: Users, title: 'Community', value: 'Top 10%', color: 'orange', desc: 'in your region' }
+            ].map((insight, i) => (
+              <motion.div
+                key={insight.title}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 1.7 + i * 0.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-white/80 backdrop-blur-md rounded-xl p-3 border border-white/30"
+              >
+                <div className={`p-2 bg-${insight.color}-100 rounded-lg mb-2 w-fit`}>
+                  <insight.icon className={`h-4 w-4 text-${insight.color}-600`} />
+                </div>
+                <p className="font-bold text-gray-900">{insight.value}</p>
+                <p className="text-xs text-gray-600">{insight.title}</p>
+                <p className="text-xs text-gray-500 mt-1">{insight.desc}</p>
+              </motion.div>
+            ))}
           </div>
-        </section>
+        </motion.section>
       </main>
 
-      {/* FAB is now handled by ResponsiveLayout */}
-
-      {/* Chatbot Avatar - Positioned absolutely within the page */}
-      <div className="fixed bottom-24 right-4 z-40">
-        <ChatbotAvatar 
-          isOpen={showChatbot}
-          hasNewMessage={hasNewMessage}
+      {/* Enhanced ChatBot - Floating Genius */}
+      <motion.div
+        initial={{ scale: 0, rotate: -180 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ delay: 2, type: "spring" }}
+        className="fixed bottom-24 right-4 z-40"
+      >
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           onClick={toggleChatbot}
-          onClose={() => setShowChatbot(false)}
-        />
-      </div>
+          className="relative p-4 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full shadow-2xl"
+        >
+          <MessageCircleIcon className="h-6 w-6 text-white" />
+          {hasNewMessage && (
+            <motion.div
+              animate={{ scale: [1, 1.3, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+              className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center"
+            >
+              <span className="text-xs text-white font-bold">!</span>
+            </motion.div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-500 rounded-full animate-ping opacity-20" />
+        </motion.button>
+      </motion.div>
 
-
-
-      {/* Chatbot Panel */}
+      {/* Smart ChatBot Panel */}
       <AnimatePresence>
         {showChatbot && (
-          <motion.div 
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 100 }}
-            transition={{ type: 'spring', damping: 25 }}
-            className="fixed bottom-16 right-4 w-72 bg-white rounded-t-2xl shadow-xl z-50 overflow-hidden"
+          <motion.div
+            initial={{ opacity: 0, y: 100, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 100, scale: 0.9 }}
+            transition={{ type: "spring", damping: 25 }}
+            className="fixed bottom-16 right-4 w-80 bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl z-50 border border-white/30"
           >
-            <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 text-white">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-600 to-green-700 p-4 text-white rounded-t-3xl">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center">
-                    <MessageCircleIcon className="h-6 w-6" />
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <Sparkles className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">CropGenius AI</h3>
-                    <p className="text-xs opacity-80">Online</p>
+                    <h3 className="font-bold">CropGenius AI</h3>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-green-400 rounded-full" />
+                      <span className="text-xs opacity-90">Always here to help</span>
+                    </div>
                   </div>
                 </div>
-                <button 
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
                   onClick={() => setShowChatbot(false)}
                   className="p-1 rounded-full hover:bg-white/10"
                 >
                   <XIcon className="h-4 w-4" />
-                </button>
+                </motion.button>
               </div>
             </div>
-            <div className="p-4 h-64 overflow-y-auto">
-              <div className="text-center py-8 text-sm text-gray-500">
-                <p>Ask me anything about your farm, crops, or weather!</p>
-              </div>
-            </div>
-            <div className="border-t p-3 bg-gray-50">
-              <div className="flex items-center bg-white rounded-full px-3 py-2 shadow-sm border">
-                <input 
-                  type="text" 
-                  placeholder="Type a message..." 
-                  className="flex-1 border-0 focus:ring-0 text-sm"
-                />
-                <button className="text-green-600 hover:text-green-700">
-                  <ArrowUpRight className="h-5 w-5" />
-                </button>
+
+            {/* Quick Actions */}
+            <div className="p-4 space-y-3">
+              <p className="text-sm text-gray-600 text-center">What can I help you with?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { icon: '🔬', text: 'Disease scan', action: () => navigate('/scan') },
+                  { icon: '🌦️', text: 'Weather tips', action: () => navigate('/weather') },
+                  { icon: '💰', text: 'Market prices', action: () => navigate('/market') },
+                  { icon: '📈', text: 'Yield tips', action: () => navigate('/insights') }
+                ].map((item, i) => (
+                  <motion.button
+                    key={item.text}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={item.action}
+                    className="p-3 bg-gray-50 rounded-xl text-center space-y-1"
+                  >
+                    <div className="text-lg">{item.icon}</div>
+                    <p className="text-xs font-medium text-gray-700">{item.text}</p>
+                  </motion.button>
+                ))}
               </div>
             </div>
           </motion.div>
