@@ -2,22 +2,42 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 serve(async (req) => {
-  const { userId, amount, description } = await req.json();
+  const { amount, description } = await req.json();
 
-  if (!userId || !amount || amount <= 0) {
-    return new Response(JSON.stringify({ error: 'User ID and a positive amount are required.' }), {
+  if (!amount || amount <= 0) {
+    return new Response(JSON.stringify({ error: 'A positive amount is required.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
-  const supabaseAdmin = createClient(
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(JSON.stringify({ error: 'Missing authorization header.' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: authHeader } } }
   );
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return new Response(JSON.stringify({ error: 'Invalid token.' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  const userId = user.id;
+
+  
+
   try {
-    const { error } = await supabaseAdmin.rpc('restore_user_credits', {
+    const { error } = await supabase.rpc('restore_user_credits', {
       p_user_id: userId,
       p_amount: amount,
       p_description: description,
@@ -37,4 +57,4 @@ serve(async (req) => {
       headers: { 'Content-Type': 'application/json' },
     });
   }
-}); 
+});

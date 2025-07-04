@@ -174,7 +174,6 @@ export function useServiceWorker(config: ServiceWorkerConfig = {}): ServiceWorke
     }
 
     if (process.env.NODE_ENV !== 'production') {
-      console.log('[useServiceWorker] Skipping registration in development mode');
       return;
     }
 
@@ -275,18 +274,24 @@ export function useServiceWorker(config: ServiceWorkerConfig = {}): ServiceWorke
 /**
  * Custom hook to show a toast notification when an update is available
  */
-export function useServiceWorkerUpdateNotification() {
+export function useServiceWorkerNotification() {
   const { updateAvailable, applyUpdate } = useServiceWorker();
-  
+  const [showNotification, setShowNotification] = useState(updateAvailable);
+
   useEffect(() => {
-    if (updateAvailable) {
-      // You can integrate with your notification system here
-      const shouldUpdate = window.confirm('A new version is available. Would you like to update now?');
-      if (shouldUpdate) {
-        applyUpdate().catch(console.error);
-      }
-    }
-  }, [updateAvailable, applyUpdate]);
-  
-  return null;
+    setShowNotification(updateAvailable);
+  }, [updateAvailable]);
+
+  const handleUpdate = () => {
+    applyUpdate().catch(err => console.error('Failed to apply update', err));
+    setShowNotification(false);
+  };
+
+  const dismissNotification = () => {
+    setShowNotification(false);
+  };
+
+  return { showNotification, handleUpdate, dismissNotification };
 }
+
+export { isServiceWorkerSupported };

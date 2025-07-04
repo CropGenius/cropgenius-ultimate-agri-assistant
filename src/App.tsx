@@ -97,7 +97,7 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <UserMetaProvider>
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <TooltipProvider>
               <div className="min-h-screen bg-background text-foreground flex flex-col">
                 <AppRoutes />

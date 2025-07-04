@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Session, User, AuthError } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabaseClient';
 import { AppError, ErrorCode, reportError, reportWarning } from '@/lib/errors';
 import { networkManager } from '@/lib/network';
@@ -16,21 +16,14 @@ export interface UserProfile {
 }
 
 export interface AuthState {
-  // Core auth state
   user: User | null;
   session: Session | null;
   profile: UserProfile | null;
-  
-  // Loading states
   isLoading: boolean;
   isLoadingProfile: boolean;
   isRefreshing: boolean;
-  
-  // Error states
   error: AppError | null;
   profileError: AppError | null;
-  
-  // Feature flags
   isAuthenticated: boolean;
   isOnboardingComplete: boolean;
   hasProfile: boolean;
@@ -48,8 +41,6 @@ export interface AuthActions {
 }
 
 const PROFILE_CACHE_KEY = 'auth_profile_cache';
-const SESSION_RETRY_DELAY = 1000;
-const MAX_SESSION_RETRIES = 3;
 
 export const useAuth = (): AuthState & AuthActions => {
   const [state, setState] = useState<AuthState>({
@@ -66,14 +57,12 @@ export const useAuth = (): AuthState & AuthActions => {
     hasProfile: false,
   });
 
-  // Memoized computed values for performance
   const derivedState = useMemo(() => ({
-    isAuthenticated: !!state.user,
+    isAuthenticated: !!state.session,
     isOnboardingComplete: state.profile?.onboarding_completed ?? false,
     hasProfile: !!state.profile,
-  }), [state.user, state.profile]);
+  }), [state.session, state.profile]);
 
-  // Cache profile data for offline access
   const cacheProfile = useCallback((profile: UserProfile | null) => {
     try {
       if (profile) {
@@ -86,7 +75,6 @@ export const useAuth = (): AuthState & AuthActions => {
     }
   }, []);
 
-  // Load cached profile data
   const loadCachedProfile = useCallback((): UserProfile | null => {
     try {
       const cached = localStorage.getItem(PROFILE_CACHE_KEY);
@@ -97,425 +85,181 @@ export const useAuth = (): AuthState & AuthActions => {
     }
   }, []);
 
-  // Fetch user profile with retry logic
   const fetchProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     try {
       const operation = async () => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
         if (error) {
-          if (error.code === 'PGRST116') {
-            // No profile found - this is expected for new users
-            return null;
-          }
+          if (error.code === 'PGRST116') return null; // Not an error, just no profile
           throw error;
         }
-
         return data as UserProfile;
       };
-
-      return await networkManager.executeWithRetry(operation, {
-        retries: 3,
-        priority: 'high',
-        offlineQueue: true,
-      });
+      return await networkManager.executeWithRetry(operation);
     } catch (error) {
-      const appError = new AppError(
-        ErrorCode.UNKNOWN_ERROR,
-        'Failed to fetch user profile',
-        'Unable to load your profile. Some features may be limited.',
-        { userId, error },
-        true
-      );
-      
-      setState(prev => ({ ...prev, profileError: appError }));
+      const appError = AppError.fromError(error as Error, ErrorCode.NETWORK_FAILED);
+      setState((prevState: AuthState) => ({ ...prevState, profileError: appError }));
       reportError(appError);
-      
-      // Return cached profile as fallback
       return loadCachedProfile();
     }
   }, [loadCachedProfile]);
 
-  // Initialize auth state and set up listeners
   useEffect(() => {
-    let mounted = true;
-    let retryCount = 0;
+    let isMounted = true;
 
-    const initializeAuth = async () => {
-      try {
-        // Load cached profile immediately for faster startup
-        const cachedProfile = loadCachedProfile();
-        if (cachedProfile) {
-          setState(prev => ({ ...prev, profile: cachedProfile }));
-        }
+    // Immediately set loading state
+    setState(prev => ({ ...prev, isLoading: true }));
 
-        // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          throw new AppError(
-            ErrorCode.AUTH_SESSION_EXPIRED,
-            error.message,
-            'Your session has expired. Please log in again.',
-            { error }
-          );
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
 
-        if (mounted) {
-          setState(prev => ({
-            ...prev,
-            session,
-            user: session?.user || null,
-            isLoading: false,
-            error: null,
-          }));
+      // Update session and user state
+      setState(prev => ({ ...prev, session, user: session?.user || null, error: null, isLoading: false }));
 
-          // Fetch fresh profile if user is authenticated
-          if (session?.user) {
-            setState(prev => ({ ...prev, isLoadingProfile: true }));
-            const profile = await fetchProfile(session.user.id);
-            
-            if (mounted && profile) {
-              setState(prev => ({ ...prev, profile, isLoadingProfile: false }));
-              cacheProfile(profile);
-            } else if (mounted) {
-              setState(prev => ({ ...prev, isLoadingProfile: false }));
+      // Handle different auth events
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+        if (session?.user) {
+          setState(prev => ({ ...prev, isLoadingProfile: true }));
+          const profile = await fetchProfile(session.user.id);
+          if (isMounted) {
+            setState(prev => ({ ...prev, profile, isLoadingProfile: false }));
+            cacheProfile(profile);
+            if (event === 'SIGNED_IN') {
+              toast.success(`Welcome back, ${profile?.full_name || session.user.email}!`);
             }
           }
         }
-      } catch (error) {
-        if (mounted) {
-          const appError = error instanceof AppError 
-            ? error 
-            : AppError.fromError(error as Error, ErrorCode.AUTH_SESSION_EXPIRED);
-          
-          setState(prev => ({ 
-            ...prev, 
-            error: appError, 
-            isLoading: false,
-            isLoadingProfile: false,
-          }));
-          
-          reportError(appError);
-
-          // Retry with exponential backoff
-          if (retryCount < MAX_SESSION_RETRIES) {
-            retryCount++;
-            setTimeout(() => {
-              if (mounted) {
-                initializeAuth();
-              }
-            }, SESSION_RETRY_DELAY * Math.pow(2, retryCount));
-          }
+      } else if (event === 'SIGNED_OUT') {
+        setState(prev => ({ ...prev, profile: null, error: null, profileError: null }));
+        cacheProfile(null);
+        toast.info('You have been signed out.');
+      } else if (event === 'USER_UPDATED' && session?.user) {
+        const profile = await fetchProfile(session.user.id);
+        if (isMounted) {
+          setState(prev => ({ ...prev, profile }));
+          cacheProfile(profile);
         }
+      } else if (event === 'PASSWORD_RECOVERY') {
+        toast.info('Password recovery email sent.');
+      } else if (event === 'TOKEN_REFRESHED') {
+        // Session has been refreshed.
+        // You might want to re-fetch user-specific data here if needed.
       }
-    };
-
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-
-        reportWarning(`Auth event: ${event}`, { userId: session?.user?.id });
-
-        setState(prev => ({
-          ...prev,
-          session,
-          user: session?.user || null,
-          error: null,
-        }));
-
-        switch (event) {
-          case 'SIGNED_IN':
-            if (session?.user) {
-              setState(prev => ({ ...prev, isLoadingProfile: true }));
-              const profile = await fetchProfile(session.user.id);
-              
-              if (mounted) {
-                setState(prev => ({ ...prev, profile, isLoadingProfile: false }));
-                cacheProfile(profile);
-                toast.success(`Welcome back, ${profile?.full_name || session.user.email}!`);
-              }
-            }
-            break;
-
-          case 'SIGNED_OUT':
-            if (mounted) {
-              setState(prev => ({
-                ...prev,
-                profile: null,
-                error: null,
-                profileError: null,
-              }));
-              cacheProfile(null);
-              toast.info('You have been signed out');
-            }
-            break;
-
-          case 'TOKEN_REFRESHED':
-            // Session is automatically updated, no additional action needed
-            break;
-
-          case 'USER_UPDATED':
-            // Refresh profile data
-            if (session?.user && mounted) {
-              const profile = await fetchProfile(session.user.id);
-              if (mounted && profile) {
-                setState(prev => ({ ...prev, profile }));
-                cacheProfile(profile);
-              }
-            }
-            break;
-        }
-      }
-    );
-
-    initializeAuth();
+    });
 
     return () => {
-      mounted = false;
-      subscription.unsubscribe();
+      isMounted = false;
+      subscription?.unsubscribe();
     };
-  }, [fetchProfile, cacheProfile, loadCachedProfile]);
+  }, [fetchProfile, cacheProfile]);
 
-  // Auth actions
-  const signIn = useCallback(async (email: string, password: string): Promise<void> => {
+  const signIn = useCallback(async (email: string, password: string) => {
+    setState((prevState: AuthState) => ({ ...prevState, isLoading: true, error: null }));
     try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
-
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-
-      if (error) {
-        let code = ErrorCode.AUTH_INVALID_CREDENTIALS;
-        if (error.message.includes('not confirmed')) {
-          code = ErrorCode.AUTH_USER_NOT_FOUND;
-        }
-        
-        throw new AppError(
-          code,
-          error.message,
-          'Failed to sign in. Please check your credentials.',
-          { email: email.trim().toLowerCase() }
-        );
-      }
-
-      // Success is handled by the auth state change listener
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
     } catch (error) {
-      const appError = error instanceof AppError 
-        ? error 
-        : AppError.fromError(error as Error, ErrorCode.AUTH_INVALID_CREDENTIALS);
-      
-      setState(prev => ({ ...prev, error: appError, isLoading: false }));
+      const appError = AppError.fromError(error as Error, ErrorCode.AUTH_INVALID_CREDENTIALS);
+      setState((prevState: AuthState) => ({ ...prevState, error: appError, isLoading: false }));
       reportError(appError);
-      throw appError;
+      toast.error(appError.userMessage);
     }
   }, []);
 
-  const signUp = useCallback(async (
-    email: string, 
-    password: string, 
-    metadata?: Record<string, any>
-  ): Promise<void> => {
+  const signUp = useCallback(async (email: string, password: string, metadata?: Record<string, any>) => {
+    setState((prevState: AuthState) => ({ ...prevState, isLoading: true, error: null }));
     try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
-
-      const { error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: {
-          data: metadata || {},
-        },
-      });
-
-      if (error) {
-        throw new AppError(
-          ErrorCode.AUTH_INVALID_CREDENTIALS,
-          error.message,
-          'Failed to create account. Please try again.',
-          { email: email.trim().toLowerCase() }
-        );
-      }
-
-      toast.success('Account created! Please check your email to verify your account.');
+      const { error } = await supabase.auth.signUp({ email, password, options: { data: metadata } });
+      if (error) throw error;
+      toast.success('Account created!', { description: 'Please check your email to verify.' });
     } catch (error) {
-      const appError = error instanceof AppError 
-        ? error 
-        : AppError.fromError(error as Error, ErrorCode.AUTH_INVALID_CREDENTIALS);
-      
-      setState(prev => ({ ...prev, error: appError, isLoading: false }));
+      const appError = AppError.fromError(error as Error, ErrorCode.AUTH_INVALID_CREDENTIALS);
+      setState((prevState: AuthState) => ({ ...prevState, error: appError, isLoading: false }));
       reportError(appError);
-      throw appError;
+      toast.error(appError.userMessage);
     }
   }, []);
 
-  const signOut = useCallback(async (): Promise<void> => {
+  const signOut = useCallback(async () => {
+    setState((prevState: AuthState) => ({ ...prevState, isRefreshing: true }));
     try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
-      
       const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        throw new AppError(
-          ErrorCode.AUTH_SESSION_EXPIRED,
-          error.message,
-          'Failed to sign out. Please try again.',
-          { error }
-        );
-      }
-
-      // Success is handled by the auth state change listener
+      if (error) throw error;
     } catch (error) {
-      const appError = error instanceof AppError 
-        ? error 
-        : AppError.fromError(error as Error, ErrorCode.AUTH_SESSION_EXPIRED);
-      
-      setState(prev => ({ ...prev, error: appError, isLoading: false }));
+      const appError = AppError.fromError(error as Error, ErrorCode.NETWORK_FAILED);
+      setState((prevState: AuthState) => ({ ...prevState, error: appError, isRefreshing: false }));
       reportError(appError);
-      throw appError;
-    }
-  }, []);
-
-  const refreshSession = useCallback(async (): Promise<void> => {
-    try {
-      setState(prev => ({ ...prev, isRefreshing: true, error: null }));
-      
-      const { error } = await supabase.auth.refreshSession();
-      
-      if (error) {
-        throw new AppError(
-          ErrorCode.AUTH_SESSION_EXPIRED,
-          error.message,
-          'Failed to refresh session. Please log in again.',
-          { error }
-        );
-      }
-    } catch (error) {
-      const appError = error instanceof AppError 
-        ? error 
-        : AppError.fromError(error as Error, ErrorCode.AUTH_SESSION_EXPIRED);
-      
-      setState(prev => ({ ...prev, error: appError }));
-      reportError(appError);
-      throw appError;
+      toast.error(appError.userMessage);
     } finally {
-      setState(prev => ({ ...prev, isRefreshing: false }));
+      setState((prevState: AuthState) => ({ ...prevState, isRefreshing: false }));
     }
   }, []);
 
-  const refreshProfile = useCallback(async (): Promise<void> => {
-    if (!state.user) return;
-
+  const refreshSession = useCallback(async () => {
+    setState((prevState: AuthState) => ({ ...prevState, isRefreshing: true }));
     try {
-      setState(prev => ({ ...prev, isLoadingProfile: true, profileError: null }));
-      
-      const profile = await fetchProfile(state.user.id);
-      
-      setState(prev => ({ ...prev, profile, isLoadingProfile: false }));
-      cacheProfile(profile);
+      const { error } = await supabase.auth.refreshSession();
+      if (error) throw error;
     } catch (error) {
-      setState(prev => ({ ...prev, isLoadingProfile: false }));
-      // Error is already handled in fetchProfile
+      const appError = AppError.fromError(error as Error, ErrorCode.AUTH_SESSION_EXPIRED);
+      setState((prevState: AuthState) => ({ ...prevState, error: appError }));
+      reportError(appError);
+      await signOut();
+    } finally {
+      setState((prevState: AuthState) => ({ ...prevState, isRefreshing: false }));
     }
+  }, [signOut]);
+
+  const refreshProfile = useCallback(async () => {
+    if (!state.user) return;
+    setState((prevState: AuthState) => ({ ...prevState, isLoadingProfile: true }));
+    const profile = await fetchProfile(state.user.id);
+    setState((prevState: AuthState) => ({ ...prevState, profile, isLoadingProfile: false }));
+    cacheProfile(profile);
   }, [state.user, fetchProfile, cacheProfile]);
 
-  const updateProfile = useCallback(async (updates: Partial<UserProfile>): Promise<void> => {
-    if (!state.user) {
-      throw new AppError(
-        ErrorCode.AUTH_USER_NOT_FOUND,
-        'User not authenticated',
-        'Please log in to update your profile.'
-      );
-    }
-
+  const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
+    if (!state.user) return;
+    setState((prevState: AuthState) => ({ ...prevState, isLoadingProfile: true }));
     try {
-      setState(prev => ({ ...prev, isLoadingProfile: true, profileError: null }));
-
       const operation = async () => {
         const { data, error } = await supabase
           .from('profiles')
-          .update({
-            ...updates,
-            updated_at: new Date().toISOString(),
-          })
+          .update({ ...updates, updated_at: new Date().toISOString() })
           .eq('id', state.user!.id)
           .select()
           .single();
-
         if (error) throw error;
         return data as UserProfile;
       };
-
-      const updatedProfile = await networkManager.executeWithRetry(operation, {
-        retries: 3,
-        priority: 'high',
-        offlineQueue: true,
-      });
-
-      setState(prev => ({ 
-        ...prev, 
-        profile: updatedProfile, 
-        isLoadingProfile: false 
-      }));
+      const updatedProfile = await networkManager.executeWithRetry(operation);
+      setState((prevState: AuthState) => ({ ...prevState, profile: updatedProfile, isLoadingProfile: false }));
       cacheProfile(updatedProfile);
-      
-      toast.success('Profile updated successfully!');
+      toast.success('Profile updated!');
     } catch (error) {
-      const appError = new AppError(
-        ErrorCode.UNKNOWN_ERROR,
-        'Failed to update profile',
-        'Your profile changes could not be saved. Please try again.',
-        { updates, error },
-        true
-      );
-      
-      setState(prev => ({ 
-        ...prev, 
-        profileError: appError, 
-        isLoadingProfile: false 
-      }));
+      const appError = AppError.fromError(error as Error, ErrorCode.NETWORK_FAILED);
+      setState((prevState: AuthState) => ({ ...prevState, profileError: appError, isLoadingProfile: false }));
       reportError(appError);
-      throw appError;
+      toast.error(appError.userMessage);
     }
   }, [state.user, cacheProfile]);
 
-  const resetPassword = useCallback(async (email: string): Promise<void> => {
+  const resetPassword = useCallback(async (email: string) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        email.trim().toLowerCase(),
-        {
-          redirectTo: `${window.location.origin}/auth/reset-password`,
-        }
-      );
-
-      if (error) {
-        throw new AppError(
-          ErrorCode.AUTH_INVALID_CREDENTIALS,
-          error.message,
-          'Failed to send reset email. Please check your email address.',
-          { email: email.trim().toLowerCase() }
-        );
-      }
-
-      toast.success('Password reset email sent! Please check your inbox.');
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+      if (error) throw error;
+      toast.success('Password reset email sent.');
     } catch (error) {
-      const appError = error instanceof AppError 
-        ? error 
-        : AppError.fromError(error as Error, ErrorCode.AUTH_INVALID_CREDENTIALS);
-      
+      const appError = AppError.fromError(error as Error, ErrorCode.AUTH_INVALID_CREDENTIALS);
       reportError(appError);
-      throw appError;
+      toast.error(appError.userMessage);
     }
   }, []);
 
   const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null, profileError: null }));
+    setState((prevState: AuthState) => ({ ...prevState, error: null, profileError: null }));
   }, []);
 
   return {

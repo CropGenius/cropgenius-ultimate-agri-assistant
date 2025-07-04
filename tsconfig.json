@@ -10,18 +10,24 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "strict": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noImplicitAny": false,
-    "noFallthroughCasesInSwitch": false,
+    "jsxImportSource": "react",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitAny": true,
+    "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["node", "jest", "@testing-library/jest-dom"]
+    "types": ["vitest", "node", "react"],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true
   },
-  "include": ["src"],
+  "include": ["src", "vitest.config.ts", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"],
   "references": [
     { "path": "./tsconfig.node.json" }
   ]

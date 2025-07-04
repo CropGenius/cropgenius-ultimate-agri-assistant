@@ -4,7 +4,7 @@ import { OnboardingNavigation } from '../OnboardingNavigation';
 import { OnboardingProvider } from '../context/OnboardingContext';
 
 // Mock the useForm hook
-jest.mock('react-hook-form', () => ({
+vi.mock('react-hook-form', () => ({
   useForm: () => ({
     handleSubmit: (fn: any) => fn,
     formState: { errors: {} },
@@ -12,8 +12,8 @@ jest.mock('react-hook-form', () => ({
 }));
 
 // Mock the useOnboarding hook
-const mockGoToStep = jest.fn();
-const mockSubmitStep = jest.fn();
+const mockGoToStep = vi.fn();
+const mockSubmitStep = vi.fn();
 
 jest.mock('../../hooks/useOnboarding', () => ({
   useOnboarding: () => ({
@@ -28,13 +28,13 @@ jest.mock('../../hooks/useOnboarding', () => ({
 // Test component that wraps the OnboardingNavigation with the provider
 const TestComponent = () => (
   <OnboardingProvider>
-    <OnboardingNavigation onNext={jest.fn()} onBack={jest.fn()} />
+    <OnboardingNavigation onNext={vi.fn()} onBack={vi.fn()} />
   </OnboardingProvider>
 );
 
 describe('OnboardingNavigation', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders the navigation buttons correctly', () => {
@@ -45,10 +45,10 @@ describe('OnboardingNavigation', () => {
   });
 
   it('calls onBack when the back button is clicked', () => {
-    const onBack = jest.fn();
+    const onBack = vi.fn();
     render(
       <OnboardingProvider>
-        <OnboardingNavigation onNext={jest.fn()} onBack={onBack} />
+        <OnboardingNavigation onNext={vi.fn()} onBack={onBack} />
       </OnboardingProvider>
     );
     
@@ -57,10 +57,10 @@ describe('OnboardingNavigation', () => {
   });
 
   it('calls onNext when the next button is clicked', () => {
-    const onNext = jest.fn();
+    const onNext = vi.fn();
     render(
       <OnboardingProvider>
-        <OnboardingNavigation onNext={onNext} onBack={jest.fn()} />
+        <OnboardingNavigation onNext={onNext} onBack={vi.fn()} />
       </OnboardingProvider>
     );
     
@@ -70,7 +70,7 @@ describe('OnboardingNavigation', () => {
 
   it('shows submit button on the last step', () => {
     // Mock the useOnboarding hook to return the last step
-    jest.mock('../../hooks/useOnboarding', () => ({
+    vi.mock('../../hooks/useOnboarding', () => ({
       useOnboarding: () => ({
         currentStep: 4, // Last step (0-based index)
         totalSteps: 5,
@@ -96,7 +96,7 @@ describe('OnboardingNavigation', () => {
 
   it('shows loading state when submitting', () => {
     // Mock the useOnboarding hook to return isSubmitting as true
-    jest.mock('../../hooks/useOnboarding', () => ({
+    vi.mock('../../hooks/useOnboarding', () => ({
       useOnboarding: () => ({
         currentStep: 4, // Last step
         totalSteps: 5,
@@ -123,7 +123,7 @@ describe('OnboardingNavigation', () => {
 
   it('hides the back button on the first step', () => {
     // Mock the useOnboarding hook to return the first step
-    jest.mock('../../hooks/useOnboarding', () => ({
+    vi.mock('../../hooks/useOnboarding', () => ({
       useOnboarding: () => ({
         currentStep: 0, // First step
         totalSteps: 5,

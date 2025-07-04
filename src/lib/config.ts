@@ -11,7 +11,7 @@ interface Environment {
 const DEFAULTS = {
   VITE_SUPABASE_URL: 'https://bapqlyvfwxsichlyjxpd.supabase.co',
   // Public anon key – safe to expose client-side. Replace with your own if needed.
-  VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo-anon-key',
+  VITE_SUPABASE_ANON_KEY: undefined,
   // Public demo Mapbox token – replace with your own for production maps.
   VITE_MAPBOX_ACCESS_TOKEN: 'pk.eyJ1IjoidGVzdCIsImEiOiJjanR1eHZqc2owMGpxMnhxYjRlYzFscjRmIn0.demo-token'
 };
@@ -35,8 +35,8 @@ export const APP_CONFIG = {
   version: '2.0.0',
   api: {
     supabase: {
-      url: config.VITE_SUPABASE_URL,
-      anonKey: config.VITE_SUPABASE_ANON_KEY,
+      url: 'https://bapqlyvfwxsichlyjxpd.supabase.co',
+      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g',
     },
     mapbox: {
       accessToken: config.VITE_MAPBOX_ACCESS_TOKEN,

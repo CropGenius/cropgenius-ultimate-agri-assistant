@@ -1,64 +1,67 @@
 #!/usr/bin/env tsx
 /**
  * Database migration runner for CropGenius
- * 
+ *
  * This script handles:
- * 1. Connecting to the Supabase database
- * 2. Running pending migrations
+ * 1. Connecting to the Supabase database directly
+ * 2. Running a single, monolithic migration file within a transaction
  * 3. Seeding initial data
  */
 
 import { execSync } from 'child_process';
 import { join } from 'path';
 import { config as dotenv } from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
-import { fileURLToPath } from 'url';
 import { readFileSync, readdirSync } from 'fs';
+import postgres from 'postgres';
 
 // Load environment variables
 dotenv({ path: join(process.cwd(), '.env.local') });
+dotenv({ path: join(process.cwd(), '.env') });
 
-// Initialize Supabase client
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+// Construct the database connection string
+const projectRef = process.env.VITE_SUPABASE_URL?.split('.')[0].replace('https://', '');
+const dbPassword = 'umIz3tmInjcX9JgM';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
+if (!projectRef || !dbPassword) {
+  console.error('Missing Supabase project reference or database password.');
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const dbUrl = `postgres://postgres:${dbPassword}@db.${projectRef}.supabase.co:5432/postgres`;
+
+// Initialize Postgres client
+const sql = postgres(dbUrl, {
+  onnotice: () => {}, // Suppress notices
+});
 
 // Run migrations
 const runMigrations = async () => {
   console.log('Running database migrations...');
   
   try {
-    // Get list of migration files
     const migrationsDir = join(process.cwd(), 'supabase', 'migrations');
-    const migrationFiles = readdirSync(migrationsDir)
-      .filter(file => file.endsWith('.sql'))
-      .sort();
+    const monolithicMigrationFile = '20250629_monolithic_migration.sql';
+    const migrationPath = join(migrationsDir, monolithicMigrationFile);
+
+    console.log(`\nRunning monolithic migration: ${monolithicMigrationFile}`);
+    let migration = readFileSync(migrationPath, 'utf8');
+
+    // Remove BEGIN; and COMMIT; from the migration file
+    migration = migration.replace(/^\s*BEGIN;?/gmi, '').replace(/^\s*COMMIT;?/gmi, '');
     
-    console.log(`Found ${migrationFiles.length} migration(s) to run`);
-    
-    // Run each migration
-    for (const file of migrationFiles) {
-      console.log(`\nRunning migration: ${file}`);
-      const migration = readFileSync(join(migrationsDir, file), 'utf8');
-      
-      // Execute the migration
-      const { error } = await supabase.rpc('pgmigrate', {
-        query: migration
-      });
-      
-      if (error) {
-        console.error(`Error running migration ${file}:`, error);
-        throw error;
-      }
-      
-      console.log(`✅ Successfully ran migration: ${file}`);
+    // Remove everything after the "End the transaction" comment
+    const endTransactionComment = '-- End the transaction';
+    const endIndex = migration.indexOf(endTransactionComment);
+    if (endIndex !== -1) {
+        migration = migration.substring(0, endIndex + endTransactionComment.length);
     }
+    
+    // Execute the migration within a transaction managed by the 'postgres' library
+    await sql.begin(async (sql) => {
+        await sql.unsafe(migration);
+    });
+    
+    console.log(`✅ Successfully ran monolithic migration: ${monolithicMigrationFile}`);
     
     console.log('\n✅ All migrations completed successfully!');
     return true;
@@ -90,6 +93,7 @@ const main = async () => {
     console.error('Error during database setup:', error);
     process.exit(1);
   } finally {
+    await sql.end();
     process.exit(0);
   }
 };

@@ -2,12 +2,20 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { onboardingService } from '@/services/onboardingService';
-import { OnboardingData, OnboardingError } from '@/types/onboarding';
+import { OnboardingData, OnboardingResponse } from '@/types/onboarding';
+import { useAuth } from '@/context/AuthContext';
+
+interface OnboardingError {
+  message: string;
+  code?: string;
+  details?: string;
+}
 
 export const useOnboarding = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<OnboardingError | null>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const completeOnboarding = useCallback(async (data: OnboardingData) => {
     setIsLoading(true);
@@ -23,7 +31,11 @@ export const useOnboarding = () => {
         return true;
       }
       
-      throw { message: 'Failed to complete onboarding' };
+      throw {
+        message: 'Failed to complete onboarding',
+        code: 'ONBOARDING_FAILED',
+        details: 'The server indicated that onboarding was not successful'
+      } as OnboardingError;
     } catch (err) {
       console.error('Onboarding error:', err);
       

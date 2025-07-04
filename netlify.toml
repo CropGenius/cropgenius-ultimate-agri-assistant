@@ -8,11 +8,9 @@
   status = 200
 
 [[headers]]
-  # Cache and allow CDN push for versioned assets
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
-    Link = "</assets/main.js>; rel=preload; as=script"
 
 [build.environment]
   NODE_VERSION = "20"

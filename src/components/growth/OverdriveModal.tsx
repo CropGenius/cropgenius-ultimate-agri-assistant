@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useGrowthEngine } from '@/providers/GrowthEngineProvider';
 import { useAuthContext } from '@/providers/AuthProvider';
@@ -23,10 +23,10 @@ export default function OverdriveModal({ onClose }: { onClose: () => void }) {
             <Clock3 className="h-4 w-4" /> AI Overdrive Mode
           </DialogTitle>
         </DialogHeader>
-        <p className="mb-4">
+        <DialogDescription className="mb-4">
           2x faster insights, priority queue access, rainfall predictor unlocked — 10 credits only.
           Offer ends in 24h.
-        </p>
+        </DialogDescription>
         <DialogFooter>
           <Button className="w-full" onClick={handleActivate}>Activate Now</Button>
         </DialogFooter>

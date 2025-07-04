@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useUpdateNotification } from '../hooks/useServiceWorker';
+import { useServiceWorkerNotification as useUpdateNotification, isServiceWorkerSupported } from '../hooks/useServiceWorker';
 
 const UpdateNotification = () => {
+  if (!isServiceWorkerSupported()) {
+    return null;
+  }
   const { showNotification, handleUpdate, dismissNotification } = useUpdateNotification();
   const [isVisible, setIsVisible] = useState(false);
   const [isExiting, setIsExiting] = useState(false);

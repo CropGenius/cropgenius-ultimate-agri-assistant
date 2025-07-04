@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { OnboardingData, OnboardingResponse, OnboardingError } from '@/types/onboarding';
+import { OnboardingData, OnboardingResponse } from '@/types/onboarding';
 
 /**
  * Validates the onboarding data before submission
@@ -60,6 +60,7 @@ const normalizeDate = (date: Date | string | null | undefined, fallback: Date): 
 };
 
 export const completeOnboarding = async (data: OnboardingData): Promise<OnboardingResponse> => {
+  
   try {
     // Validate required fields
     const validationError = validateOnboardingData(data);
@@ -81,7 +82,18 @@ export const completeOnboarding = async (data: OnboardingData): Promise<Onboardi
     // Postgres expects array literals in the form "{item1,item2}" for text[] inputs
     const postgresArrayLiteral = `{${normalizedCrops.join(',')}}`;
 
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw {
+        message: 'User not authenticated',
+        code: 'AUTH_ERROR',
+        details: 'Cannot complete onboarding without a logged-in user'
+      };
+    }
+
     const payload = {
+      p_user_id: user.id, // Pass the authenticated user's ID
       farm_name: data.farmName.trim(),
       total_area: Number(data.totalArea) || 1,
       crops: postgresArrayLiteral, // Proper array literal to satisfy RPC expectations

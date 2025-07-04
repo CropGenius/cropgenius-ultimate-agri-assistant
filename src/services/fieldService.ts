@@ -187,7 +187,7 @@ export const createField = async (field: Omit<Field, "id" | "created_at" | "upda
         .from('fields')
         .insert({
           name: sanitizedField.name,
-          user_id: field.user_id,
+          user_id: field.user_id || (await supabase.auth.getUser()).data.user?.id, // Ensure user_id is always present
           farm_id: resolvedFarmId, // Use resolved farm_id
           size: sanitizedField.size,
           size_unit: sanitizedField.size_unit,
@@ -209,7 +209,7 @@ export const createField = async (field: Omit<Field, "id" | "created_at" | "upda
           .from('fields')
           .insert({
             name: sanitizedField.name,
-            user_id: field.user_id,
+            user_id: field.user_id || (await supabase.auth.getUser()).data.user?.id,
             farm_id: resolvedFarmId
           })
           .select()

@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Task, TaskPriority, TaskStatus, mapPriorityToDisplay } from '../taskTypes';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
