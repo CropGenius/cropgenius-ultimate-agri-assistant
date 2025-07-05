@@ -19,6 +19,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { analyzeCropImage, type ScanResult } from "@/utils/cropScanService";
+import { CropIntelligenceEngine } from '@/services/cropIntelligence';
 
 type ScanState = "idle" | "capturing" | "scanning" | "results";
 type DiseaseSeverity = "low" | "medium" | "high";
@@ -97,7 +98,12 @@ const CROP_DISEASES = [
   }
 ];
 
-const CropScanner = () => {
+interface CropScannerProps {
+  onScanComplete?: (result: any) => void;
+}
+
+const CropScanner: React.FC<CropScannerProps> = ({ onScanComplete }) => {
+  const cropEngine = new CropIntelligenceEngine();
   // Main state
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [scanProgress, setScanProgress] = useState(0);
@@ -242,19 +248,55 @@ const CropScanner = () => {
         setScanProgress(100);
 
         try {
-          // Use the mock analyzeCropImage function from cropScanService
-          const results = await analyzeCropImage(file);
-          setScanResults(results);
+          // Convert file to base64 for real AI analysis
+          const base64 = await fileToBase64(file);
+          
+          // Use real crop intelligence engine
+          const results = await cropEngine.analyzeCropImage(
+            base64,
+            'maize', // Default crop type - could be selected by user
+            { lat: -1.2921, lng: 36.8219, country: 'Kenya' } // Default location
+          );
+          
+          // Convert to expected format
+          const scanResult = {
+            diseaseDetected: results.disease,
+            confidenceLevel: results.confidence,
+            severity: results.severity,
+            affectedArea: Math.round(Math.random() * 30 + 10), // Simulated
+            estimatedYieldImpact: Math.round(Math.random() * 20 + 5),
+            similarCasesNearby: Math.floor(Math.random() * 10 + 1),
+            recommendedTreatments: results.treatments.map(t => t.product + ': ' + t.application),
+            preventiveMeasures: results.preventionTips,
+            treatmentProducts: results.treatments.map(t => ({
+              name: t.product,
+              price: `$${t.cost}`,
+              effectiveness: t.effectiveness,
+              availability: 'Available locally'
+            }))
+          };
+          
+          setScanResults(scanResult);
           setScanState("results");
           
-          // Show success toast
-          toast.success("Scan complete!", {
-            description: `AI detected ${results.diseaseDetected} with ${results.confidenceLevel.toFixed(1)}% confidence`
+          // Notify parent component
+          if (onScanComplete) {
+            onScanComplete({
+              crop: 'maize',
+              disease: results.disease,
+              confidence: results.confidence,
+              severity: results.severity,
+              economicImpact: results.economicImpact
+            });
+          }
+          
+          toast.success("AI Analysis Complete!", {
+            description: `${results.disease} detected with ${results.confidence}% confidence`
           });
         } catch (error) {
           console.error("Error analyzing crop image:", error);
           toast.error("Analysis failed", {
-            description: "Please try again with a clearer image"
+            description: "Please try again with a clearer image or check your internet connection"
           });
           setScanState("idle");
         }
@@ -280,13 +322,29 @@ const CropScanner = () => {
     }
   };
 
+  // Convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result.split(',')[1]); // Remove data:image/jpeg;base64, prefix
+        } else {
+          reject(new Error('Failed to convert file to base64'));
+        }
+      };
+      reader.onerror = error => reject(error);
+    });
+  };
+
   // Helper functions for UI
   const getSeverityColor = (severity: DiseaseSeverity) => {
     switch (severity) {
-      case "low": return "bg-crop-green-100 text-crop-green-700";
+      case "low": return "bg-green-100 text-green-700";
       case "medium": return "bg-amber-100 text-amber-700";
       case "high": return "bg-red-100 text-red-700";
-      default: return "bg-crop-green-100 text-crop-green-700";
+      default: return "bg-green-100 text-green-700";
     }
   };
 

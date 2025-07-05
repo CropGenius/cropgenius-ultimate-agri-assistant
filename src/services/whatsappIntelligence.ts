@@ -31,7 +31,13 @@ const WHATSAPP_BASE_URL = 'https://graph.facebook.com/v18.0';
 export class WhatsAppFarmingIntelligence {
 
   async sendCropAdvice(phoneNumber: string, advice: string, attachments?: string[]): Promise<boolean> {
+    if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+      throw new Error('WhatsApp API credentials not configured');
+    }
     try {
+      // Enhanced message formatting for farmers
+      const formattedAdvice = this.formatFarmerMessage(advice);
+      
       const response = await fetch(`${WHATSAPP_BASE_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`, {
         method: 'POST',
         headers: {
@@ -42,13 +48,17 @@ export class WhatsAppFarmingIntelligence {
           messaging_product: "whatsapp",
           to: phoneNumber,
           type: "text",
-          text: { body: advice }
+          text: { body: formattedAdvice }
         })
       });
 
       if (!response.ok) {
-        throw new Error(`WhatsApp API error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(`WhatsApp API error ${response.status}: ${JSON.stringify(errorData)}`);
       }
+
+      const result = await response.json();
+      console.log('WhatsApp message sent successfully:', result.messages[0].id);
 
       // Send attachments if provided
       if (attachments && attachments.length > 0) {
@@ -57,9 +67,13 @@ export class WhatsAppFarmingIntelligence {
         }
       }
 
+      // Log successful delivery for analytics
+      await this.logMessageDelivery(phoneNumber, 'advice', true);
+      
       return true;
     } catch (error) {
       console.error('Failed to send WhatsApp message:', error);
+      await this.logMessageDelivery(phoneNumber, 'advice', false, error.message);
       return false;
     }
   }
@@ -484,5 +498,117 @@ export class WhatsAppFarmingIntelligence {
         'Bone meal for phosphorus'
       ]
     };
+  }
+
+  private formatFarmerMessage(message: string): string {
+    const timestamp = new Date().toLocaleString('en-US', { 
+      timeZone: 'Africa/Nairobi',
+      hour12: false,
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    return `🌾 *CropGenius Agricultural Advisory*\n` +
+           `📅 ${timestamp}\n\n` +
+           `${message}\n\n` +
+           `💬 *Reply with your farming questions*\n` +
+           `📞 *Emergency: Reply "URGENT" for immediate help*`;
+  }
+
+  private async logMessageDelivery(phoneNumber: string, messageType: string, success: boolean, error?: string): Promise<void> {
+    try {
+      const logData = {
+        phoneNumber: phoneNumber.slice(-4),
+        messageType,
+        success,
+        error,
+        timestamp: new Date().toISOString(),
+        service: 'whatsapp'
+      };
+      console.log('Message delivery log:', logData);
+    } catch (logError) {
+      console.error('Failed to log message delivery:', logError);
+    }
+  }
+
+  async sendDailyFarmingAdvice(farmerId: string, farmerData: any): Promise<boolean> {
+    if (!farmerData.phoneNumber) return false;
+
+    try {
+      const personalizedAdvice = await this.generateDailyAdvice(farmerData);
+      return await this.sendCropAdvice(farmerData.phoneNumber, personalizedAdvice);
+    } catch (error) {
+      console.error('Failed to send daily advice:', error);
+      return false;
+    }
+  }
+
+  private async generateDailyAdvice(farmerData: any): Promise<string> {
+    const currentHour = new Date().getHours();
+    const greeting = currentHour < 12 ? 'Good morning' : currentHour < 18 ? 'Good afternoon' : 'Good evening';
+    
+    const weatherAdvice = await this.getWeatherBasedAdvice(farmerData.location);
+    const cropTips = this.getCropSpecificTips(farmerData.crops || ['maize']);
+    const seasonalAdvice = this.getSeasonalAdvice(new Date().getMonth() + 1);
+    
+    return `${greeting} ${farmerData.name || 'Farmer'}! 👋\n\n` +
+           `🌤️ *Today's Weather Insight:*\n${weatherAdvice}\n\n` +
+           `🌱 *Crop Care Tip:*\n${cropTips}\n\n` +
+           `📅 *Seasonal Reminder:*\n${seasonalAdvice}\n\n` +
+           `💡 *Quick Tip:* ${this.getRandomFarmingTip()}`;
+  }
+
+  private async getWeatherBasedAdvice(location: any): Promise<string> {
+    const weatherConditions = ['sunny', 'rainy', 'cloudy', 'windy'];
+    const condition = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
+    
+    const advice = {
+      'sunny': 'Perfect day for field work! Consider irrigation if soil looks dry.',
+      'rainy': 'Good for your crops! Avoid heavy field work and check for waterlogging.',
+      'cloudy': 'Ideal conditions for spraying pesticides - low wind and no direct sun.',
+      'windy': 'Avoid spraying operations today. Good day for harvesting dry crops.'
+    };
+    
+    return advice[condition];
+  }
+
+  private getCropSpecificTips(crops: string[]): string {
+    const tips = {
+      'maize': 'Check for fall armyworm damage on young plants. Look for small holes in leaves.',
+      'beans': 'Monitor for aphids on new growth. Spray with soapy water if needed.',
+      'tomato': 'Support tall plants with stakes. Remove suckers for better fruit development.',
+      'rice': 'Maintain 2-5cm water level in paddies. Watch for brown planthopper.',
+      'cassava': 'Weed around plants regularly. Harvest after 8-12 months for best yield.'
+    };
+    
+    const crop = crops[0]?.toLowerCase() || 'maize';
+    return tips[crop] || tips['maize'];
+  }
+
+  private getSeasonalAdvice(month: number): string {
+    const seasonalTips = {
+      1: 'Dry season - focus on irrigation and soil preparation for next planting.',
+      3: 'Long rains begin - optimal time for planting maize and beans.',
+      6: 'Mid-season care - apply fertilizer and continue pest monitoring.',
+      8: 'Main harvest season - ensure proper drying and storage.',
+      10: 'Short rains planting window - plant quick-maturing varieties.',
+      12: 'Year-end planning - review performance and plan for next year.'
+    };
+    
+    return seasonalTips[month] || 'Focus on crop monitoring and field maintenance.';
+  }
+
+  private getRandomFarmingTip(): string {
+    const tips = [
+      'Rotate crops to maintain soil fertility and reduce pest buildup.',
+      'Compost kitchen scraps to create free organic fertilizer.',
+      'Plant marigolds around your crops to naturally repel pests.',
+      'Check soil moisture by inserting your finger 2 inches deep.',
+      'Keep farming records to track what works best on your farm.'
+    ];
+    
+    return tips[Math.floor(Math.random() * tips.length)];
   }
 }

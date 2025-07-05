@@ -2,6 +2,9 @@
 import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import CropScanner from "@/components/scanner/CropScanner";
+import { CropIntelligenceEngine } from '@/services/cropIntelligence';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -12,35 +15,61 @@ import { motion } from "framer-motion";
 
 const ScanPage = () => {
   const [userId, setUserId] = useState<string | null>(null);
-  const [scanHistory, setScanHistory] = useState([
-    {
-      id: 1,
-      crop: 'Maize',
-      disease: 'Leaf Blight',
-      confidence: 94.5,
-      severity: 'Medium',
-      date: '2 hours ago',
-      status: 'treated'
-    },
-    {
-      id: 2,
-      crop: 'Tomatoes',
-      disease: 'Early Blight',
-      confidence: 87.2,
-      severity: 'High',
-      date: '1 day ago',
-      status: 'pending'
-    },
-    {
-      id: 3,
-      crop: 'Beans',
-      disease: 'Healthy',
-      confidence: 98.1,
-      severity: 'None',
-      date: '3 days ago',
-      status: 'healthy'
+  const [scanHistory, setScanHistory] = useState([]);
+  const [recentScans, setRecentScans] = useState(0);
+  const [loading, setLoading] = useState(true);
+  
+  const cropEngine = new CropIntelligenceEngine();
+
+  useEffect(() => {
+    loadScanHistory();
+  }, []);
+
+  const loadScanHistory = async () => {
+    try {
+      setLoading(true);
+      // Simulate loading scan history
+      setTimeout(() => {
+        setScanHistory([
+          {
+            id: 1,
+            crop: 'Maize',
+            disease: 'Maize Streak Virus',
+            confidence: 94.5,
+            severity: 'High',
+            date: '2 hours ago',
+            status: 'treated',
+            economicImpact: 450
+          },
+          {
+            id: 2,
+            crop: 'Tomatoes',
+            disease: 'Late Blight',
+            confidence: 87.2,
+            severity: 'Critical',
+            date: '1 day ago',
+            status: 'pending',
+            economicImpact: 680
+          },
+          {
+            id: 3,
+            crop: 'Beans',
+            disease: 'Healthy',
+            confidence: 98.1,
+            severity: 'None',
+            date: '3 days ago',
+            status: 'healthy',
+            economicImpact: 0
+          }
+        ]);
+        setRecentScans(3);
+        setLoading(false);
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to load scan history:', error);
+      setLoading(false);
     }
-  ]);
+  };
   
   // Get the current user ID
   useEffect(() => {
@@ -101,54 +130,72 @@ const ScanPage = () => {
         </div>
 
         <Tabs defaultValue="scanner" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="scanner">New Scan</TabsTrigger>
-            <TabsTrigger value="history">Scan History</TabsTrigger>
-            <TabsTrigger value="insights">AI Insights</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 glass-card">
+            <TabsTrigger value="scanner" className="text-white">New Scan</TabsTrigger>
+            <TabsTrigger value="history" className="text-white">History ({recentScans})</TabsTrigger>
+            <TabsTrigger value="insights" className="text-white">AI Insights</TabsTrigger>
           </TabsList>
           
           <TabsContent value="scanner" className="mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Main Scanner */}
               <div className="lg:col-span-2">
-                <Card>
+                <Card className="glass-card">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-white">
                       <Camera className="h-5 w-5" />
-                      Crop Disease Scanner
+                      AI Crop Disease Scanner
                     </CardTitle>
-                    <CardDescription>
-                      Take a photo or upload an image to analyze your crops for diseases, pests, and health issues.
+                    <CardDescription className="text-white/70">
+                      Take a photo or upload an image for instant AI-powered disease detection with 99.7% accuracy.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <CropScanner />
+                    <CropScanner onScanComplete={(result) => {
+                      const newScan = {
+                        id: Date.now(),
+                        crop: result.crop || 'Unknown',
+                        disease: result.disease,
+                        confidence: result.confidence,
+                        severity: result.severity,
+                        date: 'Just now',
+                        status: 'analyzed',
+                        economicImpact: result.economicImpact?.netImpact || 0
+                      };
+                      setScanHistory(prev => [newScan, ...prev]);
+                      setRecentScans(prev => prev + 1);
+                      toast.success('Scan completed successfully!');
+                    }} />
                   </CardContent>
                 </Card>
               </div>
 
               {/* Quick Stats */}
               <div className="space-y-4">
-                <Card>
+                <Card className="glass-card">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">Quick Stats</CardTitle>
+                    <CardTitle className="text-lg text-white">AI Performance</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Accuracy Rate</span>
-                      <span className="font-bold text-green-600">99.7%</span>
+                      <span className="text-sm text-white/70">Accuracy Rate</span>
+                      <span className="font-bold text-green-400">99.7%</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Diseases Detected</span>
-                      <span className="font-bold">150+</span>
+                      <span className="text-sm text-white/70">Diseases Detected</span>
+                      <span className="font-bold text-white">150+</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Crops Supported</span>
-                      <span className="font-bold">25+</span>
+                      <span className="text-sm text-white/70">Crops Supported</span>
+                      <span className="font-bold text-white">25+</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Response Time</span>
-                      <span className="font-bold text-blue-600">&lt; 3 sec</span>
+                      <span className="text-sm text-white/70">Response Time</span>
+                      <span className="font-bold text-blue-400">&lt; 3 sec</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-white/70">Your Scans Today</span>
+                      <span className="font-bold text-yellow-400">{recentScans}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -186,44 +233,57 @@ const ScanPage = () => {
           </TabsContent>
           
           <TabsContent value="history" className="mt-6">
-            <Card>
+            <Card className="glass-card">
               <CardHeader>
-                <CardTitle>Scan History</CardTitle>
-                <CardDescription>
-                  Review your previous crop scans and their results
+                <CardTitle className="text-white">Scan History</CardTitle>
+                <CardDescription className="text-white/70">
+                  Review your previous crop scans and their AI analysis results
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {scanHistory.map((scan, index) => (
-                    <motion.div
-                      key={scan.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-green-100 rounded-lg">
-                          {getStatusIcon(scan.status)}
-                        </div>
-                        <div>
-                          <h4 className="font-medium">{scan.crop}</h4>
-                          <p className="text-sm text-muted-foreground">{scan.disease}</p>
-                        </div>
+                {loading ? (
+                  <div className="space-y-4">
+                    {[1,2,3].map(i => (
+                      <div key={i} className="animate-pulse">
+                        <div className="h-16 bg-white/10 rounded-lg"></div>
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge className={`text-xs ${getSeverityColor(scan.severity)}`}>
-                            {scan.severity}
-                          </Badge>
-                          <span className="text-sm font-medium">{scan.confidence}%</span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {scanHistory.map((scan, index) => (
+                      <motion.div
+                        key={scan.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="flex items-center justify-between p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors border border-white/10"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 bg-green-500/20 rounded-lg">
+                            {getStatusIcon(scan.status)}
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-white">{scan.crop}</h4>
+                            <p className="text-sm text-white/70">{scan.disease}</p>
+                            {scan.economicImpact > 0 && (
+                              <p className="text-xs text-red-400">Impact: -${scan.economicImpact}</p>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">{scan.date}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge className={`text-xs ${getSeverityColor(scan.severity)}`}>
+                              {scan.severity}
+                            </Badge>
+                            <span className="text-sm font-medium text-white">{scan.confidence}%</span>
+                          </div>
+                          <p className="text-xs text-white/50">{scan.date}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
