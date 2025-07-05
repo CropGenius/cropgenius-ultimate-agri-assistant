@@ -22,6 +22,11 @@ export default defineConfig({
     cors: true,
     headers: {
       'Cache-Control': 'public, max-age=31536000, immutable',
+      'Content-Type': 'application/javascript; charset=utf-8',
+    },
+    middlewareMode: false,
+    fs: {
+      strict: false
     }
   },
   preview: {
@@ -73,4 +78,5 @@ export default defineConfig({
   esbuild: {
     target: 'es2020',
   },
+  assetsInclude: ['**/*.js', '**/*.mjs', '**/*.ts', '**/*.tsx'],
 });
