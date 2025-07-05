@@ -180,11 +180,25 @@
       <!-- App will be mounted here -->
     </div>
     
-    <!-- MIME Fix -->
-    <script src="/mime-fix.js"></script>
+    <!-- Error handling and fallback -->
+    <script>
+      window.addEventListener('error', function(e) {
+        console.error('Module loading error:', e);
+        if (e.message && e.message.includes('MIME type')) {
+          window.location.href = '/fallback.html';
+        }
+      });
+      
+      // Timeout fallback
+      setTimeout(function() {
+        if (!document.querySelector('#root').hasChildNodes()) {
+          window.location.href = '/fallback.html';
+        }
+      }, 10000);
+    </script>
     
     <!-- Load the app -->
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx" onerror="window.location.href='/fallback.html'"></script>
     
     <!-- Register service worker after app loads -->
     <script>

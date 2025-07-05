@@ -20,10 +20,6 @@ export default defineConfig({
     strictPort: true,
     open: true,
     cors: true,
-    headers: {
-      'Cache-Control': 'public, max-age=31536000, immutable',
-      'Content-Type': 'application/javascript; charset=utf-8',
-    },
     middlewareMode: false,
     fs: {
       strict: false
