@@ -8,9 +8,9 @@ import mimeTypeFix from './vite-plugin-mime-fix.js';
 export default defineConfig({
   plugins: [
     react({
-      jsxRuntime: 'automatic'
+      jsxRuntime: 'automatic',
+      jsxImportSource: 'react'
     }),
-    mimeTypeFix(),
     ...(process.env.ANALYZE ? [visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true })] : []),
   ],
   base: './',
@@ -23,6 +23,11 @@ export default defineConfig({
     middlewareMode: false,
     fs: {
       strict: false
+    },
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     }
   },
   preview: {
@@ -42,26 +47,15 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: true,
+    sourcemap: false,
+    target: 'es2020',
     rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-      },
       output: {
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash][extname]',
-        manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
-          supabase: ['@supabase/supabase-js'],
-          mapbox: ['mapbox-gl', '@mapbox/mapbox-sdk'],
-          analytics: ['posthog-js', '@sentry/react'],
-          leaflet: ['leaflet', 'react-leaflet'],
-          icons: ['lucide-react'],
-        },
+        format: 'es',
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name][extname]',
       },
-      external: []
     },
   },
   optimizeDeps: {

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CropGenius - Emergency Mode</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      text-align: center;
+      max-width: 500px;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 40px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    h1 { font-size: 2.5rem; margin-bottom: 20px; }
+    p { font-size: 1.1rem; margin-bottom: 30px; opacity: 0.9; }
+    .btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin: 10px;
+      transition: all 0.3s;
+    }
+    .btn:hover {
+      background: rgba(255,255,255,0.3);
+      transform: translateY(-2px);
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌾 CropGenius</h1>
+    <p>Emergency mode activated. We're fixing the technical issues.</p>
+    <div class="spinner"></div>
+    <button class="btn" onclick="location.reload()">Try Again</button>
+    <button class="btn" onclick="clearCache()">Clear Cache & Retry</button>
+  </div>
+  
+  <script>
+    function clearCache() {
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => caches.delete(name));
+        });
+      }
+      localStorage.clear();
+      sessionStorage.clear();
+      location.reload(true);
+    }
+    
+    // Auto-retry every 30 seconds
+    setTimeout(() => location.reload(), 30000);
+  </script>
+</body>
+</html>
