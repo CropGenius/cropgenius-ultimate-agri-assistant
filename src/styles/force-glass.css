@@ -1,31 +1,49 @@
-/* 🔥 FORCE GLASSMORPHISM - NUCLEAR OPTION */
+/* 🔥 ULTIMATE GLASSMORPHISM FORCE */
 
-/* FORCE GLASS ON CARDS */
+/* UNIVERSAL GLASS CARDS */
 .glass-card,
-div.glass-card,
-[class~="glass-card"] {
+div[class*="glass-card"],
+[data-testid*="card"],
+div[class*="Card"],
+[class*="card"] {
   background: rgba(255, 255, 255, 0.1) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 20px !important;
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37) !important;
+  position: relative !important;
 }
 
-/* FORCE GLASS ON BUTTONS */
+/* UNIVERSAL GLASS BUTTONS */
 .glass-btn,
-button.glass-btn,
-[class~="glass-btn"] {
+button,
+[role="button"],
+[class*="Button"],
+[class*="btn"] {
   background: rgba(255, 255, 255, 0.15) !important;
   backdrop-filter: blur(16px) saturate(200%) !important;
   -webkit-backdrop-filter: blur(16px) saturate(200%) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
   border-radius: 16px !important;
   box-shadow: 0 4px 16px rgba(31, 38, 135, 0.2) !important;
+  transition: all 0.3s ease !important;
+}
+
+button:hover,
+[class*="Button"]:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-2px) !important;
 }
 
 /* FORCE BODY BACKGROUND */
 body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
   min-height: 100vh !important;
+}
+
+/* FORCE ROOT CONTAINER */
+#root {
+  min-height: 100vh !important;
+  backdrop-filter: blur(1px) !important;
 }
