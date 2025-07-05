@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App.tsx';
 import './index.css';
 import './styles/glassmorphism.css';
+import './styles/glass-empire.css';
 import { AuthProvider } from './providers/AuthProvider';
 import { Toaster } from '@/components/ui/sonner';
 import { GrowthEngineProvider } from './providers/GrowthEngineProvider';

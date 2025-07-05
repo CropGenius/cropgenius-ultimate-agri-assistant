@@ -1,108 +1,194 @@
-/* 🌟 CROPGENIUS GLASSMORPHISM SYSTEM */
+/* 🌟 CROPGENIUS GLASSMORPHISM EMPIRE - INFINITE POWER */
 
-/* 1. Glass Card Base */
-.glass-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px) saturate(150%);
-  -webkit-backdrop-filter: blur(10px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 16px;
-  box-shadow:
-    0 8px 32px rgba(0,0,0,0.1),
-    inset 0 1px 0 rgba(255,255,255,0.5);
-  overflow: hidden;
-  position: relative;
+/* UNIVERSAL GLASS TRANSFORMATION */
+.glass-card,
+[class*="Card"],
+[data-testid*="card"],
+div[class*="card"],
+div[class*="Card"] {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 20px !important;
+  box-shadow: 
+    0 8px 32px rgba(31, 38, 135, 0.37) !important,
+    inset 0 1px 0 rgba(255, 255, 255, 0.5) !important,
+    0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  position: relative !important;
+  overflow: visible !important;
 }
 
-.glass-card::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-  box-shadow:
-    inset -10px -8px 0 rgba(255,255,255,0.7),
-    inset 0 -9px 0 rgba(255,255,255,0.5);
-  opacity: 0.6;
-  pointer-events: none;
+/* LIQUID GLASS HIGHLIGHT */
+.glass-card::before,
+[class*="Card"]::before,
+div[class*="card"]::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent) !important;
+  z-index: 1 !important;
 }
 
-/* 2. Glass Button */
-.glass-btn {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 24px;
-  padding: 12px 24px;
-  color: #000;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+/* GLASS BUTTONS - PREMIUM POWER */
+.glass-btn,
+button,
+[role="button"],
+.btn,
+[class*="Button"],
+[class*="button"] {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(16px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 16px !important;
+  box-shadow: 
+    0 4px 16px rgba(31, 38, 135, 0.2) !important,
+    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
 }
 
-.glass-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
+.glass-btn:hover,
+button:hover,
+[role="button"]:hover,
+[class*="Button"]:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 
+    0 8px 32px rgba(31, 38, 135, 0.4) !important,
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
 }
 
-.glass-btn:active {
-  transform: scale(0.98);
+/* GLASS INPUTS */
+input,
+textarea,
+select,
+[class*="Input"],
+[class*="input"] {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* 3. Glass Modal */
-.glass-modal {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(15px) saturate(160%);
-  -webkit-backdrop-filter: blur(15px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 24px;
-  padding: 2rem;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+input:focus,
+textarea:focus,
+select:focus {
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.1) !important,
+    0 0 0 3px rgba(255, 255, 255, 0.1) !important;
 }
 
-/* 4. Tailwind Integration */
-.glass-morphic {
-  @apply glass-card;
+/* NAVIGATION GLASS */
+nav,
+header,
+[class*="nav"],
+[class*="Nav"],
+[class*="header"],
+[class*="Header"] {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(24px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 24px rgba(31, 38, 135, 0.1) !important;
 }
 
-.glass-button {
-  @apply glass-btn;
+/* MODAL GLASS EMPIRE */
+[role="dialog"],
+[class*="modal"],
+[class*="Modal"],
+[class*="dialog"],
+[class*="Dialog"] {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(32px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 24px !important;
+  box-shadow: 
+    0 24px 64px rgba(31, 38, 135, 0.4) !important,
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
 }
 
-.glass-overlay {
-  @apply glass-modal;
+/* SIDEBAR GLASS */
+aside,
+[class*="sidebar"],
+[class*="Sidebar"] {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-/* 5. Performance Fallback */
-@supports not (backdrop-filter: blur(10px)) {
-  .glass-card {
-    background: rgba(255,255,255,0.9);
-  }
-  .glass-btn {
-    background: rgba(255,255,255,0.8);
-  }
-  .glass-modal {
-    background: rgba(255,255,255,0.85);
-  }
+/* BADGE GLASS */
+[class*="badge"],
+[class*="Badge"],
+span[class*="bg-"] {
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 12px !important;
 }
 
-/* 6. Dark Mode Variants */
+/* PROGRESS GLASS */
+[class*="progress"],
+[class*="Progress"] {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+/* DARK MODE EMPIRE */
 @media (prefers-color-scheme: dark) {
-  .glass-card {
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+  .glass-card,
+  [class*="Card"],
+  div[class*="card"] {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
   }
   
-  .glass-btn {
-    background: rgba(0, 0, 0, 0.2);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+  button,
+  [class*="Button"] {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
   }
-  
-  .glass-modal {
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* PERFORMANCE FALLBACK */
+@supports not (backdrop-filter: blur(10px)) {
+  .glass-card,
+  [class*="Card"],
+  button,
+  input {
+    background: rgba(255, 255, 255, 0.95) !important;
   }
+}
+
+/* ANIMATION EMPIRE */
+@keyframes glassShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.glass-card::after,
+[class*="Card"]::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent) !important;
+  animation: glassShimmer 3s infinite !important;
+  pointer-events: none !important;
 }
