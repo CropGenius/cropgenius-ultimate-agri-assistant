@@ -153,7 +153,7 @@ const EnhancedDashboard: React.FC = () => {
 
   const dashboardCards = [
     {
-      title: 'Crop Scanner',
+      title: 'AI Crop Scanner',
       description: 'Scan crops for diseases and get AI recommendations',
       icon: <Leaf className="h-4 w-4 text-green-600" />,
       value: 'AI Ready',
@@ -183,7 +183,7 @@ const EnhancedDashboard: React.FC = () => {
     },
     {
       title: 'AI Assistant',
-      description: 'Chat with Genie for farming advice and guidance',
+      description: 'Chat with CropGenius AI for farming advice and guidance',
       icon: <MessageCircle className="h-4 w-4 text-purple-600" />,
       value: '24/7 Available',
       onClick: () => navigate('/chat'),

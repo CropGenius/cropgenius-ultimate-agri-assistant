@@ -1082,7 +1082,7 @@ const MobileHomePage: React.FC = () => {
                   { icon: '🔬', text: 'Disease scan', action: () => navigate('/scan') },
                   { icon: '🌦️', text: 'Weather tips', action: () => navigate('/weather') },
                   { icon: '💰', text: 'Market prices', action: () => navigate('/market') },
-                  { icon: '📈', text: 'Yield tips', action: () => navigate('/insights') }
+                  { icon: '💬', text: 'AI Chat', action: () => navigate('/chat') }
                 ].map((item, i) => (
                   <motion.button
                     key={item.text}

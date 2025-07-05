@@ -1,76 +1,56 @@
 import React, { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthPage } from './features/auth/components/AuthPage';
 import { ProtectedRoute } from './features/auth/components/ProtectedRoute';
 import { useAuth } from './context/AuthContext';
-import ResponsiveLayout from './components/layout/ResponsiveLayout';
 
-// Route-level code-splitting. These pages are fetched only when the route is visited.
+// Route-level code-splitting
 const Dashboard = lazy(() => import('./pages/MissionControlPage'));
 const MobileHomePage = lazy(() => import('./pages/home/MobileHomePage'));
 const FieldDetailPage = lazy(() => import('./pages/FieldDetail'));
 const FarmPlanningPage = lazy(() => import('./pages/FarmPlanningPage'));
 const MarketInsightsPage = lazy(() => import('./pages/MarketInsightsPage'));
+const ScanPage = lazy(() => import('./pages/Scan'));
+const WeatherPage = lazy(() => import('./pages/Weather'));
+const MarketPage = lazy(() => import('./pages/Market'));
+const ChatPage = lazy(() => import('./pages/Chat'));
+const SettingsPage = lazy(() => import('./pages/Settings'));
 
-// Onboarding wizard is a named export (no default), so map it to `default` for React.lazy
+// Onboarding wizard
 const OnboardingWizard = lazy(() =>
   import('./features/onboarding/OnboardingWizard').then((m) => ({
     default: m.OnboardingWizard,
   }))
 );
 
-// Create a component that wraps routes with ResponsiveLayout
-interface LayoutWrapperProps {
-  children: React.ReactNode;
-}
-
-const LayoutWrapper: React.FC<LayoutWrapperProps> = ({ children }) => {
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  return (
-    <ResponsiveLayout isMobile={isMobile}>
-      {children}
-    </ResponsiveLayout>
-  );
+// Detect mobile device
+const isMobile = () => {
+  return window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 };
 
 const AppLayout = () => {
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const mobile = isMobile();
   
   return (
     <Routes>
-      {/* Wrap all routes that need the layout */}
-      <Route element={
-        <LayoutWrapper>
-          <Outlet />
-        </LayoutWrapper>
-      }>
-        {/* Mobile-specific routes */}
-        {isMobile && (
-          <Route path="/home" element={<ProtectedRoute><MobileHomePage /></ProtectedRoute>} />
-        )}
-        
-        {/* Common routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/field/:fieldId" element={<ProtectedRoute><FieldDetailPage /></ProtectedRoute>} />
-        <Route path="/farm-plan" element={<ProtectedRoute><FarmPlanningPage /></ProtectedRoute>} />
-        <Route path="/market" element={<ProtectedRoute><MarketInsightsPage /></ProtectedRoute>} />
-        
-        {/* Redirect root based on device */}
-        <Route 
-          path="/" 
-          element={
-            <Navigate to={isMobile ? "/home" : "/dashboard"} replace /> 
-          } 
-        />
-        
-        {/* Fallback route */}
-        <Route 
-          path="*" 
-          element={
-            <Navigate to={isMobile ? "/home" : "/dashboard"} replace /> 
-          } 
-        />
-      </Route>
+      {/* Core routes */}
+      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/home" element={<ProtectedRoute><MobileHomePage /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      
+      {/* Feature routes */}
+      <Route path="/scan" element={<ProtectedRoute><ScanPage /></ProtectedRoute>} />
+      <Route path="/weather" element={<ProtectedRoute><WeatherPage /></ProtectedRoute>} />
+      <Route path="/market" element={<ProtectedRoute><MarketPage /></ProtectedRoute>} />
+      <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      
+      {/* Field routes */}
+      <Route path="/field/:fieldId" element={<ProtectedRoute><FieldDetailPage /></ProtectedRoute>} />
+      <Route path="/farm-plan" element={<ProtectedRoute><FarmPlanningPage /></ProtectedRoute>} />
+      
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
@@ -79,28 +59,25 @@ export const AppRoutes = () => {
   const { user, isLoading, profile } = useAuth();
 
   if (isLoading) {
-    return <div>Loading application...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-sky-50 to-green-50">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-gray-600">Loading CropGenius...</p>
+        </div>
+      </div>
+    );
   }
 
   if (user) {
-    if (profile === undefined || profile === null) {
-        // Profile is loading or user does not have one, needs onboarding
-        if (profile === null) {
-            return (
-                <Suspense fallback={<div>Loading...</div>}>
-                    <Routes>
-                        <Route path="/onboarding" element={<OnboardingWizard />} />
-                        <Route path="*" element={<Navigate to="/onboarding" replace />} />
-                    </Routes>
-                </Suspense>
-            );
-        }
-        return <div>Loading user profile...</div>;
-    }
-
-    if (!profile.onboarding_completed) {
+    // Check if user needs onboarding
+    if (profile === null || (profile && !profile.onboarding_completed)) {
       return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        }>
           <Routes>
             <Route path="/onboarding" element={<OnboardingWizard />} />
             <Route path="*" element={<Navigate to="/onboarding" replace />} />
@@ -109,6 +86,7 @@ export const AppRoutes = () => {
       );
     }
 
+    // User is authenticated and onboarded
     return (
       <Suspense fallback={
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-sky-50 to-green-50">
@@ -119,28 +97,21 @@ export const AppRoutes = () => {
         </div>
       }>
         <Routes>
-          <Route 
-            path="/auth" 
-            element={
-              <Navigate to={/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? "/home" : "/dashboard"} replace />
-            } 
-          />
-          <Route 
-            path="/onboarding" 
-            element={
-              <Navigate to={
-                /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? "/home" : "/dashboard"
-              } replace />
-            } 
-          />
+          <Route path="/auth" element={<Navigate to="/" replace />} />
+          <Route path="/onboarding" element={<Navigate to="/" replace />} />
           <Route path="/*" element={<AppLayout />} />
         </Routes>
       </Suspense>
     );
   }
 
+  // User not authenticated
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
       <Routes>
         <Route path="/auth" element={<AuthPage />} />
         <Route path="*" element={<Navigate to="/auth" replace />} />

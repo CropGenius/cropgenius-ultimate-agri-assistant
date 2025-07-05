@@ -1,10 +1,10 @@
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Leaf, Cloud, ShoppingCart, MessageCircle, Scan } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Home, Leaf, Cloud, ShoppingCart, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 const BottomNav: React.FC = () => {
   const location = useLocation();
@@ -73,15 +73,21 @@ const BottomNav: React.FC = () => {
               className={cn(
                 "flex flex-col items-center px-3 py-2 rounded-xl transition-all duration-200 min-w-0 flex-1",
                 active
-                  ? "text-primary bg-primary/10"
-                  : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+                  ? "text-green-600 bg-green-50"
+                  : "text-gray-500 hover:text-green-600 hover:bg-green-50"
               )}
               whileTap={{ scale: 0.95 }}
             >
               <div className="relative">
                 <Icon size={20} />
                 {item.requiresAuth && !user && (
-                  <div className="absolute -top-1 -right-1 h-2 w-2 bg-amber-500 rounded-full" />
+                  <div className="absolute -top-1 -right-1 h-2 w-2 bg-amber-500 rounded-full animate-pulse" />
+                )}
+                {active && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-green-600 rounded-full"
+                  />
                 )}
               </div>
               <span className="text-xs font-medium mt-1 truncate">

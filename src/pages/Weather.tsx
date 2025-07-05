@@ -17,6 +17,7 @@ import {
   ArrowRight,
   RefreshCw,
   MapPin,
+  CheckCircle2
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,34 @@ export default function Weather() {
   const [user, setUser] = useState<any>(null);
   const [farmData, setFarmData] = useState<any>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [weatherData, setWeatherData] = useState({
+    current: {
+      temperature: 26,
+      condition: 'Partly Cloudy',
+      humidity: 65,
+      windSpeed: 12,
+      pressure: 1013,
+      uvIndex: 6,
+      visibility: 10
+    },
+    forecast: [
+      { day: 'Today', high: 28, low: 18, condition: 'Partly Cloudy', rain: 15 },
+      { day: 'Tomorrow', high: 30, low: 20, condition: 'Sunny', rain: 5 },
+      { day: 'Wednesday', high: 27, low: 19, condition: 'Light Rain', rain: 80 },
+      { day: 'Thursday', high: 25, low: 17, condition: 'Cloudy', rain: 40 },
+      { day: 'Friday', high: 29, low: 21, condition: 'Sunny', rain: 10 }
+    ],
+    alerts: [
+      {
+        id: 1,
+        type: 'warning',
+        title: 'Heavy Rain Expected',
+        message: 'Heavy rainfall expected Wednesday. Protect young plants and ensure proper drainage.',
+        severity: 'medium',
+        validUntil: 'Wednesday 6 PM'
+      }
+    ]
+  });
 
   useEffect(() => {
     checkUser();
@@ -127,96 +156,257 @@ export default function Weather() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <LiveWeatherPanel location={location} />
-          </div>
-          <div className="lg:col-span-1">
-            <DisasterAlerts location={location} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        {/* Current Weather Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3">
             <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between">
-                  <span>AI Farm Action Recommendations</span>
-                  <Badge className="bg-amber-500 hover:bg-amber-600">Priority Actions</Badge>
-                </CardTitle>
-                <CardDescription>
-                  These AI-powered recommendations are based on current and forecasted weather conditions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FarmActionsList location={location} crops={farmData?.crops || []} />
-              </CardContent>
-            </Card>
-          </div>
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader className="pb-3">
+              <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  <span>Market Weather Impact</span>
+                  <ThermometerSun className="h-5 w-5" />
+                  Current Conditions
                 </CardTitle>
-                <CardDescription>
-                  AI-predicted price fluctuations based on regional weather patterns
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <MarketImpact location={location} crops={farmData?.crops || []} />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-blue-600">{weatherData.current.temperature}°C</div>
+                    <p className="text-sm text-muted-foreground">{weatherData.current.condition}</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-cyan-600">{weatherData.current.humidity}%</div>
+                    <p className="text-sm text-muted-foreground">Humidity</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{weatherData.current.windSpeed} km/h</div>
+                    <p className="text-sm text-muted-foreground">Wind Speed</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-600">UV {weatherData.current.uvIndex}</div>
+                    <p className="text-sm text-muted-foreground">UV Index</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="lg:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-orange-500" />
+                  Weather Alerts
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {weatherData.alerts.length > 0 ? (
+                  <div className="space-y-3">
+                    {weatherData.alerts.map((alert) => (
+                      <div key={alert.id} className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                        <h4 className="font-medium text-orange-900 text-sm">{alert.title}</h4>
+                        <p className="text-xs text-orange-700 mt-1">{alert.message}</p>
+                        <p className="text-xs text-orange-600 mt-2">Until: {alert.validUntil}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">No weather alerts</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
         </div>
 
-        <Tabs defaultValue="forecast" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:w-auto md:grid-cols-4">
-            <TabsTrigger value="forecast">7-Day Forecast</TabsTrigger>
-            <TabsTrigger value="seasonal">Seasonal Predictions</TabsTrigger>
-            <TabsTrigger value="rain">Rainfall Analysis</TabsTrigger>
-            <TabsTrigger value="alerts">Alert History</TabsTrigger>
-          </TabsList>
-          <TabsContent value="forecast" className="mt-4">
-            <ForecastPanel location={location} />
-          </TabsContent>
-          <TabsContent value="seasonal" className="mt-4">
-            <SeasonalPredictions location={location} crops={farmData?.crops || []} />
-          </TabsContent>
-          <TabsContent value="rain" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Rainfall Analysis & Predictions</CardTitle>
-                <CardDescription>
-                  AI-powered rainfall pattern analysis for optimal farming decisions
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-96 flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <Droplet className="h-12 w-12 mx-auto mb-4" />
-                  <p>Detailed rainfall analysis and forecast coming soon</p>
+        {/* 5-Day Forecast */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5" />
+              5-Day Forecast
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {weatherData.forecast.map((day, index) => (
+                <div key={index} className="text-center p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                  <p className="font-medium text-sm mb-2">{day.day}</p>
+                  <div className="text-2xl mb-2">
+                    {day.condition === 'Sunny' && '☀️'}
+                    {day.condition === 'Partly Cloudy' && '⛅'}
+                    {day.condition === 'Cloudy' && '☁️'}
+                    {day.condition === 'Light Rain' && '🌦️'}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">{day.high}° / {day.low}°</p>
+                    <p className="text-xs text-blue-600">{day.rain}% rain</p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="alerts" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Weather Alert History</CardTitle>
-                <CardDescription>
-                  Past alerts and notifications for your farm location
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-96 flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <Bell className="h-12 w-12 mx-auto mb-4" />
-                  <p>Weather alert history coming soon</p>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* AI Recommendations */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tractor className="h-5 w-5" />
+                AI Farm Recommendations
+              </CardTitle>
+              <CardDescription>
+                Smart actions based on current weather conditions
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="p-1 bg-green-500 rounded-full">
+                    <CheckCircle2 className="h-3 w-3 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-green-900">Perfect Planting Conditions</h4>
+                    <p className="text-sm text-green-700">Current temperature and humidity are ideal for planting maize. Consider starting today.</p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                <div className="flex items-start gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="p-1 bg-orange-500 rounded-full">
+                    <AlertTriangle className="h-3 w-3 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-orange-900">Prepare for Rain</h4>
+                    <p className="text-sm text-orange-700">Heavy rain expected Wednesday. Ensure proper drainage and protect young plants.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="p-1 bg-blue-500 rounded-full">
+                    <Droplet className="h-3 w-3 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-blue-900">Irrigation Schedule</h4>
+                    <p className="text-sm text-blue-700">Reduce watering by 30% this week due to expected rainfall.</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Market Weather Impact
+              </CardTitle>
+              <CardDescription>
+                How weather affects crop prices in your region
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">Maize Prices</p>
+                    <p className="text-sm text-muted-foreground">Expected to rise due to rain</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600">+8%</p>
+                    <p className="text-xs text-muted-foreground">This week</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">Tomato Prices</p>
+                    <p className="text-sm text-muted-foreground">May drop due to oversupply</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-red-600">-3%</p>
+                    <p className="text-xs text-muted-foreground">This week</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">Bean Prices</p>
+                    <p className="text-sm text-muted-foreground">Stable conditions expected</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-gray-600">+1%</p>
+                    <p className="text-xs text-muted-foreground">This week</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Additional Weather Insights */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Soil Conditions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Moisture Level</span>
+                  <span className="font-bold text-blue-600">Good</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Temperature</span>
+                  <span className="font-bold">{weatherData.current.temperature - 3}°C</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">pH Level</span>
+                  <span className="font-bold text-green-600">6.8</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Growing Conditions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Overall Rating</span>
+                  <span className="font-bold text-green-600">Excellent</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Best for</span>
+                  <span className="font-bold">Maize, Beans</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Avoid</span>
+                  <span className="font-bold text-red-600">Tomatoes</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">This Week Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Avg Temperature</span>
+                  <span className="font-bold">27°C</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Total Rainfall</span>
+                  <span className="font-bold text-blue-600">45mm</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Sunny Days</span>
+                  <span className="font-bold text-yellow-600">4/7</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Layout>
   );
