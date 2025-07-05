@@ -1,13 +1,10 @@
-import MissionControl from '@/components/dashboard/MissionControl';
-
+import EnhancedDashboard from '@/components/dashboard/EnhancedDashboard';
 import Layout from '@/components/Layout';
 
 const MissionControlPage = () => {
   return (
     <Layout>
-      <div className="container mx-auto py-8">
-        <MissionControl />
-      </div>
+      <EnhancedDashboard />
     </Layout>
   );
 };
