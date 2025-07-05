@@ -1,0 +1,31 @@
+/* 🔥 FORCE GLASSMORPHISM - NUCLEAR OPTION */
+
+/* FORCE GLASS ON CARDS */
+.glass-card,
+div.glass-card,
+[class~="glass-card"] {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37) !important;
+}
+
+/* FORCE GLASS ON BUTTONS */
+.glass-btn,
+button.glass-btn,
+[class~="glass-btn"] {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(16px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 16px rgba(31, 38, 135, 0.2) !important;
+}
+
+/* FORCE BODY BACKGROUND */
+body {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  min-height: 100vh !important;
+}

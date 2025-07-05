@@ -5,6 +5,8 @@ During your interaction with the user, if you find anything reusable in this pro
 You should also use the `RULES.md` file as a Scratchpad to organize your thoughts. Especially when you receive a new task, you should first review the content of the Scratchpad, clear old different task if necessary, first explain the task, and plan the steps you need to take to complete the task. You can use todo markers to indicate the progress, e.g.
 [X] Task 1
 [ ] Task 2
+supabase link --project-ref bapqlyvfwxsichlyjxpd
+supabase link --project-ref bapqlyvfwxsichlyjxpd
 
 Also update the progress of the task in the Scratchpad when you finish a subtask.
 Especially when you finished a milestone, it will help to improve your depth of task accomplishment to use the Scratchpad to reflect and plan.
