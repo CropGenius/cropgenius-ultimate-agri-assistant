@@ -138,29 +138,7 @@ const MapSelector: React.FC<MapSelectorProps> = ({
   };
 
   if (mapError) {
-    return (
-      <div className={`w-full h-full min-h-[400px] flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg ${className}`}>
-        <div className="text-center p-6 max-w-md">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Map Unavailable</h3>
-          <p className="text-gray-600 mb-4 text-sm">{mapError}</p>
-          <div className="space-y-2">
-            <Button 
-              onClick={handleUseCurrentLocation}
-              variant="outline"
-              size="sm"
-              className="w-full"
-            >
-              <MapPin className="h-4 w-4 mr-2" />
-              Use Current Location
-            </Button>
-            <p className="text-xs text-gray-500">
-              Or manually enter coordinates in the form below
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    throw new Error(`CRITICAL MAP FAILURE: ${mapError}. Maps are REQUIRED for 100M farmers.`);
   }
 
   return (

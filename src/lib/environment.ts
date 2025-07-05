@@ -13,20 +13,20 @@ interface EnvironmentConfig {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
   
-  // External APIs
-  OPENWEATHERMAP_API_KEY?: string;
-  GEMINI_API_KEY?: string;
-  PLANTNET_API_KEY?: string;
-  MAPBOX_ACCESS_TOKEN?: string;
+  // External APIs - ALL REQUIRED
+  OPENWEATHERMAP_API_KEY: string;
+  GEMINI_API_KEY: string;
+  PLANTNET_API_KEY: string;
+  MAPBOX_ACCESS_TOKEN: string;
   
-  // Satellite & Field Analysis
-  SENTINEL_HUB_CLIENT_ID?: string;
-  SENTINEL_HUB_CLIENT_SECRET?: string;
+  // Satellite & Field Analysis - REQUIRED
+  SENTINEL_HUB_CLIENT_ID: string;
+  SENTINEL_HUB_CLIENT_SECRET: string;
   
-  // WhatsApp Business API
-  WHATSAPP_PHONE_NUMBER_ID?: string;
-  WHATSAPP_ACCESS_TOKEN?: string;
-  WHATSAPP_WEBHOOK_VERIFY_TOKEN?: string;
+  // WhatsApp Business API - REQUIRED
+  WHATSAPP_PHONE_NUMBER_ID: string;
+  WHATSAPP_ACCESS_TOKEN: string;
+  WHATSAPP_WEBHOOK_VERIFY_TOKEN: string;
   
   // Feature Flags
   ENABLE_WHATSAPP: boolean;
@@ -78,30 +78,30 @@ export const loadEnvironmentConfig = (): EnvironmentConfig => {
     const SUPABASE_URL = validateRequired('VITE_SUPABASE_URL', env.VITE_SUPABASE_URL);
     const SUPABASE_ANON_KEY = validateRequired('VITE_SUPABASE_ANON_KEY', env.VITE_SUPABASE_ANON_KEY);
     
-    // Optional API keys
-    const OPENWEATHERMAP_API_KEY = validateOptional(env.VITE_OPENWEATHERMAP_API_KEY);
-    const GEMINI_API_KEY = validateOptional(env.VITE_GEMINI_API_KEY);
-    const PLANTNET_API_KEY = validateOptional(env.VITE_PLANTNET_API_KEY);
-    const MAPBOX_ACCESS_TOKEN = validateOptional(env.VITE_MAPBOX_ACCESS_TOKEN);
+    // ALL API keys REQUIRED for 100M farmers
+    const OPENWEATHERMAP_API_KEY = validateRequired('VITE_OPENWEATHERMAP_API_KEY', env.VITE_OPENWEATHERMAP_API_KEY);
+    const GEMINI_API_KEY = validateRequired('VITE_GEMINI_API_KEY', env.VITE_GEMINI_API_KEY);
+    const PLANTNET_API_KEY = validateRequired('VITE_PLANTNET_API_KEY', env.VITE_PLANTNET_API_KEY);
+    const MAPBOX_ACCESS_TOKEN = validateRequired('VITE_MAPBOX_ACCESS_TOKEN', env.VITE_MAPBOX_ACCESS_TOKEN);
     
-    // Satellite analysis
-    const SENTINEL_HUB_CLIENT_ID = validateOptional(env.VITE_SENTINEL_HUB_CLIENT_ID);
-    const SENTINEL_HUB_CLIENT_SECRET = validateOptional(env.VITE_SENTINEL_HUB_CLIENT_SECRET);
+    // Satellite analysis REQUIRED
+    const SENTINEL_HUB_CLIENT_ID = validateRequired('VITE_SENTINEL_HUB_CLIENT_ID', env.VITE_SENTINEL_HUB_CLIENT_ID);
+    const SENTINEL_HUB_CLIENT_SECRET = validateRequired('VITE_SENTINEL_HUB_CLIENT_SECRET', env.VITE_SENTINEL_HUB_CLIENT_SECRET);
     
-    // WhatsApp Business API
-    const WHATSAPP_PHONE_NUMBER_ID = validateOptional(env.VITE_WHATSAPP_PHONE_NUMBER_ID);
-    const WHATSAPP_ACCESS_TOKEN = validateOptional(env.VITE_WHATSAPP_ACCESS_TOKEN);
-    const WHATSAPP_WEBHOOK_VERIFY_TOKEN = validateOptional(env.VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN);
+    // WhatsApp Business API REQUIRED
+    const WHATSAPP_PHONE_NUMBER_ID = validateRequired('VITE_WHATSAPP_PHONE_NUMBER_ID', env.VITE_WHATSAPP_PHONE_NUMBER_ID);
+    const WHATSAPP_ACCESS_TOKEN = validateRequired('VITE_WHATSAPP_ACCESS_TOKEN', env.VITE_WHATSAPP_ACCESS_TOKEN);
+    const WHATSAPP_WEBHOOK_VERIFY_TOKEN = validateRequired('VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN', env.VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN);
     
     // Monitoring
     const SENTRY_DSN = validateOptional(env.VITE_SENTRY_DSN);
     const POSTHOG_API_KEY = validateOptional(env.VITE_POSTHOG_API_KEY);
     
-    // Feature flags based on available API keys
-    const ENABLE_WHATSAPP = !!(WHATSAPP_PHONE_NUMBER_ID && WHATSAPP_ACCESS_TOKEN);
-    const ENABLE_SATELLITE_ANALYSIS = !!(SENTINEL_HUB_CLIENT_ID && SENTINEL_HUB_CLIENT_SECRET);
-    const ENABLE_WEATHER_INTELLIGENCE = !!OPENWEATHERMAP_API_KEY;
-    const ENABLE_DISEASE_DETECTION = !!(GEMINI_API_KEY && PLANTNET_API_KEY);
+    // ALL FEATURES ENABLED - NO COMPROMISES FOR 100M FARMERS
+    const ENABLE_WHATSAPP = true;
+    const ENABLE_SATELLITE_ANALYSIS = true;
+    const ENABLE_WEATHER_INTELLIGENCE = true;
+    const ENABLE_DISEASE_DETECTION = true;
     const ENABLE_ANALYTICS = !!POSTHOG_API_KEY;
     const ENABLE_ERROR_TRACKING = !!SENTRY_DSN;
     
@@ -154,17 +154,7 @@ export const loadEnvironmentConfig = (): EnvironmentConfig => {
       }
     });
     
-    // Warn about missing optional features
-    const missingFeatures = [];
-    if (!config.ENABLE_WHATSAPP) missingFeatures.push('WhatsApp Integration');
-    if (!config.ENABLE_SATELLITE_ANALYSIS) missingFeatures.push('Satellite Analysis');
-    if (!config.ENABLE_WEATHER_INTELLIGENCE) missingFeatures.push('Weather Intelligence');
-    if (!config.ENABLE_DISEASE_DETECTION) missingFeatures.push('Disease Detection');
-    
-    if (missingFeatures.length > 0) {
-      console.warn('⚠️ Some features are disabled due to missing API keys:', missingFeatures.join(', '));
-      console.warn('📖 Check .env.example for required environment variables');
-    }
+    console.log('🚀 ALL FEATURES ENABLED FOR 100M AFRICAN FARMERS!');
     
     return config;
     
