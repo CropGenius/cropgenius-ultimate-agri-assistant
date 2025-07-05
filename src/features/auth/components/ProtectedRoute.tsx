@@ -1,18 +1,23 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
+import { Loader2 } from 'lucide-react';
 
 export const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
-    // You can replace this with a beautiful loading spinner component
-    return <div>Loading...</div>;
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Verifying access...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
-    // Redirect them to the /login page, but save the current location they were
-    // trying to go to. This allows us to send them along to that page after they log in.
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 

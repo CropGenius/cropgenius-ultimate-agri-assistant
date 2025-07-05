@@ -1,4 +1,3 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -22,30 +21,6 @@ const PWAComponentsLoader = () => (
     <Loader2 className="h-8 w-8 animate-spin text-green-600" />
   </div>
 );
-
-// Configure React Query with better error handling
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 2,
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-      meta: {
-        onError: (error) => {
-          console.error("❌ [Query Error]", error);
-          diagnostics.logError(error as Error, { source: 'react-query' });
-        }
-      }
-    },
-    mutations: {
-      meta: {
-        onError: (error) => {
-          console.error("❌ [Mutation Error]", error);
-          diagnostics.logError(error as Error, { source: 'react-query-mutation' });
-        }
-      }
-    }
-  }
-});
 
 // Global unhandled error handlers
 if (typeof window !== 'undefined') {
@@ -95,28 +70,26 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <UserMetaProvider>
-          <BrowserRouter>
-            <TooltipProvider>
-              <div className="min-h-screen bg-background text-foreground flex flex-col">
-                <AppRoutes />
-                <Toaster />
-                <Sonner position="top-right" />
-                
-                {/* PWA Components */}
-                <Suspense fallback={<PWAComponentsLoader />}>
-                  <UpdateNotification />
-                  <NetworkStatus />
-                </Suspense>
-                
-                {/* Debug Panel */}
-                {process.env.NODE_ENV === 'development' && showDebugPanel && <DevDebugPanel />}
-              </div>
-            </TooltipProvider>
-          </BrowserRouter>
-        </UserMetaProvider>
-      </QueryClientProvider>
+      <UserMetaProvider>
+        <BrowserRouter>
+          <TooltipProvider>
+            <div className="min-h-screen bg-background text-foreground flex flex-col">
+              <AppRoutes />
+              <Toaster />
+              <Sonner position="top-right" />
+              
+              {/* PWA Components */}
+              <Suspense fallback={<PWAComponentsLoader />}>
+                <UpdateNotification />
+                <NetworkStatus />
+              </Suspense>
+              
+              {/* Debug Panel */}
+              {process.env.NODE_ENV === 'development' && showDebugPanel && <DevDebugPanel />}
+            </div>
+          </TooltipProvider>
+        </BrowserRouter>
+      </UserMetaProvider>
     </ErrorBoundary>
   );
 }

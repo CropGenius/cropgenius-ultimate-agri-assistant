@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/context/AuthContext';
 import { useCredits } from '@/hooks/useCredits';
+import ErrorBoundary from '@/components/error/ErrorBoundary';
 
 interface DashboardCardProps {
   title: string;
@@ -34,7 +35,7 @@ interface DashboardCardProps {
   badge?: string;
 }
 
-const DashboardCard: React.FC<DashboardCardProps> = ({
+const DashboardCard: React.FC<DashboardCardProps> = React.memo(({
   title,
   description,
   icon,
@@ -45,70 +46,87 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
   loading = false,
   badge
 }) => {
-  const statusColors = {
+  const statusColors = useMemo(() => ({
     good: 'border-green-200 bg-green-50/50 text-green-800',
     warning: 'border-amber-200 bg-amber-50/50 text-amber-800',
     critical: 'border-red-200 bg-red-50/50 text-red-800'
-  };
+  }), []);
+
+  const handleClick = useCallback(() => {
+    if (onClick) {
+      onClick();
+    }
+  }, [onClick]);
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.2 }}
-    >
-      <Card 
-        className={`cursor-pointer hover:shadow-lg transition-all duration-200 ${
-          onClick ? 'hover:border-primary/50' : ''
-        }`}
-        onClick={onClick}
-      >
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            <div className="flex items-center gap-2">
-              {icon}
-              {title}
-            </div>
-          </CardTitle>
-          {badge && (
-            <Badge variant="secondary" className="text-xs">
-              {badge}
-            </Badge>
-          )}
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">Loading...</span>
-              </div>
-            ) : (
-              <>
-                {value && (
-                  <div className="text-2xl font-bold">{value}</div>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {description}
-                </p>
-                {progress !== undefined && (
-                  <Progress value={progress} className="w-full h-2" />
-                )}
-                {status !== 'good' && (
-                  <div className={`text-xs px-2 py-1 rounded-md ${statusColors[status]}`}>
-                    {status === 'warning' && <AlertTriangle className="inline h-3 w-3 mr-1" />}
-                    {status === 'critical' && <AlertTriangle className="inline h-3 w-3 mr-1" />}
-                    {status === 'warning' ? 'Needs Attention' : 'Critical Issue'}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </CardContent>
+    <ErrorBoundary fallback={
+      <Card className="p-4">
+        <div className="text-center text-muted-foreground">
+          <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
+          <p>Failed to load {title}</p>
+        </div>
       </Card>
-    </motion.div>
+    }>
+      <motion.div
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ duration: 0.2 }}
+      >
+        <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all duration-200 ${
+            onClick ? 'hover:border-primary/50' : ''
+          }`}
+          onClick={handleClick}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              <div className="flex items-center gap-2">
+                {icon}
+                {title}
+              </div>
+            </CardTitle>
+            {badge && (
+              <Badge variant="secondary" className="text-xs">
+                {badge}
+              </Badge>
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">Loading...</span>
+                </div>
+              ) : (
+                <>
+                  {value && (
+                    <div className="text-2xl font-bold">{value}</div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {description}
+                  </p>
+                  {progress !== undefined && (
+                    <Progress value={progress} className="w-full h-2" />
+                  )}
+                  {status !== 'good' && (
+                    <div className={`text-xs px-2 py-1 rounded-md ${statusColors[status]}`}>
+                      {status === 'warning' && <AlertTriangle className="inline h-3 w-3 mr-1" />}
+                      {status === 'critical' && <AlertTriangle className="inline h-3 w-3 mr-1" />}
+                      {status === 'warning' ? 'Needs Attention' : 'Critical Issue'}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </ErrorBoundary>
   );
-};
+});
+
+DashboardCard.displayName = 'DashboardCard';
 
 const EnhancedDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -119,45 +137,71 @@ const EnhancedDashboard: React.FC = () => {
   const [marketData, setMarketData] = useState<any>(null);
   const [tasks, setTasks] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [dataLoadError, setDataLoadError] = useState<string | null>(null);
 
-  // Simulate data loading
-  useEffect(() => {
-    const loadData = async () => {
-      setIsRefreshing(true);
-      
-      // Simulate API calls
-      setTimeout(() => {
-        setWeatherData({
-          temperature: 26,
-          condition: 'Partly Cloudy',
-          forecast: 'Good for farming',
-        });
-        
-        setMarketData({
-          maizePrice: 45,
-          beansPrice: 120,
-          trend: 'up',
-        });
-        
-        setTasks([
-          { id: 1, title: 'Water tomatoes', urgent: true },
-          { id: 2, title: 'Check maize field', urgent: false },
-        ]);
-        
-        setIsRefreshing(false);
-      }, 1000);
-    };
+  // Memoized navigation handlers
+  const navigationHandlers = useMemo(() => ({
+    scan: () => navigate('/scan'),
+    weather: () => navigate('/weather'),
+    market: () => navigate('/market'),
+    chat: () => navigate('/chat'),
+  }), [navigate]);
 
-    loadData();
+  // Simulate data loading with error handling
+  const loadData = useCallback(async () => {
+    setIsRefreshing(true);
+    setDataLoadError(null);
+    
+    try {
+      // Simulate API calls with potential failure
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // Simulate occasional failures
+          if (Math.random() > 0.9) {
+            reject(new Error('Simulated network error'));
+            return;
+          }
+          
+          setWeatherData({
+            temperature: 26,
+            condition: 'Partly Cloudy',
+            forecast: 'Good for farming',
+          });
+          
+          setMarketData({
+            maizePrice: 45,
+            beansPrice: 120,
+            trend: 'up',
+          });
+          
+          setTasks([
+            { id: 1, title: 'Water tomatoes', urgent: true },
+            { id: 2, title: 'Check maize field', urgent: false },
+          ]);
+          
+          resolve(true);
+        }, 1000);
+      });
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+      setDataLoadError(error instanceof Error ? error.message : 'Failed to load data');
+    } finally {
+      setIsRefreshing(false);
+    }
   }, []);
 
-  const dashboardCards = [
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Memoized dashboard cards to prevent unnecessary rerenders
+  const dashboardCards = useMemo(() => [
     {
       title: 'AI Crop Scanner',
       description: 'Scan crops for diseases and get AI recommendations',
       icon: <Leaf className="h-4 w-4 text-green-600" />,
       value: 'AI Ready',
-      onClick: () => navigate('/scan'),
+      onClick: navigationHandlers.scan,
       badge: 'Popular'
     },
     {
@@ -166,9 +210,9 @@ const EnhancedDashboard: React.FC = () => {
         `${weatherData.temperature}°C • ${weatherData.condition}` : 
         'Get hyperlocal weather insights',
       icon: <Cloud className="h-4 w-4 text-blue-600" />,
-      value: weatherData?.forecast || 'Loading...',
-      onClick: () => navigate('/weather'),
-      loading: !weatherData
+      value: weatherData?.forecast || (isRefreshing ? 'Loading...' : 'Tap to load'),
+      onClick: navigationHandlers.weather,
+      loading: !weatherData && isRefreshing
     },
     {
       title: 'Market Insights',
@@ -176,9 +220,9 @@ const EnhancedDashboard: React.FC = () => {
         `Maize: KES ${marketData.maizePrice}/kg • Beans: KES ${marketData.beansPrice}/kg` :
         'Get current market prices and trends',
       icon: <TrendingUp className="h-4 w-4 text-emerald-600" />,
-      value: marketData?.trend === 'up' ? '↗ Trending Up' : 'Loading...',
-      onClick: () => navigate('/market'),
-      loading: !marketData,
+      value: marketData?.trend === 'up' ? '↗ Trending Up' : (isRefreshing ? 'Loading...' : 'Tap to load'),
+      onClick: navigationHandlers.market,
+      loading: !marketData && isRefreshing,
       status: marketData?.trend === 'up' ? 'good' : 'warning'
     },
     {
@@ -186,7 +230,7 @@ const EnhancedDashboard: React.FC = () => {
       description: 'Chat with CropGenius AI for farming advice and guidance',
       icon: <MessageCircle className="h-4 w-4 text-purple-600" />,
       value: '24/7 Available',
-      onClick: () => navigate('/chat'),
+      onClick: navigationHandlers.chat,
       badge: 'New'
     },
     {
@@ -205,10 +249,32 @@ const EnhancedDashboard: React.FC = () => {
       loading: creditsLoading,
       status: balance < 20 ? 'warning' : 'good'
     },
-  ];
+  ], [weatherData, marketData, farmHealth, balance, creditsLoading, isRefreshing, navigationHandlers]);
+
+  const handleRefresh = useCallback(() => {
+    loadData();
+  }, [loadData]);
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <ErrorBoundary>
+      <div className="container mx-auto p-4 space-y-6">
+        {dataLoadError && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <p className="text-amber-800 font-medium">Data Loading Error</p>
+            </div>
+            <p className="text-amber-700 text-sm mt-1">{dataLoadError}</p>
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline" 
+              size="sm" 
+              className="mt-2"
+            >
+              Try Again
+            </Button>
+          </div>
+        )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -221,7 +287,7 @@ const EnhancedDashboard: React.FC = () => {
         </div>
         
         <Button
-          onClick={() => setIsRefreshing(true)}
+          onClick={handleRefresh}
           variant="outline"
           size="sm"
           disabled={isRefreshing}
@@ -326,7 +392,8 @@ const EnhancedDashboard: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 };
 

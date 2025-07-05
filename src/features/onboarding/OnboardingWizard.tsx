@@ -125,9 +125,41 @@ export function OnboardingWizard() {
     }
   }, [step]);
 
+  const validateFormData = (data: Partial<OnboardingData>): string[] => {
+    const errors: string[] = [];
+    
+    if (!data.farmName || data.farmName.trim().length < 2) {
+      errors.push('Farm name must be at least 2 characters long');
+    }
+    
+    if (!data.totalArea || data.totalArea < 0.1) {
+      errors.push('Total area must be at least 0.1 hectares');
+    }
+    
+    if (!data.crops || data.crops.length === 0) {
+      errors.push('Please select at least one crop');
+    }
+    
+    if (data.whatsappNumber && !/^\+?[1-9]\d{1,14}$/.test(data.whatsappNumber.replace(/\s/g, ''))) {
+      errors.push('Please enter a valid WhatsApp number');
+    }
+    
+    return errors;
+  };
+
   const handleFinalSubmit = useCallback(async () => {
     if (isSubmitting || !user?.id) {
       toast.error('Please sign in to continue');
+      return false;
+    }
+
+    // Validate form data before submission
+    const validationErrors = validateFormData(formData);
+    if (validationErrors.length > 0) {
+      toast.error('Please fix the following errors:', {
+        description: validationErrors.join(', '),
+        duration: 5000,
+      });
       return false;
     }
 
@@ -135,11 +167,11 @@ export function OnboardingWizard() {
     setSubmitError(null);
 
     try {
-      // Prepare the submission data with proper types
+      // Prepare the submission data with proper types and validation
       const submissionData: OnboardingData = {
         ...formData,
-        farmName: formData.farmName || 'My Farm',
-        totalArea: Number(formData.totalArea) || 1,
+        farmName: formData.farmName?.trim() || 'My Farm',
+        totalArea: Math.max(Number(formData.totalArea) || 1, 0.1),
         crops: formData.crops || [],
         primaryGoal: formData.primaryGoal || 'increase_yield',
         primaryPainPoint: formData.primaryPainPoint || 'pests',
@@ -148,46 +180,76 @@ export function OnboardingWizard() {
         hasSoilTest: Boolean(formData.hasSoilTest),
         budgetBand: formData.budgetBand || 'medium',
         preferredLanguage: formData.preferredLanguage || 'en',
-        whatsappNumber: formData.whatsappNumber || '',
+        whatsappNumber: formData.whatsappNumber?.trim() || '',
         plantingDate: formData.plantingDate || new Date(),
         harvestDate: formData.harvestDate || new Date(Date.now() + 120 * 24 * 60 * 60 * 1000), // 120 days from now
       };
 
       console.log('Submitting onboarding data:', submissionData);
 
-      // Call the onboarding service
-      const result = await completeOnboarding(submissionData);
+      // Call the onboarding service with timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timed out after 30 seconds')), 30000)
+      );
+      
+      const result = await Promise.race([
+        completeOnboarding(submissionData),
+        timeoutPromise
+      ]);
       
       console.log('Onboarding completed successfully:', result);
       
       // Refresh user profile to get updated onboarding status
       if (refreshProfile) {
-        await refreshProfile();
+        try {
+          await refreshProfile();
+        } catch (profileError) {
+          console.warn('Failed to refresh profile, but onboarding was successful:', profileError);
+        }
       }
       
       // Clear form data from localStorage
-      localStorage.removeItem(ONBOARDING_FORM_DATA_KEY);
-      localStorage.removeItem(ONBOARDING_STEP_KEY);
+      try {
+        localStorage.removeItem(ONBOARDING_FORM_DATA_KEY);
+        localStorage.removeItem(ONBOARDING_STEP_KEY);
+      } catch (storageError) {
+        console.warn('Failed to clear localStorage:', storageError);
+      }
       
       // Show success message
-      toast.success('Onboarding completed successfully!');
+      toast.success('Welcome to CropGenius!', {
+        description: 'Your farm profile has been created successfully.',
+        duration: 3000,
+      });
       
       // Navigate to dashboard after a short delay to show success state
       setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+        navigate('/dashboard', { replace: true });
+      }, 1500);
       
       return true;
     } catch (error) {
       console.error('Error in onboarding submission:', error);
-      const errorMessage = error?.message || 'An unknown error occurred';
-      const errorDetails = error?.details || error?.toString() || 'No additional details';
       
-      console.error('Error details:', errorDetails);
-      setSubmitError(`Error: ${errorMessage}`);
+      let errorMessage = 'An unexpected error occurred';
+      let errorDescription = 'Please try again or contact support if the problem persists.';
       
-      toast.error(`Failed to save: ${errorMessage}`, {
-        description: errorDetails,
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        if (error.message.includes('timeout')) {
+          errorDescription = 'The request took too long. Please check your internet connection and try again.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorDescription = 'Please check your internet connection and try again.';
+        } else if (error.message.includes('validation')) {
+          errorDescription = 'Please check your form data and try again.';
+        }
+      }
+      
+      setSubmitError(errorMessage);
+      
+      toast.error('Failed to complete onboarding', {
+        description: errorDescription,
         duration: 5000,
       });
       

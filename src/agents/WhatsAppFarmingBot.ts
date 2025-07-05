@@ -75,7 +75,7 @@ export const sendCropAdvice = async (
   adviceType: 'disease' | 'weather' | 'market' | 'general' = 'general'
 ): Promise<boolean> => {
   if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
-    throw new Error('WhatsApp API credentials are missing');
+    throw new Error('WhatsApp API credentials are required for production deployment');
   }
 
   try {
@@ -101,13 +101,13 @@ export const sendCropAdvice = async (
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
       console.error('WhatsApp API error:', errorData);
-      throw new Error(`WhatsApp API error: ${response.status}`);
+      throw new Error(`WhatsApp API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const result = await response.json();
-    console.log('✅ WhatsApp message sent successfully:', result.messages[0].id);
+    console.log('✅ WhatsApp message sent successfully:', result.messages?.[0]?.id || 'Message sent');
 
     // Log the interaction
     await logFarmerInteraction(phoneNumber, 'outbound', message, adviceType);
@@ -116,6 +116,13 @@ export const sendCropAdvice = async (
 
   } catch (error) {
     console.error('❌ Failed to send WhatsApp message:', error);
+    
+    // Don't throw error in production - log it and continue
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('WhatsApp message failed but continuing operation');
+      return false;
+    }
+    
     throw error;
   }
 };
@@ -124,6 +131,55 @@ export const sendCropAdvice = async (
  * Handle incoming WhatsApp messages
  */
 export const handleIncomingMessage = async (message: WhatsAppMessage): Promise<string> => {
+  // Check if WhatsApp API is configured
+  if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+    console.warn('⚠️ WhatsApp API not configured - message will be processed but response not sent');
+    
+    try {
+      // Process the message for logging/analysis purposes
+      const farmerProfile = await getFarmerProfile(message.from);
+      const intent = await classifyFarmingIntent(message, farmerProfile);
+      
+      let response = '';
+      switch (intent.category) {
+        case 'disease_identification':
+          response = await processDiseaseQuery(message, farmerProfile);
+          break;
+        case 'planting_advice':
+          response = await providePlantingGuidance(message, farmerProfile);
+          break;
+        case 'weather_inquiry':
+          response = await shareWeatherInsights(message, farmerProfile);
+          break;
+        case 'market_prices':
+          response = await getLocalMarketPrices(message, farmerProfile);
+          break;
+        case 'pest_control':
+          response = await providePestControlAdvice(message, farmerProfile);
+          break;
+        case 'irrigation':
+          response = await provideIrrigationAdvice(message, farmerProfile);
+          break;
+        case 'fertilizer':
+          response = await provideFertilizerAdvice(message, farmerProfile);
+          break;
+        case 'harvest_timing':
+          response = await provideHarvestTiming(message, farmerProfile);
+          break;
+        default:
+          response = await provideGeneralFarmingAdvice(message, farmerProfile);
+      }
+      
+      // Log the interaction
+      await logFarmerInteraction(message.from, 'inbound', message.text?.body || 'Media message', intent.category);
+      
+      return response;
+    } catch (error) {
+      console.error('❌ Error processing message (WhatsApp not configured):', error);
+      return "WhatsApp service is currently not available. Please try again later.";
+    }
+  }
+
   try {
     console.log(`📱 Processing incoming message from ${message.from}...`);
 
@@ -164,8 +220,13 @@ export const handleIncomingMessage = async (message: WhatsAppMessage): Promise<s
         response = await provideGeneralFarmingAdvice(message, farmerProfile);
     }
 
-    // Send response back to farmer
-    await sendWhatsAppMessage(message.from, response);
+    // Send response back to farmer (with error handling)
+    try {
+      await sendWhatsAppMessage(message.from, response);
+    } catch (sendError) {
+      console.error('Failed to send WhatsApp response:', sendError);
+      // Continue processing even if send fails
+    }
 
     // Log the interaction
     await logFarmerInteraction(message.from, 'inbound', message.text?.body || 'Media message', intent.category);
@@ -175,9 +236,14 @@ export const handleIncomingMessage = async (message: WhatsAppMessage): Promise<s
   } catch (error) {
     console.error('❌ Error handling incoming message:', error);
     
-    // Send error message to farmer
+    // Send error message to farmer (with error handling)
     const errorResponse = "I'm sorry, I'm having trouble processing your request right now. Please try again in a few minutes or contact our support team.";
-    await sendWhatsAppMessage(message.from, errorResponse);
+    
+    try {
+      await sendWhatsAppMessage(message.from, errorResponse);
+    } catch (sendError) {
+      console.error('Failed to send error response:', sendError);
+    }
     
     return errorResponse;
   }
@@ -646,22 +712,42 @@ What would you like help with today?`;
  * Send WhatsApp message
  */
 async function sendWhatsAppMessage(phoneNumber: string, message: string): Promise<void> {
-  const response = await fetch(`${WHATSAPP_API_BASE_URL}/messages`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to: phoneNumber,
-      type: "text",
-      text: { body: message }
-    })
-  });
+  if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_NUMBER_ID) {
+    console.warn('⚠️ WhatsApp API not configured - message not sent:', message.substring(0, 100) + '...');
+    return;
+  }
 
-  if (!response.ok) {
-    throw new Error(`WhatsApp API error: ${response.status}`);
+  try {
+    const response = await fetch(`${WHATSAPP_API_BASE_URL}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: phoneNumber,
+        type: "text",
+        text: { body: message }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(`WhatsApp API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+    
+    console.log('✅ WhatsApp message sent successfully');
+  } catch (error) {
+    console.error('❌ Failed to send WhatsApp message:', error);
+    
+    // In production, don't throw - just log and continue
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('WhatsApp message failed but continuing operation');
+      return;
+    }
+    
+    throw error;
   }
 }
 

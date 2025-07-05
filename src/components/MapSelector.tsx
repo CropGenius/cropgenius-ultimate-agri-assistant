@@ -1,4 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { AlertCircle, MapPin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface MapSelectorProps {
   onLocationSelect?: (location: { lat: number; lng: number }) => void;
@@ -9,13 +11,15 @@ interface MapSelectorProps {
 
 const MapSelector: React.FC<MapSelectorProps> = ({
   onLocationSelect,
-  initialCenter = { lat: 0, lng: 0 },
-  zoom = 2,
+  initialCenter = { lat: -1.2921, lng: 36.8219 }, // Nairobi, Kenya as default
+  zoom = 10,
   className = '',
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const marker = useRef<any>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -23,19 +27,28 @@ const MapSelector: React.FC<MapSelectorProps> = ({
     // Initialize map
     const initializeMap = async () => {
       try {
+        setIsLoading(true);
+        setMapError(null);
+        
+        const mapboxToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+        
+        if (!mapboxToken) {
+          throw new Error('CRITICAL: Mapbox access token REQUIRED for 100M farmers. Configure VITE_MAPBOX_ACCESS_TOKEN immediately.');
+        }
+        
         const mapboxgl = (await import('mapbox-gl')).default;
         
         // Set access token
-        (mapboxgl as any).accessToken = process.env.VITE_MAPBOX_ACCESS_TOKEN || '';
+        (mapboxgl as any).accessToken = mapboxToken;
         
         // Check browser support
         if (!(mapboxgl as any).supported()) {
-          throw new Error('Your browser does not support Mapbox GL');
+          throw new Error('Your browser does not support Mapbox GL. Please update your browser or use a different one.');
         }
 
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/streets-v11',
+          style: 'mapbox://styles/mapbox/satellite-streets-v12', // Better for farming
           center: [initialCenter.lng, initialCenter.lat],
           zoom: zoom,
         });
@@ -52,7 +65,9 @@ const MapSelector: React.FC<MapSelectorProps> = ({
             if (marker.current) {
               marker.current.setLngLat([lng, lat]);
             } else {
-              marker.current = new mapboxgl.Marker()
+              marker.current = new mapboxgl.Marker({
+                color: '#10b981' // Green marker for farming theme
+              })
                 .setLngLat([lng, lat])
                 .addTo(map.current);
             }
@@ -61,8 +76,15 @@ const MapSelector: React.FC<MapSelectorProps> = ({
             onLocationSelect({ lat, lng });
           });
         }
+        
+        map.current.on('load', () => {
+          setIsLoading(false);
+        });
+        
       } catch (error) {
         console.error('Error initializing map:', error);
+        setMapError(error instanceof Error ? error.message : 'Failed to load map');
+        setIsLoading(false);
       }
     };
 
@@ -76,13 +98,101 @@ const MapSelector: React.FC<MapSelectorProps> = ({
     };
   }, [initialCenter, zoom, onLocationSelect]);
 
+  const handleUseCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          if (onLocationSelect) {
+            onLocationSelect({ lat: latitude, lng: longitude });
+          }
+          
+          // Update map center if available
+          if (map.current) {
+            map.current.flyTo({
+              center: [longitude, latitude],
+              zoom: 15
+            });
+            
+            // Add or update marker
+            if (marker.current) {
+              marker.current.setLngLat([longitude, latitude]);
+            } else {
+              const mapboxgl = require('mapbox-gl');
+              marker.current = new mapboxgl.Marker({
+                color: '#10b981'
+              })
+                .setLngLat([longitude, latitude])
+                .addTo(map.current);
+            }
+          }
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          setMapError('Unable to get your current location. Please select manually on the map.');
+        }
+      );
+    } else {
+      setMapError('Geolocation is not supported by your browser.');
+    }
+  };
+
+  if (mapError) {
+    return (
+      <div className={`w-full h-full min-h-[400px] flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg ${className}`}>
+        <div className="text-center p-6 max-w-md">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Map Unavailable</h3>
+          <p className="text-gray-600 mb-4 text-sm">{mapError}</p>
+          <div className="space-y-2">
+            <Button 
+              onClick={handleUseCurrentLocation}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <MapPin className="h-4 w-4 mr-2" />
+              Use Current Location
+            </Button>
+            <p className="text-xs text-gray-500">
+              Or manually enter coordinates in the form below
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div 
-      ref={mapContainer} 
-      id="map"
-      className={`w-full h-full min-h-[400px] ${className}`}
-      data-testid="map-container"
-    />
+    <div className={`relative w-full h-full min-h-[400px] ${className}`}>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg z-10">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+            <p className="text-sm text-gray-600">Loading map...</p>
+          </div>
+        </div>
+      )}
+      
+      <div 
+        ref={mapContainer} 
+        id="map"
+        className="w-full h-full min-h-[400px] rounded-lg"
+        data-testid="map-container"
+      />
+      
+      {!isLoading && (
+        <Button
+          onClick={handleUseCurrentLocation}
+          className="absolute top-4 right-4 z-10"
+          size="sm"
+          variant="secondary"
+        >
+          <MapPin className="h-4 w-4 mr-2" />
+          My Location
+        </Button>
+      )}
+    </div>
   );
 };
 
