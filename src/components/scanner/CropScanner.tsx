@@ -97,7 +97,7 @@ const CROP_DISEASES = [
   }
 ];
 
-const CropScanner: React.FC = () => {
+const CropScanner = () => {
   // Main state
   const [scanState, setScanState] = useState<ScanState>("idle");
   const [scanProgress, setScanProgress] = useState(0);
@@ -298,17 +298,13 @@ const CropScanner: React.FC = () => {
 
   // Effect for cleaning up resources on unmount
   useEffect(() => {
-    // Store capturedImage in a ref to access the latest value in cleanup
-    const capturedImageRef = React.useRef(capturedImage);
-    capturedImageRef.current = capturedImage;
-
     return () => {
-      stopCamera(); // Ensure camera stream is stopped
-      if (capturedImageRef.current) {
-        URL.revokeObjectURL(capturedImageRef.current); // Ensure object URL is revoked
+      stopCamera();
+      if (capturedImage) {
+        URL.revokeObjectURL(capturedImage);
       }
     };
-  }, [stopCamera]); // capturedImage is not in dependency array to avoid re-running effect on its change, only on unmount. stopCamera is stable.
+  }, [capturedImage, stopCamera]);
 
   return (
     <div className="p-5 pb-24 animate-fade-in">

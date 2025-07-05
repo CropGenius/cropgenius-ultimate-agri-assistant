@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useOpenWeather } from '@/hooks/useOpenWeather';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';

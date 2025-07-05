@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Thermometer, Droplets, Wind, Sun, Loader2, MapPin, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";

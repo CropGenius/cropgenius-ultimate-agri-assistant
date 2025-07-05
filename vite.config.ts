@@ -7,7 +7,9 @@ import mimeTypeFix from './vite-plugin-mime-fix.js';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      jsxRuntime: 'automatic'
+    }),
     mimeTypeFix(),
     ...(process.env.ANALYZE ? [visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true })] : []),
   ],
@@ -65,10 +67,10 @@ export default defineConfig({
     include: ['react', 'react-dom', 'react-router-dom'],
     esbuildOptions: {
       target: 'es2020',
+      jsx: 'automatic',
     },
   },
   esbuild: {
-    jsxInject: `import React from 'react'`,
     target: 'es2020',
   },
 });
