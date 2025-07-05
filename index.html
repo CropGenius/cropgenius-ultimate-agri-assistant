@@ -180,63 +180,7 @@
       <!-- App will be mounted here -->
     </div>
     
-    <!-- Ultimate error handling and module loading -->
-    <script>
-      (function() {
-        let attempts = 0;
-        const maxAttempts = 3;
-        
-        function loadApp() {
-          attempts++;
-          console.log('Loading attempt:', attempts);
-          
-          // Clear any existing scripts
-          const existingScripts = document.querySelectorAll('script[src*="main.tsx"]');
-          existingScripts.forEach(s => s.remove());
-          
-          const script = document.createElement('script');
-          script.type = 'module';
-          script.src = '/src/main.tsx?v=' + Date.now();
-          
-          script.onload = function() {
-            console.log('Main module loaded successfully');
-          };
-          
-          script.onerror = function(e) {
-            console.error('Module load failed, attempt:', attempts, e);
-            if (attempts < maxAttempts) {
-              setTimeout(loadApp, 1000 * attempts);
-            } else {
-              window.location.href = '/emergency.html';
-            }
-          };
-          
-          document.head.appendChild(script);
-        }
-        
-        // Global error handlers
-        window.addEventListener('error', function(e) {
-          console.error('Global error:', e);
-          if (e.message && e.message.includes('MIME')) {
-            window.location.href = '/emergency.html';
-          }
-        });
-        
-        window.addEventListener('unhandledrejection', function(e) {
-          console.error('Unhandled rejection:', e);
-        });
-        
-        // Start loading
-        loadApp();
-        
-        // Ultimate fallback
-        setTimeout(function() {
-          if (!document.querySelector('#root').hasChildNodes()) {
-            window.location.href = '/emergency.html';
-          }
-        }, 10000);
-      })();
-    </script>
+    <script type="module" src="/src/main.tsx"></script>
     
     <!-- Register service worker after app loads -->
     <script>
