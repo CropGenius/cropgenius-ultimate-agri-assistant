@@ -205,7 +205,7 @@ export default function GeniusGrow({
   };
 
   return (
-    <Card className="border-primary/20 shadow-lg">
+    <Card className="glass-card border-primary/20 shadow-lg">
       <CardHeader className="bg-primary-50 dark:bg-primary-900/30 pb-3">
         <CardTitle className="flex items-center gap-2">
           <Sprout className="h-5 w-5 text-primary" />

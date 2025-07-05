@@ -1,0 +1,108 @@
+/* 🌟 CROPGENIUS GLASSMORPHISM SYSTEM */
+
+/* 1. Glass Card Base */
+.glass-card {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+  overflow: hidden;
+  position: relative;
+}
+
+.glass-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  box-shadow:
+    inset -10px -8px 0 rgba(255,255,255,0.7),
+    inset 0 -9px 0 rgba(255,255,255,0.5);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* 2. Glass Button */
+.glass-btn {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 24px;
+  padding: 12px 24px;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.glass-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.glass-btn:active {
+  transform: scale(0.98);
+}
+
+/* 3. Glass Modal */
+.glass-modal {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px) saturate(160%);
+  -webkit-backdrop-filter: blur(15px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+}
+
+/* 4. Tailwind Integration */
+.glass-morphic {
+  @apply glass-card;
+}
+
+.glass-button {
+  @apply glass-btn;
+}
+
+.glass-overlay {
+  @apply glass-modal;
+}
+
+/* 5. Performance Fallback */
+@supports not (backdrop-filter: blur(10px)) {
+  .glass-card {
+    background: rgba(255,255,255,0.9);
+  }
+  .glass-btn {
+    background: rgba(255,255,255,0.8);
+  }
+  .glass-modal {
+    background: rgba(255,255,255,0.85);
+  }
+}
+
+/* 6. Dark Mode Variants */
+@media (prefers-color-scheme: dark) {
+  .glass-card {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .glass-btn {
+    background: rgba(0, 0, 0, 0.2);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .glass-modal {
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+}

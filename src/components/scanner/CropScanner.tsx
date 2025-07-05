@@ -349,7 +349,7 @@ const CropScanner = () => {
 
       {/* IDLE STATE - INITIAL VIEW */}
       {scanState === "idle" && (
-        <Card className="p-5 bg-white mb-5">
+        <Card className="glass-card p-5 mb-5">
           <div className="flex flex-col items-center text-center">
             {capturedImage ? (
               <div className="w-full mb-4">
@@ -371,14 +371,14 @@ const CropScanner = () => {
             
             <div className="grid grid-cols-2 gap-4 w-full mb-6">
               <Button 
-                className="bg-crop-green-600 hover:bg-crop-green-700 text-white flex items-center justify-center h-14"
+                className="glass-btn bg-crop-green-600 hover:bg-crop-green-700 text-white flex items-center justify-center h-14"
                 onClick={startCamera}
               >
                 <Camera className="mr-2" />
                 Take Photo
               </Button>
               <Button 
-                className="bg-soil-brown-600 hover:bg-soil-brown-700 text-white flex items-center justify-center h-14"
+                className="glass-btn bg-soil-brown-600 hover:bg-soil-brown-700 text-white flex items-center justify-center h-14"
                 onClick={triggerFileInput}
               >
                 <Upload className="mr-2" />
@@ -409,7 +409,7 @@ const CropScanner = () => {
 
       {/* SCANNING STATE */}
       {scanState === "scanning" && (
-        <Card className="p-5 bg-white mb-5">
+        <Card className="glass-card p-5 mb-5">
           <div className="flex flex-col items-center text-center">
             {capturedImage && (
               <div className="w-full mb-4">
@@ -458,7 +458,7 @@ const CropScanner = () => {
       {/* RESULTS STATE */}
       {scanState === "results" && scanResults && (
         <>
-          <Card className="p-5 bg-white mb-5 border-2 border-crop-green-500">
+          <Card className="glass-card p-5 mb-5 border-2 border-crop-green-500">
             <div className="flex justify-between items-start mb-4">
               <div>
                 <Badge className={getSeverityColor(scanResults.severity)}>
@@ -540,7 +540,7 @@ const CropScanner = () => {
             </div>
           </div>
 
-          <Card className="p-4 bg-white mb-5">
+          <Card className="glass-card p-4 mb-5">
             <h3 className="font-semibold text-gray-800 mb-3">Available Treatment Products</h3>
             {scanResults.treatmentProducts.map((product, i) => (
               <div key={i} className="border-b border-gray-100 pb-3 mb-3 last:border-0 last:mb-0 last:pb-0">
@@ -599,7 +599,7 @@ const CropScanner = () => {
             </Button>
           </div>
 
-          <Card className="p-4 bg-crop-green-50 border-0">
+          <Card className="glass-card p-4 bg-crop-green-50 border-0">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-crop-green-700">Want more accurate analysis?</h3>
