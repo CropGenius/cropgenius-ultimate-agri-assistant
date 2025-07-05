@@ -148,7 +148,7 @@ const ScanPage = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Response Time</span>
-                      <span className="font-bold text-blue-600">< 3 sec</span>
+                      <span className="font-bold text-blue-600">&lt; 3 sec</span>
                     </div>
                   </CardContent>
                 </Card>
