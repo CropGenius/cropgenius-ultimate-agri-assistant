@@ -74,34 +74,34 @@ export const loadEnvironmentConfig = (): EnvironmentConfig => {
   const env = import.meta.env;
   
   try {
-    // Core required variables
+    // Core required variables (MUST have these)
     const SUPABASE_URL = validateRequired('VITE_SUPABASE_URL', env.VITE_SUPABASE_URL);
     const SUPABASE_ANON_KEY = validateRequired('VITE_SUPABASE_ANON_KEY', env.VITE_SUPABASE_ANON_KEY);
     
-    // ALL API keys REQUIRED for 100M farmers
-    const OPENWEATHERMAP_API_KEY = validateRequired('VITE_OPENWEATHERMAP_API_KEY', env.VITE_OPENWEATHERMAP_API_KEY);
-    const GEMINI_API_KEY = validateRequired('VITE_GEMINI_API_KEY', env.VITE_GEMINI_API_KEY);
-    const PLANTNET_API_KEY = validateRequired('VITE_PLANTNET_API_KEY', env.VITE_PLANTNET_API_KEY);
-    const MAPBOX_ACCESS_TOKEN = validateRequired('VITE_MAPBOX_ACCESS_TOKEN', env.VITE_MAPBOX_ACCESS_TOKEN);
+    // API keys with graceful degradation
+    const OPENWEATHERMAP_API_KEY = env.VITE_OPENWEATHERMAP_API_KEY || '';
+    const GEMINI_API_KEY = env.VITE_GEMINI_API_KEY || '';
+    const PLANTNET_API_KEY = env.VITE_PLANTNET_API_KEY || '';
+    const MAPBOX_ACCESS_TOKEN = env.VITE_MAPBOX_ACCESS_TOKEN || '';
     
-    // Satellite analysis REQUIRED
-    const SENTINEL_HUB_CLIENT_ID = validateRequired('VITE_SENTINEL_HUB_CLIENT_ID', env.VITE_SENTINEL_HUB_CLIENT_ID);
-    const SENTINEL_HUB_CLIENT_SECRET = validateRequired('VITE_SENTINEL_HUB_CLIENT_SECRET', env.VITE_SENTINEL_HUB_CLIENT_SECRET);
+    // Satellite analysis (optional)
+    const SENTINEL_HUB_CLIENT_ID = env.VITE_SENTINEL_HUB_CLIENT_ID || '';
+    const SENTINEL_HUB_CLIENT_SECRET = env.VITE_SENTINEL_HUB_CLIENT_SECRET || '';
     
-    // WhatsApp Business API REQUIRED
-    const WHATSAPP_PHONE_NUMBER_ID = validateRequired('VITE_WHATSAPP_PHONE_NUMBER_ID', env.VITE_WHATSAPP_PHONE_NUMBER_ID);
-    const WHATSAPP_ACCESS_TOKEN = validateRequired('VITE_WHATSAPP_ACCESS_TOKEN', env.VITE_WHATSAPP_ACCESS_TOKEN);
-    const WHATSAPP_WEBHOOK_VERIFY_TOKEN = validateRequired('VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN', env.VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN);
+    // WhatsApp Business API (optional)
+    const WHATSAPP_PHONE_NUMBER_ID = env.VITE_WHATSAPP_PHONE_NUMBER_ID || '';
+    const WHATSAPP_ACCESS_TOKEN = env.VITE_WHATSAPP_ACCESS_TOKEN || '';
+    const WHATSAPP_WEBHOOK_VERIFY_TOKEN = env.VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
     
     // Monitoring
     const SENTRY_DSN = validateOptional(env.VITE_SENTRY_DSN);
     const POSTHOG_API_KEY = validateOptional(env.VITE_POSTHOG_API_KEY);
     
-    // ALL FEATURES ENABLED - NO COMPROMISES FOR 100M FARMERS
-    const ENABLE_WHATSAPP = true;
-    const ENABLE_SATELLITE_ANALYSIS = true;
-    const ENABLE_WEATHER_INTELLIGENCE = true;
-    const ENABLE_DISEASE_DETECTION = true;
+    // Features enabled based on available API keys
+    const ENABLE_WHATSAPP = !!(WHATSAPP_PHONE_NUMBER_ID && WHATSAPP_ACCESS_TOKEN);
+    const ENABLE_SATELLITE_ANALYSIS = !!(SENTINEL_HUB_CLIENT_ID && SENTINEL_HUB_CLIENT_SECRET);
+    const ENABLE_WEATHER_INTELLIGENCE = !!OPENWEATHERMAP_API_KEY;
+    const ENABLE_DISEASE_DETECTION = !!(PLANTNET_API_KEY && GEMINI_API_KEY);
     const ENABLE_ANALYTICS = !!POSTHOG_API_KEY;
     const ENABLE_ERROR_TRACKING = !!SENTRY_DSN;
     
@@ -154,7 +154,14 @@ export const loadEnvironmentConfig = (): EnvironmentConfig => {
       }
     });
     
-    console.log('🚀 ALL FEATURES ENABLED FOR 100M AFRICAN FARMERS!');
+    // Log warnings for missing API keys
+    if (!MAPBOX_ACCESS_TOKEN) console.warn('⚠️ Mapbox token missing - maps will use fallback');
+    if (!ENABLE_WHATSAPP) console.warn('⚠️ WhatsApp API not configured - chat features disabled');
+    if (!ENABLE_SATELLITE_ANALYSIS) console.warn('⚠️ Sentinel Hub not configured - satellite analysis disabled');
+    if (!ENABLE_WEATHER_INTELLIGENCE) console.warn('⚠️ OpenWeather API missing - weather features limited');
+    if (!ENABLE_DISEASE_DETECTION) console.warn('⚠️ AI APIs missing - disease detection limited');
+    
+    console.log('🚀 CropGenius initialized with available features!');
     
     return config;
     
@@ -203,9 +210,14 @@ export const validateCriticalFeatures = (): { valid: boolean; errors: string[] }
     errors.push('Supabase configuration is required for the application to function');
   }
   
-  // Check if at least one AI feature is available
+  // Warn about missing features but don't fail
+  const warnings: string[] = [];
   if (!ENV_CONFIG.ENABLE_DISEASE_DETECTION && !ENV_CONFIG.ENABLE_WEATHER_INTELLIGENCE) {
-    errors.push('At least one AI feature (Disease Detection or Weather Intelligence) should be enabled');
+    warnings.push('No AI features available - consider adding API keys for enhanced functionality');
+  }
+  
+  if (warnings.length > 0) {
+    console.warn('⚠️ Feature warnings:', warnings);
   }
   
   return {
