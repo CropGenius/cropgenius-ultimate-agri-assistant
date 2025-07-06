@@ -1,8 +1,5 @@
 {
   "mcpServers": {
-    "git": {
-      "serverType": "git"
-    },
     "supabase": {
       "command": "npx",
       "args": ["@supabase/mcp-server-supabase"],
