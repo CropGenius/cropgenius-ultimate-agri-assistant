@@ -58,7 +58,6 @@ class EnhancedSupabaseClient {
             flowType: 'pkce',
           },
           global: {
-            fetch: this.enhancedFetch.bind(this),
             headers: {
               'X-Client-Version': APP_CONFIG.version,
               'X-Client-Name': APP_CONFIG.name,
