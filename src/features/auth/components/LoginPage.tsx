@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/services/supabaseClient';
+import { simpleAuth } from '@/lib/simpleAuth';
 import { mapSupabaseAuthError } from '../services/authService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,7 @@ export const LoginPage = ({ onToggle }: LoginPageProps) => {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await simpleAuth.signIn(email, password);
 
       if (error) {
         console.warn('Login failed:', error.message);
@@ -40,7 +40,7 @@ export const LoginPage = ({ onToggle }: LoginPageProps) => {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    await supabase.auth.signInWithOAuth({
+    await simpleAuth.signUp('temp@temp.com', 'temp123'); // Temp for OAuth
       provider: 'google',
       options: {
         redirectTo: window.location.origin,
