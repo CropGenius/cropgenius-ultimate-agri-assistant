@@ -90,7 +90,7 @@ class EnhancedSupabaseClient {
     const operation = () => fetch(url, options);
 
     try {
-      if (this.options.enableOfflineQueue) {
+      if (this.options.enableOfflineQueue && this.shouldRetry(url)) {
         return await networkManager.executeWithRetry(operation, {
           retries: this.options.maxRetries,
           priority: this.getOperationPriority(url, options),
@@ -122,6 +122,22 @@ class EnhancedSupabaseClient {
 
     // Low priority: GET operations
     return 'low';
+  }
+
+  private shouldRetry(url: RequestInfo | URL, response?: Response): boolean {
+    const urlString = url.toString();
+    
+    // Never retry auth requests to prevent infinite loops
+    if (urlString.includes('/auth/')) {
+      return false;
+    }
+    
+    // Don't retry 4xx errors (client errors)
+    if (response && response.status >= 400 && response.status < 500) {
+      return false;
+    }
+    
+    return true;
   }
 
   private handleNetworkError(
