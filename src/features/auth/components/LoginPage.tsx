@@ -22,13 +22,20 @@ export const LoginPage = ({ onToggle }: LoginPageProps) => {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) {
-      setError(mapSupabaseAuthError(error));
+      if (error) {
+        console.warn('Login failed:', error.message);
+        setError(mapSupabaseAuthError(error));
+      }
+      // On success, the AuthProvider will redirect automatically.
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Unable to connect. Please check your internet connection.');
+    } finally {
+      setLoading(false);
     }
-    // On success, the AuthProvider will redirect automatically.
-    setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
