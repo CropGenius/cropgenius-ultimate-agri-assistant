@@ -11,6 +11,8 @@ import { Toaster } from '@/components/ui/sonner';
 import { GrowthEngineProvider } from './providers/GrowthEngineProvider';
 import { initAnalytics } from './analytics';
 import { register } from './utils/serviceWorkerRegistration';
+import { handleError } from './utils/errorHandler';
+import { env } from './config/environment';
 
 // Create a single instance of QueryClient for the entire application.
 const queryClient = new QueryClient({
@@ -30,51 +32,37 @@ const registerServiceWorker = () => {
     serviceWorkerUrl: '/sw.js',
     debug: process.env.NODE_ENV === 'development',
     onSuccess: (registration) => {
-      console.log('[Service Worker] Registered with scope:', registration.scope);
+      if (import.meta.env.DEV) {
+        console.log('[Service Worker] Registered');
+      }
       
       // Check for updates every hour
       setInterval(() => {
-        registration.update().catch(err => {
-          console.warn('[Service Worker] Update check failed:', err);
-        });
+        registration.update().catch(() => {});
       }, 60 * 60 * 1000);
     },
     onUpdate: (registration) => {
-      console.log('[Service Worker] New content available; waiting to update.');
-      
-      // Dispatch a custom event that our UpdateNotification component can listen for
+      // Dispatch update event silently
       window.dispatchEvent(new CustomEvent('serviceWorkerUpdate', { 
         detail: { registration } 
       }));
     },
     onError: (error) => {
-      console.error('[Service Worker] Registration failed:', error);
-      
-      // If we're in development, log additional debugging info
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Service worker registration error details:', {
-          location: window.location.href,
-          secureContext: window.isSecureContext,
-          serviceWorker: 'serviceWorker' in navigator,
-          protocol: window.location.protocol,
-          hostname: window.location.hostname,
-        });
+      // Silent in production, only log in development
+      if (import.meta.env.DEV) {
+        console.error('[Service Worker] Registration failed:', error);
       }
     },
   });
 };
 
-// Register service worker when the app loads in production
-if (process.env.NODE_ENV === 'production') {
+// Only register service worker in production with proper checks
+if (import.meta.env.PROD && 'serviceWorker' in navigator && window.isSecureContext) {
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    // Loading has already finished, register immediately
     registerServiceWorker();
   } else {
-    // Wait for the window to load before registering
     window.addEventListener('load', registerServiceWorker);
   }
-} else {
-  console.log('[Service Worker] Service worker registration is disabled in development mode');
 }
 
 const rootElement = document.getElementById('root');
@@ -111,6 +99,30 @@ root.render(
   </StrictMode>
 );
 
-// Service worker registration is now handled by Vite PWA plugin
+// Global error handling
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (event) => {
+    handleError(event.error || new Error(event.message));
+  });
 
-initAnalytics();
+  window.addEventListener('unhandledrejection', (event) => {
+    handleError(event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
+    event.preventDefault();
+  });
+}
+
+// Initialize analytics silently
+try {
+  initAnalytics();
+} catch (error) {
+  handleError(error as Error, { source: 'analytics' });
+}
+
+// Log environment status in development
+if (import.meta.env.DEV) {
+  console.log('🔧 Environment Configuration:', {
+    features: env.features,
+    supabaseConfigured: !!(env.supabase.url && env.supabase.anonKey)
+  });
+  console.log('🚀 ALL FEATURES ENABLED FOR 100M AFRICAN FARMERS!');
+}
