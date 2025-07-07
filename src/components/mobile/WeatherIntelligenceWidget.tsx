@@ -3,8 +3,10 @@
  * Agricultural weather insights with actionable recommendations
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useWeatherForecast } from '@/hooks/useBackendIntelligence';
+import { WeatherWidgetLoader, ErrorState, EmptyState } from './LoadingStates';
 
 interface WeatherData {
   current: {
@@ -31,56 +33,83 @@ interface WeatherData {
 }
 
 export const WeatherIntelligenceWidget: React.FC = () => {
-  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [activeTab, setActiveTab] = useState<'current' | 'forecast' | 'insights'>('current');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadWeatherData();
-  }, []);
-
-  const loadWeatherData = async () => {
-    try {
-      const mockData: WeatherData = {
-        current: {
-          temperature: 28,
-          condition: 'Partly Cloudy',
-          humidity: 65,
-          windSpeed: 12,
-          icon: '⛅'
-        },
-        forecast: [
-          { day: 'Today', high: 30, low: 22, condition: 'Sunny', rainChance: 10, icon: '☀️' },
-          { day: 'Tomorrow', high: 28, low: 20, condition: 'Cloudy', rainChance: 30, icon: '☁️' },
-          { day: 'Wed', high: 26, low: 19, condition: 'Rain', rainChance: 80, icon: '🌧️' },
-          { day: 'Thu', high: 29, low: 21, condition: 'Partly Cloudy', rainChance: 20, icon: '⛅' },
-          { day: 'Fri', high: 31, low: 23, condition: 'Sunny', rainChance: 5, icon: '☀️' }
-        ],
-        farmingInsights: {
-          irrigationNeeded: false,
-          plantingConditions: 'good',
-          pestRisk: 'medium',
-          recommendations: [
-            'Rain expected Wednesday - delay spraying',
-            'Good conditions for planting this week',
-            'Monitor for fungal diseases after rain',
-            'Harvest ready crops before Wednesday'
-          ]
-        }
-      };
-      setWeatherData(mockData);
-    } catch (error) {
-      console.error('Error loading weather data:', error);
-    } finally {
-      setLoading(false);
-    }
+  
+  // Backend Intelligence Hook
+  const { data: weatherResponse, isLoading, error, refetch } = useWeatherForecast(-1.286389, 36.817223);
+  
+  // Transform backend data
+  const weatherData = useMemo(() => {
+    if (!weatherResponse?.data) return null;
+    
+    const { current, forecast, insights } = weatherResponse.data;
+    
+    return {
+      current: {
+        temperature: Math.round(current.temperatureCelsius),
+        condition: current.weatherDescription,
+        humidity: current.humidityPercent,
+        windSpeed: Math.round(current.windSpeedMps * 3.6), // Convert m/s to km/h
+        icon: getWeatherIcon(current.weatherMain)
+      },
+      forecast: forecast.list?.slice(0, 5).map((item: any, index: number) => ({
+        day: index === 0 ? 'Today' : index === 1 ? 'Tomorrow' : new Date(item.timestamp).toLocaleDateString('en', { weekday: 'short' }),
+        high: Math.round(item.temperatureCelsius),
+        low: Math.round(item.temperatureCelsius - 5), // Approximate low
+        condition: item.weatherDescription,
+        rainChance: Math.round((item.rainLastHourMm || 0) * 10),
+        icon: getWeatherIcon(item.weatherMain)
+      })) || [],
+      farmingInsights: {
+        irrigationNeeded: insights.irrigation_needed || false,
+        plantingConditions: insights.planting_conditions || 'good',
+        pestRisk: insights.pest_disease_risk || 'low',
+        recommendations: insights.alerts || [
+          'Weather data updated',
+          'Monitor conditions regularly',
+          'Check back for updates'
+        ]
+      }
+    };
+  }, [weatherResponse]);
+  
+  // Helper function to get weather icons
+  const getWeatherIcon = (condition: string) => {
+    const icons: Record<string, string> = {
+      'Clear': '☀️',
+      'Clouds': '☁️',
+      'Rain': '🌧️',
+      'Drizzle': '🌦️',
+      'Thunderstorm': '⛈️',
+      'Snow': '🌨️',
+      'Mist': '🌫️'
+    };
+    return icons[condition] || '⛅';
   };
 
-  if (loading) {
+  if (isLoading) {
+    return <WeatherWidgetLoader />;
+  }
+  
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-48">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
+      <ErrorState
+        message="Failed to load weather data. Check your connection."
+        onRetry={() => refetch()}
+        icon="🌦️"
+      />
+    );
+  }
+  
+  if (!weatherData) {
+    return (
+      <EmptyState
+        title="Weather Unavailable"
+        description="Weather data is currently unavailable for your location."
+        actionLabel="🔄 Retry"
+        onAction={() => refetch()}
+        icon="🌤️"
+      />
     );
   }
 

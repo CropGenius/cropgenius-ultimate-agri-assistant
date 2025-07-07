@@ -1,9 +1,40 @@
 /**
- * @file supabaseClient.ts
- * @description Re-exports the Supabase client from the services directory.
- * This file exists to maintain compatibility with imports from '@/lib/supabaseClient'.
+ * 💾 SUPABASE CLIENT - Trillion-Dollar Backend
+ * Secure, fast, and magical data layer
  */
 
-import { supabase } from '@/services/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 
-export { supabase };
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+});
+
+// Auth helpers
+export const getCurrentUser = async () => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  return user;
+};
+
+export const signInWithGoogle = async () => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/dashboard`
+    }
+  });
+  if (error) throw error;
+  return data;
+};

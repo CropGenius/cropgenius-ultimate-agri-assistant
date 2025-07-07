@@ -5,6 +5,8 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDiseaseScan } from '@/hooks/useBackendIntelligence';
+import { DiseaseAnalysisLoader, ErrorState } from './LoadingStates';
 
 interface DiseaseResult {
   disease_name: string;

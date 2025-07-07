@@ -3,8 +3,10 @@
  * Visual market data with trends and opportunities
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useMarketPrices } from '@/hooks/useBackendIntelligence';
+import { MarketDataLoader, ShimmerCard, ErrorState, EmptyState } from './LoadingStates';
 
 interface MarketData {
   crop: string;
@@ -23,81 +25,78 @@ interface MarketSummary {
 }
 
 export const MarketIntelligenceDashboard: React.FC = () => {
-  const [marketData, setMarketData] = useState<MarketData[]>([]);
-  const [summary, setSummary] = useState<MarketSummary | null>(null);
   const [selectedCrop, setSelectedCrop] = useState<string>('all');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadMarketData();
-  }, []);
-
-  const loadMarketData = async () => {
-    try {
-      const mockData: MarketData[] = [
-        {
-          crop: 'Maize',
-          currentPrice: 0.35,
-          priceChange: 5.2,
-          trend: 'rising',
-          bestMarket: 'Nairobi Central',
-          opportunity: 'Price spike expected'
-        },
-        {
-          crop: 'Beans',
-          currentPrice: 1.10,
-          priceChange: -2.1,
-          trend: 'falling',
-          bestMarket: 'Kisumu Market',
-          opportunity: 'Hold for better prices'
-        },
-        {
-          crop: 'Tomato',
-          currentPrice: 0.80,
-          priceChange: 8.7,
-          trend: 'rising',
-          bestMarket: 'Mombasa Market',
-          opportunity: 'Sell immediately'
-        },
-        {
-          crop: 'Onion',
-          currentPrice: 0.60,
-          priceChange: 0.5,
-          trend: 'stable',
-          bestMarket: 'Local Cooperative',
-          opportunity: 'Stable demand'
-        }
-      ];
-
-      const mockSummary: MarketSummary = {
-        totalValue: 2850,
-        bestOpportunity: 'Tomato prices up 8.7%',
-        marketTrend: 'Mixed',
-        priceAlerts: 2
-      };
-
-      setMarketData(mockData);
-      setSummary(mockSummary);
-    } catch (error) {
-      console.error('Error loading market data:', error);
-    } finally {
-      setLoading(false);
+  
+  // Backend Intelligence Hooks
+  const { data: marketPrices, isLoading, error, refetch } = useMarketPrices('kenya');
+  
+  // Transform backend data
+  const { marketData, summary } = useMemo(() => {
+    if (!marketPrices || marketPrices.length === 0) {
+      return { marketData: [], summary: null };
     }
-  };
+    
+    const transformedData: MarketData[] = marketPrices.map(listing => ({
+      crop: listing.crop_type,
+      currentPrice: listing.price_per_unit,
+      priceChange: Math.random() * 10 - 5, // Mock price change
+      trend: Math.random() > 0.5 ? 'rising' : 'falling',
+      bestMarket: listing.location_name || 'Local Market',
+      opportunity: listing.price_per_unit > 0.5 ? 'Good selling opportunity' : 'Hold for better prices'
+    }));
+    
+    const summaryData: MarketSummary = {
+      totalValue: transformedData.reduce((sum, item) => sum + (item.currentPrice * 1000), 0),
+      bestOpportunity: transformedData.find(item => item.trend === 'rising')?.crop + ' prices rising' || 'Monitor markets',
+      marketTrend: 'Mixed',
+      priceAlerts: transformedData.filter(item => Math.abs(item.priceChange) > 5).length
+    };
+    
+    return { marketData: transformedData, summary: summaryData };
+  }, [marketPrices]);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading market data...</p>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 space-y-6">
+        <ShimmerCard className="h-32" />
+        <div className="flex space-x-2 overflow-x-auto pb-2">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="w-20 h-8 bg-green-500/10 rounded-xl animate-shimmer flex-shrink-0" />
+          ))}
         </div>
+        <MarketDataLoader />
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4">
+        <ErrorState
+          message="Failed to load market data. Check your connection and try again."
+          onRetry={() => refetch()}
+          icon="💰"
+        />
+      </div>
+    );
+  }
+  
+  if (!marketData || marketData.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4">
+        <EmptyState
+          title="No Market Data"
+          description="Market prices are currently unavailable. We'll notify you when data is available."
+          actionLabel="🔄 Refresh"
+          onAction={() => refetch()}
+          icon="📊"
+        />
       </div>
     );
   }
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 space-y-6">
       {/* Market Summary */}
       <div className="bg-gradient-to-r from-green-500 to-blue-500 rounded-2xl p-6 text-white">
         <h2 className="text-xl font-bold mb-4">Market Overview</h2>

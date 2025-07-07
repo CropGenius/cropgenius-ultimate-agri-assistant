@@ -23,45 +23,52 @@ interface FarmHealthData {
 }
 
 export const UnifiedFarmDashboard: React.FC = () => {
-  const [farmData, setFarmData] = useState<FarmHealthData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadFarmData();
-  }, []);
-
-  const loadFarmData = async () => {
-    try {
-      const mockData: FarmHealthData = {
-        overallHealth: 78,
-        alerts: [
-          { type: 'weather', severity: 'medium', message: 'Rain expected in 2 days', icon: '🌧️' },
-          { type: 'market', severity: 'low', message: 'Maize prices stable', icon: '💰' }
-        ],
-        quickStats: {
-          fieldHealth: 82,
-          weatherRisk: 'low',
-          marketTrend: 'stable',
-          diseaseRisk: 'low'
-        }
-      };
-      setFarmData(mockData);
-    } catch (error) {
-      console.error('Error loading farm data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Backend Intelligence Hooks
+  const { data: farms, isLoading: farmsLoading } = useUserFarms();
+  const { data: healthScore, isLoading: healthLoading } = useFarmHealthScore();
+  const { data: marketData, isLoading: marketLoading } = useMarketPrices('kenya');
+  const { data: weatherData, isLoading: weatherLoading } = useWeatherForecast(-1.286389, 36.817223);
+  
+  const loading = farmsLoading || healthLoading;
+  
+  // Transform backend data
+  const farmData = useMemo(() => {
+    if (!healthScore?.data) return null;
+    
+    return {
+      overallHealth: healthScore.data.overallHealth,
+      alerts: healthScore.data.alerts || [],
+      quickStats: {
+        fieldHealth: healthScore.data.factors.cropHealth,
+        weatherRisk: weatherData?.data?.insights?.pest_risk || 'low',
+        marketTrend: marketData?.[0]?.price_analysis?.trend_direction || 'stable',
+        diseaseRisk: healthScore.data.factors.diseaseRisk < 30 ? 'low' : 'medium'
+      }
+    };
+  }, [healthScore, weatherData, marketData]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="relative">
-          <div className="w-16 h-16 bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl animate-glow-pulse flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-green-primary border-t-transparent rounded-full animate-spin"></div>
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-primary/20 to-transparent animate-shimmer rounded-2xl"></div>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 space-y-6">
+        <HealthOrbLoader />
+        <div className="grid grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map(i => <ShimmerCard key={i} />)}
         </div>
+        <ShimmerCard className="h-32" />
+      </div>
+    );
+  }
+  
+  if (!farmData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4">
+        <EmptyState
+          title="Welcome to CropGenius!"
+          description="Let's set up your first farm to get started with AI-powered insights."
+          actionLabel="🚀 Create Farm"
+          onAction={() => console.log('Create farm')}
+          icon="🌾"
+        />
       </div>
     );
   }
