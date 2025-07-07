@@ -38,7 +38,6 @@ interface EnvironmentConfig {
   // Performance & Monitoring
   ENABLE_ANALYTICS: boolean;
   ENABLE_ERROR_TRACKING: boolean;
-  SENTRY_DSN?: string;
   POSTHOG_API_KEY?: string;
 }
 
@@ -49,7 +48,7 @@ const DEFAULT_CONFIG: Partial<EnvironmentConfig> = {
   NODE_ENV: 'development',
   ENABLE_OFFLINE_MODE: true,
   ENABLE_ANALYTICS: false,
-  ENABLE_ERROR_TRACKING: false,
+  ENABLE_ERROR_TRACKING: true,
 };
 
 // Validation functions
@@ -97,43 +96,35 @@ export const loadEnvironmentConfig = (): EnvironmentConfig => {
     const POSTHOG_API_KEY = validateOptional(env.VITE_POSTHOG_API_KEY);
     
     // Features enabled based on available API keys
-    const ENABLE_WHATSAPP = !!(WHATSAPP_PHONE_NUMBER_ID && WHATSAPP_ACCESS_TOKEN);
-    const ENABLE_SATELLITE_ANALYSIS = !!(SENTINEL_HUB_CLIENT_ID && SENTINEL_HUB_CLIENT_SECRET);
-    const ENABLE_WEATHER_INTELLIGENCE = !!OPENWEATHERMAP_API_KEY;
-    const ENABLE_DISEASE_DETECTION = !!(PLANTNET_API_KEY && GEMINI_API_KEY);
-    const ENABLE_ANALYTICS = !!POSTHOG_API_KEY;
-    const ENABLE_ERROR_TRACKING = !!SENTRY_DSN;
+    const ENABLE_WHATSAPP = Boolean(WHATSAPP_PHONE_NUMBER_ID && WHATSAPP_ACCESS_TOKEN);
+    const ENABLE_SATELLITE_ANALYSIS = Boolean(SENTINEL_HUB_CLIENT_ID && SENTINEL_HUB_CLIENT_SECRET);
+    const ENABLE_WEATHER_INTELLIGENCE = Boolean(OPENWEATHERMAP_API_KEY);
+    const ENABLE_DISEASE_DETECTION = Boolean(PLANTNET_API_KEY && GEMINI_API_KEY);
+    const ENABLE_ANALYTICS = Boolean(POSTHOG_API_KEY);
     
     const config: EnvironmentConfig = {
       NODE_ENV: (env.NODE_ENV as EnvironmentConfig['NODE_ENV']) || 'development',
-      APP_NAME: env.VITE_APP_NAME || DEFAULT_CONFIG.APP_NAME!,
-      APP_VERSION: env.VITE_APP_VERSION || DEFAULT_CONFIG.APP_VERSION!,
-      
+      APP_NAME: env.VITE_APP_NAME || DEFAULT_CONFIG.APP_NAME,
+      APP_VERSION: env.VITE_APP_VERSION || DEFAULT_CONFIG.APP_VERSION,
       SUPABASE_URL,
       SUPABASE_ANON_KEY,
-      
       OPENWEATHERMAP_API_KEY,
       GEMINI_API_KEY,
       PLANTNET_API_KEY,
       MAPBOX_ACCESS_TOKEN,
-      
       SENTINEL_HUB_CLIENT_ID,
       SENTINEL_HUB_CLIENT_SECRET,
-      
       WHATSAPP_PHONE_NUMBER_ID,
       WHATSAPP_ACCESS_TOKEN,
       WHATSAPP_WEBHOOK_VERIFY_TOKEN,
-      
-      SENTRY_DSN,
       POSTHOG_API_KEY,
-      
       ENABLE_WHATSAPP,
       ENABLE_SATELLITE_ANALYSIS,
       ENABLE_WEATHER_INTELLIGENCE,
       ENABLE_DISEASE_DETECTION,
-      ENABLE_OFFLINE_MODE: validateBoolean(env.VITE_ENABLE_OFFLINE_MODE, true),
       ENABLE_ANALYTICS,
-      ENABLE_ERROR_TRACKING,
+      ENABLE_ERROR_TRACKING: true,
+      ENABLE_OFFLINE_MODE: validateBoolean(env.VITE_ENABLE_OFFLINE_MODE, true),
     };
     
     // Log configuration status (without sensitive data)
