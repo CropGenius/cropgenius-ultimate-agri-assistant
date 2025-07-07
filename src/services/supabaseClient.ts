@@ -53,9 +53,10 @@ class EnhancedSupabaseClient {
     };
 
     try {
+      // Initialize Supabase client with basic config
       this.client = createClient<Database>(
         APP_CONFIG.api.supabase.url,
-        APP_CONFIG.api.supabase.anonKey,
+        '', // Empty anon key since we'll handle auth tokens manually
         {
           db: {
             schema: 'public',
@@ -65,6 +66,11 @@ class EnhancedSupabaseClient {
             persistSession: true,
             detectSessionInUrl: true,
             flowType: 'pkce',
+            flowOptions: {
+              // Configure PKCE flow options
+              codeChallengeMethod: 'S256',
+              scopes: ['openid', 'email', 'profile'],
+            },
           },
           global: {
             headers: {
@@ -74,6 +80,9 @@ class EnhancedSupabaseClient {
           },
         }
       );
+
+      // Set up auth token management
+      this.setupAuthTokenManagement();
 
       // Set up auth state change monitoring
       this.setupAuthMonitoring();
@@ -98,6 +107,15 @@ class EnhancedSupabaseClient {
     const operation = () => fetch(url, options);
 
     try {
+      // Always retry auth requests with exponential backoff
+      if (url.toString().includes('/auth/')) {
+        return await networkManager.executeWithRetry(operation, {
+          retries: this.options.maxRetries,
+          priority: 'high',
+          backoff: true, // Enable exponential backoff for auth requests
+        });
+      }
+
       if (this.options.enableOfflineQueue && this.shouldRetry(url)) {
         return await networkManager.executeWithRetry(operation, {
           retries: this.options.maxRetries,
@@ -107,7 +125,15 @@ class EnhancedSupabaseClient {
         return await operation();
       }
     } catch (error) {
-      throw this.handleNetworkError(error, url, options);
+      // Handle network errors and retry if appropriate
+      const appError = this.handleNetworkError(error, url, options);
+      if (appError.context?.retry) {
+        return await networkManager.executeWithRetry(operation, {
+          retries: this.options.maxRetries,
+          priority: this.getOperationPriority(url, options),
+        });
+      }
+      throw appError;
     }
   }
 
@@ -135,9 +161,9 @@ class EnhancedSupabaseClient {
   private shouldRetry(url: RequestInfo | URL, response?: Response): boolean {
     const urlString = url.toString();
     
-    // Never retry auth requests to prevent infinite loops
+    // Allow retrying auth requests with exponential backoff
     if (urlString.includes('/auth/')) {
-      return false;
+      return true;
     }
     
     // Don't retry 4xx errors (client errors)
@@ -159,36 +185,63 @@ class EnhancedSupabaseClient {
 
     let code = ErrorCode.NETWORK_FAILED;
     let userMessage = 'Network error occurred';
+    let retry = false;
 
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       code = ErrorCode.NETWORK_OFFLINE;
       userMessage = 'You appear to be offline';
+      retry = true;
     } else if (error.message?.includes('timeout')) {
       code = ErrorCode.NETWORK_TIMEOUT;
       userMessage = 'Request timed out';
+      retry = true;
     }
 
     return new AppError(
       code,
       error.message || 'Network request failed',
       userMessage,
-      { url: url.toString(), method: options?.method || 'GET' },
+      { 
+        url: url.toString(), 
+        method: options?.method || 'GET',
+        retry: retry 
+      },
       true
     );
   }
 
-  private setupAuthMonitoring(): void {
+  private setupAuthTokenManagement(): void {
+    // Handle initial auth token
+    const initialToken = localStorage.getItem('supabase_auth_token');
+    if (initialToken) {
+      this.client.auth.setAuth(initialToken);
+      networkManager.notifyAuthChange(initialToken);
+    }
+
+    // Set up auth state change monitoring
     this.client.auth.onAuthStateChange(async (event, session) => {
       switch (event) {
         case 'SIGNED_IN':
-          reportWarning('User signed in successfully', { userId: session?.user?.id });
+          if (session?.access_token) {
+            // Store token for offline use
+            localStorage.setItem('supabase_auth_token', session.access_token);
+            networkManager.notifyAuthChange(session.access_token);
+            reportWarning('User signed in successfully', { userId: session.user?.id });
+          }
           break;
         case 'SIGNED_OUT':
-          reportWarning('User signed out');
-          // Clear any cached data
+          // Clear stored token and cached data
+          localStorage.removeItem('supabase_auth_token');
           this.clearOfflineCache();
+          networkManager.notifyAuthChange(null);
+          reportWarning('User signed out');
           break;
         case 'TOKEN_REFRESHED':
+          if (session?.access_token) {
+            // Update stored token and notify network manager
+            localStorage.setItem('supabase_auth_token', session.access_token);
+            networkManager.notifyAuthChange(session.access_token);
+          }
           reportWarning('Auth token refreshed');
           break;
         case 'USER_UPDATED':
@@ -245,12 +298,47 @@ class EnhancedSupabaseClient {
     return this.client.rpc(functionName, args);
   }
 
-  // Health check method
+  // Health check method with proper error handling and status tracking
+  private lastHealthCheck: Date | null = null;
+  private healthCheckInterval = 5 * 60 * 1000; // 5 minutes
+  private healthCheckError: string | null = null;
+
   public async healthCheck(): Promise<boolean> {
     try {
-      const { error } = await this.client.from('profiles').select('id').limit(1);
-      return !error;
-    } catch {
+      // Only perform health check if it's been longer than the interval
+      if (this.lastHealthCheck && Date.now() - this.lastHealthCheck.getTime() < this.healthCheckInterval) {
+        return true;
+      }
+
+      // Check auth health
+      const { data: authData, error: authError } = await this.client.auth.getSession();
+      if (authError) {
+        throw authError;
+      }
+
+      // Check database health
+      const { error: dbError } = await this.client.from('profiles').select('id').limit(1);
+      if (dbError) {
+        throw dbError;
+      }
+
+      // Check storage health
+      const { error: storageError } = await this.client.storage.from('public').list('');
+      if (storageError) {
+        throw storageError;
+      }
+
+      this.lastHealthCheck = new Date();
+      this.healthCheckError = null;
+      return true;
+    } catch (error) {
+      this.healthCheckError = error instanceof Error ? error.message : 'Unknown health check error';
+      reportError(new AppError(
+        ErrorCode.SERVICE_UNAVAILABLE,
+        'Service health check failed',
+        'Some services may be unavailable',
+        { error }
+      ));
       return false;
     }
   }
@@ -260,10 +348,9 @@ class EnhancedSupabaseClient {
     isHealthy: boolean;
     lastError: string | null;
   } {
-    // This would need to be implemented with actual health tracking
     return {
-      isHealthy: true,
-      lastError: null,
+      isHealthy: this.healthCheckError === null,
+      lastError: this.healthCheckError
     };
   }
 }

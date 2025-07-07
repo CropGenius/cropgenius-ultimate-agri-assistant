@@ -14,7 +14,9 @@ export interface QueuedOperation {
   retries: number;
   maxRetries: number;
   priority: 'low' | 'medium' | 'high';
+  backoff: boolean;
   createdAt: Date;
+  lastAttempt: Date | null;
 }
 
 class NetworkManager {
@@ -25,9 +27,24 @@ class NetworkManager {
     connectionType: 'unknown',
   };
 
+  private currentAuthToken: string | null = null;
+
   private listeners: ((state: NetworkState) => void)[] = [];
   private operationQueue: QueuedOperation[] = [];
   private isProcessingQueue = false;
+
+  // Public methods to get queue status
+  public getQueueStatus(): { pending: number; processing: boolean } {
+    return {
+      pending: this.operationQueue.length,
+      processing: this.isProcessingQueue
+    };
+  }
+
+  // Public method to get current auth token
+  public getCurrentAuthToken(): string | null {
+    return this.currentAuthToken;
+  }
 
   constructor() {
     this.initialize();
@@ -108,6 +125,12 @@ class NetworkManager {
     this.listeners.forEach(listener => listener(this.state));
   }
 
+  public notifyAuthChange(newToken: string): void {
+    this.currentAuthToken = newToken;
+    // Notify all listeners about auth token change
+    this.listeners.forEach(listener => listener(this.state));
+  }
+
   public subscribe(listener: (state: NetworkState) => void): () => void {
     this.listeners.push(listener);
     // Immediately notify with current state
@@ -125,97 +148,91 @@ class NetworkManager {
     return { ...this.state };
   }
 
-  public async executeWithRetry<T>(
-    operation: () => Promise<T>,
-    options: {
-      retries?: number;
-      priority?: 'low' | 'medium' | 'high';
-      offlineQueue?: boolean;
-    } = {}
-  ): Promise<T> {
-    const {
-      retries = APP_CONFIG.performance.maxRetries,
-      priority = 'medium',
-      offlineQueue = true,
-    } = options;
+  public async executeWithRetry(operation: () => Promise<any>, options: {
+    retries?: number;
+    priority?: 'low' | 'medium' | 'high';
+    offlineQueue?: boolean;
+    backoff?: boolean;
+  } = {}): Promise<any> {
+    const id = crypto.randomUUID();
+    const maxRetries = options.retries || 3;
+    const priority = options.priority || 'medium';
+    const offlineQueue = options.offlineQueue || false;
+    const useBackoff = options.backoff || false;
+
+    if (!this.state.isOnline && !offlineQueue) {
+      throw new AppError(
+        ErrorCode.NETWORK_OFFLINE,
+        'Cannot execute operation while offline',
+        'Please check your internet connection',
+        { id, priority },
+        true
+      );
+    }
+
+    const queuedOperation: QueuedOperation = {
+      id,
+      operation,
+      retries: 0,
+      maxRetries,
+      priority,
+      backoff: useBackoff,
+      createdAt: new Date(),
+      lastAttempt: null,
+    };
 
     if (!this.state.isOnline) {
-      if (offlineQueue) {
-        return this.queueOperation(operation, retries, priority);
-      } else {
-        throw new AppError(
-          ErrorCode.NETWORK_OFFLINE,
-          'Operation requires internet connection',
-          'You are offline. Please check your internet connection.',
-          { offlineQueue },
-          true
-        );
-      }
-    }
-
-    return this.executeWithRetryLogic(operation, retries);
-  }
-
-  private async executeWithRetryLogic<T>(
-    operation: () => Promise<T>,
-    retriesLeft: number
-  ): Promise<T> {
-    try {
-      return await operation();
-    } catch (error) {
-      if (retriesLeft > 0) {
-        const delay = APP_CONFIG.performance.retryDelay * (APP_CONFIG.performance.maxRetries - retriesLeft + 1);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return this.executeWithRetryLogic(operation, retriesLeft - 1);
-      }
-      
-      const appError = error instanceof AppError 
-        ? error 
-        : AppError.fromError(error as Error, ErrorCode.NETWORK_FAILED);
-      
-      reportError(appError);
-      throw appError;
-    }
-  }
-
-  private queueOperation<T>(
-    operation: () => Promise<T>,
-    maxRetries: number,
-    priority: 'low' | 'medium' | 'high'
-  ): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const queuedOp: QueuedOperation = {
-        id: crypto.randomUUID(),
-        operation: async () => {
-          try {
-            const result = await operation();
-            resolve(result);
-            return result;
-          } catch (error) {
-            reject(error);
-            throw error;
+      this.operationQueue.push(queuedOperation);
+      return new Promise((resolve, reject) => {
+        const unsubscribe = this.subscribe((state) => {
+          if (state.isOnline) {
+            unsubscribe();
+            this.processQueue()
+              .then(resolve)
+              .catch(reject);
           }
-        },
-        retries: 0,
-        maxRetries,
-        priority,
-        createdAt: new Date(),
-      };
+        });
+      });
+    }
 
-      // Insert based on priority
-      const priorityOrder = { high: 0, medium: 1, low: 2 };
-      const insertIndex = this.operationQueue.findIndex(
-        op => priorityOrder[op.priority] > priorityOrder[priority]
-      );
+    return this.processOperation(queuedOperation);
+  }
+
+  private async processOperation(operation: QueuedOperation): Promise<any> {
+    try {
+      // Get the original operation function
+      const originalOperation = operation.operation;
       
-      if (insertIndex === -1) {
-        this.operationQueue.push(queuedOp);
-      } else {
-        this.operationQueue.splice(insertIndex, 0, queuedOp);
+      // Add auth token to headers
+      const headers = new Headers();
+      if (this.currentAuthToken) {
+        headers.set('Authorization', `Bearer ${this.currentAuthToken}`);
       }
 
-      reportInfo(`Operation queued for offline execution (${this.operationQueue.length} pending)`);
-    });
+      // Execute operation with headers
+      const result = await originalOperation({ headers });
+      return result;
+    } catch (error) {
+      if (operation.retries >= operation.maxRetries) {
+        throw error;
+      }
+
+      operation.retries++;
+      operation.lastAttempt = new Date();
+
+      // Calculate backoff delay if enabled
+      const delay = operation.backoff 
+        ? Math.min(1000 * Math.pow(2, operation.retries), 30000) // Max 30s delay
+        : 0;
+
+      // Add operation back to queue with delay
+      setTimeout(() => {
+        this.operationQueue.push(operation);
+        this.processQueue();
+      }, delay);
+
+      throw error;
+    }
   }
 
   private async processQueue(): Promise<void> {
@@ -224,24 +241,17 @@ class NetworkManager {
     }
 
     this.isProcessingQueue = true;
-    reportInfo(`Processing ${this.operationQueue.length} queued operations`);
 
-    while (this.operationQueue.length > 0 && this.state.isOnline) {
-      const operation = this.operationQueue.shift()!;
-      
-      try {
-        await operation.operation();
-        reportInfo(`Queued operation completed: ${operation.id}`);
-      } catch (error) {
-        operation.retries++;
-        
-        if (operation.retries < operation.maxRetries) {
-          // Re-queue with exponential backoff
-          this.operationQueue.unshift(operation);
-          await new Promise(resolve => 
-            setTimeout(resolve, 1000 * Math.pow(2, operation.retries))
-          );
-        } else {
+    try {
+      while (this.operationQueue.length > 0) {
+        const operation = this.operationQueue.shift();
+        if (!operation) {
+          break;
+        }
+
+        try {
+          await this.processOperation(operation);
+        } catch (error) {
           reportError(new AppError(
             ErrorCode.NETWORK_FAILED,
             `Queued operation failed after ${operation.maxRetries} retries`,
@@ -250,16 +260,12 @@ class NetworkManager {
           ));
         }
       }
+    } catch (error) {
+      console.error('Error processing queue:', error);
+    } finally {
+      this.isProcessingQueue = false;
+      this.notifyListeners();
     }
-
-    this.isProcessingQueue = false;
-  }
-
-  public getQueueStatus(): { pending: number; processing: boolean } {
-    return {
-      pending: this.operationQueue.length,
-      processing: this.isProcessingQueue,
-    };
   }
 }
 
@@ -276,4 +282,24 @@ export const useNetworkState = (): NetworkState => {
   }, []);
 
   return state;
+};
+
+export const useNetworkQueue = (): {
+  pending: number;
+  processing: boolean;
+} => {
+  const [status, setStatus] = React.useState({
+    pending: 0 as number,
+    processing: false as boolean
+  });
+
+  React.useEffect(() => {
+    const unsubscribe = networkManager.subscribe(() => {
+      const queueStatus = networkManager.getQueueStatus();
+      setStatus(queueStatus);
+    });
+    return unsubscribe;
+  }, []);
+
+  return status;
 };
