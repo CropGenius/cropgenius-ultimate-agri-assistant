@@ -70,30 +70,30 @@ const validateBoolean = (value: string | undefined, defaultValue: boolean = fals
 
 // Load and validate environment configuration
 export const loadEnvironmentConfig = (): EnvironmentConfig => {
-  const env = import.meta.env;
+  const env = process.env;
   
   try {
     // Core required variables (MUST have these)
-    const SUPABASE_URL = validateRequired('VITE_SUPABASE_URL', env.VITE_SUPABASE_URL);
-    const SUPABASE_ANON_KEY = validateRequired('VITE_SUPABASE_ANON_KEY', env.VITE_SUPABASE_ANON_KEY);
+    const SUPABASE_URL = validateRequired('SUPABASE_URL', env.SUPABASE_URL);
+    const SUPABASE_ANON_KEY = validateRequired('SUPABASE_ANON_KEY', env.SUPABASE_ANON_KEY);
     
     // API keys with graceful degradation
-    const OPENWEATHERMAP_API_KEY = env.VITE_OPENWEATHERMAP_API_KEY || '';
-    const GEMINI_API_KEY = env.VITE_GEMINI_API_KEY || '';
-    const PLANTNET_API_KEY = env.VITE_PLANTNET_API_KEY || '';
-    const MAPBOX_ACCESS_TOKEN = env.VITE_MAPBOX_ACCESS_TOKEN || '';
+    const OPENWEATHERMAP_API_KEY = env.OPENWEATHERMAP_API_KEY || '';
+    const GEMINI_API_KEY = env.GEMINI_API_KEY || '';
+    const PLANTNET_API_KEY = env.PLANTNET_API_KEY || '';
+    const MAPBOX_ACCESS_TOKEN = env.MAPBOX_ACCESS_TOKEN || '';
     
     // Satellite analysis (optional)
-    const SENTINEL_HUB_CLIENT_ID = env.VITE_SENTINEL_HUB_CLIENT_ID || '';
-    const SENTINEL_HUB_CLIENT_SECRET = env.VITE_SENTINEL_HUB_CLIENT_SECRET || '';
+    const SENTINEL_HUB_CLIENT_ID = env.SENTINEL_HUB_CLIENT_ID || '';
+    const SENTINEL_HUB_CLIENT_SECRET = env.SENTINEL_HUB_CLIENT_SECRET || '';
     
     // WhatsApp Business API (optional)
-    const WHATSAPP_PHONE_NUMBER_ID = env.VITE_WHATSAPP_PHONE_NUMBER_ID || '';
-    const WHATSAPP_ACCESS_TOKEN = env.VITE_WHATSAPP_ACCESS_TOKEN || '';
-    const WHATSAPP_WEBHOOK_VERIFY_TOKEN = env.VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
+    const WHATSAPP_PHONE_NUMBER_ID = env.WHATSAPP_PHONE_NUMBER_ID || '';
+    const WHATSAPP_ACCESS_TOKEN = env.WHATSAPP_ACCESS_TOKEN || '';
+    const WHATSAPP_WEBHOOK_VERIFY_TOKEN = env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
     
     // Monitoring
-    const POSTHOG_API_KEY = validateOptional(env.VITE_POSTHOG_API_KEY);
+    const POSTHOG_API_KEY = validateOptional(env.POSTHOG_API_KEY);
     
     // Features enabled based on available API keys
     const ENABLE_WHATSAPP = Boolean(WHATSAPP_PHONE_NUMBER_ID && WHATSAPP_ACCESS_TOKEN);

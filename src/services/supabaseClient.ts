@@ -8,7 +8,7 @@
  * schema, and auth settings.
  */
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient, type AuthError } from '@supabase/supabase-js';
 import type { Database } from '../types/supabase';
 import { APP_CONFIG } from '../lib/config';
 import { AppError, ErrorCode, reportError, reportWarning } from '../lib/errors';
@@ -32,7 +32,7 @@ interface SupabaseClientOptions {
 
 class EnhancedSupabaseClient {
   private static instance: EnhancedSupabaseClient;
-  private client: SupabaseClient<Database>;
+  private client: SupabaseClient<Database, 'public'>;
   private options: SupabaseClientOptions;
   private static initialized = false;
 
@@ -53,10 +53,10 @@ class EnhancedSupabaseClient {
     };
 
     try {
-      // Initialize Supabase client with basic config
+      // Initialize Supabase client with proper configuration
       this.client = createClient<Database>(
         APP_CONFIG.api.supabase.url,
-        '', // Empty anon key since we'll handle auth tokens manually
+        APP_CONFIG.api.supabase.anonKey, // Use the anon key from config
         {
           db: {
             schema: 'public',
@@ -66,17 +66,18 @@ class EnhancedSupabaseClient {
             persistSession: true,
             detectSessionInUrl: true,
             flowType: 'pkce',
-            flowOptions: {
-              // Configure PKCE flow options
-              codeChallengeMethod: 'S256',
-              scopes: ['openid', 'email', 'profile'],
-            },
+            flowType: 'pkce',
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: true,
+            storageKey: 'supabase-auth-token',
           },
           global: {
             headers: {
               'X-Client-Version': APP_CONFIG.version,
               'X-Client-Name': APP_CONFIG.name,
             },
+            fetch: this.enhancedFetch, // Use our enhanced fetch with retry logic
           },
         }
       );
@@ -104,6 +105,15 @@ class EnhancedSupabaseClient {
     url: RequestInfo | URL,
     options?: RequestInit
   ): Promise<Response> {
+    // Add auth token to options if it exists
+    if (options?.headers) {
+      const headers = new Headers(options.headers);
+      if (this.currentAuthToken) {
+        headers.set('Authorization', `Bearer ${this.currentAuthToken}`);
+      }
+      options.headers = headers;
+    }
+
     const operation = () => fetch(url, options);
 
     try {
@@ -214,7 +224,8 @@ class EnhancedSupabaseClient {
     // Handle initial auth token
     const initialToken = localStorage.getItem('supabase_auth_token');
     if (initialToken) {
-      this.client.auth.setAuth(initialToken);
+      // Update auth token in localStorage and notify network manager
+      localStorage.setItem('supabase_auth_token', initialToken);
       networkManager.notifyAuthChange(initialToken);
     }
 
