@@ -66,10 +66,6 @@ class EnhancedSupabaseClient {
             persistSession: true,
             detectSessionInUrl: true,
             flowType: 'pkce',
-            flowType: 'pkce',
-            autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: true,
             storageKey: 'supabase-auth-token',
           },
           global: {

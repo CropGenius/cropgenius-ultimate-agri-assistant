@@ -80,6 +80,7 @@ The goal is to help you maintain a big picture as well as the progress of the ta
 - When using seaborn styles in matplotlib, use 'seaborn-v0_8' instead of 'seaborn' as the style name due to recent seaborn version changes
 - Use 'gpt-4o' as the model name for OpenAI's GPT-4 with vision capabilities
 - MCP configuration should be in .mcp directory, not .roo directory
+- Fixed Netlify deployment errors: Remove duplicate keys in supabaseClient.ts auth config, install missing @tanstack/react-query-persist-client dependency, fix escaped characters in JSX components
 
 # Scratchpad
 
