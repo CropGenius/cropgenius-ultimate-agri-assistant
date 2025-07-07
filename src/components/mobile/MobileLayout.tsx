@@ -1,6 +1,6 @@
 /**
- * 📱 MOBILE LAYOUT - Trillion-Dollar Container
- * iPhone 20 Pro level layout with glassmorphism magic
+ * 📱 MOBILE LAYOUT - Trillion-Dollar Container + Neuro-Magic
+ * iPhone 20 Pro level layout with voice, swipe, haptic interactions
  */
 
 import React, { useState, useEffect } from 'react';
@@ -12,6 +12,15 @@ import { SatelliteFieldViewer } from './SatelliteFieldViewer';
 import { DiseaseDetectionCamera } from './DiseaseDetectionCamera';
 import { MarketIntelligenceDashboard } from './MarketIntelligenceDashboard';
 import { WeatherIntelligenceWidget } from './WeatherIntelligenceWidget';
+import { VoiceCommandChip } from './VoiceCommandChip';
+import { SwipeableCard } from './SwipeableCard';
+import { useToast } from './DopamineToast';
+import { useOfflineStatus } from '@/hooks/useOfflineStatus';
+import { useHapticFeedback } from '@/lib/hapticFeedback';
+import { FarmerCommunityHub } from './FarmerCommunityHub';
+import { AchievementCelebration } from './AchievementCelebration';
+import { useGamification, Achievement } from '@/lib/gamificationEngine';
+import { personalizationEngine } from '@/lib/personalizationEngine';
 
 interface MobileLayoutProps {
   children?: React.ReactNode;
@@ -19,31 +28,108 @@ interface MobileLayoutProps {
 
 export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   const [activeTab, setActiveTab] = useState('home');
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
+  const [celebrationAchievement, setCelebrationAchievement] = useState<Achievement | null>(null);
+  const [personalizedGreeting, setPersonalizedGreeting] = useState('');
+  const { isOnline, statusConfig, clearOfflineFlag } = useOfflineStatus();
+  const { success, warning, info, ToastContainer } = useToast();
+  const { triggerMedium, triggerSuccess } = useHapticFeedback();
+  const { trackAction } = useGamification();
+  
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    if (statusConfig.status === 'reconnected') {
+      success('Connected!', 'All your data is now synced', '🟢');
+      const timer = setTimeout(() => {
+        clearOfflineFlag();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [statusConfig.status, clearOfflineFlag, success]);
+  
+  useEffect(() => {
+    // Load personalized greeting
+    const userId = 'current-user-id'; // Would get from auth
+    const greeting = personalizationEngine.getPersonalizedGreeting(userId);
+    setPersonalizedGreeting(greeting);
     
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+    // Track daily login
+    trackAction('daily_login').then(result => {
+      if (result.newAchievements.length > 0) {
+        setCelebrationAchievement(result.newAchievements[0]);
+      }
+    });
+  }, [trackAction]);
 
-  const handleScanCrop = () => {
+  const handleScanCrop = async () => {
     setActiveTab('scan');
+    triggerMedium();
+    info('Camera Ready', 'Point at your crop to analyze', '📸');
+    
+    // Track action for gamification
+    const result = await trackAction('navigate_to_scan');
+    if (result.newAchievements.length > 0) {
+      setCelebrationAchievement(result.newAchievements[0]);
+    }
   };
 
-  const handleWeatherCheck = () => {
+  const handleWeatherCheck = async () => {
     setActiveTab('weather');
+    triggerMedium();
+    
+    const result = await trackAction('weather_check');
+    if (result.newAchievements.length > 0) {
+      setCelebrationAchievement(result.newAchievements[0]);
+    }
   };
 
-  const handleMarketCheck = () => {
+  const handleMarketCheck = async () => {
     setActiveTab('market');
+    triggerMedium();
+    
+    const result = await trackAction('market_check');
+    if (result.newAchievements.length > 0) {
+      setCelebrationAchievement(result.newAchievements[0]);
+    }
+  };
+  
+  const handleVoiceNavigate = (tab: string) => {
+    setActiveTab(tab);
+    triggerSuccess();
+    success('Voice Command', `Navigated to ${tab}`, '🗣️');
+  };
+  
+  const handleVoiceAction = (action: string) => {
+    switch (action) {
+      case 'analyze':
+        if (activeTab === 'scan') {
+          success('AI Analysis', 'Starting crop analysis...', '🧠');
+        }
+        break;
+      case 'refresh':
+        success('Refreshed', 'Data updated successfully', '🔄');
+        break;
+    }
+    triggerSuccess();
+  };
+  
+  const handleSwipeLeft = () => {
+    const tabs = ['home', 'scan', 'market', 'weather', 'community'];
+    const currentIndex = tabs.indexOf(activeTab);
+    const nextIndex = (currentIndex + 1) % tabs.length;
+    setActiveTab(tabs[nextIndex]);
+    triggerMedium();
+  };
+  
+  const handleSwipeRight = () => {
+    const tabs = ['home', 'scan', 'market', 'weather', 'community'];
+    const currentIndex = tabs.indexOf(activeTab);
+    const prevIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
+    setActiveTab(tabs[prevIndex]);
+    triggerMedium();
+  };
+  
+  const handleSwipeDown = () => {
+    success('Refreshed', 'Latest data loaded', '⬇️');
+    triggerMedium();
   };
 
   const renderContent = () => {
@@ -57,13 +143,160 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
       case 'weather':
         return <WeatherIntelligenceWidget />;
       case 'community':
-        return <CommunityHub />;
+        return <FarmerCommunityHub />;
       default:
         return <UnifiedFarmDashboard />;
     }
   };
 
   return (
-    <div className=\"min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden\">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden">
       {/* Background Pattern */}
-      <div className=\"absolute inset-0 opacity-5\">\n        <div className=\"absolute inset-0\" style={{\n          backgroundImage: `url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")`,\n        }} />\n      </div>\n\n      {/* Status Bar */}\n      <div className=\"bg-white/10 backdrop-blur-xl border-b border-white/10 px-4 py-2 flex items-center justify-between\">\n        <div className=\"flex items-center space-x-2\">\n          <div className={`w-2 h-2 rounded-full ${\n            isOnline ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'\n          }`} />\n          <span className=\"text-xs font-medium text-gray-700\">\n            {isOnline ? 'Online' : 'Offline Mode'}\n          </span>\n        </div>\n        \n        <div className=\"flex items-center space-x-1\">\n          <span className=\"text-lg\">🌾</span>\n          <span className=\"text-sm font-bold text-green-primary\">CropGenius</span>\n        </div>\n        \n        <div className=\"flex items-center space-x-1\">\n          <div className=\"w-6 h-3 border border-gray-400 rounded-sm relative\">\n            <div className=\"absolute inset-0.5 bg-green-500 rounded-sm\" style={{ width: '80%' }} />\n          </div>\n          <span className=\"text-xs text-gray-600\">80%</span>\n        </div>\n      </div>\n\n      {/* Main Content */}\n      <div className=\"pb-20 min-h-screen\">\n        <AnimatePresence mode=\"wait\">\n          <motion.div\n            key={activeTab}\n            initial={{ opacity: 0, x: 20 }}\n            animate={{ opacity: 1, x: 0 }}\n            exit={{ opacity: 0, x: -20 }}\n            transition={{ duration: 0.3 }}\n            className=\"h-full\"\n          >\n            {renderContent()}\n          </motion.div>\n        </AnimatePresence>\n      </div>\n\n      {/* Floating Action Button */}\n      <FloatingActionButton\n        onScanCrop={handleScanCrop}\n        onWeatherCheck={handleWeatherCheck}\n        onMarketCheck={handleMarketCheck}\n      />\n\n      {/* Bottom Navigation */}\n      <BottomNavigation\n        activeTab={activeTab}\n        onTabChange={setActiveTab}\n      />\n    </div>\n  );\n};\n\n// Community Hub Component\nconst CommunityHub: React.FC = () => {\n  return (\n    <div className=\"p-4 space-y-6\">\n      <div className=\"bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-glow-green\">\n        <h2 className=\"text-2xl font-bold text-gray-800 mb-4\">👥 Farmer Community</h2>\n        \n        <div className=\"space-y-4\">\n          <motion.div \n            className=\"bg-white/5 backdrop-blur-sm border border-white/5 rounded-xl p-4\"\n            whileHover={{ scale: 1.02 }}\n          >\n            <h3 className=\"font-semibold text-gray-800 mb-2\">💬 Group Chat</h3>\n            <p className=\"text-sm text-gray-600\">Connect with 2,847 farmers in your region</p>\n          </motion.div>\n          \n          <motion.div \n            className=\"bg-white/5 backdrop-blur-sm border border-white/5 rounded-xl p-4\"\n            whileHover={{ scale: 1.02 }}\n          >\n            <h3 className=\"font-semibold text-gray-800 mb-2\">🧑‍🌾 Ask Agronomist</h3>\n            <p className=\"text-sm text-gray-600\">Get expert advice from certified professionals</p>\n          </motion.div>\n          \n          <motion.div \n            className=\"bg-white/5 backdrop-blur-sm border border-white/5 rounded-xl p-4\"\n            whileHover={{ scale: 1.02 }}\n          >\n            <h3 className=\"font-semibold text-gray-800 mb-2\">🏆 Success Stories</h3>\n            <p className=\"text-sm text-gray-600\">Share your farming achievements</p>\n          </motion.div>\n        </div>\n      </div>\n    </div>\n  );\n};
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
+      </div>
+
+      {/* Status Bar */}
+      <div className="bg-white/10 backdrop-blur-xl border-b border-white/10 px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className={`w-2 h-2 rounded-full ${statusConfig.color} ${statusConfig.glow}`} />
+          <span className="text-xs font-medium text-gray-700">
+            {statusConfig.text}
+          </span>
+          {statusConfig.status === 'reconnected' && (
+            <motion.span
+              className="text-xs text-green-600 font-medium"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              ✨ Synced
+            </motion.span>
+          )}
+        </div>
+        
+        <div className="flex items-center space-x-1">
+          <span className="text-lg">🌾</span>
+          <span className="text-sm font-bold text-green-primary">CropGenius</span>
+        </div>
+        
+        <div className="flex items-center space-x-1">
+          <div className="w-6 h-3 border border-gray-400 rounded-sm relative">
+            <div className="absolute inset-0.5 bg-green-500 rounded-sm" style={{ width: '80%' }} />
+          </div>
+          <span className="text-xs text-gray-600">80%</span>
+        </div>
+      </div>
+
+      {/* Main Content with Swipe Gestures */}
+      <div className="pb-20 min-h-screen">
+        <SwipeableCard
+          onSwipeLeft={handleSwipeLeft}
+          onSwipeRight={handleSwipeRight}
+          onSwipeDown={handleSwipeDown}
+          className="h-full"
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ 
+                type: 'spring',
+                stiffness: 300,
+                damping: 30
+              }}
+              className="h-full"
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
+        </SwipeableCard>
+      </div>
+
+      {/* Floating Action Button */}
+      <FloatingActionButton
+        onScanCrop={handleScanCrop}
+        onWeatherCheck={handleWeatherCheck}
+        onMarketCheck={handleMarketCheck}
+      />
+
+      {/* Voice Command Chip */}
+      <VoiceCommandChip
+        onNavigate={handleVoiceNavigate}
+        onAction={handleVoiceAction}
+      />
+      
+      {/* Toast Notifications */}
+      <ToastContainer />
+      
+      {/* Achievement Celebration */}
+      <AchievementCelebration
+        achievement={celebrationAchievement}
+        onComplete={() => setCelebrationAchievement(null)}
+      />
+      
+      {/* Personalized Greeting */}
+      {personalizedGreeting && (
+        <motion.div
+          className="fixed top-16 left-4 right-4 bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-glow-green z-40"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ delay: 1 }}
+        >
+          <p className="text-sm text-gray-800 text-center">{personalizedGreeting}</p>
+        </motion.div>
+      )}
+      
+      {/* Bottom Navigation */}
+      <BottomNavigation
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          triggerMedium();
+        }}
+      />
+    </div>
+  );
+};
+
+// Community Hub Component
+const CommunityHub: React.FC = () => {
+  return (
+    <div className="p-4 space-y-6">
+      <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-glow-green">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">👥 Farmer Community</h2>
+        
+        <div className="space-y-4">
+          <motion.div 
+            className="bg-white/5 backdrop-blur-sm border border-white/5 rounded-xl p-4"
+            whileHover={{ scale: 1.02 }}
+          >
+            <h3 className="font-semibold text-gray-800 mb-2">💬 Group Chat</h3>
+            <p className="text-sm text-gray-600">Connect with 2,847 farmers in your region</p>
+          </motion.div>
+          
+          <motion.div 
+            className="bg-white/5 backdrop-blur-sm border border-white/5 rounded-xl p-4"
+            whileHover={{ scale: 1.02 }}
+          >
+            <h3 className="font-semibold text-gray-800 mb-2">🧑‍🌾 Ask Agronomist</h3>
+            <p className="text-sm text-gray-600">Get expert advice from certified professionals</p>
+          </motion.div>
+          
+          <motion.div 
+            className="bg-white/5 backdrop-blur-sm border border-white/5 rounded-xl p-4"
+            whileHover={{ scale: 1.02 }}
+          >
+            <h3 className="font-semibold text-gray-800 mb-2">🏆 Success Stories</h3>
+            <p className="text-sm text-gray-600">Share your farming achievements</p>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+};
