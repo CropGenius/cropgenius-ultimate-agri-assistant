@@ -31,10 +31,19 @@ interface SupabaseClientOptions {
 }
 
 class EnhancedSupabaseClient {
+  private static instance: EnhancedSupabaseClient;
   private client: SupabaseClient<Database>;
   private options: SupabaseClientOptions;
+  private static initialized = false;
 
-  constructor(options: Partial<SupabaseClientOptions> = {}) {
+  private constructor(options: Partial<SupabaseClientOptions> = {}) {
+    if (EnhancedSupabaseClient.initialized) {
+      throw new Error('EnhancedSupabaseClient is a singleton and cannot be instantiated directly');
+    }
+
+    EnhancedSupabaseClient.initialized = true;
+    EnhancedSupabaseClient.instance = this;
+
     this.options = {
       enableRetries: true,
       enableOfflineQueue: true,
@@ -224,6 +233,14 @@ class EnhancedSupabaseClient {
     return this.client.from(table);
   }
 
+  // Static method to get the singleton instance
+  public static getInstance(options?: Partial<SupabaseClientOptions>): EnhancedSupabaseClient {
+    if (!EnhancedSupabaseClient.instance) {
+      EnhancedSupabaseClient.instance = new EnhancedSupabaseClient(options);
+    }
+    return EnhancedSupabaseClient.instance;
+  }
+
   public rpc(functionName: string, args?: any) {
     return this.client.rpc(functionName, args);
   }
@@ -252,7 +269,7 @@ class EnhancedSupabaseClient {
 }
 
 // Export singleton instance
-export const supabase = new EnhancedSupabaseClient();
+export const supabase = EnhancedSupabaseClient.getInstance();
 
 // Export types for convenience
 export type Tables<T extends keyof Database['public']['Tables']> =
