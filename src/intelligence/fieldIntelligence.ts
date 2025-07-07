@@ -31,38 +31,64 @@ if (SENTINEL_CLIENT_ID && SENTINEL_CLIENT_SECRET) {
   console.warn('   Required: VITE_SENTINEL_CLIENT_ID and VITE_SENTINEL_CLIENT_SECRET');
 }
 
-// Evalscript calculating NDVI and returning single band image (0-1)
-const NDVI_EVALSCRIPT = `//VERSION=3
+// ENHANCED MULTI-INDEX EVALSCRIPT - Production Grade Agricultural Analysis
+const ENHANCED_MULTI_INDEX_EVALSCRIPT = `//VERSION=3
 function setup() {
   return {
-    input: ['B08', 'B04'],
-    output: { bands: 1, sampleType: 'FLOAT32' }
+    input: ['B02', 'B03', 'B04', 'B08', 'B11', 'B12'],
+    output: [
+      { id: 'default', bands: 4, sampleType: 'UINT8' },
+      { id: 'ndvi', bands: 1, sampleType: 'FLOAT32' },
+      { id: 'evi', bands: 1, sampleType: 'FLOAT32' },
+      { id: 'savi', bands: 1, sampleType: 'FLOAT32' },
+      { id: 'moisture', bands: 1, sampleType: 'FLOAT32' }
+    ]
   };
 }
+
 function evaluatePixel(sample) {
+  // NDVI - Normalized Difference Vegetation Index
   const ndvi = (sample.B08 - sample.B04) / (sample.B08 + sample.B04);
-  return [ndvi];
+  
+  // EVI - Enhanced Vegetation Index (better for dense vegetation)
+  const evi = 2.5 * ((sample.B08 - sample.B04) / (sample.B08 + 6 * sample.B04 - 7.5 * sample.B02 + 1));
+  
+  // SAVI - Soil Adjusted Vegetation Index (accounts for soil brightness)
+  const L = 0.5; // Soil brightness correction factor
+  const savi = ((sample.B08 - sample.B04) / (sample.B08 + sample.B04 + L)) * (1 + L);
+  
+  // NDMI - Normalized Difference Moisture Index
+  const moisture = (sample.B08 - sample.B11) / (sample.B08 + sample.B11);
+  
+  // True color composite for visualization
+  const trueColor = [sample.B04 * 2.5, sample.B03 * 2.5, sample.B02 * 2.5, 1];
+  
+  return {
+    default: trueColor,
+    ndvi: [ndvi],
+    evi: [evi],
+    savi: [savi],
+    moisture: [moisture]
+  };
 }`;
 
 /**
- * Analyse a polygon field using Sentinel-2 imagery with proper OAuth2 authentication.
- * Coordinates should be in EPSG:4326 (lat/lng pairs) and form a closed polygon (first == last).
+ * ENHANCED REAL SATELLITE ANALYSIS - Production Grade
+ * Analyse a polygon field using Sentinel-2 imagery with comprehensive metrics
  */
 export async function analyzeField(coordinates: GeoLocation[], farmerId?: string): Promise<FieldHealthAnalysis> {
   if (!isSentinelHubAuthConfigured()) {
-    const err = new Error('Sentinel Hub authentication not configured. Please set VITE_SENTINEL_CLIENT_ID and VITE_SENTINEL_CLIENT_SECRET');
-    throw err;
+    console.warn('⚠️ Sentinel Hub not configured - using NASA MODIS fallback');
+    return await analyzeFieldWithNASAMODIS(coordinates, farmerId);
   }
 
-  // Get authenticated fetch function
   const authenticatedFetch = getSentinelHubAuthenticatedFetch();
-
-  // Ensure polygon is closed
   const closed = [...coordinates];
   if (coordinates[0].lat !== coordinates[coordinates.length - 1].lat || coordinates[0].lng !== coordinates[coordinates.length - 1].lng) {
     closed.push(coordinates[0]);
   }
 
+  // Enhanced payload with multiple indices
   const payload = {
     input: {
       bounds: {
@@ -71,13 +97,26 @@ export async function analyzeField(coordinates: GeoLocation[], farmerId?: string
           coordinates: [closed.map((c) => [c.lng, c.lat])],
         },
       },
-      data: [{ type: 'sentinel-2-l2a' }],
+      data: [{ 
+        type: 'sentinel-2-l2a',
+        dataFilter: {
+          timeRange: {
+            from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+            to: new Date().toISOString()
+          },
+          maxCloudCoverage: 20
+        }
+      }],
     },
-    evalscript: NDVI_EVALSCRIPT,
+    evalscript: ENHANCED_MULTI_INDEX_EVALSCRIPT,
     output: {
-      width: 256,
-      height: 256,
-      responses: [{ identifier: 'default', format: { type: 'image/tiff' } }],
+      width: 512,
+      height: 512,
+      responses: [
+        { identifier: 'default', format: { type: 'image/tiff' } },
+        { identifier: 'ndvi', format: { type: 'image/tiff' } },
+        { identifier: 'evi', format: { type: 'image/tiff' } }
+      ],
     },
   };
 
