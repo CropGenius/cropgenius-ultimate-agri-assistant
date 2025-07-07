@@ -40,13 +40,18 @@ export const LoginPage = ({ onToggle }: LoginPageProps) => {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    await simpleAuth.signUp('temp@temp.com', 'temp123'); // Temp for OAuth
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-    setLoading(false);
+    try {
+      await simpleAuth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+    } catch (error) {
+      console.error('Google sign in error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
