@@ -1,0 +1,200 @@
+{
+  "realtime_subscriptions": {
+    "field_updates": {
+      "table": "fields",
+      "events": ["INSERT", "UPDATE", "DELETE"],
+      "filter": "user_id=eq.{user_id}",
+      "frontend_handler": "handleFieldUpdate",
+      "use_cases": [
+        "Live field status updates",
+        "Real-time crop health monitoring",
+        "Instant field boundary changes"
+      ]
+    },
+    "task_management": {
+      "table": "tasks",
+      "events": ["INSERT", "UPDATE", "DELETE"],
+      "filter": "user_id=eq.{user_id}",
+      "frontend_handler": "handleTaskUpdate",
+      "use_cases": [
+        "Live task status changes",
+        "Real-time task assignments",
+        "Instant priority updates"
+      ]
+    },
+    "farm_insights": {
+      "table": "farm_insights",
+      "events": ["INSERT"],
+      "filter": "user_id=eq.{user_id}",
+      "frontend_handler": "handleNewInsight",
+      "use_cases": [
+        "Instant AI insight delivery",
+        "Real-time alert notifications",
+        "Live recommendation updates"
+      ]
+    },
+    "credit_transactions": {
+      "table": "credit_transactions",
+      "events": ["INSERT"],
+      "filter": "user_id=eq.{user_id}",
+      "frontend_handler": "handleCreditUpdate",
+      "use_cases": [
+        "Real-time credit balance updates",
+        "Instant transaction notifications",
+        "Live referral rewards"
+      ]
+    },
+    "whatsapp_messages": {
+      "table": "whatsapp_messages",
+      "events": ["INSERT"],
+      "filter": "user_id=eq.{user_id}",
+      "frontend_handler": "handleWhatsAppMessage",
+      "use_cases": [
+        "Live WhatsApp message status",
+        "Real-time delivery confirmations",
+        "Instant response tracking"
+      ]
+    },
+    "market_listings": {
+      "table": "market_listings",
+      "events": ["INSERT", "UPDATE"],
+      "filter": "is_active=eq.true",
+      "frontend_handler": "handleMarketUpdate",
+      "use_cases": [
+        "Live market price updates",
+        "Real-time listing changes",
+        "Instant market opportunities"
+      ]
+    },
+    "weather_data": {
+      "table": "weather_data",
+      "events": ["INSERT"],
+      "filter": "location=eq.{user_location}",
+      "frontend_handler": "handleWeatherUpdate",
+      "use_cases": [
+        "Live weather condition updates",
+        "Real-time forecast changes",
+        "Instant weather alerts"
+      ]
+    }
+  },
+  "database_triggers": {
+    "profile_creation": {
+      "trigger_name": "on_auth_user_created",
+      "table": "auth.users",
+      "event": "AFTER INSERT",
+      "function": "handle_new_user",
+      "purpose": "Automatic profile creation on user signup"
+    },
+    "credit_initialization": {
+      "trigger_name": "on_auth_user_created_add_credits",
+      "table": "auth.users",
+      "event": "AFTER INSERT",
+      "function": "handle_new_user_credits",
+      "purpose": "Grant initial 100 credits to new users"
+    },
+    "timestamp_updates": {
+      "trigger_name": "update_{table}_updated_at",
+      "tables": ["profiles", "farms", "fields", "tasks", "market_listings"],
+      "event": "BEFORE UPDATE",
+      "function": "update_updated_at_column",
+      "purpose": "Automatic timestamp updates on record changes"
+    },
+    "user_memory_updates": {
+      "trigger_name": "update_user_memory_updated_at",
+      "table": "user_memory",
+      "event": "BEFORE UPDATE",
+      "function": "update_updated_at_column",
+      "purpose": "Track user memory modification timestamps"
+    }
+  },
+  "frontend_subscription_patterns": {
+    "react_query_integration": {
+      "pattern": "useRealtimeSubscription",
+      "implementation": {
+        "hook": "useRealtimeQuery",
+        "invalidation": "queryClient.invalidateQueries",
+        "optimistic_updates": true,
+        "error_handling": "toast.error"
+      }
+    },
+    "subscription_lifecycle": {
+      "mount": "supabase.from(table).on('*', handler).subscribe()",
+      "unmount": "subscription.unsubscribe()",
+      "error_recovery": "automatic_reconnection",
+      "offline_handling": "queue_updates"
+    }
+  },
+  "notification_triggers": {
+    "ai_insights_ready": {
+      "trigger": "farm_insights.INSERT",
+      "condition": "priority = 'high'",
+      "action": "send_push_notification",
+      "message_template": "New {type} insight available for {field_name}"
+    },
+    "credit_low_warning": {
+      "trigger": "credit_transactions.INSERT",
+      "condition": "new_balance < 10",
+      "action": "show_upgrade_modal",
+      "message_template": "Low credit balance: {balance} credits remaining"
+    },
+    "task_due_reminder": {
+      "trigger": "tasks.UPDATE",
+      "condition": "due_date < NOW() + INTERVAL '24 hours'",
+      "action": "send_reminder_notification",
+      "message_template": "Task '{title}' is due in 24 hours"
+    },
+    "weather_alert": {
+      "trigger": "weather_data.INSERT",
+      "condition": "condition IN ('storm', 'extreme_heat', 'frost')",
+      "action": "send_weather_alert",
+      "message_template": "Weather alert: {condition} expected in your area"
+    },
+    "market_opportunity": {
+      "trigger": "market_listings.INSERT",
+      "condition": "price_per_unit > average_price * 1.2",
+      "action": "send_market_alert",
+      "message_template": "High price alert: {crop_type} at {price_per_unit}/{unit}"
+    }
+  },
+  "cross_table_updates": {
+    "farm_health_calculation": {
+      "triggers": ["fields.UPDATE", "tasks.UPDATE", "farm_insights.INSERT"],
+      "target": "farms.health_score",
+      "calculation": "weighted_average_field_health",
+      "update_frequency": "real_time"
+    },
+    "user_activity_tracking": {
+      "triggers": ["fields.INSERT", "tasks.INSERT", "farm_insights.SELECT"],
+      "target": "profiles.last_activity",
+      "update": "NOW()",
+      "purpose": "Track user engagement"
+    },
+    "credit_balance_sync": {
+      "triggers": ["credit_transactions.INSERT"],
+      "target": "user_credits.balance",
+      "calculation": "SUM(amount) WHERE user_id = NEW.user_id",
+      "validation": "balance >= 0"
+    }
+  },
+  "performance_optimizations": {
+    "subscription_batching": {
+      "enabled": true,
+      "batch_size": 10,
+      "batch_timeout": "100ms",
+      "purpose": "Reduce real-time update frequency"
+    },
+    "selective_subscriptions": {
+      "enabled": true,
+      "user_specific_filters": true,
+      "geographic_filters": true,
+      "purpose": "Minimize unnecessary data transfer"
+    },
+    "connection_pooling": {
+      "enabled": true,
+      "max_connections": 100,
+      "idle_timeout": "5min",
+      "purpose": "Optimize real-time connection usage"
+    }
+  }
+}

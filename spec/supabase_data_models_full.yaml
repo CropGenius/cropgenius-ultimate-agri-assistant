@@ -1,0 +1,469 @@
+# CROPGENIUS SUPABASE DATA MODELS - COMPLETE SPECIFICATION
+# Generated from comprehensive codebase analysis
+
+# CORE TABLES
+tables:
+  # Authentication & User Management
+  profiles:
+    description: "User profiles with farm metadata"
+    columns:
+      id: { type: "UUID", primary_key: true, references: "auth.users(id)", cascade: "DELETE" }
+      full_name: { type: "TEXT", nullable: true }
+      avatar_url: { type: "TEXT", nullable: true }
+      phone_number: { type: "TEXT", nullable: true }
+      role: { type: "user_role", default: "farmer" }
+      preferred_language: { type: "TEXT", default: "en" }
+      onboarding_completed: { type: "BOOLEAN", default: false }
+      farm_name: { type: "TEXT", nullable: true }
+      farm_size: { type: "DECIMAL", nullable: true }
+      farm_units: { type: "farm_size_unit", default: "hectares" }
+      location: { type: "TEXT", nullable: true, description: "lat,lng format" }
+      created_at: { type: "TIMESTAMPTZ", default: "now()" }
+      updated_at: { type: "TIMESTAMPTZ", default: "now()" }
+    rls_policies:
+      - name: "Public profiles viewable"
+        operation: "SELECT"
+        using: "true"
+      - name: "Users update own profile"
+        operation: "UPDATE"
+        using: "auth.uid() = id"
+
+  # Farm Management
+  farms:
+    description: "Farm entities with geographic data"
+    columns:
+      id: { type: "UUID", primary_key: true, default: "uuid_generate_v4()" }
+      name: { type: "TEXT", required: true }
+      description: { type: "TEXT", nullable: true }
+      size: { type: "DECIMAL", nullable: true }
+      size_unit: { type: "farm_size_unit", default: "hectares" }
+      location: { type: "TEXT", nullable: true, description: "lat,lng format" }
+      total_area: { type: "DECIMAL", nullable: true }
+      user_id: { type: "UUID", references: "auth.users(id)", cascade: "DELETE" }
+      created_at: { type: "TIMESTAMPTZ", default: "now()" }
+      updated_at: { type: "TIMESTAMPTZ", default: "now()" }
+    indexes:
+      - name: "idx_farms_user_id"
+        columns: ["user_id"]
+    rls_policies:
+      - name: "Farms viewable by everyone"
+        operation: "SELECT"
+        using: "true"
+      - name: "Users manage own farms"
+        operation: "ALL"
+        using: "auth.uid() = user_id"
+
+  fields:
+    description: "Field polygons with crop data"
+    columns:
+      id: { type: "UUID", primary_key: true, default: "uuid_generate_v4()" }
+      name: { type: "TEXT", required: true }
+      farm_id: { type: "UUID", references: "farms(id)", cascade: "DELETE" }
+      crop_type_id: { type: "UUID", references: "crop_types(id)", set_null: true }
+      size: { type: "DECIMAL", nullable: true }
+      size_unit: { type: "farm_size_unit", default: "hectares" }
+      location: { type: "GEOGRAPHY(POLYGON, 4326)", nullable: true }
+      planted_at: { type: "TIMESTAMPTZ", nullable: true }
+      harvest_date: { type: "TIMESTAMPTZ", nullable: true }
+      notes: { type: "TEXT", nullable: true }
+      created_at: { type: "TIMESTAMPTZ", default: "now()" }
+      updated_at: { type: "TIMESTAMPTZ", default: "now()" }
+    indexes:
+      - name: "idx_fields_farm_id"
+        columns: ["farm_id"]
+    rls_policies:
+      - name: "Fields viewable by farm owners"
+        operation: "SELECT"
+        using: "EXISTS (SELECT 1 FROM farms WHERE farms.id = fields.farm_id AND farms.user_id = auth.uid())"
+      - name: "Users manage fields in own farms"
+        operation: "ALL"
+        using: "EXISTS (SELECT 1 FROM farms WHERE farms.id = fields.farm_id AND farms.user_id = auth.uid())"
+
+  # Credit System
+  user_credits:
+    description: "User credit balances"
+    columns:
+      user_id: { type: "UUID", primary_key: true, references: "auth.users(id)", cascade: "DELETE" }
+      balance: { type: "INTEGER", required: true, default: 100, check: "balance >= 0" }
+      last_updated_at: { type: "TIMESTAMPTZ", default: "now()" }
+    rls_policies:
+      - name: "Users read own credits"
+        operation: "SELECT"
+        using: "auth.uid() = user_id"
+
+  credit_transactions:
+    description: "Credit transaction audit log"
+    columns:
+      id: { type: "UUID", primary_key: true, default: "gen_random_uuid()" }
+      user_id: { type: "UUID", references: "auth.users(id)", cascade: "DELETE" }
+      amount: { type: "INTEGER", required: true }
+      description: { type: "TEXT", nullable: true }
+      created_at: { type: "TIMESTAMPTZ", default: "now()" }
+      related_entity_id: { type: "UUID", nullable: true }
+    rls_policies:
+      - name: "Users read own transactions"
+        operation: "SELECT"
+        using: "auth.uid() = user_id"
+
+  # Referral System
+  referrals:
+    description: "User referral tracking"
+    columns:
+      id: { type: "UUID", primary_key: true, default: "gen_random_uuid()" }
+      referrer_id: { type: "UUID", references: "auth.users(id)", cascade: "DELETE" }
+      referred_id: { type: "UUID", unique: true, references: "auth.users(id)", cascade: "DELETE" }
+      reward_issued: { type: "BOOLEAN", default: false }
+      created_at: { type: "TIMESTAMPTZ", default: "now()" }
+      rewarded_at: { type: "TIMESTAMPTZ", nullable: true }
+
+  # Task Management
+  tasks:
+    description: "Farm task management"
+    columns:
+      id: { type: "UUID", primary_key: true, default: "uuid_generate_v4()" }
+      title: { type: "TEXT", required: true }
+      description: { type: "TEXT", nullable: true }
+      field_id: { type: "UUID", references: "fields(id)", cascade: "DELETE" }
+      assigned_to: { type: "UUID", references: "auth.users(id)", set_null: true }
+      due_date: { type: "TIMESTAMPTZ", nullable: true }
+      status: { type: "task_status", default: "pending" }
+      priority: { type: "INTEGER", default: 2, description: "1=High, 2=Medium, 3=Low" }
+      created_by: { type: "UUID", references: "auth.users(id)", set_null: true }
+      created_at: { type: "TIMESTAMPTZ", default: "now()" }
+      updated_at: { type: "TIMESTAMPTZ", default: "now()" }
+    indexes:
+      - name: "idx_tasks_field_id"
+        columns: ["field_id"]
+      - name: "idx_tasks_assigned_to"
+        columns: ["assigned_to"]
+    rls_policies:
+      - name: "Tasks viewable by field owners"
+        operation: "SELECT"
+        using: "EXISTS (SELECT 1 FROM fields JOIN farms ON fields.farm_id = farms.id WHERE fields.id = tasks.field_id AND (farms.user_id = auth.uid() OR tasks.assigned_to = auth.uid()))"
+
+  # Weather Data
+  weather_data:
+    description: "Weather information storage"
+    columns:
+      id: { type: "UUID", primary_key: true, default: "uuid_generate_v4()" }
+      location: { type: "TEXT", required: true, description: "lat,lng format" }
+      temperature: { type: "DECIMAL", nullable: true }
+      humidity: { type: "DECIMAL", nullable: true }
+      rainfall: { type: "DECIMAL", nullable: true }
+      wind_speed: { type: "DECIMAL", nullable: true }
+      wind_direction: { type: "INTEGER", nullable: true }
+      condition: { type: "TEXT", nullable: true }
+      recorded_at: { type: "TIMESTAMPTZ", default: "now()" }
+      forecast_data: { type: "JSONB", nullable: true }
+      created_at: { type: "TIMESTAMPTZ", default: "now()" }
+    indexes:
+      - name: "idx_weather_location"
+        columns: ["location"]
+
+  # Market Intelligence
+  market_listings:
+    description: "Crop market price tracking"
+    columns:
+      id: { type: "UUID", primary_key: true, default: "uuid_generate_v4()" }
+      crop_type: { type: "TEXT", required: true }
+      variety: { type: "TEXT", nullable: true }
+      price_per_unit: { type: "DECIMAL(10,2)", required: true }
+      unit: { type: "TEXT", required: true, description: "kg, sack, ton" }
+      quantity_available: { type: "DECIMAL(10,2)", nullable: true }
+      location: { type: "GEOGRAPHY(POINT, 4326)", nullable: true }
+      location_name: { type: "TEXT", nullable: true }
+      source: { type: "TEXT", required: true, description: "user_input, api_integration, web_scraped, partner_feed" }
+      quality_rating: { type: "SMALLINT", nullable: true, description: "1-5 scale" }
+      harvest_date: { type: "TIMESTAMPTZ", nullable: true }
+      created_at: { type: "TIMESTAMPTZ", default: "now()" }
+      updated_at: { type: "TIMESTAMPTZ", default: "now()" }
+      created_by: { type: "UUID", references: "auth.users(id)", set_null: true }
+      is_active: { type: "BOOLEAN", default: true }
+    indexes:
+      - name: "idx_market_listings_crop_type"
+        columns: ["crop_type"]
+      - name: "idx_market_listings_location"
+        type: "GIST"
+        columns: ["location"]
+      - name: "idx_market_listings_created_at"
+        columns: ["created_at DESC"]
+      - name: "idx_market_listings_is_active"
+        columns: ["is_active"]
+    rls_policies:
+      - name: "Active listings readable by all"
+        operation: "SELECT"
+        using: "is_active = true"
+      - name: "Authenticated users can insert"
+        operation: "INSERT"
+        with_check: "auth.role() = 'authenticated' AND auth.uid() = created_by"
+      - name: "Users update own listings"
+        operation: "UPDATE"
+        using: "auth.uid() = created_by"
+
+  # AI & Intelligence
+  field_insights:
+    description: "AI-generated field analysis"
+    columns:
+      id: { type: "UUID", primary_key: true, default: "gen_random_uuid()" }
+      field_id: { type: "UUID", references: "fields(id)", cascade: "DELETE" }
+      user_id: { type: "UUID", references: "auth.users(id)", cascade: "DELETE" }
+      insights: { type: "JSONB", required: true }
+      created_at: { type: "TIMESTAMPTZ", default: "now()" }
+    indexes:
+      - name: "field_insights_field_id_idx"
+        columns: ["field_id"]
+      - name: "field_insights_user_id_idx"
+        columns: ["user_id"]
+    rls_policies:
+      - name: "Users view own field insights"
+        operation: "SELECT"
+        using: "auth.uid() = user_id"
+      - name: "Users insert own field insights"
+        operation: "INSERT"
+        with_check: "auth.uid() = user_id"
+
+  user_memory:
+    description: "User AI memory and preferences"
+    columns:
+      id: { type: "UUID", primary_key: true, default: "gen_random_uuid()" }
+      user_id: { type: "UUID", unique: true, references: "auth.users(id)", cascade: "DELETE" }
+      memory_data: { type: "JSONB", default: "'{}'::jsonb" }
+      created_at: { type: "TIMESTAMPTZ", default: "now()" }
+      updated_at: { type: "TIMESTAMPTZ", default: "now()" }
+    indexes:
+      - name: "idx_user_memory_user_id"
+        columns: ["user_id"]
+    rls_policies:
+      - name: "Users read own memory"
+        operation: "SELECT"
+        using: "auth.uid() = user_id"
+      - name: "Users insert own memory"
+        operation: "INSERT"
+        with_check: "auth.uid() = user_id"
+      - name: "Users update own memory"
+        operation: "UPDATE"
+        using: "auth.uid() = user_id"
+
+  # Growth & Analytics
+  growth_log:
+    description: "User growth event tracking"
+    columns:
+      id: { type: "UUID", primary_key: true, default: "gen_random_uuid()" }
+      user_id: { type: "UUID", references: "auth.users(id)", cascade: "DELETE" }
+      event: { type: "TEXT", required: true }
+      meta: { type: "JSONB", nullable: true }
+      created_at: { type: "TIMESTAMPTZ", default: "now()" }
+    rls_policies:
+      - name: "Users read own growth logs"
+        operation: "SELECT"
+        using: "auth.uid() = user_id"
+
+  # Communication
+  whatsapp_messages:
+    description: "WhatsApp message log"
+    columns:
+      id: { type: "UUID", primary_key: true, default: "gen_random_uuid()" }
+      user_id: { type: "UUID", references: "auth.users(id)", cascade: "DELETE" }
+      phone_number: { type: "TEXT", required: true }
+      message_type: { type: "TEXT", required: true }
+      message_content: { type: "TEXT", required: true }
+      sent_at: { type: "TIMESTAMPTZ", default: "now()" }
+      status: { type: "TEXT", default: "sent" }
+
+  # Reference Data
+  crop_types:
+    description: "Crop type reference data"
+    columns:
+      id: { type: "UUID", primary_key: true, default: "uuid_generate_v4()" }
+      name: { type: "TEXT", unique: true, required: true }
+      description: { type: "TEXT", nullable: true }
+      created_at: { type: "TIMESTAMPTZ", default: "now()" }
+      updated_at: { type: "TIMESTAMPTZ", default: "now()" }
+
+# ENUMS
+enums:
+  user_role:
+    values: ["admin", "farmer", "agronomist", "viewer"]
+  
+  farm_size_unit:
+    values: ["hectares", "acres"]
+  
+  task_status:
+    values: ["pending", "in_progress", "completed", "cancelled"]
+  
+  alert_severity:
+    values: ["info", "warning", "critical"]
+
+# FUNCTIONS
+functions:
+  update_updated_at_column:
+    description: "Trigger function to update updated_at timestamp"
+    returns: "TRIGGER"
+    language: "plpgsql"
+    body: |
+      BEGIN
+        NEW.updated_at = NOW();
+        RETURN NEW;
+      END;
+
+  handle_new_user:
+    description: "Create profile for new auth user"
+    returns: "TRIGGER"
+    language: "plpgsql"
+    security: "DEFINER"
+    body: |
+      BEGIN
+        INSERT INTO public.profiles (
+          id, full_name, avatar_url, preferred_language, 
+          onboarding_completed, phone_number, created_at, updated_at
+        ) VALUES (
+          NEW.id, 
+          COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name'), 
+          NEW.raw_user_meta_data->>'avatar_url',
+          COALESCE(NEW.raw_user_meta_data->>'preferred_language', 'en'),
+          FALSE, NEW.phone, NOW(), NOW()
+        ) ON CONFLICT (id) DO UPDATE SET
+          full_name = EXCLUDED.full_name,
+          avatar_url = EXCLUDED.avatar_url,
+          preferred_language = EXCLUDED.preferred_language,
+          updated_at = NOW();
+        RETURN NEW;
+      END;
+
+  handle_new_user_credits:
+    description: "Initialize credits for new user"
+    returns: "TRIGGER"
+    language: "plpgsql"
+    security: "DEFINER"
+    body: |
+      BEGIN
+        INSERT INTO public.user_credits (user_id, balance)
+        VALUES (new.id, 100);
+        RETURN new;
+      END;
+
+  deduct_user_credits:
+    description: "Atomically deduct user credits"
+    parameters:
+      - name: "p_user_id"
+        type: "UUID"
+      - name: "p_amount"
+        type: "INTEGER"
+      - name: "p_description"
+        type: "TEXT"
+    returns: "void"
+    language: "plpgsql"
+    security: "DEFINER"
+    body: |
+      DECLARE
+        current_balance INTEGER;
+      BEGIN
+        SELECT balance INTO current_balance FROM public.user_credits WHERE user_id = p_user_id;
+        
+        IF current_balance IS NULL OR current_balance < p_amount THEN
+          RAISE EXCEPTION 'Insufficient credits';
+        END IF;
+        
+        UPDATE public.user_credits
+        SET balance = balance - p_amount, last_updated_at = NOW()
+        WHERE user_id = p_user_id;
+        
+        INSERT INTO public.credit_transactions (user_id, amount, description)
+        VALUES (p_user_id, -p_amount, p_description);
+      END;
+
+  restore_user_credits:
+    description: "Atomically restore user credits"
+    parameters:
+      - name: "p_user_id"
+        type: "UUID"
+      - name: "p_amount"
+        type: "INTEGER"
+      - name: "p_description"
+        type: "TEXT"
+    returns: "void"
+    language: "plpgsql"
+    security: "DEFINER"
+    body: |
+      BEGIN
+        UPDATE public.user_credits
+        SET balance = balance + p_amount, last_updated_at = NOW()
+        WHERE user_id = p_user_id;
+        
+        INSERT INTO public.credit_transactions (user_id, amount, description)
+        VALUES (p_user_id, p_amount, p_description);
+      END;
+
+  process_referral:
+    description: "Process referral and issue credits"
+    parameters:
+      - name: "p_referrer"
+        type: "UUID"
+      - name: "p_referred"
+        type: "UUID"
+    returns: "void"
+    language: "plpgsql"
+    security: "DEFINER"
+    body: |
+      DECLARE
+        exists_referral BOOLEAN;
+      BEGIN
+        SELECT TRUE INTO exists_referral FROM public.referrals WHERE referred_id = p_referred;
+        IF exists_referral THEN
+          RETURN;
+        END IF;
+        
+        INSERT INTO public.referrals (referrer_id, referred_id, reward_issued)
+        VALUES (p_referrer, p_referred, TRUE);
+        
+        PERFORM public.restore_user_credits(p_referrer, 10, 'Referral reward');
+        PERFORM public.restore_user_credits(p_referred, 10, 'Referral signup bonus');
+        
+        UPDATE public.referrals SET rewarded_at = NOW() WHERE referred_id = p_referred;
+      END;
+
+# TRIGGERS
+triggers:
+  - table: "profiles"
+    name: "update_profiles_updated_at"
+    event: "BEFORE UPDATE"
+    function: "update_updated_at_column()"
+  
+  - table: "farms"
+    name: "update_farms_updated_at"
+    event: "BEFORE UPDATE"
+    function: "update_updated_at_column()"
+  
+  - table: "fields"
+    name: "update_fields_updated_at"
+    event: "BEFORE UPDATE"
+    function: "update_updated_at_column()"
+  
+  - table: "tasks"
+    name: "update_tasks_updated_at"
+    event: "BEFORE UPDATE"
+    function: "update_updated_at_column()"
+  
+  - table: "market_listings"
+    name: "update_market_listings_updated_at"
+    event: "BEFORE UPDATE"
+    function: "update_updated_at_column()"
+  
+  - table: "auth.users"
+    name: "on_auth_user_created"
+    event: "AFTER INSERT"
+    function: "public.handle_new_user()"
+  
+  - table: "auth.users"
+    name: "on_auth_user_created_add_credits"
+    event: "AFTER INSERT"
+    function: "public.handle_new_user_credits()"
+
+# REALTIME SUBSCRIPTIONS
+realtime:
+  enabled_tables:
+    - "user_memory"
+    - "field_insights"
+    - "tasks"
+    - "weather_data"
+    - "market_listings"

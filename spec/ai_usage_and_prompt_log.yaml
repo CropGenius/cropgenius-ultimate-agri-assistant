@@ -1,0 +1,292 @@
+# CROPGENIUS AI USAGE & PROMPT LOGGING - COMPLETE EXTRACTION
+
+ai_interaction_logging:
+  table_name: ai_interaction_logs
+  schema:
+    id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
+    user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE
+    session_id: UUID NOT NULL
+    agent_type: TEXT NOT NULL # 'crop_disease', 'weather', 'market', 'yield_prediction', 'chat'
+    interaction_type: TEXT NOT NULL # 'query', 'analysis', 'recommendation', 'feedback'
+    input_data: JSONB NOT NULL
+    output_data: JSONB NOT NULL
+    processing_time_ms: INTEGER
+    confidence_score: DECIMAL
+    api_calls_made: JSONB # Track external API usage
+    credits_consumed: INTEGER DEFAULT 0
+    success: BOOLEAN DEFAULT TRUE
+    error_message: TEXT
+    created_at: TIMESTAMPTZ DEFAULT NOW()
+  indexes:
+    - idx_ai_logs_user_id ON user_id
+    - idx_ai_logs_agent_type ON agent_type
+    - idx_ai_logs_created_at ON created_at DESC
+    - idx_ai_logs_session_id ON session_id
+  rls: "Users can view their own AI interaction logs"
+
+prompt_templates:
+  table_name: ai_prompt_templates
+  schema:
+    id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
+    agent_type: TEXT NOT NULL
+    template_name: TEXT NOT NULL
+    prompt_template: TEXT NOT NULL
+    variables: JSONB # Template variables and their types
+    version: INTEGER DEFAULT 1
+    is_active: BOOLEAN DEFAULT TRUE
+    created_at: TIMESTAMPTZ DEFAULT NOW()
+    updated_at: TIMESTAMPTZ DEFAULT NOW()
+  rls: "Public read access for active templates"
+
+ai_model_usage:
+  table_name: ai_model_usage_stats
+  schema:
+    id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
+    model_provider: TEXT NOT NULL # 'gemini', 'plantnet', 'openweather', 'sentinel_hub'
+    model_name: TEXT NOT NULL
+    endpoint: TEXT NOT NULL
+    user_id: UUID REFERENCES auth.users(id)
+    request_count: INTEGER DEFAULT 1
+    total_tokens: INTEGER
+    total_cost_usd: DECIMAL(10, 4)
+    avg_response_time_ms: INTEGER
+    success_rate: DECIMAL(3, 2)
+    date: DATE NOT NULL
+    created_at: TIMESTAMPTZ DEFAULT NOW()
+  indexes:
+    - idx_model_usage_provider ON model_provider
+    - idx_model_usage_date ON date DESC
+    - idx_model_usage_user_id ON user_id
+  rls: "Admin access only for usage stats"
+
+# AI AGENT LOGGING PATTERNS
+
+crop_disease_oracle_logging:
+  agent: CropDiseaseOracle
+  log_points:
+    image_upload:
+      event: image_received
+      data:
+        image_size_bytes: INTEGER
+        image_format: TEXT
+        crop_type: TEXT
+        location: JSONB
+    plantnet_api_call:
+      event: plantnet_analysis
+      data:
+        api_response_time_ms: INTEGER
+        confidence_scores: JSONB
+        species_identified: TEXT[]
+        api_cost: DECIMAL
+    gemini_ai_call:
+      event: gemini_treatment_advice
+      data:
+        prompt_tokens: INTEGER
+        completion_tokens: INTEGER
+        response_time_ms: INTEGER
+        treatment_recommendations: JSONB
+        economic_analysis: JSONB
+    final_analysis:
+      event: disease_analysis_complete
+      data:
+        disease_name: TEXT
+        confidence: DECIMAL
+        severity: TEXT
+        treatment_cost_estimate: DECIMAL
+        credits_consumed: INTEGER
+
+weather_agent_logging:
+  agent: WeatherAgent
+  log_points:
+    location_request:
+      event: weather_data_requested
+      data:
+        latitude: DECIMAL
+        longitude: DECIMAL
+        forecast_days: INTEGER
+    api_integration:
+      event: openweather_api_call
+      data:
+        api_endpoint: TEXT
+        response_time_ms: INTEGER
+        data_points_received: INTEGER
+    agricultural_analysis:
+      event: farming_insights_generated
+      data:
+        irrigation_recommendations: JSONB
+        planting_advice: JSONB
+        risk_assessments: JSONB
+        confidence_scores: JSONB
+
+smart_market_agent_logging:
+  agent: SmartMarketAgent
+  log_points:
+    market_data_fetch:
+      event: market_prices_requested
+      data:
+        crop_types: TEXT[]
+        location_radius_km: INTEGER
+        data_sources: TEXT[]
+    price_analysis:
+      event: price_analysis_complete
+      data:
+        price_trends: JSONB
+        market_recommendations: JSONB
+        profit_projections: JSONB
+        transport_costs: JSONB
+
+whatsapp_bot_logging:
+  agent: WhatsAppFarmingBot
+  log_points:
+    message_received:
+      event: whatsapp_message_received
+      data:
+        phone_number: TEXT # Hashed for privacy
+        message_type: TEXT
+        intent_classification: JSONB
+        confidence_score: DECIMAL
+    response_generated:
+      event: whatsapp_response_sent
+      data:
+        response_type: TEXT
+        processing_time_ms: INTEGER
+        api_calls_made: JSONB
+        success: BOOLEAN
+
+yield_predictor_logging:
+  agent: YieldPredictorAgent
+  log_points:
+    prediction_request:
+      event: yield_prediction_requested
+      data:
+        field_id: UUID
+        crop_type: TEXT
+        planting_date: DATE
+        input_data_quality: JSONB
+    gemini_analysis:
+      event: gemini_yield_analysis
+      data:
+        prompt_complexity: INTEGER
+        response_tokens: INTEGER
+        confidence_factors: JSONB
+    prediction_complete:
+      event: yield_prediction_complete
+      data:
+        predicted_yield_kg_per_ha: DECIMAL
+        confidence_score: DECIMAL
+        key_factors: JSONB
+        recommendations: TEXT[]
+
+# USAGE ANALYTICS AGGREGATION
+
+daily_usage_summary:
+  table_name: daily_ai_usage_summary
+  schema:
+    id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
+    date: DATE NOT NULL
+    user_id: UUID REFERENCES auth.users(id)
+    agent_type: TEXT NOT NULL
+    total_interactions: INTEGER DEFAULT 0
+    total_credits_consumed: INTEGER DEFAULT 0
+    total_processing_time_ms: BIGINT DEFAULT 0
+    success_rate: DECIMAL(3, 2)
+    avg_confidence_score: DECIMAL(3, 2)
+    unique_sessions: INTEGER DEFAULT 0
+    created_at: TIMESTAMPTZ DEFAULT NOW()
+  indexes:
+    - idx_daily_usage_date ON date DESC
+    - idx_daily_usage_user_id ON user_id
+    - idx_daily_usage_agent_type ON agent_type
+  rls: "Users can view their own usage summary"
+
+user_ai_preferences:
+  table_name: user_ai_preferences
+  schema:
+    user_id: UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE
+    preferred_agents: TEXT[] DEFAULT ARRAY['crop_disease', 'weather']
+    confidence_threshold: DECIMAL DEFAULT 0.7
+    auto_apply_recommendations: BOOLEAN DEFAULT FALSE
+    notification_preferences: JSONB DEFAULT '{}'::jsonb
+    language_preference: TEXT DEFAULT 'en'
+    feedback_frequency: TEXT DEFAULT 'weekly'
+    updated_at: TIMESTAMPTZ DEFAULT NOW()
+  rls: "Users can manage their own AI preferences"
+
+# FEEDBACK & IMPROVEMENT TRACKING
+
+ai_feedback_logs:
+  table_name: ai_feedback_logs
+  schema:
+    id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
+    interaction_log_id: UUID REFERENCES ai_interaction_logs(id)
+    user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE
+    feedback_type: TEXT NOT NULL # 'thumbs_up', 'thumbs_down', 'correction', 'suggestion'
+    feedback_score: INTEGER # 1-5 rating
+    feedback_text: TEXT
+    improvement_suggestions: JSONB
+    created_at: TIMESTAMPTZ DEFAULT NOW()
+  indexes:
+    - idx_feedback_interaction_id ON interaction_log_id
+    - idx_feedback_user_id ON user_id
+    - idx_feedback_type ON feedback_type
+  rls: "Users can provide feedback on their own interactions"
+
+# PERFORMANCE MONITORING
+
+ai_performance_metrics:
+  table_name: ai_performance_metrics
+  schema:
+    id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
+    agent_type: TEXT NOT NULL
+    metric_name: TEXT NOT NULL # 'response_time', 'accuracy', 'user_satisfaction'
+    metric_value: DECIMAL NOT NULL
+    measurement_date: DATE NOT NULL
+    sample_size: INTEGER
+    confidence_interval: JSONB
+    created_at: TIMESTAMPTZ DEFAULT NOW()
+  indexes:
+    - idx_performance_agent_type ON agent_type
+    - idx_performance_metric_name ON metric_name
+    - idx_performance_date ON measurement_date DESC
+  rls: "Admin access only"
+
+# ERROR TRACKING & DEBUGGING
+
+ai_error_logs:
+  table_name: ai_error_logs
+  schema:
+    id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
+    interaction_log_id: UUID REFERENCES ai_interaction_logs(id)
+    error_type: TEXT NOT NULL # 'api_timeout', 'invalid_input', 'model_error', 'rate_limit'
+    error_code: TEXT
+    error_message: TEXT NOT NULL
+    stack_trace: TEXT
+    user_impact: TEXT # 'none', 'degraded', 'blocked'
+    resolution_status: TEXT DEFAULT 'open' # 'open', 'investigating', 'resolved'
+    created_at: TIMESTAMPTZ DEFAULT NOW()
+    resolved_at: TIMESTAMPTZ
+  indexes:
+    - idx_error_type ON error_type
+    - idx_error_status ON resolution_status
+    - idx_error_created_at ON created_at DESC
+  rls: "Admin access only"
+
+# COST TRACKING & OPTIMIZATION
+
+api_cost_tracking:
+  table_name: api_cost_tracking
+  schema:
+    id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
+    provider: TEXT NOT NULL # 'gemini', 'plantnet', 'openweather', 'sentinel_hub'
+    endpoint: TEXT NOT NULL
+    user_id: UUID REFERENCES auth.users(id)
+    request_count: INTEGER DEFAULT 1
+    cost_per_request: DECIMAL(10, 6)
+    total_cost: DECIMAL(10, 4)
+    billing_date: DATE NOT NULL
+    created_at: TIMESTAMPTZ DEFAULT NOW()
+  indexes:
+    - idx_cost_provider ON provider
+    - idx_cost_billing_date ON billing_date DESC
+    - idx_cost_user_id ON user_id
+  rls: "Admin access for cost analysis"
