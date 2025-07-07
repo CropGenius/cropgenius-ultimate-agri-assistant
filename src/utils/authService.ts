@@ -1,7 +1,7 @@
 import { supabase } from "@/services/supabaseClient";
-import { User, Session } from "@supabase/supabase-js";
-import { Database, Profile } from "@/types/supabase";
+import { User, Session, AuthError } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { ErrorHandler } from "@/services/errorHandler";
 
 // Types
 export interface AuthState {
@@ -9,7 +9,7 @@ export interface AuthState {
   session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  profile: Profile | null;
+  profile: any | null;
   error: Error | null;
 }
 
@@ -17,47 +17,95 @@ export interface AuthResponse {
   data: {
     user: User | null;
     session: Session | null;
-    profile?: Profile | null;
+    profile?: any | null;
   } | null;
   error: string | null;
-  status?: number;
+  status: number;
   message?: string;
+  success: boolean;
 }
 
-export const isSessionValid = (session: Session | null): boolean => {
+export interface Profile {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  phone_number: string | null;
+  location: string | null;
+  farm_size: number | null;
+  farm_units: string | null;
+  preferred_language: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const isSessionValid = async (session: Session | null): Promise<boolean> => {
   if (!session || !session.expires_at) {
     return false;
   }
+  
   // Check if the token is expired. Supabase times are in seconds.
-  return session.expires_at > (Date.now() / 1000);
+  if (session.expires_at <= (Date.now() / 1000)) {
+    try {
+      const { error } = await supabase.auth.refreshSession();
+      if (error) {
+        ErrorHandler.getInstance().handleError(error, 'Session refresh failed');
+        return false;
+      }
+      return true;
+    } catch (error) {
+      ErrorHandler.getInstance().handleError(error as Error, 'Session refresh failed');
+      return false;
+    }
+  }
+  return true;
 };
 
 // Sign in with email and password
 export const signInWithEmail = async (email: string, password: string): Promise<AuthResponse> => {
   try {
-    console.log("Signing in with email:", email);
+    console.log(" Signing in with email:", email);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     
     if (error) {
-      console.error("Sign in error:", error.message);
-      throw new Error(error.message);
+      ErrorHandler.getInstance().handleError(error, 'Sign in failed');
+      return {
+        data: null,
+        error: error.message,
+        status: error.status || 401,
+        success: false
+      };
     }
     
-    console.log("Sign in successful:", data.user?.id);
-    return { data, error: null };
+    console.log(" Sign in successful:", data.user?.id);
+    return {
+      data: {
+        user: data.user,
+        session: data.session,
+        profile: null
+      },
+      error: null,
+      status: 200,
+      success: true
+    };
   } catch (error: any) {
-    console.error("Error signing in:", error.message);
-    return { data: null, error: error.message };
+    ErrorHandler.getInstance().handleError(error as Error, 'Sign in failed');
+    return {
+      data: null,
+      error: error.message,
+      status: 500,
+      success: false
+    };
   }
 };
 
 // Sign up with email and password
 export const signUpWithEmail = async (email: string, password: string, fullName: string): Promise<AuthResponse> => {
   try {
-    console.log("Signing up with email:", email);
+    console.log(" Signing up with email:", email);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -69,26 +117,46 @@ export const signUpWithEmail = async (email: string, password: string, fullName:
     });
     
     if (error) {
-      console.error("Sign up error:", error.message);
-      throw new Error(error.message);
+      ErrorHandler.getInstance().handleError(error, 'Sign up failed');
+      return {
+        data: null,
+        error: error.message,
+        status: error.status || 400,
+        success: false
+      };
     }
     
-    console.log("Sign up successful:", data.user?.id);
-    return { data, error: null };
+    console.log(" Sign up successful:", data.user?.id);
+    return {
+      data: {
+        user: data.user,
+        session: data.session,
+        profile: null
+      },
+      error: null,
+      status: 201,
+      success: true
+    };
   } catch (error: any) {
-    console.error("Error signing up:", error.message);
-    return { data: null, error: error.message };
+    ErrorHandler.getInstance().handleError(error as Error, 'Sign up failed');
+    return {
+      data: null,
+      error: error.message,
+      status: 500,
+      success: false
+    };
   }
 };
 
 // Sign in with Google
-export const signInWithGoogle = async (): Promise<any> => {
+export const signInWithGoogle = async (): Promise<AuthResponse> => {
   try {
     const baseUrl = window.location.origin;
     const callbackUrl = `${baseUrl}/auth/callback`;
     
-    console.log("Starting Google sign in flow with redirect to:", callbackUrl);
+    console.log(" Starting Google sign in flow with redirect to:", callbackUrl);
     
+    // First, initiate the OAuth flow
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -101,14 +169,56 @@ export const signInWithGoogle = async (): Promise<any> => {
     });
     
     if (error) {
-      console.error("Google sign in error:", error.message);
-      throw new Error(error.message);
+      ErrorHandler.getInstance().handleError(error, 'Google sign in failed');
+      return {
+        data: null,
+        error: error.message,
+        status: error.status || 401,
+        success: false
+      };
     }
+
+    // After redirect, get the session
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     
-    return { data, error: null };
+    if (sessionError) {
+      ErrorHandler.getInstance().handleError(sessionError, 'Failed to get session after Google sign in');
+      return {
+        data: null,
+        error: sessionError.message,
+        status: sessionError.status || 401,
+        success: false
+      };
+    }
+
+    if (!sessionData.session) {
+      ErrorHandler.getInstance().handleError(new Error('No session found after Google sign in'), 'No session found');
+      return {
+        data: null,
+        error: 'No session found after Google sign in',
+        status: 401,
+        success: false
+      };
+    }
+
+    return {
+      data: {
+        user: sessionData.session.user,
+        session: sessionData.session,
+        profile: null
+      },
+      error: null,
+      status: 200,
+      success: true
+    };
   } catch (error: any) {
-    console.error("Error signing in with Google:", error.message);
-    return { data: null, error: error.message };
+    ErrorHandler.getInstance().handleError(error as Error, 'Google sign in failed');
+    return {
+      data: null,
+      error: error.message,
+      status: 500,
+      success: false
+    };
   }
 };
 

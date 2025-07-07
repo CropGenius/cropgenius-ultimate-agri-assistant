@@ -2,33 +2,54 @@ import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 
 interface YieldBadgeProps {
-  area: number;
+  value: number;
+  unit: string;
+  className?: string;
+  ariaLabel?: string;
 }
 
-// A simple, optimistic calculation to provide instant feedback
-const CROP_YIELD_FACTOR = 1.18; // Represents an 18% potential increase per hectare
+const YIELD_VARIANTS = {
+  low: 'bg-red-100 text-red-800',
+  medium: 'bg-yellow-100 text-yellow-800',
+  high: 'bg-green-100 text-green-800'
+};
 
-export function YieldBadge({ area }: YieldBadgeProps) {
-  const potentialYieldIncrease = useMemo(() => {
-    if (!area || area <= 0) return 0;
-    // This formula is for psychological effect, not scientific accuracy
-    const yieldValue = (Math.log(area + 1) * CROP_YIELD_FACTOR * 10);
-    return Math.min(Math.round(yieldValue), 99); // Cap at 99%
-  }, [area]);
+export function YieldBadge({ 
+  value, 
+  unit, 
+  className = '',
+  ariaLabel = 'Yield indicator'
+}: YieldBadgeProps) {
+  const yieldLevel = useMemo(() => {
+    if (value >= 80) return 'high';
+    if (value >= 40) return 'medium';
+    return 'low';
+  }, [value]);
 
-  if (potentialYieldIncrease === 0) return null;
+  const getIcon = () => {
+    switch (yieldLevel) {
+      case 'low': return '↓';
+      case 'medium': return '→';
+      case 'high': return '↑';
+      default: return '';
+    }
+  };
 
   return (
     <motion.div
+      role="status"
+      aria-label={ariaLabel}
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-      className="bg-lime-100 text-lime-800 p-3 rounded-lg text-center"
+      className={`p-3 rounded-lg text-center ${className} ${YIELD_VARIANTS[yieldLevel]}`}
+      data-testid="yield-badge"
     >
-      <p className="font-bold">
-        Potential Yield ↑ <span className="text-2xl">{potentialYieldIncrease}%</span>
-      </p>
-      <p className="text-xs">Based on your farm size. More data unlocks more potential!</p>
+      <div className="flex items-center justify-center">
+        <span className="text-2xl font-bold">{value}</span>
+        <span className="mx-2 text-xl">{getIcon()}</span>
+        <span className="text-lg">{unit}</span>
+      </div>
     </motion.div>
   );
 }
