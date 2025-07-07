@@ -1,42 +1,268 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/**
+ * 🎨 CROPGENIUS GLOBAL STYLES - Trillion-Dollar CSS
+ * iPhone 20 Pro level styling with glassmorphism magic
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Global Reset & Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #030754aa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+html {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* App Container */
+.App {
+  text-align: left;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Custom Scrollbar - Glassmorphism */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+}
+
+/* Selection Styling */
+::selection {
+  background: rgba(16, 185, 129, 0.2);
+  color: #065f46;
+}
+
+::-moz-selection {
+  background: rgba(16, 185, 129, 0.2);
+  color: #065f46;
+}
+
+/* Focus Styles */
+*:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+}
+
+/* Button Focus */
+button:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3), 0 8px 30px rgba(16, 185, 129, 0.4);
+}
+
+/* Input Focus */
+input:focus,
+textarea:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2), 0 4px 15px rgba(16, 185, 129, 0.1);
+}
+
+/* Glassmorphism Utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+}
+
+/* Green Glow Utilities */
+.glow-green {
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
+}
+
+.glow-green-lg {
+  box-shadow: 0 12px 40px rgba(16, 185, 129, 0.5);
+}
+
+.glow-green-xl {
+  box-shadow: 0 16px 50px rgba(16, 185, 129, 0.6);
+}
+
+/* Animation Utilities */
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.8);
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }
 
-.card {
-  padding: 2em;
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  /* Touch Targets */
+  button,
+  [role="button"],
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent zoom on input focus */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 
-.read-the-docs {
-  color: #888;
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .glass {
+    backdrop-filter: blur(25px);
+  }
+  
+  .glass-strong {
+    backdrop-filter: blur(35px);
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
+  }
+  
+  .glass {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .glass-strong {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .glass {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #10b981;
+  }
+  
+  .glow-green {
+    box-shadow: 0 0 0 2px #10b981;
+  }
+}
+
+/* Safe Area Insets for Mobile */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Loading States */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(16,185,129,0.1) 50%, rgba(255,255,255,0.1) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Haptic Feedback Simulation */
+.haptic-light {
+  transition: transform 0.1s ease;
+}
+
+.haptic-light:active {
+  transform: scale(0.98);
+}
+
+.haptic-medium {
+  transition: transform 0.15s ease;
+}
+
+.haptic-medium:active {
+  transform: scale(0.95);
+}
+
+/* Performance Optimizations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.smooth-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
