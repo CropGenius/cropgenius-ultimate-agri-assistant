@@ -20,10 +20,32 @@ export default defineConfig({
     rollupOptions: {
       output: {
         format: 'es',
-        entryFileNames: '[name].js',
-        chunkFileNames: '[name].js',
-        assetFileNames: '[name].[ext]'
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['@/components/ui'],
+          'vendor-maps': ['mapbox-gl', 'react-map-gl'],
+          'vendor-charts': ['recharts', 'chart.js'],
+          'vendor-utils': ['@/utils'],
+          'ai-agents': ['@/agents'],
+          'dashboard-core': ['@/components/dashboard'],
+          'field-management': ['@/features/fields'],
+          'auth-system': ['@/features/auth'],
+          'weather-system': ['@/features/weather']
+        }
       }
-    }
+    },
+    target: 'es2018',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        drop_debugger: true
+      }
+    },
+    chunkSizeWarningLimit: 800,
+    sourcemap: false
   }
 })
