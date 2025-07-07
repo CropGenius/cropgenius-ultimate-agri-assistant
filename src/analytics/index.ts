@@ -23,19 +23,6 @@ export const initAnalytics = async (): Promise<void> => {
     // eslint-disable-next-line no-console
     console.warn('PostHog disabled:', err);
   }
-
-  // Sentry ----------------------------------------------------------------
-  try {
-    const dsn = import.meta.env.VITE_SENTRY_DSN ?? '';
-    if (dsn) {
-      const mod = await import('@sentry/react');
-      Sentry = mod;
-      Sentry.init({ dsn, tracesSampleRate: 1.0 });
-    }
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.warn('Sentry disabled:', err);
-  }
 };
 
 // -----------------------------------------------------------------------
@@ -51,12 +38,7 @@ export const captureEvent = (name: string, props: Record<string, any> = {}): voi
   }
 };
 
-export const captureError = (err: unknown): void => {
-  try {
-    if (Sentry?.captureException) {
-      Sentry.captureException(err);
-    }
-  } catch {
-    /* swallow */
-  }
-}; 
+// Error tracking ----------------------------------------------------------------
+export const trackError = (err: Error) => {
+  console.error('Error tracked:', err);
+};

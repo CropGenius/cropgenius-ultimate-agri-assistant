@@ -91,7 +91,6 @@ export class SmartMarketAgent {
 
       if (error) {
         console.error('Error fetching market listings:', error);
-        Sentry.captureException(error);
         return [];
       }
 

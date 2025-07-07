@@ -8,8 +8,6 @@
  * - Real supplier lookup and organic/inorganic solutions
  */
 
-import * as Sentry from "@sentry/react";
-
 // API Configuration
 const PLANTNET_API_KEY = import.meta.env.VITE_PLANTNET_API_KEY;
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
@@ -118,7 +116,6 @@ export class CropDiseaseOracle {
 
     } catch (error) {
       console.error('❌ Disease detection error:', error);
-      Sentry.captureException(error);
       return this.generateFallbackAnalysis(cropType, farmLocation);
     }
   }

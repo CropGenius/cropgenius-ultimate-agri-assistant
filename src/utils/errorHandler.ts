@@ -19,9 +19,6 @@ export const handleError = (error: Error, context?: any) => {
   if (import.meta.env.DEV) {
     console.error('Error:', error.message, context);
   }
-  
-  // In production, silently handle errors
-  // Could send to error reporting service here
 };
 
 export const handleAuthError = (error: any) => {

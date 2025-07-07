@@ -94,7 +94,6 @@ export const loadEnvironmentConfig = (): EnvironmentConfig => {
     const WHATSAPP_WEBHOOK_VERIFY_TOKEN = env.VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
     
     // Monitoring
-    const SENTRY_DSN = validateOptional(env.VITE_SENTRY_DSN);
     const POSTHOG_API_KEY = validateOptional(env.VITE_POSTHOG_API_KEY);
     
     // Features enabled based on available API keys

@@ -1,9 +1,8 @@
 import { fetchJSON } from '@/utils/network';
-import * as Sentry from "@sentry/react";
 import { 
-  initializeSentinelHubAuth, 
   getSentinelHubAuthenticatedFetch, 
-  isSentinelHubAuthConfigured 
+  isSentinelHubAuthConfigured,
+  initializeSentinelHubAuth
 } from '@/utils/sentinelHubAuth';
 
 export interface GeoLocation {
@@ -52,7 +51,6 @@ function evaluatePixel(sample) {
 export async function analyzeField(coordinates: GeoLocation[], farmerId?: string): Promise<FieldHealthAnalysis> {
   if (!isSentinelHubAuthConfigured()) {
     const err = new Error('Sentinel Hub authentication not configured. Please set VITE_SENTINEL_CLIENT_ID and VITE_SENTINEL_CLIENT_SECRET');
-    Sentry.captureException(err);
     throw err;
   }
 
@@ -96,14 +94,12 @@ export async function analyzeField(coordinates: GeoLocation[], farmerId?: string
     if (!resp.ok) {
       const errTxt = await resp.text();
       const err = new Error(`Sentinel API error (Process API): ${resp.status} ${resp.statusText} – ${errTxt}`);
-      Sentry.captureException(err, { 
-        extra: { 
-          farmerId, 
-          coordinatesCount: coordinates.length, 
-          requestBody: payload,
-          responseStatus: resp.status,
-          responseText: errTxt
-        } 
+      console.error('Process API error:', {
+        farmerId,
+        coordinatesCount: coordinates.length,
+        requestBody: payload,
+        responseStatus: resp.status,
+        responseText: errTxt
       });
       throw err;
     }
@@ -144,12 +140,10 @@ export async function analyzeField(coordinates: GeoLocation[], farmerId?: string
 
   } catch (error) {
     console.error('Sentinel Hub API error:', error);
-    Sentry.captureException(error, { 
-      extra: { 
-        farmerId, 
-        coordinatesCount: coordinates.length,
-        error: error.message 
-      } 
+    console.error('Sentinel Hub API error:', {
+      farmerId,
+      coordinatesCount: coordinates.length,
+      error: error.message
     });
     
     // Return fallback analysis instead of throwing
