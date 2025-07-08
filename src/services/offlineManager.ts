@@ -93,4 +93,3 @@ export const offlineManager: OfflineManager = {
     return () => window.removeEventListener('offline', handleOffline);
   }
 };
-}
