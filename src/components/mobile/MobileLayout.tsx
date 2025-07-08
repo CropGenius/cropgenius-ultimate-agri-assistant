@@ -20,7 +20,7 @@ import { useHapticFeedback } from '@/lib/hapticFeedback';
 import { FarmerCommunityHub } from './FarmerCommunityHub';
 import { AchievementCelebration } from './AchievementCelebration';
 import { useGamification, Achievement } from '@/lib/gamificationEngine';
-import { personalizationEngine } from '@/lib/personalizationEngine';
+
 
 interface MobileLayoutProps {
   children?: React.ReactNode;
@@ -46,12 +46,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   }, [statusConfig.status, clearOfflineFlag, success]);
   
   useEffect(() => {
-    // Load personalized greeting
-    const userId = 'current-user-id'; // Would get from auth
-    const greeting = personalizationEngine.getPersonalizedGreeting(userId);
-    setPersonalizedGreeting(greeting);
-    
-    // Track daily login
+    // Track daily login with real user
     trackAction('daily_login').then(result => {
       if (result.newAchievements.length > 0) {
         setCelebrationAchievement(result.newAchievements[0]);
