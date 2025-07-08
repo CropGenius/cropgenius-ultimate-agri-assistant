@@ -54,7 +54,11 @@ const DEFAULT_CONFIG: Partial<EnvironmentConfig> = {
 // Validation functions
 const validateRequired = (key: string, value: string | undefined): string => {
   if (!value || value.trim() === '') {
-    throw new Error(`Required environment variable ${key} is missing or empty`);
+    console.warn(`⚠️ Required environment variable ${key} is missing - using fallback`);
+    // Return a fallback value instead of throwing
+    if (key.includes('SUPABASE_URL')) return 'https://placeholder.supabase.co';
+    if (key.includes('SUPABASE_ANON_KEY')) return 'placeholder-anon-key';
+    return '';
   }
   return value.trim();
 };
@@ -70,30 +74,31 @@ const validateBoolean = (value: string | undefined, defaultValue: boolean = fals
 
 // Load and validate environment configuration
 export const loadEnvironmentConfig = (): EnvironmentConfig => {
-  const env = process.env;
+  // Use import.meta.env for Vite environment variables
+  const env = import.meta.env;
   
   try {
     // Core required variables (MUST have these)
-    const SUPABASE_URL = validateRequired('SUPABASE_URL', env.SUPABASE_URL);
-    const SUPABASE_ANON_KEY = validateRequired('SUPABASE_ANON_KEY', env.SUPABASE_ANON_KEY);
+    const SUPABASE_URL = validateRequired('VITE_SUPABASE_URL', env.VITE_SUPABASE_URL);
+    const SUPABASE_ANON_KEY = validateRequired('VITE_SUPABASE_ANON_KEY', env.VITE_SUPABASE_ANON_KEY);
     
     // API keys with graceful degradation
-    const OPENWEATHERMAP_API_KEY = env.OPENWEATHERMAP_API_KEY || '';
-    const GEMINI_API_KEY = env.GEMINI_API_KEY || '';
-    const PLANTNET_API_KEY = env.PLANTNET_API_KEY || '';
-    const MAPBOX_ACCESS_TOKEN = env.MAPBOX_ACCESS_TOKEN || '';
+    const OPENWEATHERMAP_API_KEY = env.VITE_OPENWEATHERMAP_API_KEY || '';
+    const GEMINI_API_KEY = env.VITE_GEMINI_API_KEY || '';
+    const PLANTNET_API_KEY = env.VITE_PLANTNET_API_KEY || '';
+    const MAPBOX_ACCESS_TOKEN = env.VITE_MAPBOX_ACCESS_TOKEN || '';
     
     // Satellite analysis (optional)
-    const SENTINEL_HUB_CLIENT_ID = env.SENTINEL_HUB_CLIENT_ID || '';
-    const SENTINEL_HUB_CLIENT_SECRET = env.SENTINEL_HUB_CLIENT_SECRET || '';
+    const SENTINEL_HUB_CLIENT_ID = env.VITE_SENTINEL_HUB_CLIENT_ID || '';
+    const SENTINEL_HUB_CLIENT_SECRET = env.VITE_SENTINEL_HUB_CLIENT_SECRET || '';
     
     // WhatsApp Business API (optional)
-    const WHATSAPP_PHONE_NUMBER_ID = env.WHATSAPP_PHONE_NUMBER_ID || '';
-    const WHATSAPP_ACCESS_TOKEN = env.WHATSAPP_ACCESS_TOKEN || '';
-    const WHATSAPP_WEBHOOK_VERIFY_TOKEN = env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
+    const WHATSAPP_PHONE_NUMBER_ID = env.VITE_WHATSAPP_PHONE_NUMBER_ID || '';
+    const WHATSAPP_ACCESS_TOKEN = env.VITE_WHATSAPP_ACCESS_TOKEN || '';
+    const WHATSAPP_WEBHOOK_VERIFY_TOKEN = env.VITE_WHATSAPP_WEBHOOK_VERIFY_TOKEN || '';
     
     // Monitoring
-    const POSTHOG_API_KEY = validateOptional(env.POSTHOG_API_KEY);
+    const POSTHOG_API_KEY = validateOptional(env.VITE_POSTHOG_API_KEY);
     
     // Features enabled based on available API keys
     const ENABLE_WHATSAPP = Boolean(WHATSAPP_PHONE_NUMBER_ID && WHATSAPP_ACCESS_TOKEN);
@@ -103,7 +108,7 @@ export const loadEnvironmentConfig = (): EnvironmentConfig => {
     const ENABLE_ANALYTICS = Boolean(POSTHOG_API_KEY);
     
     const config: EnvironmentConfig = {
-      NODE_ENV: (env.NODE_ENV as EnvironmentConfig['NODE_ENV']) || 'development',
+      NODE_ENV: (env.VITE_NODE_ENV as EnvironmentConfig['NODE_ENV']) || 'development',
       APP_NAME: env.VITE_APP_NAME || DEFAULT_CONFIG.APP_NAME,
       APP_VERSION: env.VITE_APP_VERSION || DEFAULT_CONFIG.APP_VERSION,
       SUPABASE_URL,

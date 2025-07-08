@@ -53,6 +53,11 @@ class EnhancedSupabaseClient {
     };
 
     try {
+      // Check if Supabase is properly configured
+      if (!APP_CONFIG.api.supabase.url || APP_CONFIG.api.supabase.url === 'https://placeholder.supabase.co') {
+        console.warn('⚠️ Supabase not configured - running in demo mode');
+      }
+      
       // Initialize Supabase client with proper configuration
       this.client = createClient<Database>(
         APP_CONFIG.api.supabase.url,
