@@ -3,8 +3,9 @@
  * Visual representation of comprehensive farm intelligence
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useUserFarms, useFarmHealthScore, useMarketPrices, useWeatherForecast } from '@/hooks/useBackendIntelligence';
 
 interface FarmHealthData {
   overallHealth: number;
@@ -50,25 +51,27 @@ export const UnifiedFarmDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 space-y-6">
-        <HealthOrbLoader />
-        <div className="grid grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map(i => <ShimmerCard key={i} />)}
+        <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-6 animate-pulse">
+          <div className="h-24 bg-white/20 rounded-xl"></div>
         </div>
-        <ShimmerCard className="h-32" />
+        <div className="grid grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map(i => <div key={i} className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-4 animate-pulse h-24"></div>)}
+        </div>
       </div>
     );
   }
   
   if (!farmData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4">
-        <EmptyState
-          title="Welcome to CropGenius!"
-          description="Let's set up your first farm to get started with AI-powered insights."
-          actionLabel="🚀 Create Farm"
-          onAction={() => console.log('Create farm')}
-          icon="🌾"
-        />
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 flex items-center justify-center">
+        <div className="text-center bg-white/10 backdrop-blur-xl border border-white/10 rounded-2xl p-8">
+          <div className="text-6xl mb-4">🌾</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to CropGenius!</h2>
+          <p className="text-gray-600 mb-6">Let's set up your first farm to get started with AI-powered insights.</p>
+          <button className="bg-green-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-600 transition-colors">
+            🚀 Create Farm
+          </button>
+        </div>
       </div>
     );
   }
