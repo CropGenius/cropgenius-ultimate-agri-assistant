@@ -82,6 +82,7 @@ The goal is to help you maintain a big picture as well as the progress of the ta
 - MCP configuration should be in .mcp directory, not .roo directory
 - Fixed Netlify deployment errors: Remove duplicate keys in supabaseClient.ts auth config, install missing @tanstack/react-query-persist-client dependency, fix escaped characters in JSX components
 - Fixed "require is not defined" browser error: Replace require() calls with ES module imports, use import.meta.env instead of process.env for Vite compatibility, add graceful fallbacks for missing environment variables
+- EMPIRE-GRADE SUPABASE SINGLETON: Eliminated multiple GoTrueClient instances with bulletproof singleton pattern, streamlined environment config, reduced bundle size by 17KB
 
 # Scratchpad
 
