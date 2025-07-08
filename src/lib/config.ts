@@ -86,9 +86,10 @@ export { ENV_CONFIG };
 
 // Validation on module load
 if (ENV_CONFIG.NODE_ENV === 'production') {
-  const { validateCriticalFeatures } = require('./environment');
-  const { valid, errors } = validateCriticalFeatures();
-  if (!valid) {
-    console.error('❌ Critical configuration errors:', errors);
-  }
+  import('./environment').then(({ validateCriticalFeatures }) => {
+    const { valid, errors } = validateCriticalFeatures();
+    if (!valid) {
+      console.error('❌ Critical configuration errors:', errors);
+    }
+  }).catch(console.error);
 }

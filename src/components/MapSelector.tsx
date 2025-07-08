@@ -98,7 +98,7 @@ const MapSelector: React.FC<MapSelectorProps> = ({
     };
   }, [initialCenter, zoom, onLocationSelect]);
 
-  const handleUseCurrentLocation = () => {
+  const handleUseCurrentLocation = async () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -118,7 +118,7 @@ const MapSelector: React.FC<MapSelectorProps> = ({
             if (marker.current) {
               marker.current.setLngLat([longitude, latitude]);
             } else {
-              const mapboxgl = require('mapbox-gl');
+              const mapboxgl = (await import('mapbox-gl')).default;
               marker.current = new mapboxgl.Marker({
                 color: '#10b981'
               })
