@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_interaction_logs: {
+        Row: {
+          created_at: string | null
+          id: number
+          metadata: Json | null
+          model: string | null
+          prompt: string
+          response: string
+          tokens_used: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          metadata?: Json | null
+          model?: string | null
+          prompt: string
+          response: string
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          metadata?: Json | null
+          model?: string | null
+          prompt?: string
+          response?: string
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       credit_transactions: {
         Row: {
           amount: number

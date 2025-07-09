@@ -1,54 +1,31 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Layout from "@/components/Layout";
-import { User } from "@supabase/supabase-js";
-import { supabase } from "@/services/supabaseClient";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useMemoryStore } from '@/hooks/useMemoryStore';
-import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-import { isOnline, addOnlineStatusListener } from "@/utils/isOnline";
+import { useMemoryStore } from '@/hooks/useMemoryStore';
+import { supabase } from "@/services/supabaseClient";
+import { isOnline } from "@/utils/isOnline";
 import { reverseGeocode } from '@/utils/location';
 import { fetchJSON } from '@/utils/network';
-import { RefreshCcw } from 'lucide-react';
-
-// Import our new components
-import PowerHeader from "@/components/dashboard/PowerHeader";
-import MissionControl from "@/components/dashboard/MissionControl";
-import FieldIntelligence from "@/components/dashboard/FieldIntelligence";
-import MoneyZone from "@/components/dashboard/MoneyZone";
+import { toast } from "sonner";
+import { motion, AnimatePresence } from 'framer-motion';
+import { Menu, MapPin, MessageCircle, Plus, Home, Camera, BarChart3, Cloud, MessageSquare } from 'lucide-react';
 
 export default function Index() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { memory } = useMemoryStore();
   
-  // Fallback actions when no tasks are available or on error
-  const FALLBACK_ACTIONS = [
-    {
-      id: 'fallback-1',
-      title: 'Water Field A — Moisture 17%',
-      description: 'Low soil moisture detected. Irrigation recommended today.',
-      type: 'water',
-      urgent: true
-    },
-    {
-      id: 'fallback-2',
-      title: 'Harvest Alert — Maize ready in 2 fields',
-      description: 'Optimal harvest window in the next 5 days.',
-      type: 'harvest',
-      urgent: false
-    },
-    {
-      id: 'fallback-3', 
-      title: 'Crop Prices: Beans up +11% this week',
-      description: 'Good time to sell. Local markets showing high demand.',
-      type: 'market',
-      urgent: false
-    }
-  ];
+  // Enhanced FPSI and action system
+  const [fpsi, setFpsi] = useState<number>(85);
+  const [fpsiTrend, setFpsiTrend] = useState<'growing' | 'stable' | 'declining'>('growing');
+  const [todaysGeniusAction, setTodaysGeniusAction] = useState<{
+    title: string;
+    description: string;
+    impact: string;
+    type: 'proactive' | 'reactive' | 'market';
+    urgent: boolean;
+  } | null>(null);
   
-  // Prevent loading screens by setting loading to false by default
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
   const [weatherInfo, setWeatherInfo] = useState({
@@ -57,84 +34,147 @@ export default function Index() {
     condition: "checking..."
   });
   const [detectedLocation, setDetectedLocation] = useState<string | null>(null);
-  const [farmScore, setFarmScore] = useState<number>(68);
   const [allSynced, setAllSynced] = useState<boolean>(true);
   
-  // Mission Control: Genius actions
+  // Fields data
+  const [fields, setFields] = useState<any[]>([]);
+  const [fieldsLoading, setFieldsLoading] = useState(false);
+  
+  // Actions for backward compatibility  
   const [actions, setActions] = useState<any[]>([]);
   const [actionsLoading, setActionsLoading] = useState(true);
   
-  // Safety timeout to prevent infinite loading state
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (actionsLoading) {
-        console.log('Safety timeout: Resetting actionsLoading state');
-        setActionsLoading(false);
-      }
-    }, 5000);
-    
-    return () => clearTimeout(timer);
-  }, [actionsLoading]);
-  
-  // Field Intelligence: Fields data
-  const [fields, setFields] = useState<any[]>([]);
-  const [fieldsLoading, setFieldsLoading] = useState(false);
+  // Priority alerts
+  const [priorityAlerts, setPriorityAlerts] = useState<Array<{
+    id: string;
+    type: 'weather' | 'disease' | 'market' | 'task';
+    severity: 'high' | 'medium' | 'low';
+    message: string;
+    icon: string;
+    timestamp: string;
+  }>>([]);
 
-  useEffect(() => {
-    // Ensure component is never in a loading state
-    setLoading(false);
-  }, []);
+  // Fallback actions for when no tasks are available
+  const FALLBACK_ACTIONS = [
+    {
+      id: 'fpsi-action-1',
+      title: 'Optimal planting window for Maize in Field 2',
+      description: 'Weather conditions perfect for planting. Act within 48 hours.',
+      impact: 'Expected FPSI increase: +3%',
+      type: 'proactive' as const,
+      urgent: false
+    },
+    {
+      id: 'fpsi-action-2', 
+      title: 'Early blight detected in Field 1',
+      description: 'Apply organic fungicide within 24 hours to prevent yield loss.',
+      impact: 'Prevent 15% yield loss',
+      type: 'reactive' as const,
+      urgent: true
+    },
+    {
+      id: 'fpsi-action-3',
+      title: 'Maize prices peaking in Eldoret market',
+      description: 'Consider selling 50% of harvest today for maximum profit.',
+      impact: '+$150 profit opportunity',
+      type: 'market' as const,
+      urgent: false
+    }
+  ];
 
+  // Enhanced loading system
   useEffect(() => {
-    // Check for user session and load data
-    const loadData = async () => {
-      try {
-        // Get user location
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              setLocation({
-                lat: position.coords.latitude,
-                lng: position.coords.longitude
-              });
-              
-              // Generate simulated location and weather based on coordinates
-              setRealLocationAndWeather(position.coords.latitude, position.coords.longitude);
-            },
-            () => {
-              // Failed to get location, use random location for demo
-              setRealLocationAndWeather(null, null);
-            }
-          );
-        } else {
-          // Use random location for demo if geolocation not available
-          setRealLocationAndWeather(null, null);
-        }
-        
-        if (user) {
-          // Load user's fields
-          await loadUserFields();
-          
-          // Load genius actions
-          await loadGeniusActions();
-          
-          // Load farm score data
-          await loadFarmScore();
-        }
-      } catch (err) {
-        console.error("Error loading data:", err);
-      } finally {
-        setLoading(false);
+    const initializeApp = async () => {
+      setLoading(true);
+      
+      if (user) {
+        await Promise.all([
+          loadUserFields(),
+          loadTodaysGeniusAction(),
+          loadFPSIData(),
+          loadPriorityAlerts()
+        ]);
       }
+      
+      // Location and weather
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setLocation({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+            setRealLocationAndWeather(position.coords.latitude, position.coords.longitude);
+          },
+          () => setRealLocationAndWeather(null, null)
+        );
+      } else {
+        setRealLocationAndWeather(null, null);
+      }
+      
+      setLoading(false);
     };
 
-    loadData();
-    
-    // Cleanup function
-    return () => {
-      // Any cleanup needed
-    };
+    initializeApp();
   }, [user]);
+
+  // Load Today's Genius Action (single most important recommendation)
+  const loadTodaysGeniusAction = async () => {
+    try {
+      // In real app, this would be AI-generated based on all farm data
+      const todayAction = FALLBACK_ACTIONS[Math.floor(Math.random() * FALLBACK_ACTIONS.length)];
+      setTodaysGeniusAction(todayAction);
+    } catch (err) {
+      console.error("Error loading genius action:", err);
+    }
+  };
+
+  // Load FPSI data
+  const loadFPSIData = async () => {
+    try {
+      // Simulate FPSI calculation based on multiple factors
+      const baseScore = Math.floor(Math.random() * 20) + 75; // 75-95
+      setFpsi(baseScore);
+      
+      // Determine trend
+      const trendRandom = Math.random();
+      if (trendRandom > 0.6) setFpsiTrend('growing');
+      else if (trendRandom > 0.3) setFpsiTrend('stable');
+      else setFpsiTrend('declining');
+      
+      setAllSynced(Math.random() > 0.2);
+    } catch (err) {
+      console.error("Error loading FPSI:", err);
+    }
+  };
+
+  // Load priority alerts
+  const loadPriorityAlerts = async () => {
+    try {
+      const sampleAlerts = [
+        {
+          id: '1',
+          type: 'weather' as const,
+          severity: 'medium' as const,
+          message: 'Heavy rain expected tomorrow',
+          icon: '🌧️',
+          timestamp: new Date().toISOString()
+        },
+        {
+          id: '2', 
+          type: 'disease' as const,
+          severity: 'low' as const,
+          message: 'Crop health is excellent',
+          icon: '🌱',
+          timestamp: new Date().toISOString()
+        }
+      ];
+      
+      setPriorityAlerts(sampleAlerts);
+    } catch (err) {
+      console.error("Error loading alerts:", err);
+    }
+  };
   
   // Load user's fields from Supabase or localStorage
   const loadUserFields = async () => {
@@ -188,92 +228,52 @@ export default function Index() {
     }
   };
   
-  // Load genius actions (personalized recommendations)
+  // Load genius actions (backwards compatibility)
   const loadGeniusActions = async () => {
     setActionsLoading(true);
+    await loadTodaysGeniusAction();
+    setActionsLoading(false);
+  };
+
+  // Get user's greeting
+  const getUserGreeting = () => {
+    const hour = new Date().getHours();
+    const name = user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'dev';
     
-    try {
-      if (!user) {
-        setActions([]);
-        return;
-      }
+    if (hour < 12) return `Good morning, ${name}.`;
+    if (hour < 17) return `Good afternoon, ${name}.`;
+    return `Good evening, ${name}.`;
+  };
 
-      // First check if any tasks exist
-      const { count, error: countError } = await supabase
-        .from('farm_tasks')
-        .select('id', { count: 'exact', head: true });
+  // Handle actions
+  const handleAddField = () => {
+    navigate('/fields');
+  };
 
-      // If no tasks exist, create a default task for testing
-      if (count === 0 || countError) {
-        console.log('No tasks found, creating default task');
-        
-        // First get a farm plan to associate with the task
-        const { data: plans } = await supabase
-          .from('farm_plans')
-          .select('id')
-          .eq('user_id', user.id)
-          .limit(1);
-          
-        if (plans && plans.length > 0) {
-          // Create a default task
-          await supabase.from('farm_tasks').insert({
-            plan_id: plans[0].id,
-            title: 'Water Field A — Moisture 17%',
-            description: 'Low soil moisture detected. Irrigation recommended today.',
-            priority: 'high',
-            status: 'pending',
-            due_date: new Date().toISOString().split('T')[0],
-            ai_recommended: true
-          });
-        }
-      }
+  const handleAskCropGenius = () => {
+    navigate('/chat');
+  };
 
-      const { data, error } = await supabase
-        .from('farm_tasks')
-        .select('id,title,description,priority,status')
-        .in('status', ['pending', 'in_progress'])
-        .order('due_date', { ascending: true })
-        .limit(20);
-
-      if (error) throw error;
-
-      const parsedActions = (data || []).map((t: any) => ({
-        id: t.id,
-        title: t.title,
-        description: t.description || 'No description',
-        type: t.priority === 'high' ? 'alert' : t.title.toLowerCase().includes('harvest') ? 'harvest' : t.title.toLowerCase().includes('water') ? 'water' : 'market',
-        urgent: t.priority === 'high',
-      }));
-
-      // If no tasks found, add fallback tasks
-      if (parsedActions.length === 0) {
-        setActions(FALLBACK_ACTIONS);
-      } else {
-        setActions(parsedActions);
-      }
-    } catch (err) {
-      console.error("Error loading genius actions:", err);
-      // Provide fallback actions on error
-      setActions(FALLBACK_ACTIONS);
-    } finally {
-      setActionsLoading(false);
+  const handleCompleteAction = async () => {
+    if (todaysGeniusAction) {
+      toast.success('Action completed!', {
+        description: 'Great work! Your FPSI will be updated.'
+      });
+      setTodaysGeniusAction(null);
+      await loadTodaysGeniusAction();
     }
   };
-  
-  // Load farm health score
-  const loadFarmScore = async () => {
-    try {
-      // In a real app, this would come from an AI model or analytics service
-      // Generate a score between 50 and 95 for now
-      const randomScore = Math.floor(Math.random() * 45) + 50;
-      setFarmScore(randomScore);
-      
-      // Check if all fields are synced
-      setAllSynced(Math.random() > 0.2);
-    } catch (err) {
-      console.error("Error loading farm score:", err);
-    }
-  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 text-center">
+          <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-700 font-medium">Loading your farm intelligence...</p>
+        </div>
+      </div>
+    );
+  }
   
   // === REAL location + weather ===
   const setRealLocationAndWeather = async (lat: number | null, lng: number | null) => {
@@ -376,54 +376,197 @@ export default function Index() {
   };
 
   return (
-    <Layout>
-      {/* POWER HEADER */}
-      <PowerHeader 
-        location={weatherInfo.location}
-        temperature={weatherInfo.temperature}
-        weatherCondition={weatherInfo.condition}
-        farmScore={farmScore}
-        synced={allSynced}
-      />
-      
-      {/* MISSION CONTROL */}
-      <div className="px-4 py-2">
-        <h2 className="text-xl font-semibold mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full">
-              <RefreshCcw size={18} />
-            </span>
-            Mission Control
-          </div>
-          <button 
-            onClick={() => {
-              setActionsLoading(true);
-              loadGeniusActions();
-            }}
-            className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-          >
-            <RefreshCcw size={14} />
-            <span>Refresh</span>
-          </button>
-        </h2>
-        <MissionControl
-          title="🧠 Today's Genius Actions"
-          actions={actions}
-          loading={actionsLoading}
-          onComplete={handleCompleteTask}
-        />
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50/80 via-green-50/60 to-teal-50/40 relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }} />
       </div>
-      
-      {/* FIELD INTELLIGENCE */}
-      <FieldIntelligence 
-        fields={fields}
-        loading={fieldsLoading}
-      />
-      
-      {/* MONEY ZONE */}
-      <MoneyZone 
-        onUpgrade={handleShowProUpgrade}
-      />
-    </Layout>
+
+      {/* Top Bar - Clean & Persistent */}
+      <div className="bg-white/10 backdrop-blur-xl border-b border-white/10 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+        <button className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+          <Menu className="w-5 h-5 text-gray-700" />
+        </button>
+        <div className="flex items-center space-x-2">
+          <span className="text-2xl">🌾</span>
+          <span className="font-bold text-gray-800">CropGenius</span>
+        </div>
+        <button 
+          onClick={() => navigate('/fields')}
+          className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors text-sm font-medium text-gray-700 flex items-center gap-1"
+        >
+          <MapPin className="w-4 h-4" />
+          Manage Fields
+        </button>
+      </div>
+
+      <div className="px-4 py-6 space-y-6 pb-24">
+        {/* Dynamic Header - Personal & Contextual */}
+        <div className="space-y-4">
+          <h1 className="text-2xl font-bold text-gray-800">{getUserGreeting()}</h1>
+          <div className="flex items-center text-gray-600">
+            <MapPin className="w-4 h-4 mr-2" />
+            <span>{weatherInfo.location} — {weatherInfo.temperature}°C {weatherInfo.condition}</span>
+          </div>
+        </div>
+
+        {/* FPSI Orb - The Centerpiece */}
+        <motion.div 
+          className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 text-center shadow-2xl"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Farm Profit & Sustainability Index</h2>
+          <div className="relative inline-block">
+            <svg className="w-32 h-32 transform -rotate-90">
+              <circle cx="64" cy="64" r="56" stroke="rgba(255,255,255,0.2)" strokeWidth="8" fill="none" />
+              <circle
+                cx="64" cy="64" r="56"
+                stroke={fpsiTrend === 'growing' ? '#10b981' : fpsiTrend === 'stable' ? '#f59e0b' : '#ef4444'}
+                strokeWidth="8" fill="none"
+                strokeDasharray={`${2 * Math.PI * 56}`}
+                strokeDashoffset={`${2 * Math.PI * 56 * (1 - fpsi / 100)}`}
+                className="transition-all duration-1000 ease-out filter drop-shadow-[0_0_12px_rgba(16,185,129,0.6)]"
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-3xl font-bold text-green-600">{fpsi}%</span>
+              <span className="text-xs text-gray-600 capitalize">{fpsiTrend}</span>
+            </div>
+          </div>
+          <div className="mt-4 flex items-center justify-center text-sm text-gray-600">
+            <div className={`w-2 h-2 rounded-full mr-2 ${allSynced ? 'bg-green-500' : 'bg-yellow-500'}`} />
+            {allSynced ? 'All fields synced' : 'Syncing...'}
+          </div>
+        </motion.div>
+
+        {/* Today's Genius Action - Core Intelligence */}
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-xl">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Today's Genius Action</h3>
+          {todaysGeniusAction ? (
+            <motion.div 
+              className="space-y-3"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-800 mb-1">{todaysGeniusAction.title}</h4>
+                  <p className="text-sm text-gray-600 mb-2">{todaysGeniusAction.description}</p>
+                  <p className="text-sm font-medium text-green-600">{todaysGeniusAction.impact}</p>
+                </div>
+                {todaysGeniusAction.urgent && (
+                  <span className="px-2 py-1 bg-red-500/20 text-red-700 text-xs rounded-full border border-red-500/30">
+                    URGENT
+                  </span>
+                )}
+              </div>
+              <button 
+                onClick={handleCompleteAction}
+                className="w-full py-3 bg-green-500/20 hover:bg-green-500/30 text-green-700 font-medium rounded-xl transition-colors border border-green-500/30"
+              >
+                Complete Action
+              </button>
+            </motion.div>
+          ) : (
+            <p className="text-gray-500 text-center py-4">No actions for today. Great work!</p>
+          )}
+        </div>
+
+        {/* Ask CropGenius */}
+        <button 
+          onClick={handleAskCropGenius}
+          className="w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-4 text-center hover:bg-white/15 transition-colors shadow-xl flex items-center justify-center gap-2"
+        >
+          <MessageCircle className="w-5 h-5 text-gray-700" />
+          <span className="font-medium text-gray-800">Ask CropGenius</span>
+        </button>
+
+        {/* My Fields - Visual Overview */}
+        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-xl">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">My Fields</h3>
+          {fields.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3">
+              {fields.map((field) => (
+                <motion.div
+                  key={field.id}
+                  className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-3 hover:bg-white/10 transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <h4 className="font-medium text-gray-800 mb-1">{field.name}</h4>
+                  <p className="text-xs text-gray-600 mb-2">{field.crop} • {field.size} {field.size_unit}</p>
+                  <div className={`w-full h-1 rounded-full ${
+                    field.health === 'good' ? 'bg-green-500' : 
+                    field.health === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
+                  }`} />
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <button 
+              onClick={handleAddField}
+              className="w-full py-8 border-2 border-dashed border-white/20 rounded-2xl text-center hover:border-white/30 hover:bg-white/5 transition-colors"
+            >
+              <Plus className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-600 font-medium">Add New Field</p>
+            </button>
+          )}
+        </div>
+
+        {/* Priority Alerts */}
+        {priorityAlerts.length > 0 && (
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              🚨 Priority Alerts
+            </h3>
+            <div className="space-y-3">
+              {priorityAlerts.map((alert) => (
+                <div key={alert.id} className="flex items-center p-3 bg-white/5 rounded-xl">
+                  <span className="text-2xl mr-3">{alert.icon}</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-800">{alert.message}</p>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      alert.severity === 'high' ? 'bg-red-500/20 text-red-700' :
+                      alert.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-700' :
+                      'bg-green-500/20 text-green-700'
+                    }`}>
+                      {alert.severity.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Navigation - Persistent & Intuitive */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur-xl border-t border-white/20 px-4 py-2">
+        <div className="flex justify-around items-center">
+          {[
+            { icon: Home, label: 'Home', path: '/', active: true },
+            { icon: Camera, label: 'Scan', path: '/scan' },
+            { icon: Cloud, label: 'Weather', path: '/weather' },
+            { icon: BarChart3, label: 'Market', path: '/market' },
+            { icon: MessageSquare, label: 'Chat', path: '/chat' },
+          ].map(({ icon: Icon, label, path, active }) => (
+            <button
+              key={path}
+              onClick={() => navigate(path)}
+              className={`flex flex-col items-center p-2 rounded-xl transition-colors ${
+                active ? 'bg-green-500/20 text-green-700' : 'text-gray-600 hover:text-gray-800 hover:bg-white/10'
+              }`}
+            >
+              <Icon className="w-5 h-5 mb-1" />
+              <span className="text-xs font-medium">{label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
