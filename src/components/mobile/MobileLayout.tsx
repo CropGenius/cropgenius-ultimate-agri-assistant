@@ -13,7 +13,6 @@ import { DiseaseDetectionCamera } from './DiseaseDetectionCamera';
 import { MarketIntelligenceDashboard } from './MarketIntelligenceDashboard';
 import { WeatherIntelligenceWidget } from './WeatherIntelligenceWidget';
 import { VoiceCommandChip } from './VoiceCommandChip';
-import { SwipeableCard } from './SwipeableCard';
 import { useToast } from './DopamineToast';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { useHapticFeedback } from '@/lib/hapticFeedback';
@@ -105,27 +104,6 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
     }
     triggerSuccess();
   };
-  
-  const handleSwipeLeft = () => {
-    const tabs = ['home', 'scan', 'market', 'weather', 'community', 'growth'];
-    const currentIndex = tabs.indexOf(activeTab);
-    const nextIndex = (currentIndex + 1) % tabs.length;
-    setActiveTab(tabs[nextIndex]);
-    triggerMedium();
-  };
-  
-  const handleSwipeRight = () => {
-    const tabs = ['home', 'scan', 'market', 'weather', 'community', 'growth'];
-    const currentIndex = tabs.indexOf(activeTab);
-    const prevIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
-    setActiveTab(tabs[prevIndex]);
-    triggerMedium();
-  };
-  
-  const handleSwipeDown = () => {
-    success('Refreshed', 'Latest data loaded', '⬇️');
-    triggerMedium();
-  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -187,31 +165,24 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
         </div>
       </div>
 
-      {/* Main Content with Swipe Gestures */}
-      <div className="pb-20 min-h-screen">
-        <SwipeableCard
-          onSwipeLeft={handleSwipeLeft}
-          onSwipeRight={handleSwipeRight}
-          onSwipeDown={handleSwipeDown}
-          className="h-full"
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ 
-                type: 'spring',
-                stiffness: 300,
-                damping: 30
-              }}
-              className="h-full"
-            >
-              {renderContent()}
-            </motion.div>
-          </AnimatePresence>
-        </SwipeableCard>
+      {/* Main Content - Scrollable */}
+      <div className="pb-20 min-h-screen overflow-y-auto">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ 
+              type: 'spring',
+              stiffness: 300,
+              damping: 30
+            }}
+            className="h-full"
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Floating Action Button */}
