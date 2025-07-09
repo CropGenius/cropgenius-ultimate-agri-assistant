@@ -165,8 +165,8 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
         </div>
       </div>
 
-      {/* Main Content - Scrollable */}
-      <div className="pb-20 min-h-screen overflow-y-auto">
+      {/* Main Content - Fixed Scroll Issues */}
+      <div className="pb-20 min-h-screen overflow-y-scroll overscroll-y-contain">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -178,7 +178,8 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
               stiffness: 300,
               damping: 30
             }}
-            className="h-full"
+            className="h-full touch-pan-y"
+            style={{ touchAction: 'pan-y' }}
           >
             {renderContent()}
           </motion.div>

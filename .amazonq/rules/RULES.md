@@ -112,6 +112,7 @@ A step-by-step guide on integrating the solution, including risk mitigation and 
 - Fixed Netlify deployment errors: Remove duplicate keys in supabaseClient.ts auth config, install missing @tanstack/react-query-persist-client dependency, fix escaped characters in JSX components
 - Fixed "require is not defined" browser error: Replace require() calls with ES module imports, use import.meta.env instead of process.env for Vite compatibility, add graceful fallbacks for missing environment variables
 - EMPIRE-GRADE SUPABASE SINGLETON: Eliminated multiple GoTrueClient instances with bulletproof singleton pattern, streamlined environment config, reduced bundle size by 17KB
+- MOBILE OVERLAP ELIMINATION: Fixed dashboard overlap issue by removing duplicate navigation bars, ensuring only MobileLayout renders navigation, fixed scroll/swipe conflicts with touch-pan-y and overscroll-y-contain
 
 # Scratchpad
 

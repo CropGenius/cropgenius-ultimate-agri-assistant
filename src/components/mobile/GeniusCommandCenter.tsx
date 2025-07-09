@@ -291,40 +291,9 @@ export const GeniusCommandCenter: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 relative">
-      {/* Subtle animated background */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
-      </div>
-
-      <div className="relative z-10 pb-24">
-        {/* Top Navigation Bar */}
-        <div className="bg-white/10 backdrop-blur-xl border-b border-white/10 p-4 shadow-lg">
-          <div className="flex items-center justify-between">
-            <motion.button 
-              className="p-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Menu className="w-5 h-5 text-gray-700" />
-            </motion.button>
-            
-            <div className="flex items-center space-x-2">
-              <span className="text-xl">🌾</span>
-              <span className="font-bold text-lg text-gray-800">CropGenius</span>
-            </div>
-            
-            <motion.button
-              className="px-4 py-2 bg-emerald-500/20 backdrop-blur-sm border border-emerald-500/30 rounded-full text-sm font-medium text-emerald-700"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Manage Fields
-            </motion.button>
-          </div>
-        </div>
+    <div className="w-full bg-transparent relative">
+      <div className="relative z-10 pb-4">
+        {/* Removed duplicate top navigation - MobileLayout handles this */}
 
         {/* Dynamic Header */}
         <div className="px-4 py-6 space-y-6">
