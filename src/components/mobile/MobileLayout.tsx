@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BottomNavigation } from './BottomNavigation';
 import { FloatingActionButton } from './FloatingActionButton';
-import { UnifiedFarmDashboard } from './UnifiedFarmDashboard';
+import { GeniusCommandCenter } from './GeniusCommandCenter';
 import { SatelliteFieldViewer } from './SatelliteFieldViewer';
 import { DiseaseDetectionCamera } from './DiseaseDetectionCamera';
 import { MarketIntelligenceDashboard } from './MarketIntelligenceDashboard';
@@ -107,7 +107,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   };
   
   const handleSwipeLeft = () => {
-    const tabs = ['home', 'scan', 'market', 'weather', 'community'];
+    const tabs = ['home', 'scan', 'market', 'weather', 'community', 'growth'];
     const currentIndex = tabs.indexOf(activeTab);
     const nextIndex = (currentIndex + 1) % tabs.length;
     setActiveTab(tabs[nextIndex]);
@@ -115,7 +115,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   };
   
   const handleSwipeRight = () => {
-    const tabs = ['home', 'scan', 'market', 'weather', 'community'];
+    const tabs = ['home', 'scan', 'market', 'weather', 'community', 'growth'];
     const currentIndex = tabs.indexOf(activeTab);
     const prevIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
     setActiveTab(tabs[prevIndex]);
@@ -130,7 +130,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <UnifiedFarmDashboard />;
+        return <GeniusCommandCenter />;
       case 'scan':
         return <DiseaseDetectionCamera />;
       case 'market':
@@ -139,8 +139,10 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
         return <WeatherIntelligenceWidget />;
       case 'community':
         return <FarmerCommunityHub />;
+      case 'growth':
+        return <FarmerCommunityHub />; // Placeholder for Growth/Gamification
       default:
-        return <UnifiedFarmDashboard />;
+        return <GeniusCommandCenter />;
     }
   };
 

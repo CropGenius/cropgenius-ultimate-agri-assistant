@@ -25,9 +25,9 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   const navItems: NavItem[] = [
     { id: 'home', icon: '🏠', label: 'Home' },
     { id: 'scan', icon: '📸', label: 'Scan' },
-    { id: 'market', icon: '💰', label: 'Market', badge: 2 },
     { id: 'weather', icon: '🌦️', label: 'Weather' },
-    { id: 'community', icon: '👥', label: 'Community', badge: 5 },
+    { id: 'market', icon: '💰', label: 'Market', badge: 2 },
+    { id: 'growth', icon: '🚀', label: 'Growth', badge: 3 },
   ];
 
   return (
