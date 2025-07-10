@@ -18,6 +18,7 @@ import MarketInsightsPage from './pages/MarketInsightsPage';
 import MissionControlPage from './pages/MissionControlPage';
 import YieldPredictor from './pages/YieldPredictor';
 import Community from './pages/Community';
+import Farms from './pages/Farms';
 import { SuperDashboard } from './components/SuperDashboard';
 import { BackendDashboard } from './pages/BackendDashboard';
 
@@ -40,6 +41,7 @@ export default function AppRoutes() {
       <Route path="/mission-control" element={<ProtectedRoute><MissionControlPage /></ProtectedRoute>} />
       <Route path="/yield-predictor" element={<ProtectedRoute><YieldPredictor /></ProtectedRoute>} />
       <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+      <Route path="/farms" element={<ProtectedRoute><Farms /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/super" element={<ProtectedRoute><SuperDashboard /></ProtectedRoute>} />
       <Route path="/backend" element={<ProtectedRoute><BackendDashboard /></ProtectedRoute>} />

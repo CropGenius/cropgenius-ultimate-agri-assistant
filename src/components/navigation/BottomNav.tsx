@@ -1,16 +1,16 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Camera, BarChart3, MessageCircle, Settings } from 'lucide-react';
+import { Home, Camera, BarChart3, MessageCircle, MapPin, Settings } from 'lucide-react';
 
 const BottomNav = () => {
   const location = useLocation();
   
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
+    { path: '/farms', icon: MapPin, label: 'Farms' },
     { path: '/scan', icon: Camera, label: 'Scan' },
     { path: '/market', icon: BarChart3, label: 'Market' },
     { path: '/chat', icon: MessageCircle, label: 'Chat' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   return (
