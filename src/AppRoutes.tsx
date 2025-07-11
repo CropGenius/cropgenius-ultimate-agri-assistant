@@ -11,6 +11,7 @@ import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import OnboardingPage from './pages/OnboardingPage';
 import AuthCallback from './pages/AuthCallback';
+import OAuthCallback from './pages/OAuthCallback';
 import FieldDetail from './pages/FieldDetail';
 import ManageFields from './pages/ManageFields';
 import FarmPlanningPage from './pages/FarmPlanningPage';
@@ -27,6 +28,7 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       <Route path="/fields" element={<ProtectedRoute><Fields /></ProtectedRoute>} />

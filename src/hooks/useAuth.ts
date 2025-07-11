@@ -109,8 +109,24 @@ export const useAuth = (): AuthState & AuthActions => {
 
         if (error) {
           if (error.code === 'PGRST116') {
-            // No profile found - this is expected for new users
-            return null;
+            // No profile found - create default row
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: userId,
+                onboarding_completed: false,
+                created_at: new Date().toISOString(),
+              });
+            if (insertError) {
+              throw insertError;
+            }
+            // Fetch the newly inserted profile
+            const { data: newProfile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', userId)
+              .single();
+            return newProfile as UserProfile;
           }
           throw error;
         }
@@ -276,9 +292,30 @@ export const useAuth = (): AuthState & AuthActions => {
 
     initializeAuth();
 
+    // Subscribe to realtime updates on the user's profile
+    let profileChannel: ReturnType<typeof supabase.channel> | null = null;
+    const currentUserId = state.user?.id;
+    if (mounted && currentUserId) {
+      profileChannel = supabase.channel(`profile-${currentUserId}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${currentUserId}`,
+        }, (payload) => {
+          const newProfile = payload.new as UserProfile;
+          if (newProfile && newProfile.id === currentUserId) {
+            setState(prev => ({ ...prev, profile: newProfile }));
+            cacheProfile(newProfile);
+          }
+        })
+        .subscribe();
+    }
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      if (profileChannel) profileChannel.unsubscribe();
     };
   }, [fetchProfile, cacheProfile, loadCachedProfile]);
 

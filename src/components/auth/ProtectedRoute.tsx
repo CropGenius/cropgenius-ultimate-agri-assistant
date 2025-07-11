@@ -12,7 +12,7 @@ interface ProtectedRouteProps {
 const pathsAllowedWithoutFarm: string[] = [/* e.g., '/profile', '/settings/account' */];
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, isLoading, farmId, isDevPreview } = useAuth();
+  const { user, isLoading, farmId, isDevPreview, profile } = useAuth();
   const location = useLocation();
 
   // Skip loading state if we're in dev preview mode
@@ -29,6 +29,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       return null;
     }
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
+  }
+
+  // If user is authenticated but onboarding not complete, redirect
+  if (user && profile && profile.onboarding_completed === false && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
   }
 
   // If user is authenticated (or in dev preview), check for farmId

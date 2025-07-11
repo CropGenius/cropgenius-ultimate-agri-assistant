@@ -155,6 +155,104 @@ export const completeOnboarding = async (data: OnboardingData): Promise<Onboardi
 };
 
 // Add any additional onboarding-related functions here
+/**
+ * Incremental onboarding persistence utility.
+ * Ensures idempotent upserts per step so users can resume where they left off.
+ */
+export const saveOnboardingStep = async (
+  stepId: number,
+  data: Record<string, any>,
+  userId: string
+) => {
+  switch (stepId) {
+    case 1: {
+      // basic profile details
+      return supabase
+        .from('profiles')
+        .update({
+          full_name: data.full_name,
+          language: data.language,
+          country: data.country,
+          preferences: { ...(data.preferences ?? {}) },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+    }
+
+    case 2: {
+      // farm creation (name unique per user)
+      return supabase
+        .from('farms')
+        .upsert(
+          {
+            id: data.farm_id, // might be undefined on first insert
+            name: data.farm_name,
+            location: data.location,
+            user_id: userId,
+            size: data.total_area,
+            created_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        );
+    }
+
+    case 3: {
+      if (!data.geometry) return { data: null, error: null };
+      return supabase.from('fields').upsert(
+        {
+          id: data.field_id,
+          farm_id: data.farm_id,
+          name: data.field_name,
+          geometry: data.geometry,
+          crop_type: data.crop_type,
+          season: data.season,
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+    }
+
+    case 4: {
+      return supabase
+        .from('profiles')
+        .update({
+          preferences: {
+            ...(data.preferences ?? {}),
+            default_crop: data.crop_type,
+            season: data.season,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+    }
+
+    case 5: {
+      return supabase
+        .from('profiles')
+        .update({
+          preferences: {
+            ...(data.preferences ?? {}),
+            notifications: data.notifications,
+            voice_mode: data.voice_mode,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+    }
+
+    case 6: {
+      return supabase
+        .from('profiles')
+        .update({ onboarding_completed: true, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+    }
+
+    default:
+      throw new Error('Invalid onboarding step');
+  }
+};
+
 export const onboardingService = {
   completeOnboarding,
+  saveOnboardingStep,
 };

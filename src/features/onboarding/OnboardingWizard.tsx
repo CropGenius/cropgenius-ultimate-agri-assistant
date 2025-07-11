@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { onboardingService } from '@/services/onboardingService';
 import { useAuth } from '@/context/AuthContext';
 import { OnboardingData } from '@/types/onboarding';
 import { toast } from 'sonner';
@@ -98,10 +99,20 @@ export function OnboardingWizard() {
     }
   }, []);
 
-  const handleNext = useCallback((data: Partial<OnboardingData>) => {
+  const handleNext = useCallback(async (data: Partial<OnboardingData>) => {
     const newFormData = { ...formData, ...data };
     setFormData(newFormData);
     localStorage.setItem(ONBOARDING_FORM_DATA_KEY, JSON.stringify(newFormData));
+
+    // Persist this step to Supabase
+    try {
+      if (user?.id) {
+        await onboardingService.saveOnboardingStep(step, data, user.id);
+      }
+    } catch (err) {
+      console.error('Failed to save onboarding step', err);
+      toast.error('Failed to save progress. We will retry automatically.');
+    }
 
     if (step < steps.length) {
       const nextStep = step + 1;
@@ -111,7 +122,7 @@ export function OnboardingWizard() {
       // Scroll to top when navigating to next step
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [formData, step]);
+  }, [formData, step, user?.id]);
 
   const handleBack = useCallback(() => {
     if (step > 1) {
@@ -167,6 +178,15 @@ export function OnboardingWizard() {
     setSubmitError(null);
 
     try {
+      // Persist final step (6) before completion
+      if (user?.id) {
+        try {
+          await onboardingService.saveOnboardingStep(6, {}, user.id);
+        } catch (e) {
+          console.warn('Failed to flip onboarding_completed early', e);
+        }
+      }
+
       // Prepare the submission data with proper types and validation
       const submissionData: OnboardingData = {
         ...formData,
