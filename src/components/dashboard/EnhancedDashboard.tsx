@@ -18,6 +18,9 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import FieldCard from '@/components/fields/FieldCard';
+import AddFieldForm from '@/components/fields/AddFieldForm';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/context/AuthContext';
@@ -141,6 +144,8 @@ const EnhancedDashboard: React.FC = () => {
   const [weatherData, setWeatherData] = useState<any>(null);
   const [marketData, setMarketData] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [fields, setFields] = useState<Tables<'fields'>[]>([]);
+  const [showAddField, setShowAddField] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [dataLoadError, setDataLoadError] = useState<string | null>(null);
 
@@ -172,7 +177,17 @@ const EnhancedDashboard: React.FC = () => {
       if (tasksError) throw tasksError;
       setTasks(tasksData || []);
 
-      // Placeholder data for other sections, to be replaced later
+      // Fetch fields
+      const { data: fieldsData, error: fieldsError } = await supabase
+        .from('fields')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (fieldsError) throw fieldsError;
+      setFields(fieldsData || []);
+
+      // TODO: replace weather and market with real data
       setWeatherData({
         temperature: 26,
         condition: 'Partly Cloudy',
@@ -201,7 +216,7 @@ const EnhancedDashboard: React.FC = () => {
     // Set up real-time subscription
     if (!user) return;
 
-    const channel = supabase
+    const tasksChannel = supabase
       .channel('tasks-feed')
       .on(
         'postgres_changes',
@@ -213,9 +228,27 @@ const EnhancedDashboard: React.FC = () => {
       )
       .subscribe();
 
+    const fieldsChannel = supabase
+      .channel('fields-feed')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'fields', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setFields((prev) => [payload.new as Tables<'fields'>, ...prev]);
+          } else if (payload.eventType === 'UPDATE') {
+            setFields((prev) => prev.map(f => f.id === (payload.new as any).id ? (payload.new as any) : f));
+          } else if (payload.eventType === 'DELETE') {
+            setFields((prev) => prev.filter(f => f.id !== (payload.old as any).id));
+          }
+        }
+      )
+      .subscribe();
+
     // Cleanup subscription on component unmount
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(tasksChannel);
+      supabase.removeChannel(fieldsChannel);
     };
   }, [loadData, user]);
 
@@ -330,7 +363,7 @@ const EnhancedDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Fields</p>
-                <p className="text-2xl font-bold">3</p>
+                <p className="text-2xl font-bold">{fields.length}</p>
               </div>
               <Eye className="h-8 w-8 text-muted-foreground" />
             </div>
@@ -361,6 +394,23 @@ const EnhancedDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* My Fields Live View */}
+      <div className="flex items-center justify-between mt-6">
+        <h2 className="text-xl font-bold">My Fields</h2>
+        <Button size="icon" onClick={() => setShowAddField(true)}>
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+      {fields.length === 0 ? (
+        <p className="text-muted-foreground mt-2">No fields yet. Add your first field to get started.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+          {fields.map((field) => (
+            <FieldCard key={field.id} field={field} />
+          ))}
+        </div>
+      )}
 
       {/* Main Dashboard Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -418,6 +468,17 @@ const EnhancedDashboard: React.FC = () => {
         </CardContent>
       </Card>
       </div>
+      <Dialog open={showAddField} onOpenChange={setShowAddField}>
+        <DialogContent className="max-w-3xl">
+          <AddFieldForm 
+            onSuccess={() => {
+              setShowAddField(false);
+            }}
+            onCancel={() => setShowAddField(false)}
+            defaultLocation={{ lat: -1.29, lng: 36.82 }}
+          />
+        </DialogContent>
+      </Dialog>
     </ErrorBoundary>
   );
 };
