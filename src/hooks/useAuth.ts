@@ -319,6 +319,36 @@ export const useAuth = (): AuthState & AuthActions => {
     };
   }, [fetchProfile, cacheProfile, loadCachedProfile]);
 
+  /**
+   * One-time referral bonus processing for invitee.
+   * Looks for ?ref=TOKEN in initial URL, then calls process_referral RPC.
+   */
+  useEffect(() => {
+    const userId = state.user?.id;
+    if (!userId) return;
+
+    const flagKey = `referral_applied_${userId}`;
+    if (localStorage.getItem(flagKey)) return; // already processed
+
+    const params = new URLSearchParams(window.location.search);
+    const inviterToken = params.get('ref');
+    if (!inviterToken) return;
+
+    (async () => {
+      try {
+        const { error } = await supabase.rpc('process_referral', {
+          inviter_token: inviterToken,
+          invitee_user_id: userId,
+        });
+        if (error) throw error;
+        localStorage.setItem(flagKey, 'true');
+        toast.success('Referral bonus applied: +10 credits!');
+      } catch (err) {
+        console.error('process_referral failed', err);
+      }
+    })();
+  }, [state.user?.id]);
+
   // Auth actions
   const signIn = useCallback(async (email: string, password: string): Promise<void> => {
     try {

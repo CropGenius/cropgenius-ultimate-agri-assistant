@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
@@ -287,6 +287,25 @@ export const useCredits = () => {
     // Use cached data as initial data
     placeholderData: () => getCachedCredits(),
   });
+
+  // realtime subscription to balance changes
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase.channel(`credits-${user.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_credits',
+        filter: `user_id=eq.${user.id}`,
+      }, () => {
+        if (balanceQueryKey) queryClient.invalidateQueries({ queryKey: balanceQueryKey });
+      })
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [user?.id]);
 
   // Optimistic balance calculation
   const optimisticBalance = useMemo(() => {

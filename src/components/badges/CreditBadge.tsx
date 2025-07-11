@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 
 export const CreditBadge = () => {
   const { balance, isLoading, error } = useCredits();
+  const formatted = new Intl.NumberFormat().format(balance);
 
   if (isLoading) {
     return (
@@ -25,7 +26,7 @@ export const CreditBadge = () => {
   return (
     <Badge variant="secondary" className="flex items-center gap-1 font-semibold">
       <Sparkles className="h-3 w-3 text-yellow-500" />
-      <span>{balance} Credits</span>
+      <span>{formatted} Credits</span>
     </Badge>
   );
-}; 
+};
