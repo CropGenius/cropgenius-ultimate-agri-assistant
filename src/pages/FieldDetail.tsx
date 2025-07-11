@@ -2,7 +2,7 @@ import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { supabase } from "@/services/supabaseClient";
-import { Field, FieldCrop, FieldHistory } from "@/types/field";
+import { Field, FieldCrop, FieldHistory, Boundary } from "@/types/field";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +16,27 @@ import { analyzeField, getFieldRecommendations, checkFieldRisks } from "@/servic
 
 // Lazy load FieldMap so leaflet isn't fetched unless the user opens a field
 const FieldMap = lazy(() => import("@/components/fields/FieldMap"));
+
+const parseWkt = (wkt: string): Boundary | null => {
+  if (!wkt || !wkt.toUpperCase().startsWith('POLYGON')) return null;
+  try {
+    const coordPairs = wkt.match(/\(([^)]+)\)/)?.[1].split(',').map(s => s.trim());
+    if (!coordPairs) return null;
+
+    const coordinates = coordPairs.map(pair => {
+      const [lng, lat] = pair.split(' ').map(Number);
+      return { lng, lat };
+    });
+
+    return {
+      type: 'polygon',
+      coordinates,
+    };
+  } catch (e) {
+    console.error('Failed to parse WKT string:', e);
+    return null;
+  }
+};
 
 const FieldDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -77,6 +98,9 @@ const FieldDetail = () => {
         return;
       }
       
+            if (data.boundary && typeof data.boundary === 'string') {
+        data.boundary = parseWkt(data.boundary);
+      }
       setField(data);
       
       // Get farm name if field belongs to a farm

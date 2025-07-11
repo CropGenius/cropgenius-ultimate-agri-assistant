@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -22,6 +23,8 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/context/AuthContext';
 import { useCredits } from '@/hooks/useCredits';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
+import { supabase } from '@/services/supabaseClient';
+import { Tables } from '@/types/supabase';
 
 interface DashboardCardProps {
   title: string;
@@ -34,6 +37,8 @@ interface DashboardCardProps {
   loading?: boolean;
   badge?: string;
 }
+
+type Task = Tables<'tasks'>;
 
 const DashboardCard: React.FC<DashboardCardProps> = React.memo(({
   title,
@@ -135,7 +140,7 @@ const EnhancedDashboard: React.FC = () => {
   const [farmHealth, setFarmHealth] = useState(85);
   const [weatherData, setWeatherData] = useState<any>(null);
   const [marketData, setMarketData] = useState<any>(null);
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [dataLoadError, setDataLoadError] = useState<string | null>(null);
 
@@ -149,53 +154,73 @@ const EnhancedDashboard: React.FC = () => {
 
   // Simulate data loading with error handling
   const loadData = useCallback(async () => {
+    if (!user) return;
     setIsRefreshing(true);
     setDataLoadError(null);
     
     try {
-      // Simulate API calls with potential failure
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // Simulate occasional failures
-          if (Math.random() > 0.9) {
-            reject(new Error('Simulated network error'));
-            return;
-          }
-          
-          setWeatherData({
-            temperature: 26,
-            condition: 'Partly Cloudy',
-            forecast: 'Good for farming',
-          });
-          
-          setMarketData({
-            maizePrice: 45,
-            beansPrice: 120,
-            trend: 'up',
-          });
-          
-          setTasks([
-            { id: 1, title: 'Water tomatoes', urgent: true },
-            { id: 2, title: 'Check maize field', urgent: false },
-          ]);
-          
-          resolve(true);
-        }, 1000);
+      const {
+        data: tasksData,
+        error: tasksError
+      } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .neq('status', 'completed')
+        .order('created_at', { ascending: false });
+
+      if (tasksError) throw tasksError;
+      setTasks(tasksData || []);
+
+      // Placeholder data for other sections, to be replaced later
+      setWeatherData({
+        temperature: 26,
+        condition: 'Partly Cloudy',
+        forecast: 'Good for farming',
       });
+      setMarketData({
+        maizePrice: 45,
+        beansPrice: 120,
+        trend: 'up',
+      });
+
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
-      setDataLoadError(error instanceof Error ? error.message : 'Failed to load data');
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      setDataLoadError(`Failed to load tasks: ${errorMessage}`);
+      setTasks([]); // Clear tasks on error
     } finally {
       setIsRefreshing(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
+    // Initial data load
     loadData();
-  }, [loadData]);
+
+    // Set up real-time subscription
+    if (!user) return;
+
+    const channel = supabase
+      .channel('tasks-feed')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'tasks', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          setTasks((prevTasks) => [payload.new as Task, ...prevTasks]);
+          toast.info('A new task has been added to your list!');
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on component unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadData, user]);
 
   // Memoized dashboard cards to prevent unnecessary rerenders
-  const dashboardCards = useMemo(() => [
+  const dashboardCards: DashboardCardProps[] = useMemo(() => [
     {
       title: 'AI Crop Scanner',
       description: 'Scan crops for diseases and get AI recommendations',
@@ -364,14 +389,14 @@ const EnhancedDashboard: React.FC = () => {
         <CardContent>
           <div className="space-y-3">
             {tasks.length > 0 ? (
-              tasks.map((task: any) => (
+              tasks.map((task: Task) => (
                 <div key={task.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className={`h-2 w-2 rounded-full ${task.urgent ? 'bg-red-500' : 'bg-green-500'}`} />
+                    <div className={`h-2 w-2 rounded-full ${task.priority === 'high' ? 'bg-red-500' : 'bg-green-500'}`} />
                     <span className="font-medium">{task.title}</span>
                   </div>
-                  <Badge variant={task.urgent ? 'destructive' : 'secondary'}>
-                    {task.urgent ? 'Urgent' : 'Normal'}
+                  <Badge variant={task.priority === 'high' ? 'destructive' : 'secondary'}>
+                    {task.priority}
                   </Badge>
                 </div>
               ))

@@ -9,9 +9,27 @@ import { CreditManagementPanel } from '@/components/credits/CreditManagementPane
 export const BackendDashboard = () => {
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6">
+      <div className="mb-6 space-y-4">
         <h1 className="text-3xl font-bold">🚀 CropGenius Backend Dashboard</h1>
         <p className="text-muted-foreground">Access all 47 backend features</p>
+          <Button
+            variant="secondary"
+            onClick={async () => {
+              try {
+                const { error, data } = await supabase.functions.invoke('create_farm_tasks_policy_if_not_exists');
+                if (error) throw error;
+                toast.success(data?.message ?? 'Farm task RLS policy activated.');
+              } catch (err: any) {
+                if (err?.message?.includes('already')) {
+                  toast.info('Policy already present.');
+                } else {
+                  toast.error('Policy activation failed', { description: err.message });
+                }
+              }
+            }}
+          >
+            🔐 Activate Farm/Task RLS Policy
+          </Button>
       </div>
 
       <Tabs defaultValue="intelligence" className="w-full">

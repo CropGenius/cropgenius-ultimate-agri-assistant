@@ -44,6 +44,16 @@ const MissionControl: React.FC = () => {
     }
   });
 
+  // Subscribe to realtime task updates
+  useEffect(() => {
+    const channel = supabase.channel('tasks-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   const handleToggleStatus = useCallback((taskId: string, currentStatus: TaskStatus) => {
     const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
     mutateTaskStatus({ taskId, newStatus });

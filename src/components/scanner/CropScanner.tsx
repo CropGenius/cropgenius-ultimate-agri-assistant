@@ -18,7 +18,7 @@ import {
   ArrowRight,
   AlertCircle,
 } from "lucide-react";
-import { analyzeCropImage, type ScanResult } from "@/utils/cropScanService";
+import { type ScanResult } from "@/services/cropIntelligence";
 import { CropIntelligenceEngine } from '@/services/cropIntelligence';
 
 type ScanState = "idle" | "capturing" | "scanning" | "results";
@@ -100,9 +100,11 @@ const CROP_DISEASES = [
 
 interface CropScannerProps {
   onScanComplete?: (result: any) => void;
+  cropType: string;
+  location: any; // Consider a more specific type, e.g., { lat: number; lng: number; country: string }
 }
 
-const CropScanner: React.FC<CropScannerProps> = ({ onScanComplete }) => {
+const CropScanner: React.FC<CropScannerProps> = ({ onScanComplete, cropType, location }) => {
   const cropEngine = new CropIntelligenceEngine();
   // Main state
   const [scanState, setScanState] = useState<ScanState>("idle");
@@ -252,11 +254,7 @@ const CropScanner: React.FC<CropScannerProps> = ({ onScanComplete }) => {
           const base64 = await fileToBase64(file);
           
           // Use real crop intelligence engine
-          const results = await cropEngine.analyzeCropImage(
-            base64,
-            'maize', // Default crop type - could be selected by user
-            { lat: -1.2921, lng: 36.8219, country: 'Kenya' } // Default location
-          );
+          const results = await cropEngine.analyzeCropImage(base64, cropType, location);
           
           // Convert to expected format
           const scanResult = {

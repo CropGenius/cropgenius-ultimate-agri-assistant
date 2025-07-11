@@ -1,86 +1,137 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Layout from "@/components/Layout";
 import CropScanner from "@/components/scanner/CropScanner";
-import { CropIntelligenceEngine } from '@/services/cropIntelligence';
+import { CropIntelligenceEngine, ScanResult } from '@/services/cropIntelligence';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getCurrentUser } from "@/utils/authService";
 import { Camera, Sparkles, Zap, CheckCircle2, AlertTriangle, Leaf } from "lucide-react";
 import { motion } from "framer-motion";
+import { supabase } from "@/utils/supabaseClient";
+import { Database } from "@/types/supabase";
+import { useParams } from "react-router-dom";
+
+type Field = Database['public']['Tables']['fields']['Row'];
+
+type Scan = Database['public']['Tables']['scans']['Row'];
 
 const ScanPage = () => {
   const [userId, setUserId] = useState<string | null>(null);
-  const [scanHistory, setScanHistory] = useState([]);
-  const [recentScans, setRecentScans] = useState(0);
+  const [scanHistory, setScanHistory] = useState<Scan[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [field, setField] = useState<Field | null>(null);
+  const { fieldId } = useParams<{ fieldId: string }>();
+
   const cropEngine = new CropIntelligenceEngine();
 
-  useEffect(() => {
-    loadScanHistory();
-  }, []);
-
-  const loadScanHistory = async () => {
+  const loadScanHistory = useCallback(async (currentUserId: string) => {
     try {
       setLoading(true);
-      // Simulate loading scan history
-      setTimeout(() => {
-        setScanHistory([
-          {
-            id: 1,
-            crop: 'Maize',
-            disease: 'Maize Streak Virus',
-            confidence: 94.5,
-            severity: 'High',
-            date: '2 hours ago',
-            status: 'treated',
-            economicImpact: 450
-          },
-          {
-            id: 2,
-            crop: 'Tomatoes',
-            disease: 'Late Blight',
-            confidence: 87.2,
-            severity: 'Critical',
-            date: '1 day ago',
-            status: 'pending',
-            economicImpact: 680
-          },
-          {
-            id: 3,
-            crop: 'Beans',
-            disease: 'Healthy',
-            confidence: 98.1,
-            severity: 'None',
-            date: '3 days ago',
-            status: 'healthy',
-            economicImpact: 0
-          }
-        ]);
-        setRecentScans(3);
-        setLoading(false);
-      }, 1000);
+      const { data, error } = await supabase
+        .from('scans')
+        .select('*')
+        .eq('user_id', currentUserId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setScanHistory(data || []);
     } catch (error) {
       console.error('Failed to load scan history:', error);
+      toast.error('Failed to load scan history.');
+    } finally {
       setLoading(false);
     }
-  };
-  
-  // Get the current user ID
+  }, []);
+
   useEffect(() => {
-    const fetchUserId = async () => {
+    const fetchUserAndData = async () => {
       const { user } = await getCurrentUser();
       if (user) {
         setUserId(user.id);
+        loadScanHistory(user.id);
+
+        if (fieldId) {
+          const { data: fieldData, error: fieldError } = await supabase
+            .from('fields')
+            .select('*')
+            .eq('id', fieldId)
+            .eq('user_id', user.id)
+            .single();
+
+          if (fieldError) {
+            toast.error('Failed to load field data.');
+            console.error('Error fetching field:', fieldError);
+          } else {
+            setField(fieldData);
+          }
+        }
+      } else {
+        setLoading(false);
       }
     };
+
+    fetchUserAndData();
+
     
-    fetchUserId();
-  }, []);
+  }, [loadScanHistory, fieldId]);
+
+  const handleScanComplete = async (result: ScanResult) => {
+    if (!userId) {
+      toast.error("User not found. Please log in.");
+      return;
+    }
+
+    const newScan: Database['public']['Tables']['scans']['Insert'] = {
+      user_id: userId,
+      field_id: field?.id,
+      crop: field?.crop_type || 'Unknown',
+      disease: result.disease,
+      confidence: result.confidence,
+      severity: result.severity,
+      status: 'analyzed',
+      economic_impact: result.economicImpact?.netImpact || 0,
+    };
+
+    const { data: scanData, error: scanError } = await supabase.from('scans').insert(newScan).select().single();
+
+    if (scanError) {
+      toast.error('Failed to save scan result.');
+      console.error('Error saving scan:', scanError);
+    } else if (scanData) {
+      setScanHistory(prev => [scanData, ...prev]);
+      toast.success('Scan completed and saved successfully!');
+
+      if (result.disease !== 'Healthy') {
+        const priority = result.severity_score >= 7 ? 'high' : 'medium';
+
+        const newTask: Database['public']['Tables']['tasks']['Insert'] = {
+          user_id: userId,
+          field_id: field?.id || null,
+          title: `Treat ${result.disease}`,
+          description: `AI detected ${result.disease} in your ${field?.crop_type || 'crop'} with ${result.confidence}% confidence. Severity score: ${result.severity_score}/10. Action is required.`,
+          status: 'pending',
+          priority: priority,
+          crop_type: field?.crop_type,
+          created_at: new Date().toISOString(),
+        };
+
+        const { error: taskError } = await supabase.from('tasks').insert(newTask);
+
+        if (taskError) {
+          toast.error('Failed to create a new task.');
+          console.error('Error creating task:', taskError);
+        } else {
+          toast.success(`New task created: Treat ${result.disease}`);
+        }
+      }
+    }
+  };
   
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
@@ -131,7 +182,7 @@ const ScanPage = () => {
         <Tabs defaultValue="scanner" className="w-full">
           <TabsList className="grid w-full grid-cols-3 glass-card">
             <TabsTrigger value="scanner" className="text-white">New Scan</TabsTrigger>
-            <TabsTrigger value="history" className="text-white">History ({recentScans})</TabsTrigger>
+            <TabsTrigger value="history" className="text-white">History ({scanHistory.length})</TabsTrigger>
             <TabsTrigger value="insights" className="text-white">AI Insights</TabsTrigger>
           </TabsList>
           
@@ -150,21 +201,11 @@ const ScanPage = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <CropScanner onScanComplete={(result) => {
-                      const newScan = {
-                        id: Date.now(),
-                        crop: result.crop || 'Unknown',
-                        disease: result.disease,
-                        confidence: result.confidence,
-                        severity: result.severity,
-                        date: 'Just now',
-                        status: 'analyzed',
-                        economicImpact: result.economicImpact?.netImpact || 0
-                      };
-                      setScanHistory(prev => [newScan, ...prev]);
-                      setRecentScans(prev => prev + 1);
-                      toast.success('Scan completed successfully!');
-                    }} />
+                    <CropScanner 
+                      onScanComplete={handleScanComplete} 
+                      cropType={field?.crop_type || 'Unknown'}
+                      location={field?.location}
+                    />
                   </CardContent>
                 </Card>
               </div>
@@ -194,7 +235,7 @@ const ScanPage = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-white/70">Your Scans Today</span>
-                      <span className="font-bold text-yellow-400">{recentScans}</span>
+                      <span className="font-bold text-yellow-400">{scanHistory.length}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -252,7 +293,7 @@ const ScanPage = () => {
                   <div className="space-y-4">
                     {scanHistory.map((scan, index) => (
                       <motion.div
-                        key={scan.id}
+                        key={scan.id as string}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
@@ -266,7 +307,7 @@ const ScanPage = () => {
                             <h4 className="font-medium text-white">{scan.crop}</h4>
                             <p className="text-sm text-white/70">{scan.disease}</p>
                             {scan.economicImpact > 0 && (
-                              <p className="text-xs text-red-400">Impact: -${scan.economicImpact}</p>
+                              <p className="text-xs text-red-400">Impact: -${scan.economic_impact}</p>
                             )}
                           </div>
                         </div>
@@ -277,7 +318,7 @@ const ScanPage = () => {
                             </Badge>
                             <span className="text-sm font-medium text-white">{scan.confidence}%</span>
                           </div>
-                          <p className="text-xs text-white/50">{scan.date}</p>
+                          <p className="text-xs text-white/50">{new Date(scan.created_at).toLocaleString()}</p>
                         </div>
                       </motion.div>
                     ))}

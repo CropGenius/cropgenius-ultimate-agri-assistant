@@ -20,9 +20,18 @@ export const FarmsList: React.FC<FarmsListProps> = ({ onFarmSelect, selectedFarm
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      loadFarms();
-    }
+    if (!user) return;
+    loadFarms();
+
+    // 🎧 Real-time subscription – update list on insert/update/delete
+    const channel = supabase.channel('farms-list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'farms', filter: `user_id=eq.${user.id}` }, payload => {
+        // Just reload; small list.
+        loadFarms();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   const loadFarms = async () => {

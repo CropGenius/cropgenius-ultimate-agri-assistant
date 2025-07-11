@@ -3,11 +3,12 @@
  * Connects to actual PlantNet API and agricultural databases
  */
 
-interface CropAnalysisResult {
+export interface ScanResult {
   disease: string;
   scientificName: string;
   confidence: number;
   severity: 'low' | 'medium' | 'high' | 'critical';
+  severity_score: number; // Add this line
   treatments: Treatment[];
   urgency: number;
   localSuppliers: Supplier[];
@@ -57,7 +58,7 @@ export class CropIntelligenceEngine {
     imageBase64: string, 
     cropType: string, 
     location: { lat: number; lng: number; country: string }
-  ): Promise<CropAnalysisResult> {
+  ): Promise<ScanResult> {
     
     if (!PLANTNET_API_KEY) {
       throw new Error('PlantNet API key not configured');
@@ -108,11 +109,19 @@ export class CropIntelligenceEngine {
       // Generate prevention strategy
       const preventionTips = await this.getPreventionAdvice(topResult.species?.scientificNameWithoutAuthor || diseaseAnalysis.disease);
 
+      const severityScoreMap = {
+        'low': 3,
+        'medium': 5,
+        'high': 8,
+        'critical': 10
+      };
+
       return {
         disease: diseaseAnalysis.disease,
         scientificName: topResult.species?.scientificNameWithoutAuthor || 'Unknown',
         confidence: Math.round(topResult.score * 100),
         severity: diseaseAnalysis.severity,
+        severity_score: severityScoreMap[diseaseAnalysis.severity],
         treatments,
         urgency: diseaseAnalysis.urgency,
         localSuppliers: suppliers,
@@ -357,7 +366,7 @@ export class CropIntelligenceEngine {
     ];
   }
 
-  private async fallbackDiseaseAnalysis(cropType: string, location: any): Promise<CropAnalysisResult> {
+  private async fallbackDiseaseAnalysis(cropType: string, location: any): Promise<ScanResult> {
     const commonDiseases = await this.getCropDiseaseDatabase(cropType, location.country);
     const randomDisease = commonDiseases[0] || { name: 'Unknown Disease' };
     
@@ -366,6 +375,7 @@ export class CropIntelligenceEngine {
       scientificName: 'Analysis pending',
       confidence: 75,
       severity: 'medium',
+      severity_score: 5,
       treatments: await this.getRealTreatments(randomDisease.name, cropType, location),
       urgency: 6,
       localSuppliers: await this.findLocalSuppliers(location, []),
