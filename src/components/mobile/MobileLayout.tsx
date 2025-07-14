@@ -5,18 +5,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { BottomNavigation } from './BottomNavigation';
 import { FloatingActionButton } from './FloatingActionButton';
-import { GeniusCommandCenter } from './GeniusCommandCenter';
-import { SatelliteFieldViewer } from './SatelliteFieldViewer';
-import { DiseaseDetectionCamera } from './DiseaseDetectionCamera';
-import { MarketIntelligenceDashboard } from './MarketIntelligenceDashboard';
-import { WeatherIntelligenceWidget } from './WeatherIntelligenceWidget';
 import { VoiceCommandChip } from './VoiceCommandChip';
 import { useToast } from './DopamineToast';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { useHapticFeedback } from '@/lib/hapticFeedback';
-import { FarmerCommunityHub } from './FarmerCommunityHub';
 import { AchievementCelebration } from './AchievementCelebration';
 import { useGamification, Achievement } from '@/lib/gamificationEngine';
 
@@ -26,13 +21,33 @@ interface MobileLayoutProps {
 }
 
 export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
-  const [activeTab, setActiveTab] = useState('home');
+  const location = useLocation();
+  const navigate = useNavigate();
   const [celebrationAchievement, setCelebrationAchievement] = useState<Achievement | null>(null);
   const [personalizedGreeting, setPersonalizedGreeting] = useState('');
   const { isOnline, statusConfig, clearOfflineFlag } = useOfflineStatus();
   const { success, warning, info, ToastContainer } = useToast();
   const { triggerMedium, triggerSuccess } = useHapticFeedback();
   const { trackAction } = useGamification();
+  
+  // Get current active tab from location
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path === '/farms') return 'home';
+    if (path === '/scan') return 'scan';
+    if (path === '/market') return 'market';
+    if (path === '/weather') return 'weather';
+    if (path === '/chat') return 'chat';
+    if (path === '/community') return 'community';
+    return 'home';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getActiveTab());
+  
+  // Update active tab when location changes
+  useEffect(() => {
+    setActiveTab(getActiveTab());
+  }, [location.pathname]);
   
   useEffect(() => {
     if (statusConfig.status === 'reconnected') {
@@ -54,7 +69,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   }, [trackAction]);
 
   const handleScanCrop = async () => {
-    setActiveTab('scan');
+    navigate('/scan');
     triggerMedium();
     info('Camera Ready', 'Point at your crop to analyze', '📸');
     
@@ -66,7 +81,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   };
 
   const handleWeatherCheck = async () => {
-    setActiveTab('weather');
+    navigate('/weather');
     triggerMedium();
     
     const result = await trackAction('weather_check');
@@ -76,7 +91,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   };
 
   const handleMarketCheck = async () => {
-    setActiveTab('market');
+    navigate('/market');
     triggerMedium();
     
     const result = await trackAction('market_check');
@@ -86,7 +101,15 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   };
   
   const handleVoiceNavigate = (tab: string) => {
-    setActiveTab(tab);
+    const routeMap = {
+      'home': '/farms',
+      'scan': '/scan',
+      'market': '/market',
+      'weather': '/weather',
+      'chat': '/chat',
+      'community': '/community'
+    };
+    navigate(routeMap[tab] || '/farms');
     triggerSuccess();
     success('Voice Command', `Navigated to ${tab}`, '🗣️');
   };
@@ -103,25 +126,6 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
         break;
     }
     triggerSuccess();
-  };
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'home':
-        return <GeniusCommandCenter />;
-      case 'scan':
-        return <DiseaseDetectionCamera />;
-      case 'market':
-        return <MarketIntelligenceDashboard />;
-      case 'weather':
-        return <WeatherIntelligenceWidget />;
-      case 'community':
-        return <FarmerCommunityHub />;
-      case 'growth':
-        return <FarmerCommunityHub />; // Placeholder for Growth/Gamification
-      default:
-        return <GeniusCommandCenter />;
-    }
   };
 
   return (
@@ -169,7 +173,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
       <div className="pb-20 min-h-screen overflow-y-scroll overscroll-y-contain">
         <AnimatePresence mode="wait">
           <motion.div
-            key={activeTab}
+            key={location.pathname}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -181,7 +185,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
             className="h-full touch-pan-y"
             style={{ touchAction: 'pan-y' }}
           >
-            {renderContent()}
+            {children}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -225,7 +229,15 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
       <BottomNavigation
         activeTab={activeTab}
         onTabChange={(tab) => {
-          setActiveTab(tab);
+          const routeMap = {
+            'home': '/farms',
+            'scan': '/scan',
+            'market': '/market',
+            'weather': '/weather',
+            'chat': '/chat',
+            'community': '/community'
+          };
+          navigate(routeMap[tab] || '/farms');
           triggerMedium();
         }}
       />

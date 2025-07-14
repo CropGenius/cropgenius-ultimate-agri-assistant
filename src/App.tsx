@@ -6,8 +6,10 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { BrowserRouter } from 'react-router-dom';
 import { MobileLayout } from './components/mobile/MobileLayout';
 import { setupOfflinePersistence, OfflineManager } from './lib/offlineStorage';
+import AppRoutes from './AppRoutes';
 import './App.css';
 
 // Enhanced React Query client with offline support
@@ -51,9 +53,13 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="App min-h-screen overflow-hidden">
-        <MobileLayout />
-      </div>
+      <BrowserRouter>
+        <div className="App min-h-screen overflow-hidden">
+          <MobileLayout>
+            <AppRoutes />
+          </MobileLayout>
+        </div>
+      </BrowserRouter>
       {process.env.NODE_ENV === 'development' && (
         <ReactQueryDevtools initialIsOpen={false} />
       )}

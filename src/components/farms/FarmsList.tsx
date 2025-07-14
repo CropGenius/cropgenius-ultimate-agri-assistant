@@ -6,8 +6,10 @@ import { MapPin, Edit, Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { Farm } from '@/types/farm';
+import { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { SatelliteFarmCard } from './SatelliteFarmCard';
 
 interface FarmsListProps {
   onFarmSelect?: (farm: Farm) => void;
@@ -16,7 +18,7 @@ interface FarmsListProps {
 
 export const FarmsList: React.FC<FarmsListProps> = ({ onFarmSelect, selectedFarmId }) => {
   const { user } = useAuth();
-  const [farms, setFarms] = useState<Farm[]>([]);
+  const [farms, setFarms] = useState<Database['public']['Tables']['farms']['Row'][]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -104,56 +106,43 @@ export const FarmsList: React.FC<FarmsListProps> = ({ onFarmSelect, selectedFarm
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
+            className="relative"
           >
-            <Card 
+            <div 
               className={`cursor-pointer transition-all hover:shadow-md ${
-                selectedFarmId === farm.id ? 'ring-2 ring-green-500' : ''
+                selectedFarmId === farm.id ? 'ring-2 ring-green-500 ring-offset-2' : ''
               }`}
-              onClick={() => onFarmSelect?.(farm)}
+              onClick={() => onFarmSelect?.(farm as Farm)}
             >
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-green-600" />
-                    {farm.name}
-                  </span>
-                  {selectedFarmId === farm.id && (
-                    <Badge variant="secondary">Active</Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {farm.size && (
-                    <p className="text-sm text-gray-600">
-                      Size: {farm.size} {farm.size_unit}
-                    </p>
-                  )}
-                  {farm.location && (
-                    <p className="text-sm text-gray-600">
-                      Location: {farm.location}
-                    </p>
-                  )}
-                  <div className="flex gap-2 mt-4">
-                    <Button variant="outline" size="sm">
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteFarm(farm.id);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              <SatelliteFarmCard farm={farm} />
+            </div>
+            
+            {/* Action buttons overlay */}
+            <div className="absolute top-2 right-2 flex gap-1">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 bg-white/80 hover:bg-white">
+                <Edit className="w-3 h-3" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="h-8 w-8 p-0 bg-white/80 hover:bg-white"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteFarm(farm.id);
+                }}
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </div>
+            
+            {/* Active badge */}
+            {selectedFarmId === farm.id && (
+              <div className="absolute top-2 left-2">
+                <Badge variant="secondary" className="bg-green-500 text-white">
+                  Active
+                </Badge>
+              </div>
+            )}
           </motion.div>
         ))}
       </div>

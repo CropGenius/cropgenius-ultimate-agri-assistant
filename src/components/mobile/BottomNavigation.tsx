@@ -23,11 +23,11 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   onTabChange
 }) => {
   const navItems: NavItem[] = [
-    { id: 'home', icon: '🏠', label: 'Home' },
+    { id: 'home', icon: '🏠', label: 'Farms' },
     { id: 'scan', icon: '📸', label: 'Scan' },
     { id: 'weather', icon: '🌦️', label: 'Weather' },
     { id: 'market', icon: '💰', label: 'Market', badge: 2 },
-    { id: 'growth', icon: '🚀', label: 'Growth', badge: 3 },
+    { id: 'chat', icon: '💬', label: 'Chat' },
   ];
 
   return (

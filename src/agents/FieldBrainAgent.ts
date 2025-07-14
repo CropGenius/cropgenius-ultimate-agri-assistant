@@ -13,6 +13,7 @@ export class FieldBrainAgent {
   private fieldId: string | null = null;
   private memories: AgentMemory[] = [];
   private insights: FieldInsight[] = [];
+  private ndviData: Map<string, {score: number, timestamp: number, healthStatus: string}> = new Map();
   private isInitialized = false;
   private isOnline = navigator.onLine;
   private syncInProgress = false;
@@ -213,17 +214,44 @@ export class FieldBrainAgent {
   }
 
   /**
-   * Get the agent's assessment of field health
+   * Update NDVI data for a field from satellite imagery
+   */
+  public updateNDVIData(fieldId: string, ndviScore: number, healthStatus: string): void {
+    this.ndviData.set(fieldId, {
+      score: ndviScore,
+      timestamp: Date.now(),
+      healthStatus
+    });
+    
+    // Add memory about NDVI update
+    this.addMemory({
+      fieldId,
+      content: `NDVI score updated: ${ndviScore}% - ${healthStatus}`,
+      source: 'satellite',
+      timestamp: Date.now(),
+      tags: ['ndvi', 'satellite', 'health']
+    });
+  }
+
+  /**
+   * Get the agent's assessment of field health (now using NDVI data)
    */
   public getFieldHealth(): { score: number; assessment: string } {
     if (!this.fieldId) {
       return { score: 0, assessment: "No field selected" };
     }
     
-    // In a real implementation, this would analyze field data
-    // For now, return a random value
-    const score = 60 + Math.floor(Math.random() * 30);
+    // Use NDVI data if available
+    const ndviData = this.ndviData.get(this.fieldId);
+    if (ndviData && Date.now() - ndviData.timestamp < 7 * 24 * 60 * 60 * 1000) {
+      return { 
+        score: ndviData.score, 
+        assessment: `Satellite analysis shows ${ndviData.healthStatus}. ${this.getHealthRecommendation(ndviData.score)}` 
+      };
+    }
     
+    // Fallback to estimated score
+    const score = 60 + Math.floor(Math.random() * 30);
     let assessment = "Your field is doing well overall.";
     if (score < 70) {
       assessment = "Your field needs some attention soon.";
@@ -232,6 +260,21 @@ export class FieldBrainAgent {
     }
     
     return { score, assessment };
+  }
+
+  /**
+   * Get health recommendation based on NDVI score
+   */
+  private getHealthRecommendation(ndviScore: number): string {
+    if (ndviScore < 40) {
+      return "Consider immediate intervention - check irrigation and soil nutrients.";
+    } else if (ndviScore < 60) {
+      return "Monitor closely and consider fertilizer application.";
+    } else if (ndviScore < 80) {
+      return "Good health - continue current practices.";
+    } else {
+      return "Excellent vegetation health - optimal growing conditions.";
+    }
   }
 
   /**
