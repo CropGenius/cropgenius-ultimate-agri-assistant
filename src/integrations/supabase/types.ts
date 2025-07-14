@@ -183,6 +183,7 @@ export type Database = {
       }
       farms: {
         Row: {
+          coordinates: unknown | null
           created_at: string | null
           description: string | null
           id: string
@@ -195,6 +196,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          coordinates?: unknown | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -207,6 +209,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          coordinates?: unknown | null
           created_at?: string | null
           description?: string | null
           id?: string

@@ -20,6 +20,8 @@ import {
   Target,
   Activity
 } from 'lucide-react';
+import { useFarms } from '@/hooks/useFarms';
+import { SatelliteFarmCard } from '@/components/farms/SatelliteFarmCard';
 
 // Farm Profit & Sustainability Index Orb Component
 const FPSIOrb: React.FC<{ score: number; trend: 'growing' | 'stable' | 'declining' }> = ({ score, trend }) => {
@@ -199,44 +201,8 @@ const GeniusActionCard: React.FC = () => {
   );
 };
 
-// Field Card Component
-const FieldCard: React.FC<{ field: { name: string; crop: string; health: number; id: string } }> = ({ field }) => {
-  return (
-    <motion.div
-      className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 shadow-[0_8px_32px_rgba(31,38,135,0.37)] cursor-pointer"
-      whileHover={{ scale: 1.02, y: -2 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      {/* Satellite imagery thumbnail simulation */}
-      <div className="relative h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl mb-3 overflow-hidden">
-        <div className="absolute inset-0 bg-black/10" />
-        <div className="absolute top-2 right-2">
-          <Satellite className="w-4 h-4 text-white/80" />
-        </div>
-        <div className="absolute bottom-2 left-2">
-          <div className="text-xs text-white/90 font-medium">Live View</div>
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-gray-800">{field.name}</h4>
-          <div className="text-xs text-gray-600">{field.crop}</div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <div className="flex-1 bg-white/20 rounded-full h-2">
-            <div 
-              className="bg-gradient-to-r from-emerald-400 to-green-500 h-2 rounded-full"
-              style={{ width: `${field.health}%` }}
-            />
-          </div>
-          <span className="text-xs font-medium text-gray-700">{field.health}%</span>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
+// OLD FIELD CARD COMPONENT - DELETED
+// mockFields replaced with real Supabase farms data + satellite imagery
 
 // Priority Alert Component
 const PriorityAlert: React.FC = () => {
@@ -273,6 +239,7 @@ const PriorityAlert: React.FC = () => {
 export const GeniusCommandCenter: React.FC = () => {
   const [greeting, setGreeting] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const { farms, loading: farmsLoading } = useFarms();
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -283,12 +250,6 @@ export const GeniusCommandCenter: React.FC = () => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
-
-  const mockFields = [
-    { id: '1', name: 'North Field', crop: 'Maize', health: 92 },
-    { id: '2', name: 'South Field', crop: 'Beans', health: 87 },
-    { id: '3', name: 'East Field', crop: 'Wheat', health: 94 }
-  ];
 
   return (
     <div className="w-full bg-transparent relative">
@@ -356,14 +317,14 @@ export const GeniusCommandCenter: React.FC = () => {
             </motion.button>
           </motion.div>
 
-          {/* My Fields */}
+          {/* My Farms - REAL DATA FROM SUPABASE + SATELLITE IMAGERY */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.8 }}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-800">My Fields</h2>
+              <h2 className="text-lg font-bold text-gray-800">My Farms</h2>
               <motion.button
                 className="p-2 bg-emerald-500/20 rounded-full text-emerald-600"
                 whileHover={{ scale: 1.1 }}
@@ -373,18 +334,43 @@ export const GeniusCommandCenter: React.FC = () => {
               </motion.button>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              {mockFields.map((field, index) => (
-                <motion.div
-                  key={field.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.9 + index * 0.1 }}
+            {farmsLoading ? (
+              <div className="grid grid-cols-2 gap-4">
+                {[1, 2].map((i) => (
+                  <div key={i} className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-4 animate-pulse">
+                    <div className="h-20 bg-gray-300 rounded-xl mb-3"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : farms.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600 mb-4">No farms yet. Add your first farm to get started!</p>
+                <motion.button
+                  className="px-6 py-3 bg-emerald-500/20 text-emerald-600 rounded-full font-medium"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <FieldCard field={field} />
-                </motion.div>
-              ))}
-            </div>
+                  Add Your First Farm
+                </motion.button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {farms.slice(0, 4).map((farm, index) => (
+                  <motion.div
+                    key={farm.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.9 + index * 0.1 }}
+                  >
+                    <SatelliteFarmCard farm={farm} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </motion.div>
 
           {/* Priority Alerts */}
