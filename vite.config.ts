@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: 3000,
+      port: 8080,
       open: true,
       headers: {
         'Content-Type': 'application/javascript; charset=utf-8'
