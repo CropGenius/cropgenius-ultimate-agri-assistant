@@ -301,6 +301,7 @@ export type Database = {
           harvest_date: string | null
           id: string
           location: unknown | null
+          metadata: Json | null
           name: string
           notes: string | null
           planted_at: string | null
@@ -316,6 +317,7 @@ export type Database = {
           harvest_date?: string | null
           id?: string
           location?: unknown | null
+          metadata?: Json | null
           name: string
           notes?: string | null
           planted_at?: string | null
@@ -331,6 +333,7 @@ export type Database = {
           harvest_date?: string | null
           id?: string
           location?: unknown | null
+          metadata?: Json | null
           name?: string
           notes?: string | null
           planted_at?: string | null
@@ -380,6 +383,39 @@ export type Database = {
         }
         Relationships: []
       }
+      market_prices: {
+        Row: {
+          created_at: string
+          crop_name: string
+          currency: string
+          date_recorded: string
+          id: string
+          location: string
+          price: number
+          source: string | null
+        }
+        Insert: {
+          created_at?: string
+          crop_name: string
+          currency: string
+          date_recorded: string
+          id?: string
+          location: string
+          price: number
+          source?: string | null
+        }
+        Update: {
+          created_at?: string
+          crop_name?: string
+          currency?: string
+          date_recorded?: string
+          id?: string
+          location?: string
+          price?: number
+          source?: string | null
+        }
+        Relationships: []
+      }
       onboarding_audit: {
         Row: {
           completed_at: string | null
@@ -415,6 +451,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_usage_count: number | null
           avatar_url: string | null
           created_at: string | null
           farm_id: string | null
@@ -431,6 +468,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          ai_usage_count?: number | null
           avatar_url?: string | null
           created_at?: string | null
           farm_id?: string | null
@@ -447,6 +485,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          ai_usage_count?: number | null
           avatar_url?: string | null
           created_at?: string | null
           farm_id?: string | null
