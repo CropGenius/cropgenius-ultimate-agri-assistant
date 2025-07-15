@@ -1,5 +1,5 @@
 // Sentinel Hub API service for satellite imagery integration
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/services/supabaseClient';
 
 interface SentinelHubCredentials {
   clientId: string;
@@ -32,20 +32,17 @@ class SentinelHubService {
 
   private async loadCredentials(): Promise<void> {
     try {
-      // Get credentials from Supabase secrets
-      const { data: clientId } = await supabase.functions.invoke('get-secret', {
-        body: { name: 'SENTINEL_HUB_CLIENT_ID' }
-      });
-      
-      const { data: clientSecret } = await supabase.functions.invoke('get-secret', {
-        body: { name: 'SENTINEL_HUB_CLIENT_SECRET' }
-      });
+      // Get credentials from environment variables
+      const clientId = import.meta.env.VITE_SENTINEL_HUB_CLIENT_ID;
+      const clientSecret = import.meta.env.VITE_SENTINEL_HUB_CLIENT_SECRET;
 
       if (clientId && clientSecret) {
         this.credentials = {
           clientId,
           clientSecret
         };
+      } else {
+        console.warn('Sentinel Hub credentials not configured in environment variables');
       }
     } catch (error) {
       console.error('Failed to load Sentinel Hub credentials:', error);

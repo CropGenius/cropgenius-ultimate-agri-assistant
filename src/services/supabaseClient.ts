@@ -25,3 +25,14 @@ const createSupabaseClient = (): SupabaseClient<Database> => {
 
 export const supabase = createSupabaseClient();
 export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
+
+// Debug helper to log authentication state
+export const logAuthState = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  console.log('Current session:', session);
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  console.log('Current user:', user);
+  
+  return { session, user };
+};

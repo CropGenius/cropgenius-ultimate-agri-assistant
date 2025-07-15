@@ -12,16 +12,15 @@ interface ProtectedRouteProps {
 const pathsAllowedWithoutFarm: string[] = [/* e.g., '/profile', '/settings/account' */];
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, isLoading, farmId, isDevPreview, profile } = useAuth();
+  const { user, isLoading, profile } = useAuth();
   const location = useLocation();
-  
+
   // Development bypass - check for dev mode and bypass auth if needed
   const isDevelopment = import.meta.env.DEV;
   const bypassAuth = isDevelopment && window.location.search.includes('bypass=true');
 
-  // Skip loading state if we're in dev preview mode or if loading takes too long
-  if (isLoading && !isDevPreview) {
-    // Return a simple loading screen instead of null to show something is happening
+  // Show loading state while auth is initializing
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
         <div className="text-center">
@@ -37,39 +36,20 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <>{children}</>;
   }
 
-  // If not in dev preview and no user, redirect to auth
-  if (!user && !isDevPreview && !bypassAuth) {
-    // Use window.location for immediate redirect without loading state
+  // If no user and not bypassing auth, redirect to auth
+  if (!user && !bypassAuth) {
     if (location.pathname !== '/auth') {
-      window.location.href = `/auth?redirect=${encodeURIComponent(location.pathname)}`;
-      return null;
+      return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
     }
-    return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/auth" replace />;
   }
 
-  // If user is authenticated but onboarding not complete, redirect
+  // If user is authenticated but onboarding not complete, redirect to onboarding
   if (user && profile && profile.onboarding_completed === false && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
   }
 
-  // If user is authenticated (or in dev preview), check for farmId
-  // The isDevPreview check allows development with mock farmId without triggering onboarding
-  if (user && !farmId && !isDevPreview && !pathsAllowedWithoutFarm.includes(location.pathname)) {
-    console.log("ProtectedRoute: User authenticated, no farmId, showing FarmOnboarding for", location.pathname);
-    return (
-      <div className="container mx-auto py-8 px-4 min-h-screen flex flex-col items-center justify-center">
-        <div className="w-full max-w-lg">
-          <h2 className="text-3xl font-bold mb-4 text-center">Welcome to CROPGenius!</h2>
-          <p className="text-center mb-8 text-muted-foreground text-lg">
-            Let's get your farm set up to unlock all features.
-          </p>
-          <FarmOnboarding />
-        </div>
-      </div>
-    );
-  }
-
-  // If user is authenticated (or in dev preview) AND (has farmId OR path is allowed without farmId OR in dev preview with mock farmId)
+  // User is authenticated and onboarding is complete (or no profile yet)
   return <>{children}</>;
 };
 

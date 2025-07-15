@@ -3,7 +3,7 @@
  * Every farmer gets their own superintelligence companion
  */
 
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/services/supabaseClient';
 
 interface UserBehavior {
   userId: string;
