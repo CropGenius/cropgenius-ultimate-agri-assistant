@@ -7,24 +7,24 @@ import { supabase } from '@/services/supabaseClient';
 export async function seedMarketData() {
   try {
     console.log('🌱 Seeding market_listings table with sample data...');
-    
+
     // Check if we already have data
     const { data: existingData, error: checkError } = await supabase
       .from('market_listings')
       .select('id')
       .limit(1);
-    
+
     if (checkError) {
       console.error('Error checking market_listings table:', checkError);
       return { success: false, error: checkError.message };
     }
-    
+
     // If we already have data, don't seed again
     if (existingData && existingData.length > 0) {
       console.log('✅ Market data already exists, skipping seed');
       return { success: true, message: 'Market data already exists' };
     }
-    
+
     // Sample market listings data for African markets
     const sampleListings = [
       // Kenya Markets
@@ -141,23 +141,24 @@ export async function seedMarketData() {
         is_active: true
       }
     ];
-    
+
     // Insert the sample listings in batches of 5
     const batchSize = 5;
     for (let i = 0; i < sampleListings.length; i += batchSize) {
       const batch = sampleListings.slice(i, i + batchSize);
-      
+
       const { error: insertError } = await supabase
         .from('market_listings')
         .insert(batch);
-      
+
       if (insertError) {
         console.error(`Error inserting batch ${i / batchSize + 1}:`, insertError);
         return { success: false, error: insertError.message };
       }
     }
-    
-    console.log(`✅ Successfully seeded ${sampleListings.length} market listings`);\n    return { success: true, count: sampleListings.length };
+
+    console.log(`✅ Successfully seeded ${sampleListings.length} market listings`);
+    return { success: true, count: sampleListings.length };
   } catch (error) {
     console.error('Failed to seed market data:', error);
     return { success: false, error: String(error) };
