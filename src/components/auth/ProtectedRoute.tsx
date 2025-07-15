@@ -14,15 +14,31 @@ const pathsAllowedWithoutFarm: string[] = [/* e.g., '/profile', '/settings/accou
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, isLoading, farmId, isDevPreview, profile } = useAuth();
   const location = useLocation();
+  
+  // Development bypass - check for dev mode and bypass auth if needed
+  const isDevelopment = import.meta.env.DEV;
+  const bypassAuth = isDevelopment && window.location.search.includes('bypass=true');
 
-  // Skip loading state if we're in dev preview mode
+  // Skip loading state if we're in dev preview mode or if loading takes too long
   if (isLoading && !isDevPreview) {
-    // Return null instead of a loading screen to prevent flash of loading UI
-    return null;
+    // Return a simple loading screen instead of null to show something is happening
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading CropGenius...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Development bypass - allow access without authentication in dev mode
+  if (bypassAuth) {
+    return <>{children}</>;
   }
 
   // If not in dev preview and no user, redirect to auth
-  if (!user && !isDevPreview) {
+  if (!user && !isDevPreview && !bypassAuth) {
     // Use window.location for immediate redirect without loading state
     if (location.pathname !== '/auth') {
       window.location.href = `/auth?redirect=${encodeURIComponent(location.pathname)}`;

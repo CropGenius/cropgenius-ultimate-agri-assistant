@@ -391,8 +391,8 @@ const CropScanner: React.FC<CropScannerProps> = ({ onScanComplete, cropType, loc
               <div>
                 <Badge className={getSeverityColor(scanResults.severity)}>
                   {scanResults.severity === "low" ? "Low Severity" :
-                    scanResults.severity === "medium" ? "Medium Severity" : 
-                    scanResults.severity === "high" ? "High Severity" : "Critical"}
+                    scanResults.severity === "medium" ? "Medium Severity" :
+                      scanResults.severity === "high" ? "High Severity" : "Critical"}
                 </Badge>
                 <h2 className="text-xl font-bold text-gray-800 mt-2">{scanResults.disease_name}</h2>
                 {scanResults.scientific_name && (
@@ -495,7 +495,7 @@ const CropScanner: React.FC<CropScannerProps> = ({ onScanComplete, cropType, loc
           {/* Treatment Options */}
           <div className="mb-5">
             <h3 className="font-semibold text-gray-800 mb-3">Treatment Options</h3>
-            
+
             {/* Organic Solutions */}
             {scanResults.organic_solutions.length > 0 && (
               <div className="mb-4">

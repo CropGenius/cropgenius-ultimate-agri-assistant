@@ -3,12 +3,14 @@ import { useState, useEffect, useCallback } from "react";
 import Layout from "@/components/Layout";
 import CropScanner from "@/components/scanner/CropScanner";
 import { CropIntelligenceEngine, ScanResult } from '@/services/cropIntelligence';
+import { testAIDiseaseDetection } from '@/utils/testAIDiseaseDetection';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/utils/authService";
-import { Camera, Sparkles, Zap, CheckCircle2, AlertTriangle, Leaf } from "lucide-react";
+import { Camera, Sparkles, Zap, CheckCircle2, AlertTriangle, Leaf, TestTube } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { Database } from "@/types/supabase";
@@ -152,6 +154,26 @@ const ScanPage = () => {
     }
   };
 
+  const handleTestAIDetection = async () => {
+    toast.info('Testing AI Disease Detection System...');
+    try {
+      const result = await testAIDiseaseDetection();
+      if (result.success) {
+        toast.success('AI Disease Detection Test Passed!', {
+          description: `API Keys: ${result.apiKeysConfigured.plantNet ? 'PlantNet ✅' : 'PlantNet ❌'} ${result.apiKeysConfigured.gemini ? 'Gemini ✅' : 'Gemini ❌'}`
+        });
+      } else {
+        toast.error('AI Disease Detection Test Failed', {
+          description: result.error
+        });
+      }
+    } catch (error) {
+      toast.error('Test Error', {
+        description: String(error)
+      });
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto p-4 space-y-6">
@@ -176,6 +198,17 @@ const ScanPage = () => {
             <Badge className="bg-green-100 text-green-700 border-green-200">
               {scanHistory.length} Scans Today
             </Badge>
+            {import.meta.env.DEV && (
+              <Button 
+                onClick={handleTestAIDetection}
+                size="sm"
+                variant="outline"
+                className="glass-btn"
+              >
+                <TestTube className="w-4 h-4 mr-2" />
+                Test AI
+              </Button>
+            )}
           </div>
         </div>
 

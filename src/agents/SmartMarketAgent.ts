@@ -70,7 +70,7 @@ export const fetchMarketListings = async (
       // For now, standard select:
       // .select('id, crop_type, variety, price_per_unit, unit, quantity_available, location_name, source, quality_rating, harvest_date, created_at, created_by, is_active')
       .select('*') // Keep it simple for now, RLS will filter rows. Add ST_AsGeoJSON if possible via view or function.
-      .eq('crop_type', cropType)
+      .ilike('crop_type', cropType)
       .eq('is_active', true); // Only fetch active listings by default (RLS also enforces this for public)
 
     if (latitude && longitude && radiusKm) {

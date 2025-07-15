@@ -141,8 +141,11 @@ const EnhancedDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { balance, isLoading: creditsLoading } = useCredits();
+  
+  // Use real weather data (default to Nairobi coordinates if no user location)
+  const { weather: weatherData, isLoading: weatherLoading, error: weatherError } = useWeather(-1.2921, 36.8219);
+  
   const [farmHealth, setFarmHealth] = useState(85);
-  const [weatherData, setWeatherData] = useState<any>(null);
   const [marketData, setMarketData] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [fields, setFields] = useState<Tables<'fields'>[]>([]);
@@ -188,12 +191,7 @@ const EnhancedDashboard: React.FC = () => {
       if (fieldsError) throw fieldsError;
       setFields(fieldsData || []);
 
-      // TODO: replace weather and market with real data
-      setWeatherData({
-        temperature: 26,
-        condition: 'Partly Cloudy',
-        forecast: 'Good for farming',
-      });
+      // Market data - TODO: replace with real market data hook
       setMarketData({
         maizePrice: 45,
         beansPrice: 120,

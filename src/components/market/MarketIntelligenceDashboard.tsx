@@ -3,7 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { fetchMarketListings, MarketListing } from '@/agents/SmartMarketAgent';
+import { seedMarketData } from '@/utils/seedMarketData';
 import { toast } from 'sonner';
+import { RefreshCw, TrendingUp, TrendingDown, Loader2, Sprout } from 'lucide-react';
 
 interface MarketData {
   crop: string;
@@ -17,11 +19,32 @@ interface MarketData {
 export const MarketIntelligenceDashboard: React.FC = () => {
   const [marketData, setMarketData] = useState<MarketData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [seedLoading, setSeedLoading] = useState(false);
   const [selectedCrops] = useState(['maize', 'beans', 'tomato', 'rice']);
 
   useEffect(() => {
     loadMarketData();
   }, []);
+
+  const seedSampleData = async () => {
+    setSeedLoading(true);
+    try {
+      const result = await seedMarketData();
+      
+      if (result.success) {
+        toast.success(`Successfully seeded ${result.count || 'sample'} market listings`);
+        // Reload market data after seeding
+        await loadMarketData();
+      } else {
+        toast.error(`Failed to seed market data: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error seeding market data:', error);
+      toast.error('Failed to seed market data');
+    } finally {
+      setSeedLoading(false);
+    }
+  };
 
   const loadMarketData = async () => {
     setLoading(true);
@@ -94,7 +117,17 @@ export const MarketIntelligenceDashboard: React.FC = () => {
             💰 Market Intelligence
           </CardTitle>
           <Button onClick={loadMarketData} disabled={loading} size="sm">
-            {loading ? 'Loading...' : 'Refresh'}
+            {loading ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+              </>
+            )}
           </Button>
         </div>
       </CardHeader>
@@ -130,10 +163,31 @@ export const MarketIntelligenceDashboard: React.FC = () => {
 
         {marketData.length === 0 && !loading && (
           <div className="text-center py-8 text-muted-foreground">
-            <p>No market data available</p>
-            <Button onClick={loadMarketData} className="mt-2">
-              Load Market Data
-            </Button>
+            <p className="mb-4">No market data available</p>
+            <div className="space-x-2">
+              <Button 
+                onClick={seedSampleData} 
+                disabled={seedLoading}
+                variant="outline"
+                size="sm"
+              >
+                {seedLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Seeding...
+                  </>
+                ) : (
+                  <>
+                    <Sprout className="mr-2 h-4 w-4" />
+                    Seed Sample Data
+                  </>
+                )}
+              </Button>
+              <Button onClick={loadMarketData} size="sm">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>
