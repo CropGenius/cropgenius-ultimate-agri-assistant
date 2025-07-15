@@ -1,7 +1,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase, logAuthState } from "@/integrations/supabase/client";
+import { supabase, logAuthState } from "@/lib/supabaseClient";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { debugAuthState, exchangeCodeForSession } from "@/utils/authService";
