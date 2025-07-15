@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { getCurrentUser } from "@/utils/authService";
 import { Camera, Sparkles, Zap, CheckCircle2, AlertTriangle, Leaf } from "lucide-react";
 import { motion } from "framer-motion";
-import { supabase } from "@/utils/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { Database } from "@/types/supabase";
 import { useParams } from "react-router-dom";
 
