@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { fetchMarketListings } from '@/agents/SmartMarketAgent';
-import { MarketIntelligenceEngine } from '@/services/marketIntelligence';
+import { fetchMarketListings, MarketListing } from '@/agents/SmartMarketAgent';
 import { toast } from 'sonner';
 
 interface MarketData {
@@ -27,24 +26,45 @@ export const MarketIntelligenceDashboard: React.FC = () => {
   const loadMarketData = async () => {
     setLoading(true);
     try {
-      const marketEngine = new MarketIntelligenceEngine();
-      const location = { lat: -1.2921, lng: 36.8219, country: 'Kenya', region: 'Nairobi' };
+      // Use real database data from SmartMarketAgent instead of fake MarketIntelligenceEngine
+      const allMarketData: MarketData[] = [];
       
-      const analysis = await marketEngine.getLocalMarketAnalysis(location, selectedCrops, 1000);
-      
-      const formattedData: MarketData[] = analysis.currentPrices.map(price => ({
-        crop: price.crop,
-        currentPrice: price.currentPrice,
-        currency: price.currency,
-        trend: price.trend,
-        priceChange: price.priceChange,
-        market: price.market
-      }));
+      for (const crop of selectedCrops) {
+        try {
+          const marketResult = await fetchMarketListings({
+            cropType: crop,
+            latitude: -1.2921,
+            longitude: 36.8219,
+            radiusKm: 100
+          });
 
-      setMarketData(formattedData);
+          // Convert real database listings to display format
+          const cropData: MarketData[] = marketResult.listings.map(listing => ({
+            crop: listing.crop_type,
+            currentPrice: listing.price_per_unit,
+            currency: 'KES', // Default to KES for Kenya, could be enhanced to detect from listing
+            trend: 'stable' as const, // Could be enhanced with price history analysis
+            priceChange: 0, // Could be enhanced with price history comparison
+            market: listing.location_name || 'Local Market'
+          }));
+
+          allMarketData.push(...cropData);
+        } catch (cropError) {
+          console.warn(`Failed to load data for ${crop}:`, cropError);
+          // Continue with other crops even if one fails
+        }
+      }
+
+      setMarketData(allMarketData);
+      
+      if (allMarketData.length === 0) {
+        toast.info('No market listings found. Add some market data to see prices.');
+      } else {
+        toast.success(`Loaded ${allMarketData.length} market listings from database`);
+      }
     } catch (error) {
       console.error('Error loading market data:', error);
-      toast.error('Failed to load market data');
+      toast.error('Failed to load market data from database');
     } finally {
       setLoading(false);
     }

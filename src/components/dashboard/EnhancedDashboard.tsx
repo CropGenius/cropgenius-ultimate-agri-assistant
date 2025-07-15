@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/context/AuthContext';
 import { useCredits } from '@/hooks/useCredits';
+import { useWeather } from '@/hooks/useWeather';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
 import { supabase } from '@/services/supabaseClient';
 import { Tables } from '@/types/supabase';

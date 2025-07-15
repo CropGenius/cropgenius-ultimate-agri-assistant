@@ -77,82 +77,9 @@ const setPendingTransactions = (transactions: CreditTransaction[]): void => {
   }
 };
 
-// Fetch credit balance with offline support
-const fetchCreditBalance = async (userId: string): Promise<CreditBalance> => {
-  const operation = async (): Promise<CreditBalance> => {
-    // Since user_credits table doesn't exist in schema, use profiles table for demo
-    // In production, you would create a proper user_credits table
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', userId)
-      .single();
+// REMOVED: This function is no longer needed as we handle credit fetching directly in the query
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // No credit record found - create initial record
-        const initialBalance: CreditBalance = {
-          balance: 100, // Initial credits for new users
-          reserved: 0,
-          available: 100,
-          lastUpdated: new Date().toISOString(),
-        };
-        
-        // Simulate credit initialization - in production use proper user_credits table
-        const insertError = null; // No actual insert for demo
-
-        if (insertError) {
-          throw new AppError(
-            ErrorCode.CREDITS_SYNC_FAILED,
-            insertError.message,
-            'Failed to initialize credit account',
-            { userId, error: insertError }
-          );
-        }
-
-        return initialBalance;
-      }
-      
-      throw new AppError(
-        ErrorCode.CREDITS_SYNC_FAILED,
-        error.message,
-        'Failed to fetch credit balance',
-        { userId, error }
-      );
-    }
-
-    // Simulate credit balance - in production use actual credit data
-    const creditBalance: CreditBalance = {
-      balance: 100, // Default balance for demo
-      reserved: 0,
-      available: 100,
-      lastUpdated: new Date().toISOString(),
-    };
-
-    // Cache the result
-    setCachedCredits(creditBalance);
-    return creditBalance;
-  };
-
-  try {
-    return await networkManager.executeWithRetry(operation, {
-      retries: 3,
-      priority: 'high',
-      offlineQueue: true,
-    });
-  } catch (error) {
-    // Return cached balance if available
-    const cached = getCachedCredits();
-    if (cached) {
-      reportWarning('Using cached credit balance due to network error');
-      return cached;
-    }
-    
-    throw error;
-  }
-};
-
-// Execute credit transaction with full safety
+// FIXED: Execute credit transaction using real Supabase RPC functions
 const executeCreditTransaction = async (
   transaction: Omit<CreditTransaction, 'id' | 'createdAt' | 'status'>
 ): Promise<CreditTransaction> => {
@@ -168,25 +95,37 @@ const executeCreditTransaction = async (
   setPendingTransactions([...pending, fullTransaction]);
 
   const operation = async (): Promise<CreditTransaction> => {
-    const functionName = transaction.type === 'deduct' ? 'deduct-credits' : 'restore-credits';
-    
-    const { data, error } = await supabase.functions.invoke(functionName, {
-      body: {
-        userId: transaction.userId,
-        amount: Math.abs(transaction.amount),
-        description: transaction.description,
-        transactionId: fullTransaction.id,
-        metadata: transaction.metadata,
-      },
-    });
+    // FIXED: Use real Supabase RPC functions that exist in the database
+    if (transaction.type === 'deduct') {
+      const { error } = await supabase.rpc('deduct_user_credits', {
+        p_user_id: transaction.userId,
+        p_amount: Math.abs(transaction.amount),
+        p_description: transaction.description
+      });
 
-    if (error) {
-      throw new AppError(
-        ErrorCode.CREDITS_TRANSACTION_FAILED,
-        error.message,
-        'Transaction failed',
-        { transaction: fullTransaction, error }
-      );
+      if (error) {
+        throw new AppError(
+          ErrorCode.CREDITS_TRANSACTION_FAILED,
+          error.message,
+          'Credit deduction failed',
+          { transaction: fullTransaction, error }
+        );
+      }
+    } else if (transaction.type === 'add') {
+      const { error } = await supabase.rpc('restore_user_credits', {
+        p_user_id: transaction.userId,
+        p_amount: Math.abs(transaction.amount),
+        p_description: transaction.description
+      });
+
+      if (error) {
+        throw new AppError(
+          ErrorCode.CREDITS_TRANSACTION_FAILED,
+          error.message,
+          'Credit restoration failed',
+          { transaction: fullTransaction, error }
+        );
+      }
     }
 
     // Mark transaction as completed
@@ -236,7 +175,7 @@ export const useCredits = () => {
     [user?.id]
   );
 
-  // Query for credit balance - simplified for demo
+  // Query for credit balance - FIXED to use real database
   const balanceQuery = useQuery({
     queryKey: balanceQueryKey || ['credits', 'balance', 'anonymous'],
     queryFn: async () => {
@@ -250,22 +189,57 @@ export const useCredits = () => {
         };
       }
       
-      // Fetch from user_credits table if exists, otherwise return default
+      // FIXED: Fetch from real user_credits table with proper error handling
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('user_credits')
-          .select('balance')
+          .select('balance, last_updated_at')
           .eq('user_id', user.id)
           .single();
         
+        if (error) {
+          // If user doesn't have credits record, create one
+          if (error.code === 'PGRST116') {
+            const { data: newRecord, error: insertError } = await supabase
+              .from('user_credits')
+              .insert({
+                user_id: user.id,
+                balance: 100, // Initial credits for new users
+                last_updated_at: new Date().toISOString()
+              })
+              .select('balance, last_updated_at')
+              .single();
+              
+            if (insertError) {
+              throw insertError;
+            }
+            
+            return {
+              balance: newRecord.balance,
+              reserved: 0,
+              available: newRecord.balance,
+              lastUpdated: newRecord.last_updated_at,
+            };
+          }
+          throw error;
+        }
+        
         return {
-          balance: data?.balance || 100,
+          balance: data.balance,
           reserved: 0,
-          available: data?.balance || 100,
-          lastUpdated: new Date().toISOString(),
+          available: data.balance,
+          lastUpdated: data.last_updated_at,
         };
-      } catch {
-        // If user_credits table doesn't exist or user not found, return defaults
+      } catch (error) {
+        console.error('Failed to fetch credits from database:', error);
+        // Return cached balance if available, otherwise return default
+        const cached = getCachedCredits();
+        if (cached) {
+          reportWarning('Using cached credit balance due to database error');
+          return cached;
+        }
+        
+        // Last resort: return default balance
         return {
           balance: 100,
           reserved: 0,
