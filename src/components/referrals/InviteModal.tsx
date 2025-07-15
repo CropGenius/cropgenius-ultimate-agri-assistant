@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useMemoryStore } from '@/hooks/useMemoryStore';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

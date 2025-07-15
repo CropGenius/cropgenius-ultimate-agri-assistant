@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import AuthPage from './pages/AuthPage';
 import Index from './pages/Index';
 import Fields from './pages/Fields';

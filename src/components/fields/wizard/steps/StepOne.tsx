@@ -5,7 +5,7 @@ import { MapPin, Leaf, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 

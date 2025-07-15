@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Tractor, MapPin, ArrowRight, Circle, CheckCircle, Sparkles, AlertTriangle, Loader2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthContext } from '@/providers/AuthProvider';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/services/supabaseClient';
 import { useErrorLogging } from '@/hooks/use-error-logging';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
 import { Field } from '@/types/field';
