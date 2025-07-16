@@ -7,14 +7,14 @@ port = 54321
 [db]
 port = 54322
 
-[functions.fn-crop-disease]
+[functions.weather]
+verify_jwt = false
+
+[functions.crop-scan]
 verify_jwt = true
 
 [functions.field-analysis]
 verify_jwt = true
 
-[functions.weather]
-verify_jwt = false
-
-[functions.crop-scan]
+[functions.fn-crop-disease]
 verify_jwt = true
