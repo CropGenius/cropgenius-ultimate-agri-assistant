@@ -42,8 +42,8 @@ const Onboarding = () => {
 
       if (farmError) throw farmError;
 
-      // 3. Redirect to dashboard on success
-      navigate('/dashboard');
+      // 3. Redirect to farms page on success
+      navigate('/farms');
     } catch (error) {
       console.error('Error during onboarding:', error);
       // You might want to show an error message to the user here

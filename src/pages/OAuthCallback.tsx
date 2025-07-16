@@ -35,7 +35,7 @@ export default function OAuthCallback() {
         if (!profile || profile.onboarding_completed === false) {
           navigate('/onboarding', { replace: true });
         } else {
-          navigate('/dashboard', { replace: true });
+          navigate('/farms', { replace: true });
         }
       } catch (err: any) {
         console.error('OAuth callback error', err);

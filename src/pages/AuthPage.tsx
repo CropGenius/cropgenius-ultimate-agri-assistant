@@ -17,7 +17,7 @@ const AuthPage: FC = () => {
 
       if (error) throw error;
       if (!data?.url) {
-        navigate('/dashboard');
+        navigate('/farms');
       } else {
         window.location.href = data.url;
       }
