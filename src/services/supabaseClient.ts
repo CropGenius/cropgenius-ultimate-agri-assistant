@@ -7,8 +7,8 @@ let supabaseInstance: SupabaseClient<Database> | null = null;
 const createSupabaseClient = (): SupabaseClient<Database> => {
   if (supabaseInstance) return supabaseInstance;
 
-  const url = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-  const key = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
+  const url = import.meta.env.VITE_SUPABASE_URL || 'https://bapqlyvfwxsichlyjxpd.supabase.co';
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g';
 
   supabaseInstance = createClient<Database>(url, key, {
     auth: {
