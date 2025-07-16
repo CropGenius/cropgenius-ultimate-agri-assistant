@@ -1,6 +1,6 @@
 import React, { createContext, useContext, ReactNode, useCallback } from 'react';
 import { useAuth, AuthState } from '@/hooks/useAuth';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 

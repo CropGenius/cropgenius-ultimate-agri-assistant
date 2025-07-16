@@ -1,4 +1,4 @@
-import { supabase } from '../services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 export const simpleAuth = {
   signIn: async (email: string, password: string) => {

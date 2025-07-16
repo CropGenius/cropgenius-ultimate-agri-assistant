@@ -1,4 +1,4 @@
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import { User, Session, AuthError } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { ErrorHandler } from "@/services/errorHandler";

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuthContext } from '@/providers/AuthProvider';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
 const Onboarding = () => {

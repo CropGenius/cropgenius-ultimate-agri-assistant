@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Session, User, AuthError } from '@supabase/supabase-js';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { AppError, ErrorCode, reportError, reportWarning } from '@/lib/errors';
 import { networkManager } from '@/lib/network';
 import { toast } from 'sonner';
