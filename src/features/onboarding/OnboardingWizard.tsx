@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { onboardingService } from '@/services/onboardingService';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthContext as useAuth } from '@/providers/AuthProvider';
 import { OnboardingData } from '@/types/onboarding';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';

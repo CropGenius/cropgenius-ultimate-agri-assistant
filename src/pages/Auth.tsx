@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { signInWithEmail, signUpWithEmail, signInWithGoogle, debugAuthState } from "@/utils/authService";
-import { useAuth } from "@/context/AuthContext";
+import { useAuthContext as useAuth } from '@/providers/AuthProvider';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, RefreshCw, Loader2 } from "lucide-react";
 

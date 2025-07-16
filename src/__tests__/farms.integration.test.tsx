@@ -32,9 +32,11 @@ vi.mock('@/services/supabaseClient', () => ({
 }));
 
 // Mock Auth Context
-vi.mock('@/context/AuthContext', () => ({
-  useAuth: () => ({
-    user: { id: 'user-1', email: 'test@example.com' }
+vi.mock('@/providers/AuthProvider', () => ({
+  useAuthContext: () => ({
+    user: { id: 'user-1', email: 'test@example.com' },
+    isAuthenticated: true,
+    isLoading: false
   })
 }));
 

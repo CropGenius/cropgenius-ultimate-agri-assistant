@@ -12,7 +12,7 @@ import {
   Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthContext as useAuth } from '@/providers/AuthProvider';
 import { toast } from 'sonner';
 
 // Helper function to get time-appropriate greeting

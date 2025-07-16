@@ -37,7 +37,11 @@ export default function OAuthCallback() {
         console.log('OAuth session established successfully');
         
         // Give the auth context a moment to update
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Get the app domain (not dashboard domain)
+        const appDomain = window.location.origin;
+        console.log('Current domain:', appDomain);
         
         // Check if user has completed onboarding
         const { data: profile, error: profileError } = await supabase
@@ -53,9 +57,11 @@ export default function OAuthCallback() {
 
         // Navigate to appropriate page with full page reload to ensure clean state
         if (!profile || profile.onboarding_completed === false) {
-          window.location.href = '/onboarding';
+          console.log('Redirecting to onboarding...');
+          window.location.href = `${appDomain}/onboarding`;
         } else {
-          window.location.href = '/';
+          console.log('Redirecting to home...');
+          window.location.href = `${appDomain}/`;
         }
         
       } catch (err: any) {
@@ -71,7 +77,8 @@ export default function OAuthCallback() {
         
         // Redirect to auth page after delay
         setTimeout(() => {
-          window.location.href = '/auth';
+          const currentDomain = window.location.origin;
+          window.location.href = `${currentDomain}/auth`;
         }, 3000);
       } finally {
         setProcessing(false);
@@ -87,6 +94,7 @@ export default function OAuthCallback() {
         <>
           <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
           <p className="text-lg font-medium">Finishing sign-in…</p>
+          <p className="text-sm text-muted-foreground mt-2">Setting up your CROPGenius account...</p>
         </>
       ) : error ? (
         <>

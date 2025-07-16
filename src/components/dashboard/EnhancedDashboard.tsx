@@ -23,7 +23,7 @@ import AddFieldForm from '@/components/fields/AddFieldForm';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthContext as useAuth } from '@/providers/AuthProvider';
 import { useCredits } from '@/hooks/useCredits';
 import { useWeather } from '@/hooks/useWeather';
 import ErrorBoundary from '@/components/error/ErrorBoundary';

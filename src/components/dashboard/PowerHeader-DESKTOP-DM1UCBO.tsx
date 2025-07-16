@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthContext as useAuth } from '@/providers/AuthProvider';
 import { 
   User, CloudSun, CloudRain, Sun, CloudLightning, Snowflake, Circle, 
   TrendingUp, TrendingDown, ArrowUp, ArrowDown, Sparkles

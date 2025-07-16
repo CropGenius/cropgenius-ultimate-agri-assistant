@@ -1,5 +1,4 @@
 import { Routes, Route } from 'react-router-dom';
-import ProtectedRoute from './components/auth/ProtectedRoute';
 import AuthGuard from './components/AuthGuard';
 import { AuthPage } from './features/auth/components/AuthPage';
 import Index from './pages/Index';
@@ -30,24 +29,24 @@ export default function AppRoutes() {
       <Route path="/auth" element={<AuthGuard requireAuth={false}><AuthPage /></AuthGuard>} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
-      <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
-      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-      <Route path="/fields" element={<ProtectedRoute><Fields /></ProtectedRoute>} />
-      <Route path="/fields/:id" element={<ProtectedRoute><FieldDetail /></ProtectedRoute>} />
-      <Route path="/manage-fields" element={<ProtectedRoute><ManageFields /></ProtectedRoute>} />
-      <Route path="/weather" element={<ProtectedRoute><Weather /></ProtectedRoute>} />
-      <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
-      <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-      <Route path="/market" element={<ProtectedRoute><Market /></ProtectedRoute>} />
-      <Route path="/market-insights" element={<ProtectedRoute><MarketInsightsPage /></ProtectedRoute>} />
-      <Route path="/farm-planning" element={<ProtectedRoute><FarmPlanningPage /></ProtectedRoute>} />
-      <Route path="/mission-control" element={<ProtectedRoute><MissionControlPage /></ProtectedRoute>} />
-      <Route path="/yield-predictor" element={<ProtectedRoute><YieldPredictor /></ProtectedRoute>} />
-      <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
-      <Route path="/farms" element={<ProtectedRoute><Farms /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="/super" element={<ProtectedRoute><SuperDashboard /></ProtectedRoute>} />
-      <Route path="/backend" element={<ProtectedRoute><BackendDashboard /></ProtectedRoute>} />
+      <Route path="/onboarding" element={<AuthGuard><OnboardingPage /></AuthGuard>} />
+      <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
+      <Route path="/fields" element={<AuthGuard><Fields /></AuthGuard>} />
+      <Route path="/fields/:id" element={<AuthGuard><FieldDetail /></AuthGuard>} />
+      <Route path="/manage-fields" element={<AuthGuard><ManageFields /></AuthGuard>} />
+      <Route path="/weather" element={<AuthGuard><Weather /></AuthGuard>} />
+      <Route path="/scan" element={<AuthGuard><Scan /></AuthGuard>} />
+      <Route path="/chat" element={<AuthGuard><Chat /></AuthGuard>} />
+      <Route path="/market" element={<AuthGuard><Market /></AuthGuard>} />
+      <Route path="/market-insights" element={<AuthGuard><MarketInsightsPage /></AuthGuard>} />
+      <Route path="/farm-planning" element={<AuthGuard><FarmPlanningPage /></AuthGuard>} />
+      <Route path="/mission-control" element={<AuthGuard><MissionControlPage /></AuthGuard>} />
+      <Route path="/yield-predictor" element={<AuthGuard><YieldPredictor /></AuthGuard>} />
+      <Route path="/community" element={<AuthGuard><Community /></AuthGuard>} />
+      <Route path="/farms" element={<AuthGuard><Farms /></AuthGuard>} />
+      <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
+      <Route path="/super" element={<AuthGuard><SuperDashboard /></AuthGuard>} />
+      <Route path="/backend" element={<AuthGuard><BackendDashboard /></AuthGuard>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

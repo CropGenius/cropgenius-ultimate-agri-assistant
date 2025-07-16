@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Edit, Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthContext as useAuth } from '@/providers/AuthProvider';
 import { Farm } from '@/types/farm';
 import { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';

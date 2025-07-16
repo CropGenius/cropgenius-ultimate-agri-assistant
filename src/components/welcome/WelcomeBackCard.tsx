@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useMemoryStore } from '@/hooks/useMemoryStore';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthContext as useAuth } from '@/providers/AuthProvider';
 import { toast } from 'sonner';
 import { Bot, RefreshCw, Droplets, Calendar, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
