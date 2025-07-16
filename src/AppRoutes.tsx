@@ -28,11 +28,11 @@ import { BackendDashboard } from './pages/BackendDashboard';
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Auth routes - NO mobile layout */}
+      {/* Auth routes - NO mobile layout - MUST be first */}
+      <Route path="/auth" element={<Auth />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
-      <Route path="/auth" element={<Auth />} />
       
       {/* Dashboard routes - WITH mobile layout */}
       <Route path="/" element={

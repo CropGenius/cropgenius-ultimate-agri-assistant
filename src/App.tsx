@@ -7,7 +7,7 @@ import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BrowserRouter } from 'react-router-dom';
-import { MobileLayout } from './components/mobile/MobileLayout';
+
 import { setupOfflinePersistence, OfflineManager } from './lib/offlineStorage';
 import { AuthProvider } from './providers/AuthProvider';
 import AppRoutes from './AppRoutes';
