@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 interface AuthContextType extends AuthState {
   signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,6 +37,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
+  const handleRefreshSession = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        throw error;
+      }
+      console.log('Session refreshed successfully');
+    } catch (error: any) {
+      console.error('Error refreshing session:', error);
+      toast.error('Failed to refresh session');
+    }
+  }, []);
+
   // Provide a loading state while initial auth check happens
   if (authState.isLoading) {
     return (
@@ -46,7 +60,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   return (
-    <AuthContext.Provider value={{ ...authState, signOut: handleSignOut }}>
+    <AuthContext.Provider value={{ 
+      ...authState, 
+      signOut: handleSignOut,
+      refreshSession: handleRefreshSession 
+    }}>
       {children}
     </AuthContext.Provider>
   );
