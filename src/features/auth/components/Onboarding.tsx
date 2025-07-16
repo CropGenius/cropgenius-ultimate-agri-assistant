@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuthContext } from '@/providers/AuthProvider';
 import { supabase } from '@/services/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
 const Onboarding = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const navigate = useNavigate();
   const [farmName, setFarmName] = useState('');
   const [loading, setLoading] = useState(false);
