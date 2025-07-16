@@ -119,7 +119,7 @@ export function OnboardingWizard() {
       if (success) {
         // Clear state and redirect on success
         clearOnboardingState();
-        navigate('/dashboard', { replace: true });
+        navigate('/farms', { replace: true });
       }
     } catch (error) {
       console.error('Error in onboarding submission:', error);

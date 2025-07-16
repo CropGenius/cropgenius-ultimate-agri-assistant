@@ -18,8 +18,8 @@ export const useOnboarding = () => {
       
       if (result.success) {
         toast.success('Onboarding completed successfully!');
-        // Redirect to dashboard after a short delay
-        setTimeout(() => navigate('/dashboard'), 1500);
+        // Redirect to farms page after a short delay
+        setTimeout(() => navigate('/farms'), 1500);
         return true;
       }
       

@@ -242,9 +242,9 @@ export function OnboardingWizard() {
         duration: 3000,
       });
       
-      // Navigate to dashboard after a short delay to show success state
+      // Navigate to farms page after a short delay to show success state
       setTimeout(() => {
-        navigate('/dashboard', { replace: true });
+        navigate('/farms', { replace: true });
       }, 1500);
       
       return true;
@@ -314,11 +314,11 @@ export function OnboardingWizard() {
               Try Again
             </Button>
             <Button 
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/farms')}
               variant="ghost"
               className="text-gray-600"
             >
-              Go to Dashboard
+              Go to Farms
             </Button>
           </div>
         </div>
