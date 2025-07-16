@@ -12,5 +12,13 @@ export const simpleAuth = {
   },
   getUser: () => {
     return supabase.auth.getUser();
+  },
+  signInWithOAuth: async (params: any) => {
+    return await supabase.auth.signInWithOAuth({
+      provider: params.provider,
+      options: {
+        redirectTo: `${window.location.origin}/oauth/callback`
+      }
+    });
   }
 };

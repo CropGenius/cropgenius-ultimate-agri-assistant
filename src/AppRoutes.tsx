@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import AuthPage from './pages/AuthPage';
+import AuthGuard from './components/AuthGuard';
+import { AuthPage } from './features/auth/components/AuthPage';
 import Index from './pages/Index';
 import Fields from './pages/Fields';
 import Weather from './pages/Weather';
@@ -26,7 +27,7 @@ import { BackendDashboard } from './pages/BackendDashboard';
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/auth" element={<AuthPage />} />
+      <Route path="/auth" element={<AuthGuard requireAuth={false}><AuthPage /></AuthGuard>} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />

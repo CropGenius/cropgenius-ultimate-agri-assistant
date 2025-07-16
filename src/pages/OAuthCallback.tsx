@@ -12,31 +12,55 @@ export default function OAuthCallback() {
   useEffect(() => {
     const finalizeOAuth = async () => {
       try {
-        // Ensure PKCE flow completes and session is available
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-
-        if (!session || !session.user) {
-          throw new Error('No active session found');
+        // Handle OAuth callback with proper error handling
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session error:', error);
+          throw new Error('Failed to establish session');
         }
 
-        // Fetch profile row
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('onboarding_completed')
-          .eq('id', session.user.id)
-          .single();
+        // Wait for session to be established
+        let retries = 0;
+        const maxRetries = 10;
+        
+        while (retries < maxRetries) {
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError) {
+            console.error('Session retry error:', sessionError);
+            throw sessionError;
+          }
 
-        if (profileError && profileError.code !== 'PGRST116') {
-          throw profileError;
+          if (session && session.user) {
+            console.log('Session established successfully');
+            
+            // Fetch profile row
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('onboarding_completed')
+              .eq('id', session.user.id)
+              .single();
+
+            if (profileError && profileError.code !== 'PGRST116') {
+              throw profileError;
+            }
+
+            // Determine destination
+            if (!profile || profile.onboarding_completed === false) {
+              navigate('/onboarding', { replace: true });
+            } else {
+              navigate('/farms', { replace: true });
+            }
+            return;
+          }
+
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 500));
+          retries++;
         }
 
-        // Determine destination
-        if (!profile || profile.onboarding_completed === false) {
-          navigate('/onboarding', { replace: true });
-        } else {
-          navigate('/farms', { replace: true });
-        }
+        throw new Error('Session establishment timed out');
       } catch (err: any) {
         console.error('OAuth callback error', err);
         setError(err.message || 'Authentication failed');

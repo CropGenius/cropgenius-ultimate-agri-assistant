@@ -43,12 +43,10 @@ export const LoginPage = ({ onToggle }: LoginPageProps) => {
     try {
       await simpleAuth.signInWithOAuth({
         provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-        },
       });
     } catch (error) {
       console.error('Google sign in error:', error);
+      setError('Failed to sign in with Google. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -268,7 +268,10 @@ export const useAuth = (): AuthState & AuthActions => {
                 profileError: null,
               }));
               cacheProfile(null);
-              toast.info('You have been signed out');
+              // Only show toast if not in OAuth flow
+              if (!window.location.pathname.includes('/oauth/callback')) {
+                toast.info('You have been signed out');
+              }
             }
             break;
 
