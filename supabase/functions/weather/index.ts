@@ -1,90 +1,63 @@
-// deno-lint-ignore-file no-explicit-any
-// Supabase Edge Function: /weather?lat=...&lon=...
-// Fetches current temperature and weather code from Open-Meteo API (free, no key required)
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
-import * as Sentry from "https://deno.land/x/sentry/index.mjs";
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
-// Initialize Sentry if DSN is available
-const sentryDsn = Deno.env.get("SENTRY_DSN");
-if (sentryDsn) {
-  Sentry.init({ dsn: sentryDsn });
-}
-
-interface OpenMeteoResponse {
-  current_weather: {
-    temperature: number;
-    weathercode: number;
-  };
-}
-
-function getConditionSymbol(code: number): string {
-  // minimal mapping for demonstration
-  const map: Record<number, string> = {
-    0: "Clear",
-    1: "Mainly Clear",
-    2: "Partly Cloudy",
-    3: "Overcast",
-    45: "Fog",
-    48: "Depositing Rime Fog",
-    51: "Light Drizzle",
-    61: "Rain",
-    71: "Snow",
-    95: "Thunderstorm",
-  };
-  return map[code] ?? "Unknown";
-}
-
-serve(async (req: Request) => {
-  // Handle CORS preflight requests
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      },
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
-  const url = new URL(req.url);
-  const lat = url.searchParams.get("lat");
-  const lon = url.searchParams.get("lon");
-  if (!lat || !lon) {
-    return new Response(JSON.stringify({ error: "lat and lon required" }), { 
-      status: 400,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      }
-    });
-  }
   try {
-    const api = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
-    const resp = await fetch(api);
-    const json = (await resp.json()) as OpenMeteoResponse;
-    const { temperature, weathercode } = json.current_weather;
-    return new Response(
-      JSON.stringify({ tempC: temperature, condition: getConditionSymbol(weathercode) }),
-      {
-        headers: { 
-          "Content-Type": "application/json",
-          'Access-Control-Allow-Origin': '*',
-        },
-      },
-    );
-  } catch (e) {
-    console.error("Error in weather function:", e);
-    if (sentryDsn) {
-      Sentry.captureException(e);
+    const url = new URL(req.url);
+    const lat = parseFloat(url.searchParams.get('lat') || '0');
+    const lng = parseFloat(url.searchParams.get('lng') || '0');
+
+    if (!lat || !lng) {
+      return new Response(JSON.stringify({ error: 'Missing lat/lng parameters' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
-    return new Response(JSON.stringify({ error: "fetch_failed", message: String(e) }), { 
+
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,precipitation&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto&forecast_days=7`
+    );
+    
+    const data = await response.json();
+    
+    const result = {
+      current: {
+        temperature: Math.round(data.current_weather.temperature),
+        humidity: data.hourly.relative_humidity_2m?.[0] || 50,
+        rainfall: data.hourly.precipitation?.[0] || 0,
+        condition: data.current_weather.weathercode < 3 ? 'Clear' : 'Cloudy',
+        timestamp: new Date().toISOString()
+      },
+      forecast: data.daily.time.slice(1, 6).map((date: string, i: number) => ({
+        date,
+        temperature: {
+          min: Math.round(data.daily.temperature_2m_min[i + 1]),
+          max: Math.round(data.daily.temperature_2m_max[i + 1])
+        },
+        rainfall: data.daily.precipitation_sum[i + 1] || 0
+      })),
+      agricultural_advice: [
+        "Monitor crops for optimal growing conditions",
+        "Adjust irrigation based on rainfall predictions"
+      ]
+    };
+
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });
