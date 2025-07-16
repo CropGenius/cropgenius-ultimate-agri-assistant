@@ -9,6 +9,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { BrowserRouter } from 'react-router-dom';
 import { MobileLayout } from './components/mobile/MobileLayout';
 import { setupOfflinePersistence, OfflineManager } from './lib/offlineStorage';
+import { AuthProvider } from './providers/AuthProvider';
 import AppRoutes from './AppRoutes';
 import './App.css';
 
@@ -54,11 +55,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <div className="App min-h-screen overflow-hidden">
-          <MobileLayout>
-            <AppRoutes />
-          </MobileLayout>
-        </div>
+        <AuthProvider>
+          <div className="App min-h-screen overflow-hidden">
+            <MobileLayout>
+              <AppRoutes />
+            </MobileLayout>
+          </div>
+        </AuthProvider>
       </BrowserRouter>
       {process.env.NODE_ENV === 'development' && (
         <ReactQueryDevtools initialIsOpen={false} />
