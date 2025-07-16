@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import AuthGuard from './components/AuthGuard';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { MobileLayout } from './components/mobile/MobileLayout';
 import Auth from './pages/Auth';
 import Index from './pages/Index';
 import Fields from './pages/Fields';
@@ -27,27 +28,98 @@ import { BackendDashboard } from './pages/BackendDashboard';
 export default function AppRoutes() {
   return (
     <Routes>
+      {/* Auth routes - NO mobile layout */}
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="/auth" element={<Auth />} />
-      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-      <Route path="/fields" element={<ProtectedRoute><Fields /></ProtectedRoute>} />
-      <Route path="/fields/:id" element={<ProtectedRoute><FieldDetail /></ProtectedRoute>} />
-      <Route path="/manage-fields" element={<ProtectedRoute><ManageFields /></ProtectedRoute>} />
-      <Route path="/weather" element={<ProtectedRoute><Weather /></ProtectedRoute>} />
-      <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
-      <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-      <Route path="/market" element={<ProtectedRoute><Market /></ProtectedRoute>} />
-      <Route path="/market-insights" element={<ProtectedRoute><MarketInsightsPage /></ProtectedRoute>} />
-      <Route path="/farm-planning" element={<ProtectedRoute><FarmPlanningPage /></ProtectedRoute>} />
-      <Route path="/mission-control" element={<ProtectedRoute><MissionControlPage /></ProtectedRoute>} />
-      <Route path="/yield-predictor" element={<ProtectedRoute><YieldPredictor /></ProtectedRoute>} />
-      <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
-      <Route path="/farms" element={<ProtectedRoute><Farms /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="/super" element={<ProtectedRoute><SuperDashboard /></ProtectedRoute>} />
-      <Route path="/backend" element={<ProtectedRoute><BackendDashboard /></ProtectedRoute>} />
+      
+      {/* Dashboard routes - WITH mobile layout */}
+      <Route path="/" element={
+        <MobileLayout>
+          <ProtectedRoute><Index /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/fields" element={
+        <MobileLayout>
+          <ProtectedRoute><Fields /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/fields/:id" element={
+        <MobileLayout>
+          <ProtectedRoute><FieldDetail /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/manage-fields" element={
+        <MobileLayout>
+          <ProtectedRoute><ManageFields /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/weather" element={
+        <MobileLayout>
+          <ProtectedRoute><Weather /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/scan" element={
+        <MobileLayout>
+          <ProtectedRoute><Scan /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/chat" element={
+        <MobileLayout>
+          <ProtectedRoute><Chat /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/market" element={
+        <MobileLayout>
+          <ProtectedRoute><Market /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/market-insights" element={
+        <MobileLayout>
+          <ProtectedRoute><MarketInsightsPage /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/farm-planning" element={
+        <MobileLayout>
+          <ProtectedRoute><FarmPlanningPage /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/mission-control" element={
+        <MobileLayout>
+          <ProtectedRoute><MissionControlPage /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/yield-predictor" element={
+        <MobileLayout>
+          <ProtectedRoute><YieldPredictor /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/community" element={
+        <MobileLayout>
+          <ProtectedRoute><Community /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/farms" element={
+        <MobileLayout>
+          <ProtectedRoute><Farms /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/settings" element={
+        <MobileLayout>
+          <ProtectedRoute><Settings /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/super" element={
+        <MobileLayout>
+          <ProtectedRoute><SuperDashboard /></ProtectedRoute>
+        </MobileLayout>
+      } />
+      <Route path="/backend" element={
+        <MobileLayout>
+          <ProtectedRoute><BackendDashboard /></ProtectedRoute>
+        </MobileLayout>
+      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -588,6 +588,18 @@ export const useAuth = (): AuthState & AuthActions => {
     setState(prev => ({ ...prev, error: null, profileError: null }));
   }, []);
 
+  // Debug logging for authentication state
+  useEffect(() => {
+    console.log('🔍 [AUTH DEBUG] State changed:', {
+      hasUser: !!state.user,
+      userEmail: state.user?.email,
+      isLoading: state.isLoading,
+      isAuthenticated: !!state.user,
+      session: !!state.session,
+      profile: !!state.profile
+    });
+  }, [state.user, state.session, state.profile, state.isLoading]);
+
   return {
     ...state,
     ...derivedState,

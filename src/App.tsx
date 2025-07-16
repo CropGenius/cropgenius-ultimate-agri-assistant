@@ -57,9 +57,7 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <div className="App min-h-screen overflow-hidden">
-            <MobileLayout>
-              <AppRoutes />
-            </MobileLayout>
+            <AppRoutes />
           </div>
         </AuthProvider>
       </BrowserRouter>
