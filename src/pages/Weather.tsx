@@ -30,7 +30,7 @@ import DisasterAlerts from "@/components/weather/DisasterAlerts";
 import SeasonalPredictions from "@/components/weather/SeasonalPredictions";
 import MarketImpact from "@/components/weather/MarketImpact";
 import FarmActionsList from "@/components/weather/FarmActionsList";
-import Layout from "@/components/Layout";
+
 
 export default function Weather() {
   const { toast } = useToast();
@@ -121,21 +121,18 @@ export default function Weather() {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="w-full h-[80vh] flex items-center justify-center">
+      <div className="w-full h-[80vh] flex items-center justify-center">
           <div className="text-center">
             <RefreshCw className="h-12 w-12 animate-spin text-primary mx-auto" />
             <h2 className="mt-4 text-2xl font-semibold">Loading AI Weather Intelligence</h2>
             <p className="text-muted-foreground">Analyzing hyperlocal conditions for your farm...</p>
           </div>
         </div>
-      </Layout>
     );
   }
 
   return (
-    <Layout>
-      <div className="container py-6 space-y-8 max-w-7xl">
+    <div className="container py-6 space-y-8 max-w-7xl">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">AI Weather Intelligence</h1>
@@ -407,7 +404,6 @@ export default function Weather() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </Layout>
+    </div>
   );
 }

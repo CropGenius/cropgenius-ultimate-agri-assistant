@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { supabase } from "@/services/supabaseClient";
-import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, MapPin } from "lucide-react";
@@ -83,8 +82,7 @@ const Fields = () => {
   };
 
   return (
-    <Layout>
-      <div className="container py-6">
+    <div className="container py-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Your Fields</h1>
           <AddFieldWizardButton 
@@ -178,8 +176,7 @@ const Fields = () => {
             </motion.div>
           </motion.div>
         )}
-      </div>
-    </Layout>
+    </div>
   );
 };
 

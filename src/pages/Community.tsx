@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import Layout from "@/components/Layout";
 import { 
   Card, 
   CardContent, 
@@ -538,8 +537,7 @@ const Community = () => {
   };
 
   return (
-    <Layout>
-      <div className="p-5 pb-20 animate-fade-in">
+    <div className="p-5 pb-20 animate-fade-in">
         {/* Header */}
         <div className="mb-5">
           <div className="flex items-center justify-between">
@@ -1171,8 +1169,7 @@ const Community = () => {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
-    </Layout>
+    </div>
   );
 };
 

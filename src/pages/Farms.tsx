@@ -1,5 +1,4 @@
 import React from 'react';
-import Layout from '@/components/Layout';
 import { FarmsList } from '@/components/farms/FarmsList';
 import { Farm } from '@/types/farm';
 
@@ -14,13 +13,11 @@ export default function Farms() {
   };
 
   return (
-    <Layout>
-      <div className="container py-6">
-        <FarmsList 
-          onFarmSelect={handleFarmSelect}
-          selectedFarmId={localStorage.getItem('selectedFarmId') || undefined}
-        />
-      </div>
-    </Layout>
+    <div className="container py-6">
+      <FarmsList 
+        onFarmSelect={handleFarmSelect}
+        selectedFarmId={localStorage.getItem('selectedFarmId') || undefined}
+      />
+    </div>
   );
 }

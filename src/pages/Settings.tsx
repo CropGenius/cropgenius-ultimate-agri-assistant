@@ -1,5 +1,4 @@
 import React from 'react';
-import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Settings as SettingsIcon, User, Bell, Shield, HelpCircle, LogOut } from 'lucide-react';
@@ -13,8 +12,7 @@ const Settings = () => {
   ];
 
   return (
-    <Layout>
-      <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gray-500 rounded-lg">
             <SettingsIcon className="w-6 h-6 text-white" />
@@ -62,8 +60,7 @@ const Settings = () => {
             </Button>
           </CardContent>
         </Card>
-      </div>
-    </Layout>
+    </div>
   );
 };
 

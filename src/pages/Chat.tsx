@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Layout from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -124,8 +123,7 @@ const Chat = () => {
   };
 
   return (
-    <Layout>
-      <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen">
         {/* Header */}
         <div className="p-4 border-b border-white/20">
           <div className="flex items-center gap-3">
@@ -251,8 +249,7 @@ const Chat = () => {
             </Button>
           </div>
         </div>
-      </div>
-    </Layout>
+    </div>
   );
 };
 

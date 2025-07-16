@@ -1,5 +1,4 @@
 import React from 'react';
-import Layout from '@/components/Layout';
 import { MarketIntelligenceDashboard } from '@/components/market/MarketIntelligenceDashboard';
 import { Button } from '@/components/ui/button';
 import { BarChart3, TestTube } from 'lucide-react';
@@ -128,8 +127,7 @@ const Market = () => {
   };
 
   return (
-    <Layout>
-      <div className="p-4 space-y-4 pb-20">
+    <div className="p-4 space-y-4 pb-20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-500 rounded-lg">
@@ -166,8 +164,7 @@ const Market = () => {
 
         {/* Real Market Intelligence Dashboard */}
         <MarketIntelligenceDashboard />
-      </div>
-    </Layout>
+    </div>
   );
 };
 
