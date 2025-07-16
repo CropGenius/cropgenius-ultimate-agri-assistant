@@ -237,7 +237,7 @@ const ScanPage = () => {
                     <CropScanner 
                       onScanComplete={handleScanComplete} 
                       cropType={field?.crop_type || 'Unknown'}
-                      location={field?.location}
+                      location={field?.location || { lat: -1.2921, lng: 36.8219, country: 'Kenya' }}
                     />
                   </CardContent>
                 </Card>
