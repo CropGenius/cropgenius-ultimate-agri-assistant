@@ -57,7 +57,8 @@ const validateEnvironment = (): EnvironmentConfig => {
   };
 
   if (!config.supabase.url || !config.supabase.anonKey) {
-    throw new Error('Supabase configuration is required');
+    console.warn('⚠️ Supabase configuration not found. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment variables.');
+    console.log('📝 To configure Supabase: Go to Project Settings > Environment Variables in Lovable');
   }
 
   return config;
