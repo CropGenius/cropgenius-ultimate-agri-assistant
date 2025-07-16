@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Send, User, Bot, X, Maximize2, Minimize2, MessageSquare } from 'lucide-react';
 
 type Message = {
@@ -59,26 +60,38 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({
     
     // Add user message to chat
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = inputValue;
     setInputValue('');
     setIsLoading(true);
     
     try {
-      // Simulate AI response (replace with actual API call)
-      setTimeout(() => {
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: `I received your message: "${inputValue}". This is a simulated response. In a real implementation, this would be connected to an AI service.`,
-          sender: 'ai',
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, aiMessage]);
-        setIsLoading(false);
-      }, 1000);
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: {
+          message: currentInput,
+          context: {},
+          conversationId: null
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: data.response,
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, aiMessage]);
+      setIsLoading(false);
+      
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessage: Message = {
         id: `error-${Date.now()}`,
-        content: 'Sorry, there was an error processing your request. Please try again later.',
+        content: 'I apologize, but I encountered an error processing your request. Please ensure you have a valid OpenAI API key configured and try again.',
         sender: 'ai',
         timestamp: new Date(),
       };

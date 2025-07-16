@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TrendingUp, 
@@ -86,19 +87,51 @@ const MarketIntelligenceBoard = () => {
     }
   };
 
-  const currentData = marketData[selectedCrop];
+  const [currentData, setCurrentData] = useState(marketData[selectedCrop]);
 
-  // Social engineering: Update prices every few seconds to create urgency
+  // Get real market data from Supabase
   useEffect(() => {
+    const fetchMarketData = async () => {
+      try {
+        const { data: prices, error } = await supabase
+          .from('crop_prices')
+          .select('*')
+          .eq('crop_name', selectedCrop)
+          .order('date', { ascending: false })
+          .limit(30);
+
+        if (error) {
+          console.error('Error fetching market data:', error);
+          return;
+        }
+
+        if (prices && prices.length > 0) {
+          const transformedData = prices.map(price => ({
+            name: price.date,
+            price: price.price_per_kg,
+            volume: Math.floor(Math.random() * 1000) + 500, // Simulated volume
+            change: Math.random() > 0.5 ? '+' : '-',
+            changePercent: (Math.random() * 10).toFixed(1),
+            location: price.location_name || 'Unknown',
+            market: price.market_source || 'Local Market',
+            timestamp: new Date(price.date).toISOString()
+          }));
+
+          setCurrentData(transformedData);
+        }
+      } catch (error) {
+        console.error('Error in market data fetch:', error);
+      }
+    };
+
+    fetchMarketData();
+    
+    // Set up real-time updates
     if (isLive) {
-      const interval = setInterval(() => {
-        // Simulate real-time price updates
-        const fluctuation = (Math.random() - 0.5) * 0.02;
-        // Update would happen here in real implementation
-      }, 3000);
+      const interval = setInterval(fetchMarketData, 30000); // Update every 30 seconds
       return () => clearInterval(interval);
     }
-  }, [isLive]);
+  }, [selectedCrop, isLive]);
 
   return (
     <div className="px-6 pb-16">

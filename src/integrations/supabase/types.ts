@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_conversations: {
+        Row: {
+          context: Json | null
+          created_at: string | null
+          id: string
+          messages: Json
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          messages?: Json
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          messages?: Json
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ai_interaction_logs: {
         Row: {
           created_at: string | null
@@ -42,6 +69,42 @@ export type Database = {
           model?: string | null
           prompt?: string
           response?: string
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ai_service_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          request_data: Json
+          response_data: Json | null
+          service_type: string
+          success: boolean | null
+          tokens_used: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          request_data: Json
+          response_data?: Json | null
+          service_type: string
+          success?: boolean | null
+          tokens_used?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          request_data?: Json
+          response_data?: Json | null
+          service_type?: string
+          success?: boolean | null
           tokens_used?: number | null
           user_id?: string | null
         }
@@ -541,6 +604,59 @@ export type Database = {
         }
         Relationships: []
       }
+      scans: {
+        Row: {
+          confidence: number
+          created_at: string | null
+          crop: string
+          disease: string
+          economic_impact: number | null
+          field_id: string | null
+          id: string
+          image_url: string
+          severity: number
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          confidence: number
+          created_at?: string | null
+          crop: string
+          disease: string
+          economic_impact?: number | null
+          field_id?: string | null
+          id?: string
+          image_url: string
+          severity: number
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          confidence?: number
+          created_at?: string | null
+          crop?: string
+          disease?: string
+          economic_impact?: number | null
+          field_id?: string | null
+          id?: string
+          image_url?: string
+          severity?: number
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scans_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spatial_ref_sys: {
         Row: {
           auth_name: string | null
@@ -737,6 +853,56 @@ export type Database = {
           wind_speed?: number | null
         }
         Relationships: []
+      }
+      yield_predictions: {
+        Row: {
+          confidence_score: number
+          created_at: string | null
+          crop_type: string
+          factors: Json
+          field_id: string | null
+          id: string
+          predicted_revenue: number
+          predicted_yield: number
+          soil_data: Json | null
+          user_id: string | null
+          weather_data: Json | null
+        }
+        Insert: {
+          confidence_score: number
+          created_at?: string | null
+          crop_type: string
+          factors: Json
+          field_id?: string | null
+          id?: string
+          predicted_revenue: number
+          predicted_yield: number
+          soil_data?: Json | null
+          user_id?: string | null
+          weather_data?: Json | null
+        }
+        Update: {
+          confidence_score?: number
+          created_at?: string | null
+          crop_type?: string
+          factors?: Json
+          field_id?: string | null
+          id?: string
+          predicted_revenue?: number
+          predicted_yield?: number
+          soil_data?: Json | null
+          user_id?: string | null
+          weather_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yield_predictions_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
