@@ -19,7 +19,7 @@ import {
   CropScanInput,
   ProcessedCropScanResult
 } from '../agents/CropScanAgent';
-import { useAuth } from '../context/AuthContext'; // Import useAuth
+import { useAuthContext } from '@/providers/AuthProvider'; // Import useAuth
 import {
   generateYieldPrediction as generateYieldPredictionInternal,
   saveYieldPrediction as saveYieldPredictionInternal,
@@ -74,7 +74,7 @@ import {
 // };
 
 export const useAIAgentHub = () => {
-  const { user, farmId: currentFarmId, session } = useAuth(); // Get user and farmId from AuthContext
+  const { user, session } = useAuthContext(); // Get user from AuthContext
   // --- State for AI Weather Agent ---
   const [currentWeather, setCurrentWeather] = useState<ProcessedCurrentWeather | null>(null);
   const [weatherForecast, setWeatherForecast] = useState<ProcessedForecast | null>(null);
@@ -112,7 +112,7 @@ export const useAIAgentHub = () => {
     setIsLoadingWeather(true);
     setWeatherError(null);
     try {
-      const data = await getCurrentWeatherInternal(latitude, longitude, farmId || currentFarmId, saveToDb, user?.id); // Pass userId
+      const data = await getCurrentWeatherInternal(latitude, longitude, farmId, saveToDb, user?.id); // Pass userId
       setCurrentWeather(data);
       return data;
     } catch (error) {
@@ -133,7 +133,7 @@ export const useAIAgentHub = () => {
     setIsLoadingWeather(true);
     setWeatherError(null);
     try {
-      const data = await getWeatherForecastInternal(latitude, longitude, farmId || currentFarmId, saveToDb, user?.id); // Pass userId
+      const data = await getWeatherForecastInternal(latitude, longitude, farmId, saveToDb, user?.id); // Pass userId
       setWeatherForecast(data);
       return data;
     } catch (error) {
@@ -150,7 +150,7 @@ export const useAIAgentHub = () => {
     setIsScanningCrop(true);
     setCropScanError(null);
     try {
-      const result = await performCropScanInternal({ ...scanInput, userId: user?.id, farmId: scanInput.farmId || currentFarmId }); // Pass userId and farmId
+      const result = await performCropScanInternal({ ...scanInput, userId: user?.id, farmId: scanInput.farmId }); // Pass userId and farmId
       setCropScanResult(result);
       return result;
     } catch (error) {
@@ -206,7 +206,7 @@ export const useAIAgentHub = () => {
     setMarketDataError(null);
     try {
       // Ensure farmId from context is used if not provided in input, and userId from context
-      const farmIdToUse = input.farmId || currentFarmId;
+      const farmIdToUse = input.farmId;
       const data = await fetchMarketListingsInternal({ 
         ...input, 
         userId: user?.id, 
@@ -221,7 +221,7 @@ export const useAIAgentHub = () => {
     } finally {
       setIsLoadingMarketData(false);
     }
-  }, [user, currentFarmId]);
+  }, [user]);
 
   // --- AI Farm Plan Agent methods ---
   const getFarmPlan = useCallback(async (
@@ -229,14 +229,14 @@ export const useAIAgentHub = () => {
   ): Promise<{ plan: FarmPlanOutput; inputUsed: FarmPlanInput } | undefined> => {
     setIsLoadingFarmPlan(true);
     setFarmPlanError(null);
-    if (!user || (!input.farmId && !currentFarmId)) {
+    if (!user || !input.farmId) {
       const error = new Error('User and Farm ID are required to generate a farm plan.');
       setFarmPlanError(error);
       setIsLoadingFarmPlan(false);
       throw error;
     }
     try {
-      const farmIdToUse = input.farmId || currentFarmId!;
+      const farmIdToUse = input.farmId!;
       
       // Construct full input for the agent, including context from other agents
       const fullInput: FarmPlanInput = {
@@ -262,7 +262,7 @@ export const useAIAgentHub = () => {
     } finally {
       setIsLoadingFarmPlan(false);
     }
-  }, [user, currentFarmId, currentWeather, weatherForecast, marketData]);
+  }, [user, currentWeather, weatherForecast, marketData]);
 
   const saveFarmPlan = useCallback(async (planToSave: FarmPlanOutput, inputForSave: FarmPlanInput): Promise<void> => {
     // Ensure userId and farmId are present in inputForSave, typically passed from the context where getFarmPlan was called
@@ -284,7 +284,7 @@ export const useAIAgentHub = () => {
     setIsPredictingYield(true);
     setYieldPredictionError(null);
     try {
-      const prediction = await generateYieldPredictionInternal({ ...input, userId: user?.id, farmId: input.farmId || currentFarmId }); // Pass userId and farmId
+      const prediction = await generateYieldPredictionInternal({ ...input, userId: user?.id, farmId: input.farmId }); // Pass userId and farmId
       setYieldPrediction(prediction);
       // Optionally, immediately save or let the UI decide
       // if (input.fieldId && prediction) {
@@ -309,7 +309,7 @@ export const useAIAgentHub = () => {
       throw new Error('Field ID is required to save yield prediction.');
     }
     try {
-      const savedPrediction = await saveYieldPredictionInternal({ ...predictionData, userId: user?.id, farmId: predictionData.farmId || currentFarmId }, predictionResult);
+      const savedPrediction = await saveYieldPredictionInternal({ ...predictionData, userId: user?.id, farmId: predictionData.farmId }, predictionResult);
       // Add to historical predictions and sort, ensuring no duplicates by id if re-saving
       setHistoricalYieldPredictions(prev => 
         [savedPrediction, ...prev.filter(p => p.id !== savedPrediction.id)]
