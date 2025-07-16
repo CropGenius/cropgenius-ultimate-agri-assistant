@@ -12,60 +12,67 @@ export default function OAuthCallback() {
   useEffect(() => {
     const finalizeOAuth = async () => {
       try {
-        // Handle OAuth callback with proper error handling
-        const { data, error } = await supabase.auth.getSession();
+        // Check if we have an authorization code in the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (!code) {
+          throw new Error('No authorization code found in URL');
+        }
+
+        console.log('Exchanging authorization code for session');
+        
+        // Exchange the authorization code for a session
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         
         if (error) {
-          console.error('Session error:', error);
-          throw new Error('Failed to establish session');
+          console.error('Code exchange error:', error);
+          throw new Error(`Failed to exchange code for session: ${error.message}`);
         }
 
-        // Wait for session to be established
-        let retries = 0;
-        const maxRetries = 10;
+        if (!data.session || !data.user) {
+          throw new Error('No session returned from code exchange');
+        }
+
+        console.log('OAuth session established successfully');
         
-        while (retries < maxRetries) {
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-          
-          if (sessionError) {
-            console.error('Session retry error:', sessionError);
-            throw sessionError;
-          }
+        // Give the auth context a moment to update
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Check if user has completed onboarding
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('id', data.user.id)
+          .single();
 
-          if (session && session.user) {
-            console.log('Session established successfully');
-            
-            // Fetch profile row
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('onboarding_completed')
-              .eq('id', session.user.id)
-              .single();
-
-            if (profileError && profileError.code !== 'PGRST116') {
-              throw profileError;
-            }
-
-            // Determine destination
-            if (!profile || profile.onboarding_completed === false) {
-              navigate('/onboarding', { replace: true });
-            } else {
-              navigate('/farms', { replace: true });
-            }
-            return;
-          }
-
-          // Wait before retrying
-          await new Promise(resolve => setTimeout(resolve, 500));
-          retries++;
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Profile fetch error:', profileError);
+          // Continue anyway - profile might be created by trigger
         }
 
-        throw new Error('Session establishment timed out');
+        // Navigate to appropriate page with full page reload to ensure clean state
+        if (!profile || profile.onboarding_completed === false) {
+          window.location.href = '/onboarding';
+        } else {
+          window.location.href = '/';
+        }
+        
       } catch (err: any) {
-        console.error('OAuth callback error', err);
+        console.error('OAuth callback error:', err);
         setError(err.message || 'Authentication failed');
-        toast.error('Authentication failed', { description: err.message });
-        setTimeout(() => navigate('/auth', { replace: true }), 3000);
+        
+        // Clean up any partial auth state
+        try {
+          await supabase.auth.signOut();
+        } catch (signOutError) {
+          console.error('Sign out error:', signOutError);
+        }
+        
+        // Redirect to auth page after delay
+        setTimeout(() => {
+          window.location.href = '/auth';
+        }, 3000);
       } finally {
         setProcessing(false);
       }
