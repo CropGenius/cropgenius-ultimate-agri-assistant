@@ -36,89 +36,123 @@ export default function AppRoutes() {
       
       {/* Dashboard routes - WITH mobile layout */}
       <Route path="/" element={
-        <MobileLayout>
-          <ProtectedRoute><Index /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <Index />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/fields" element={
-        <MobileLayout>
-          <ProtectedRoute><Fields /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <Fields />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/fields/:id" element={
-        <MobileLayout>
-          <ProtectedRoute><FieldDetail /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <FieldDetail />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/manage-fields" element={
-        <MobileLayout>
-          <ProtectedRoute><ManageFields /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <ManageFields />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/weather" element={
-        <MobileLayout>
-          <ProtectedRoute><Weather /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <Weather />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/scan" element={
-        <MobileLayout>
-          <ProtectedRoute><Scan /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <Scan />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/chat" element={
-        <MobileLayout>
-          <ProtectedRoute><Chat /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <Chat />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/market" element={
-        <MobileLayout>
-          <ProtectedRoute><Market /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <Market />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/market-insights" element={
-        <MobileLayout>
-          <ProtectedRoute><MarketInsightsPage /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <MarketInsightsPage />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/farm-planning" element={
-        <MobileLayout>
-          <ProtectedRoute><FarmPlanningPage /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <FarmPlanningPage />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/mission-control" element={
-        <MobileLayout>
-          <ProtectedRoute><MissionControlPage /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <MissionControlPage />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/yield-predictor" element={
-        <MobileLayout>
-          <ProtectedRoute><YieldPredictor /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <YieldPredictor />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/community" element={
-        <MobileLayout>
-          <ProtectedRoute><Community /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <Community />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/farms" element={
-        <MobileLayout>
-          <ProtectedRoute><Farms /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <Farms />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/settings" element={
-        <MobileLayout>
-          <ProtectedRoute><Settings /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <Settings />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/super" element={
-        <MobileLayout>
-          <ProtectedRoute><SuperDashboard /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <SuperDashboard />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="/backend" element={
-        <MobileLayout>
-          <ProtectedRoute><BackendDashboard /></ProtectedRoute>
-        </MobileLayout>
+        <ProtectedRoute>
+          <MobileLayout>
+            <BackendDashboard />
+          </MobileLayout>
+        </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />
     </Routes>
