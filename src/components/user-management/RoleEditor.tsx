@@ -18,12 +18,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Shield, 
-  Leaf, 
-  Microscope, 
-  Eye, 
-  RefreshCw, 
+import {
+  Shield,
+  Leaf,
+  Microscope,
+  Eye,
+  RefreshCw,
   UserCog,
   Check,
   X,
@@ -317,7 +317,7 @@ export const RoleEditor: React.FC<RoleEditorProps> = ({
 
   const renderWarningsAndRecommendations = () => {
     const { warnings, recommendations } = selectedConfig;
-    
+
     if (!warnings?.length && !recommendations?.length) return null;
 
     return (
@@ -376,7 +376,7 @@ export const RoleEditor: React.FC<RoleEditorProps> = ({
           {/* Current User Info */}
           <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
             <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-              <ROLE_CONFIGS[currentRole].icon className="h-5 w-5 text-primary" />
+              {React.createElement(ROLE_CONFIGS[currentRole].icon, { className: "h-5 w-5 text-primary" })}
             </div>
             <div className="flex-1">
               <p className="font-medium">{user.full_name || 'Unnamed User'}</p>
