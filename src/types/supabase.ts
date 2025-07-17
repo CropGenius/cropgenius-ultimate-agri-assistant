@@ -153,6 +153,147 @@ export type Database = {
             referencedColumns: ["id"]
           }
         ]
+      },
+      market_listings: {
+        Row: {
+          id: string
+          user_id: string
+          crop_name: string
+          variety: string | null
+          quantity: number
+          unit: string
+          price_per_unit: number
+          currency: string
+          location: string
+          contact_info: string
+          seller_name: string
+          description: string | null
+          status: "active" | "sold" | "expired"
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          crop_name: string
+          variety?: string | null
+          quantity: number
+          unit: string
+          price_per_unit: number
+          currency?: string
+          location: string
+          contact_info: string
+          seller_name: string
+          description?: string | null
+          status?: "active" | "sold" | "expired"
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          crop_name?: string
+          variety?: string | null
+          quantity?: number
+          unit?: string
+          price_per_unit?: number
+          currency?: string
+          location?: string
+          contact_info?: string
+          seller_name?: string
+          description?: string | null
+          status?: "active" | "sold" | "expired"
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_listings_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
+      farms: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          location: string | null
+          size: number | null
+          size_unit: string | null
+          description: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          location?: string | null
+          size?: number | null
+          size_unit?: string | null
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          location?: string | null
+          size?: number | null
+          size_unit?: string | null
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farms_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
+      profiles: {
+        Row: {
+          id: string
+          email: string | null
+          full_name: string | null
+          avatar_url: string | null
+          onboarding_completed: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email?: string | null
+          full_name?: string | null
+          avatar_url?: string | null
+          onboarding_completed?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string | null
+          full_name?: string | null
+          avatar_url?: string | null
+          onboarding_completed?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       };
     };
     Enums: {

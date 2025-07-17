@@ -1,22 +1,20 @@
-// src/pages/MarketInsightsPage.tsx
-
-import { FC } from 'react';
+import React from 'react';
 import MarketInsightsDashboard from '../components/MarketInsightsDashboard';
-// import MainLayout from '../layouts/MainLayout'; // Assuming a MainLayout exists
+import ErrorBoundary from '@/components/error/ErrorBoundary';
 
-const MarketInsightsPage: FC = () => {
+const MarketInsightsPage: React.FC = () => {
   return (
-    // <MainLayout title="Smart Market Insights">
-    //   <MarketInsightsDashboard />
-    // </MainLayout>
-    // For now, without assuming MainLayout:
-    <div style={{ padding: '20px' }}>
-      <header style={{ marginBottom: '20px' }}>
-        <h1>Smart Market Insights</h1>
-        <p>Access real-time market data and trends for your crops.</p>
-      </header>
-      <MarketInsightsDashboard />
-    </div>
+    <ErrorBoundary>
+      <div className="container py-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Smart Market Insights</h1>
+          <p className="text-gray-600 mt-1">
+            Access real-time market data, price trends, and AI-powered insights for your crops.
+          </p>
+        </div>
+        <MarketInsightsDashboard />
+      </div>
+    </ErrorBoundary>
   );
 };
 

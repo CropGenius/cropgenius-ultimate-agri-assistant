@@ -1,10 +1,13 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { WhatsAppIntegration } from '@/components/communication/WhatsAppIntegration';
 import { MarketIntelligenceDashboard } from '@/components/market/MarketIntelligenceDashboard';
 import { YieldPredictionPanel } from '@/components/ai/YieldPredictionPanel';
 import { IntelligenceHubDashboard } from '@/components/intelligence/IntelligenceHubDashboard';
 import { CreditManagementPanel } from '@/components/credits/CreditManagementPanel';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const BackendDashboard = () => {
   return (

@@ -1,39 +1,29 @@
-// 🚀 FARM TYPES - Generated from Supabase Schema Analysis
 export interface Farm {
   id: string;
-  name: string;
-  description?: string;
-  size?: number;
-  size_unit: 'hectares' | 'acres';
-  location?: string; // 'lat,lng' format
   user_id: string;
+  name: string;
+  location: string | null;
+  size: number | null;
+  size_unit: string | null;
+  description: string | null;
   created_at: string;
   updated_at: string;
-  
-  // Computed fields
+}
+
+export interface FarmWithStats extends Farm {
   fields_count?: number;
-  total_area?: number;
-  active_crops?: string[];
+  health_score?: number;
+  last_activity?: string;
 }
 
-export interface FarmWithFields extends Farm {
-  fields: Field[];
-}
-
-export interface FarmFormData {
+export interface CreateFarmData {
   name: string;
-  description?: string;
-  size?: number;
-  size_unit: 'hectares' | 'acres';
   location?: string;
+  size?: number;
+  size_unit?: string;
+  description?: string;
 }
 
-export interface FarmStats {
-  total_farms: number;
-  total_area: number;
-  total_fields: number;
-  active_crops: number;
+export interface UpdateFarmData extends Partial<CreateFarmData> {
+  id: string;
 }
-
-// Re-export Field from existing types
-export type { Field } from './field';
