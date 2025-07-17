@@ -40,7 +40,7 @@ const ProUpgradeModal = ({
   const getProTriggerMessage = () => {
     switch (variant) {
       case 'weather':
-        return "Our AI just detected critical weather changes affecting your crops. Pro users get hyperlocal forecasts and custom action plans.";
+        return "I detected critical weather changes affecting your crops. Pro users get hyperlocal forecasts and custom action plans.";
       case 'market':
         return "Market prices for your crops are fluctuating. Pro users receive detailed price analysis and optimal selling time predictions.";
       case 'yield':
