@@ -27,6 +27,7 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const authState = useAuth();
+  const [forceRender, setForceRender] = React.useState(false);
 
   // Debug logging
   console.log('🔑 [AUTH PROVIDER] Current auth state:', {
@@ -37,6 +38,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     session: !!authState.session,
     profile: !!authState.profile
   });
+
+  // Timeout mechanism to prevent infinite loading
+  React.useEffect(() => {
+    if (authState.isLoading) {
+      const timeout = setTimeout(() => {
+        console.warn('🔑 [AUTH PROVIDER] Auth loading timeout - forcing render');
+        setForceRender(true);
+      }, 5000); // 5 second timeout
+
+      return () => clearTimeout(timeout);
+    }
+  }, [authState.isLoading]);
 
   const handleSignOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
@@ -61,11 +74,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   // Provide a loading state while initial auth check happens
-  if (authState.isLoading) {
+  if (authState.isLoading && !forceRender) {
     console.log('🔑 [AUTH PROVIDER] Still loading, showing spinner...');
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Loading CropGenius...</p>
+        </div>
       </div>
     );
   }

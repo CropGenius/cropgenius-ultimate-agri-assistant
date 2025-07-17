@@ -4,8 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { useQueryClient } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 
 import { setupOfflinePersistence, OfflineManager } from './lib/offlineStorage';
@@ -13,31 +12,13 @@ import { AuthProvider } from './providers/AuthProvider';
 import AppRoutes from './AppRoutes';
 import './App.css';
 
-// Enhanced React Query client with offline support
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 24 * 60 * 60 * 1000, // 24 hours
-      retry: (failureCount, error) => {
-        if (!navigator.onLine) return false;
-        return failureCount < 3;
-      },
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
-      networkMode: 'offlineFirst',
-    },
-    mutations: {
-      networkMode: 'offlineFirst',
-      retry: 1,
-    },
-  },
-});
-
-setupOfflinePersistence(queryClient);
-
 function App() {
+  const queryClient = useQueryClient();
+  
   useEffect(() => {
+    // Setup offline persistence
+    setupOfflinePersistence(queryClient);
+    
     const offlineManager = OfflineManager.getInstance();
     
     const unsubscribe = offlineManager.subscribe((isOnline) => {
@@ -50,21 +31,16 @@ function App() {
     });
     
     return unsubscribe;
-  }, []);
+  }, [queryClient]);
   
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <div className="App min-h-screen overflow-hidden">
-            <AppRoutes />
-          </div>
-        </AuthProvider>
-      </BrowserRouter>
-      {process.env.NODE_ENV === 'development' && (
-        <ReactQueryDevtools initialIsOpen={false} />
-      )}
-    </QueryClientProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <div className="App min-h-screen overflow-hidden">
+          <AppRoutes />
+        </div>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

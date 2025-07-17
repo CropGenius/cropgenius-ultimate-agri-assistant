@@ -9,6 +9,7 @@ import './styles/force-glass.css';
 import { AuthProvider } from './providers/AuthProvider';
 import { Toaster } from '@/components/ui/sonner';
 import { GrowthEngineProvider } from './providers/GrowthEngineProvider';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { initAnalytics } from './analytics';
 import { register } from './utils/serviceWorkerRegistration';
 import { handleError } from './utils/errorHandler';
@@ -85,8 +86,8 @@ const root = createRoot(rootElement);
 // Render the application with all necessary providers.
 root.render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
         <GrowthEngineProvider>
           <App />
         </GrowthEngineProvider>
@@ -94,8 +95,8 @@ root.render(
         <Suspense fallback={null}>
           <Devtools initialIsOpen={false} />
         </Suspense>
-      </AuthProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </StrictMode>
 );
 

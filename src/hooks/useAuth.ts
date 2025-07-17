@@ -163,25 +163,32 @@ export const useAuth = (): AuthState & AuthActions => {
 
     const initializeAuth = async () => {
       try {
+        console.log('🔑 [useAuth] Initializing auth...');
+        
         // Load cached profile immediately for faster startup
         const cachedProfile = loadCachedProfile();
         if (cachedProfile) {
           setState(prev => ({ ...prev, profile: cachedProfile }));
         }
 
-        // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Get current session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session timeout')), 10000)
+        );
+
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
         
         if (error) {
-          throw new AppError(
-            ErrorCode.AUTH_SESSION_EXPIRED,
-            error.message,
-            'Your session has expired. Please log in again.',
-            { error }
-          );
+          console.warn('🔑 [useAuth] Session error:', error);
+          // Don't throw error, just continue without session
         }
 
         if (mounted) {
+          console.log('🔑 [useAuth] Setting session state:', !!session);
           setState(prev => ({
             ...prev,
             session,
@@ -193,39 +200,42 @@ export const useAuth = (): AuthState & AuthActions => {
           // Fetch fresh profile if user is authenticated
           if (session?.user) {
             setState(prev => ({ ...prev, isLoadingProfile: true }));
-            const profile = await fetchProfile(session.user.id);
-            
-            if (mounted && profile) {
-              setState(prev => ({ ...prev, profile, isLoadingProfile: false }));
-              cacheProfile(profile);
-            } else if (mounted) {
-              setState(prev => ({ ...prev, isLoadingProfile: false }));
+            try {
+              const profile = await fetchProfile(session.user.id);
+              
+              if (mounted && profile) {
+                setState(prev => ({ ...prev, profile, isLoadingProfile: false }));
+                cacheProfile(profile);
+              } else if (mounted) {
+                setState(prev => ({ ...prev, isLoadingProfile: false }));
+              }
+            } catch (profileError) {
+              console.warn('🔑 [useAuth] Profile fetch failed:', profileError);
+              if (mounted) {
+                setState(prev => ({ ...prev, isLoadingProfile: false }));
+              }
             }
           }
         }
       } catch (error) {
+        console.warn('🔑 [useAuth] Initialization error:', error);
         if (mounted) {
-          const appError = error instanceof AppError 
-            ? error 
-            : AppError.fromError(error as Error, ErrorCode.AUTH_SESSION_EXPIRED);
-          
+          // Don't show error to user, just set loading to false
           setState(prev => ({ 
             ...prev, 
-            error: appError, 
             isLoading: false,
             isLoadingProfile: false,
           }));
-          
-          reportError(appError);
 
-          // Retry with exponential backoff
-          if (retryCount < MAX_SESSION_RETRIES) {
+          // Retry with exponential backoff only for critical errors
+          if (retryCount < 2) { // Reduced retry count
             retryCount++;
             setTimeout(() => {
               if (mounted) {
+                console.log(`🔑 [useAuth] Retrying initialization (${retryCount}/2)...`);
                 initializeAuth();
               }
-            }, SESSION_RETRY_DELAY * Math.pow(2, retryCount));
+            }, SESSION_RETRY_DELAY * retryCount);
           }
         }
       }
