@@ -399,4 +399,37 @@ export const MarketPriceChart: React.FC<MarketPriceChartProps> = ({
                   yAxisId="price"
                   tick={{ fontSize: 12 }}
                   tickLine={false}
-                  axisLine={false
+                  axisLine={false}
+                />
+                <YAxis 
+                  yAxisId="volume"
+                  orientation="right"
+                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                
+                <Bar
+                  yAxisId="volume"
+                  dataKey="volume"
+                  fill="hsl(var(--muted))"
+                  opacity={0.6}
+                />
+                
+                <Line
+                  yAxisId="price"
+                  type="monotone"
+                  dataKey="price"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2, r: 4 }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+};
