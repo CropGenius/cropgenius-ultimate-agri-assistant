@@ -1,0 +1,7 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:8082",
+  "loginUser": "ui"
+}

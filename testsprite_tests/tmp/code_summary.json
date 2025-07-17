@@ -1,0 +1,485 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "React 18",
+    "Vite",
+    "Node.js",
+    "Supabase",
+    "PostgreSQL",
+    "Tailwind CSS",
+    "Framer Motion",
+    "React Query",
+    "React Router v6",
+    "shadcn/ui",
+    "Radix UI",
+    "PWA",
+    "Service Worker",
+    "IndexedDB",
+    "Google Gemini AI",
+    "PlantNet API",
+    "OpenWeatherMap API",
+    "WhatsApp Business API",
+    "Sentinel Hub API",
+    "Mapbox",
+    "Leaflet",
+    "Jest",
+    "Vitest",
+    "ESLint",
+    "Prettier"
+  ],
+  "features": [
+    {
+      "name": "Authentication System",
+      "description": "Complete authentication flow with Google OAuth, email/password, session management, and user profiles",
+      "files": [
+        "src/hooks/useAuth.ts",
+        "src/providers/AuthProvider.tsx",
+        "src/pages/Auth.tsx",
+        "src/pages/AuthCallback.tsx",
+        "src/pages/OAuthCallback.tsx",
+        "src/utils/authService.ts",
+        "src/components/AuthGuard.tsx",
+        "src/components/ProtectedRoute.tsx"
+      ]
+    },
+    {
+      "name": "Onboarding System",
+      "description": "Multi-step user onboarding with farm setup, location selection, and preferences",
+      "files": [
+        "src/pages/OnboardingPage.tsx",
+        "src/features/onboarding/",
+        "src/hooks/useOnboarding.ts",
+        "src/services/onboardingService.ts"
+      ]
+    },
+    {
+      "name": "AI Disease Detection Oracle",
+      "description": "Advanced crop disease identification using PlantNet API and Gemini AI with treatment recommendations",
+      "files": [
+        "src/agents/CropDiseaseOracle.ts",
+        "src/agents/EnhancedCropDiseaseOracle.ts",
+        "src/agents/CropDiseaseIntelligence.ts",
+        "src/intelligence/cropDiseaseIntelligence.ts"
+      ]
+    },
+    {
+      "name": "Weather Intelligence Engine",
+      "description": "Comprehensive weather forecasting with farming-specific insights and irrigation recommendations",
+      "files": [
+        "src/agents/WeatherAgent.ts",
+        "src/agents/WeatherIntelligenceEngine.ts",
+        "src/hooks/useWeather.ts",
+        "src/hooks/useOpenWeather.ts",
+        "src/services/weatherService.ts",
+        "src/services/weatherIntelligence.ts"
+      ]
+    },
+    {
+      "name": "Field Brain Agent",
+      "description": "AI-powered farming assistant with memory, insights, and personalized recommendations",
+      "files": [
+        "src/agents/FieldBrainAgent.ts",
+        "src/hooks/useFieldBrain.tsx",
+        "src/intelligence/fieldIntelligence.ts",
+        "src/intelligence/enhancedFieldIntelligence.ts"
+      ]
+    },
+    {
+      "name": "Smart Market Intelligence",
+      "description": "Real-time market price tracking and trading recommendations for African markets",
+      "files": [
+        "src/agents/SmartMarketAgent.ts",
+        "src/intelligence/marketIntelligence.ts",
+        "src/intelligence/realMarketIntelligence.ts",
+        "src/components/market/MarketIntelligenceDashboard.tsx",
+        "src/pages/Market.tsx",
+        "src/pages/MarketInsightsPage.tsx"
+      ]
+    },
+    {
+      "name": "WhatsApp Farming Bot",
+      "description": "Production-ready WhatsApp Business API integration for farmer communication",
+      "files": [
+        "src/agents/WhatsAppFarmingBot.ts",
+        "src/agents/ProductionWhatsAppBot.ts",
+        "src/components/communication/WhatsAppIntegration.tsx",
+        "src/services/whatsappIntelligence.ts"
+      ]
+    },
+    {
+      "name": "Yield Prediction System",
+      "description": "AI-powered yield forecasting using satellite data and historical patterns",
+      "files": [
+        "src/agents/YieldPredictorAgent.ts",
+        "src/pages/YieldPredictor.tsx",
+        "src/components/ai/YieldPredictionPanel.tsx"
+      ]
+    },
+    {
+      "name": "Satellite Field Analysis",
+      "description": "NDVI analysis and field health monitoring using Sentinel Hub satellite imagery",
+      "files": [
+        "src/services/sentinelHubService.ts",
+        "src/utils/sentinelHubAuth.ts",
+        "src/components/SatelliteImageryDisplay.tsx"
+      ]
+    },
+    {
+      "name": "Mobile-First UI System",
+      "description": "iPhone-level mobile interface with glassmorphism design and touch interactions",
+      "files": [
+        "src/components/mobile/MobileLayout.tsx",
+        "src/components/mobile/BottomNavigation.tsx",
+        "src/components/mobile/FloatingActionButton.tsx",
+        "src/components/mobile/VoiceCommandChip.tsx",
+        "src/hooks/use-mobile.tsx"
+      ]
+    },
+    {
+      "name": "Offline-First Architecture",
+      "description": "PWA with service worker, IndexedDB caching, and offline synchronization",
+      "files": [
+        "src/lib/offlineStorage.ts",
+        "src/hooks/useOfflineStatus.ts",
+        "src/services/offlineManager.ts",
+        "src/hooks/useServiceWorker.ts",
+        "src/utils/serviceWorker.ts",
+        "public/service-worker.js"
+      ]
+    },
+    {
+      "name": "Gamification Engine",
+      "description": "XP system, achievements, streaks, and community leaderboards",
+      "files": [
+        "src/lib/gamificationEngine.ts",
+        "src/components/mobile/AchievementCelebration.tsx",
+        "src/providers/GrowthEngineProvider.tsx"
+      ]
+    },
+    {
+      "name": "Credit Management System",
+      "description": "Freemium model with credit-based AI features and payment processing",
+      "files": [
+        "src/hooks/useCredits.ts",
+        "src/hooks/useCreditTransactions.ts",
+        "src/components/credits/CreditManagementPanel.tsx"
+      ]
+    },
+    {
+      "name": "Referral System",
+      "description": "User referral program with bonus credits and tracking",
+      "files": [
+        "src/hooks/useReferralSystem.ts",
+        "src/components/referrals/"
+      ]
+    },
+    {
+      "name": "Farm Management System",
+      "description": "Complete farm, field, and crop management with geospatial data",
+      "files": [
+        "src/pages/Farms.tsx",
+        "src/pages/Fields.tsx",
+        "src/pages/FieldDetail.tsx",
+        "src/pages/ManageFields.tsx",
+        "src/hooks/useFarms.ts",
+        "src/components/farms/",
+        "src/components/fields/",
+        "src/types/farm.ts",
+        "src/types/field.ts"
+      ]
+    },
+    {
+      "name": "AI Chat System",
+      "description": "Conversational AI assistant for farming advice and support",
+      "files": [
+        "src/pages/Chat.tsx",
+        "src/components/AIChatWidget.tsx",
+        "src/utils/aiChatService.ts",
+        "src/hooks/useRealTimeAI.ts"
+      ]
+    },
+    {
+      "name": "Crop Scanner",
+      "description": "Camera-based crop analysis with disease detection and health assessment",
+      "files": [
+        "src/pages/Scan.tsx",
+        "src/components/scanner/",
+        "src/agents/CropScanAgent.ts"
+      ]
+    },
+    {
+      "name": "Weather Dashboard",
+      "description": "Comprehensive weather interface with forecasts and farming recommendations",
+      "files": [
+        "src/pages/Weather.tsx",
+        "src/components/weather/"
+      ]
+    },
+    {
+      "name": "Community Features",
+      "description": "Farmer community hub with chat, forums, and knowledge sharing",
+      "files": [
+        "src/pages/Community.tsx"
+      ]
+    },
+    {
+      "name": "Mission Control Dashboard",
+      "description": "Advanced analytics and control panel for farm operations",
+      "files": [
+        "src/pages/MissionControlPage.tsx",
+        "src/features/mission-control/"
+      ]
+    },
+    {
+      "name": "Farm Planning System",
+      "description": "Seasonal planning, crop rotation, and resource optimization",
+      "files": [
+        "src/pages/FarmPlanningPage.tsx",
+        "src/components/FarmPlanner.tsx",
+        "src/agents/AIFarmPlanAgent.ts"
+      ]
+    },
+    {
+      "name": "Settings & Preferences",
+      "description": "User settings, language selection, and app configuration",
+      "files": [
+        "src/pages/Settings.tsx",
+        "src/components/LanguageSelector.tsx"
+      ]
+    },
+    {
+      "name": "Super Dashboard",
+      "description": "Administrative dashboard showing all backend features and system status",
+      "files": [
+        "src/components/SuperDashboard.tsx",
+        "src/pages/BackendDashboard.tsx",
+        "src/hooks/useBackendFeatures.ts",
+        "src/hooks/useBackendIntelligence.ts"
+      ]
+    },
+    {
+      "name": "Database Layer",
+      "description": "Supabase integration with RLS, real-time subscriptions, and edge functions",
+      "files": [
+        "src/services/supabaseClient.ts",
+        "src/lib/supabase.ts",
+        "src/integrations/supabase/",
+        "src/types/supabase.ts",
+        "supabase/migrations/",
+        "supabase/config.toml"
+      ]
+    },
+    {
+      "name": "Error Handling & Logging",
+      "description": "Comprehensive error management with user-friendly messages and debugging",
+      "files": [
+        "src/lib/errors.ts",
+        "src/services/errorHandler.ts",
+        "src/utils/errorHandler.ts",
+        "src/hooks/use-error-logging.tsx",
+        "src/components/error/"
+      ]
+    },
+    {
+      "name": "Network Management",
+      "description": "Network status monitoring, retry logic, and offline queue management",
+      "files": [
+        "src/lib/network.ts",
+        "src/utils/network.ts",
+        "src/components/NetworkStatus.tsx",
+        "src/components/OfflineModeBanner.tsx"
+      ]
+    },
+    {
+      "name": "Performance Optimization",
+      "description": "Performance monitoring, lazy loading, and optimization utilities",
+      "files": [
+        "src/services/performance.ts",
+        "src/utils/comprehensiveTestRunner.ts"
+      ]
+    },
+    {
+      "name": "Voice Commands",
+      "description": "Voice-controlled navigation and actions using Web Speech API",
+      "files": [
+        "src/hooks/useVoiceCommand.ts",
+        "src/components/mobile/VoiceCommandChip.tsx"
+      ]
+    },
+    {
+      "name": "Haptic Feedback",
+      "description": "Touch feedback system for enhanced mobile user experience",
+      "files": [
+        "src/lib/hapticFeedback.ts"
+      ]
+    },
+    {
+      "name": "Geolocation Services",
+      "description": "Smart location detection and management for farming context",
+      "files": [
+        "src/hooks/useSmartLocation.ts",
+        "src/utils/location.ts",
+        "src/components/MapSelector.tsx"
+      ]
+    },
+    {
+      "name": "Data Visualization",
+      "description": "Charts, graphs, and visual analytics for farming data",
+      "files": [
+        "src/components/dashboard/"
+      ]
+    },
+    {
+      "name": "Testing Infrastructure",
+      "description": "Comprehensive testing setup with unit, integration, and E2E tests",
+      "files": [
+        "src/__tests__/",
+        "src/_tests_/",
+        "src/test-utils/",
+        "jest.config.js",
+        "vitest.config.ts"
+      ]
+    },
+    {
+      "name": "Build & Deployment",
+      "description": "Production build system with PWA generation and deployment configs",
+      "files": [
+        "vite.config.ts",
+        "scripts/generate-pwa-assets.js",
+        "netlify.toml",
+        "windsurf_deployment.yaml"
+      ]
+    },
+    {
+      "name": "UI Component Library",
+      "description": "Comprehensive UI components with shadcn/ui and custom components",
+      "files": [
+        "src/components/ui/",
+        "components.json",
+        "tailwind.config.ts"
+      ]
+    },
+    {
+      "name": "Memory & Storage",
+      "description": "Local storage management, memory optimization, and data persistence",
+      "files": [
+        "src/hooks/useMemoryStore.ts",
+        "src/hooks/use-local-storage.tsx",
+        "src/services/storageService.ts"
+      ]
+    },
+    {
+      "name": "Intelligence Hub",
+      "description": "Central AI coordination system managing all intelligent agents",
+      "files": [
+        "src/services/CropGeniusIntelligenceHub.ts",
+        "src/components/intelligence/IntelligenceHubDashboard.tsx",
+        "src/hooks/useAIAgentHub.ts"
+      ]
+    },
+    {
+      "name": "User Profile Management",
+      "description": "Complete user profile system with preferences and metadata",
+      "files": [
+        "src/hooks/useUserProfile.ts",
+        "src/services/userService.ts",
+        "src/context/UserMetaContext.tsx"
+      ]
+    },
+    {
+      "name": "Field Services",
+      "description": "Field-specific services including analysis, synchronization, and sanitization",
+      "files": [
+        "src/services/fieldService.ts",
+        "src/services/fieldAIService.ts",
+        "src/utils/fieldSync.ts",
+        "src/utils/fieldSanitizer.ts"
+      ]
+    },
+    {
+      "name": "Soil Analysis",
+      "description": "Soil type detection and analysis services",
+      "files": [
+        "src/services/soilTypeService.ts"
+      ]
+    },
+    {
+      "name": "Market Data Management",
+      "description": "Market data seeding, setup, and management utilities",
+      "files": [
+        "src/utils/seedMarketData.ts",
+        "src/utils/setupMarketData.ts",
+        "create_market_listings_table.py",
+        "create_market_listings_table_v2.py",
+        "insert_market_listings.py"
+      ]
+    },
+    {
+      "name": "Development Tools",
+      "description": "Development utilities, debugging tools, and diagnostic services",
+      "files": [
+        "src/utils/diagnosticService.ts",
+        "src/utils/devMemory.ts",
+        "src/components/debug/"
+      ]
+    },
+    {
+      "name": "Analytics Integration",
+      "description": "PostHog analytics integration for user behavior tracking",
+      "files": [
+        "src/analytics/index.ts"
+      ]
+    },
+    {
+      "name": "Styling System",
+      "description": "Advanced CSS system with glassmorphism effects and animations",
+      "files": [
+        "src/styles/glassmorphism.css",
+        "src/styles/glass-empire.css",
+        "src/styles/force-glass.css",
+        "src/App.css",
+        "src/index.css"
+      ]
+    },
+    {
+      "name": "Configuration Management",
+      "description": "Environment configuration and app settings management",
+      "files": [
+        "src/config/environment.ts",
+        "src/lib/config.ts",
+        "src/lib/environment.ts",
+        ".env.example"
+      ]
+    },
+    {
+      "name": "Utility Functions",
+      "description": "Common utility functions for various app operations",
+      "files": [
+        "src/lib/utils.ts",
+        "src/utils/cn.ts",
+        "src/utils/getGreeting.ts",
+        "src/utils/isOnline.ts"
+      ]
+    },
+    {
+      "name": "Database Scripts",
+      "description": "Database setup, migration, and seeding scripts",
+      "files": [
+        "scripts/setup-db.ts",
+        "scripts/run-migrations.ts",
+        "scripts/seed-db.ts"
+      ]
+    },
+    {
+      "name": "Documentation",
+      "description": "Comprehensive project documentation and guides",
+      "files": [
+        "README.md",
+        "docs/",
+        "DEPLOYMENT_GUIDE.md",
+        "TESTING_DOCUMENTATION.md",
+        "CROPGENIUS_PRD.md"
+      ]
+    }
+  ]
+}

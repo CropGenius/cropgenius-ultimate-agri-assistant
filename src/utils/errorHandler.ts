@@ -1,6 +1,6 @@
 /**
- * PRODUCTION-READY ERROR HANDLING
- * Minimal, silent error handling for production
+ * Comprehensive Error Handler for CropGenius
+ * Handles all types of erandling for production
  */
 
 export class AppError extends Error {
@@ -14,11 +14,16 @@ export class AppError extends Error {
   }
 }
 
+import { ApiResponseHandler } from './apiResponse';
+
 export const handleError = (error: Error, context?: any) => {
   // Only log in development
   if (import.meta.env.DEV) {
     console.error('Error:', error.message, context);
   }
+  
+  // Return a standardized error response
+  return ApiResponseHandler.error(error, 500, context);
 };
 
 export const handleAuthError = (error: any) => {
@@ -27,12 +32,12 @@ export const handleAuthError = (error: any) => {
     console.warn('Auth error:', error);
   }
   
-  // Return user-friendly message
+  // Return user-friendly message with standardized format
   if (error?.message?.includes('401')) {
-    return 'Please sign in to continue';
+    return ApiResponseHandler.error('Please sign in to continue', 401);
   }
   
-  return 'Authentication issue. Please try again.';
+  return ApiResponseHandler.error('Authentication issue. Please try again.', 401);
 };
 
 export const handleNetworkError = (error: any) => {
@@ -40,5 +45,8 @@ export const handleNetworkError = (error: any) => {
     console.warn('Network error:', error);
   }
   
-  return 'Network issue. Please check your connection.';
+  return ApiResponseHandler.error('Network issue. Please check your connection.', 503, {
+    retryable: true,
+    offline: !navigator.onLine
+  });
 };

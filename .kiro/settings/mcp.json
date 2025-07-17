@@ -6,7 +6,9 @@
         "-y",
         "puppeteer-mcp-server"
       ],
-      "env": {}
+      "env": {},
+      "disabled": false,
+      "autoApprove": []
     },
     "supabase": {
       "command": "cmd",
@@ -20,16 +22,30 @@
       "env": {
         "SUPABASE_ACCESS_TOKEN": "sbp_fe9555dcbe70b2e0eea134c8a01b99605639c54f"
       },
-      "alwaysAllow": [
-        "get_project_url",
-        "get_anon_key"
-      ]
+      "disabled": false,
+      "autoApprove": []
     },
     "context7": {
       "command": "npx",
       "args": [
         "-y",
         "@upstash/context7-mcp"
+      ],
+      "disabled": false,
+      "autoApprove": []
+    },
+    "TestSprite": {
+      "command": "npx",
+      "args": [
+        "@testsprite/testsprite-mcp@latest"
+      ],
+      "env": {
+        "APIKEY": "sk-user-53YoSvjgLjTcxWXGPs23oGJKDb7bxysog393p213j5MC1MQwFCFNWHLo2pqdiQGmPFhXSWTrEIJkC4-aOKYJGMyHxXzPVagnMMmug-YPtZtL0VQdrJ1SySQhocJVx_hrAp0"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "testsprite_bootstrap_tests",
+        "testsprite_generate_code_summary"
       ]
     }
   }
