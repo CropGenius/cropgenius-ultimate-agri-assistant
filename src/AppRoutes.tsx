@@ -12,7 +12,6 @@ import Market from './pages/Market';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 import OnboardingPage from './pages/OnboardingPage';
-import AuthCallback from './pages/AuthCallback';
 import OAuthCallback from './pages/OAuthCallback';
 import FieldDetail from './pages/FieldDetail';
 import ManageFields from './pages/ManageFields';
@@ -30,7 +29,7 @@ export default function AppRoutes() {
     <Routes>
       {/* Auth routes - NO mobile layout - MUST be first */}
       <Route path="/auth" element={<Auth />} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/auth/callback" element={<OAuthCallback />} />
       <Route path="/oauth/callback" element={<OAuthCallback />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       

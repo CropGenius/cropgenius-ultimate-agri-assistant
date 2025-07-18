@@ -5,6 +5,7 @@ import { AppError, ErrorCode, reportError, reportWarning } from '@/lib/errors';
 import { networkManager } from '@/lib/network';
 import { toast } from 'sonner';
 import { fa } from '@faker-js/faker';
+import { authDebugger, AuthEventType, logAuthEvent, logAuthError } from '@/utils/authDebugger';
 
 export interface UserProfile {
   id: string;
