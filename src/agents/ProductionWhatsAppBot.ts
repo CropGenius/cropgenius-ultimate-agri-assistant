@@ -4,21 +4,16 @@
  * Supports image analysis, voice commands, and multi-language responses
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { CropDiseaseOracle } from './CropDiseaseOracle';
 import { getCurrentWeather, getWeatherForecast } from '../utils/weatherService';
 import { fetchRealMarketData } from '../intelligence/realMarketIntelligence';
 import { analyzeFieldEnhanced } from '../intelligence/enhancedFieldIntelligence';
 
 // Configuration
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || '';
 const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || '';
 const WHATSAPP_API_VERSION = 'v18.0';
 const WHATSAPP_API_BASE = `https://graph.facebook.com/${WHATSAPP_API_VERSION}`;
-
-// Initialize Supabase client
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Initialize AI agents
 const cropDiseaseOracle = new CropDiseaseOracle();

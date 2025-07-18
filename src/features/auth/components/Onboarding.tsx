@@ -13,12 +13,12 @@ const Onboarding = () => {
     if (!user || !farmName) return;
 
     setLoading(true);
-    
+
     try {
       // 1. First, update the user's profile with farm name and mark onboarding as complete
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ 
+        .update({
           farm_name: farmName,
           onboarding_completed: true,
           preferred_language: navigator.language || 'en',
@@ -31,8 +31,8 @@ const Onboarding = () => {
       // 2. Create a default farm for the user
       const { data: farm, error: farmError } = await supabase
         .from('farms')
-        .insert({ 
-          name: farmName, 
+        .insert({
+          name: farmName,
           user_id: user.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()

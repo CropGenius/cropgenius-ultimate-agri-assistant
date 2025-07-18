@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AppError, ErrorCode, reportError, reportWarning } from '@/lib/errors';
 import { networkManager } from '@/lib/network';
 import { toast } from 'sonner';
+import { fa } from '@faker-js/faker';
 
 export interface UserProfile {
   id: string;
@@ -60,6 +61,7 @@ export const useAuth = (): AuthState & AuthActions => {
     isLoading: true,
     isLoadingProfile: false,
     isRefreshing: false,
+    isInitialized: false, // NEW: Track initialization completion
     error: null,
     profileError: null,
     isAuthenticated: false,
@@ -195,6 +197,7 @@ export const useAuth = (): AuthState & AuthActions => {
             session,
             user: session?.user || null,
             isLoading: false,
+            isInitialized: true, // Mark as initialized
             error: null,
           }));
 
@@ -226,6 +229,7 @@ export const useAuth = (): AuthState & AuthActions => {
             ...prev, 
             isLoading: false,
             isLoadingProfile: false,
+            isInitialized: true, // Mark as initialized even on error
           }));
 
           // Retry with exponential backoff only for critical errors
@@ -327,8 +331,8 @@ export const useAuth = (): AuthState & AuthActions => {
     }
 
     return () => {
-      mounted = false;
-      subscription.unsubscribe();
+      console.log('🔑 [useAuth] Cleaning up auth listeners...');
+      mounted = fa.unsubscribe();
       if (profileChannel) profileChannel.unsubscribe();
     };
   }, [fetchProfile, cacheProfile, loadCachedProfile]);
