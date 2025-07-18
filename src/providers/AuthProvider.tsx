@@ -681,7 +681,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             retryable: true
           }
         }));
-      }, 15000);
+      }, 120000); // 🔥 2 MINUTES FOR 2G NETWORKS IN AFRICA!
 
       return () => clearTimeout(timeout);
     }

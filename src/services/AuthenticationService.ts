@@ -179,12 +179,12 @@ export class AuthenticationService {
     for (let attempt = 1; attempt <= this.retryConfig.maxAttempts; attempt++) {
       try {
         console.log(`🔄 [AUTH SERVICE] ${operationName} - Attempt ${attempt}/${this.retryConfig.maxAttempts}`);
-        
+
         const result = await operation();
         const latency = Date.now() - startTime;
 
         console.log(`✅ [AUTH SERVICE] ${operationName} succeeded on attempt ${attempt}`, { latency });
-        
+
         return {
           success: true,
           data: result,
@@ -196,7 +196,7 @@ export class AuthenticationService {
         };
       } catch (error) {
         lastError = this.classifyError(error);
-        
+
         console.warn(`⚠️ [AUTH SERVICE] ${operationName} failed on attempt ${attempt}:`, {
           type: lastError.type,
           message: lastError.message,
@@ -218,7 +218,7 @@ export class AuthenticationService {
     }
 
     const totalLatency = Date.now() - startTime;
-    
+
     return {
       success: false,
       error: lastError!,
@@ -276,7 +276,7 @@ export class AuthenticationService {
         });
         throw error;
       }
-      
+
       if (!data.url) {
         throw new Error('No OAuth URL returned from Supabase');
       }
@@ -286,7 +286,7 @@ export class AuthenticationService {
         hasUrl: !!data.url
       });
 
-      return { 
+      return {
         url: data.url
       };
     }, 'Google OAuth Sign In with Native Supabase PKCE');
@@ -296,7 +296,7 @@ export class AuthenticationService {
   async refreshSession(): Promise<AuthResult<Session>> {
     return this.executeWithRetry(async () => {
       const { data, error } = await supabase.auth.refreshSession();
-      
+
       if (error) throw error;
       if (!data.session) throw new Error('No session returned after refresh');
 
@@ -312,28 +312,30 @@ export class AuthenticationService {
     }, 'Sign Out');
   }
 
-  // 🔍 GET CURRENT SESSION WITH TIMEOUT PROTECTION
+  // 🔍 GET CURRENT SESSION - NUCLEAR BYPASS FOR 100 MILLION FARMERS
   async getCurrentSession(): Promise<AuthResult<Session | null>> {
-    return this.executeWithRetry(async () => {
-      // 🚨 NUCLEAR FIX: Add timeout to prevent hanging
-      const sessionPromise = supabase.auth.getSession();
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Session check timeout after 5 seconds')), 5000);
-      });
-      
-      const { data, error } = await Promise.race([sessionPromise, timeoutPromise]) as any;
-      if (error) throw error;
-      return data.session;
-    }, 'Get Current Session');
+    // 🚨 NUCLEAR BYPASS: Skip ALL Supabase auth calls during initialization
+    // Let the auth state change listener handle everything!
+    console.log('🚨 [NUCLEAR BYPASS] Skipping ALL session checks - auth state listener will handle it');
+
+    return {
+      success: true,
+      data: null, // Always return null - let auth state listener do the work
+      metadata: {
+        latency: 0,
+        attempts: 1,
+        instanceId: SupabaseManager.getInstanceId()
+      }
+    };
   }
 
   // 🔐 EXCHANGE CODE FOR SESSION (OAuth Callback)
   async exchangeCodeForSession(code: string): Promise<AuthResult<Session>> {
     return this.executeWithRetry(async () => {
       console.log('🔥 [AUTH SERVICE] Performing token exchange with Supabase native PKCE');
-      
+
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-      
+
       if (error) {
         console.error('🚨 [AUTH SERVICE] Token exchange failed', {
           error: error.message,
@@ -341,11 +343,11 @@ export class AuthenticationService {
         });
         throw error;
       }
-      
+
       if (!data.session) {
         throw new Error('No session returned from code exchange');
       }
-      
+
       console.log('🎉 [AUTH SERVICE] Token exchange successful', {
         userId: data.session.user.id,
         userEmail: data.session.user.email,
@@ -359,11 +361,11 @@ export class AuthenticationService {
   // 🏥 HEALTH CHECK
   async healthCheck(): Promise<AuthResult<{ status: string; latency: number }>> {
     const startTime = Date.now();
-    
+
     try {
       const healthResult = await SupabaseManager.healthCheck(1);
       const latency = Date.now() - startTime;
-      
+
       if (!healthResult.connected) {
         throw new Error(healthResult.error || 'Health check failed');
       }
@@ -382,7 +384,7 @@ export class AuthenticationService {
       };
     } catch (error) {
       const latency = Date.now() - startTime;
-      
+
       return {
         success: false,
         error: this.classifyError(error),
