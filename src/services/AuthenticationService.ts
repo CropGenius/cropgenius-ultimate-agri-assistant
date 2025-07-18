@@ -252,31 +252,10 @@ export class AuthenticationService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  // 🚀 GOOGLE OAUTH SIGN IN WITH INFINITY IQ PKCE FLOW
-  async signInWithGoogle(redirectTo?: string): Promise<AuthResult<{ url: string; state: string }>> {
+  // 🚀 GOOGLE OAUTH SIGN IN - LET SUPABASE HANDLE PKCE INTERNALLY
+  async signInWithGoogle(redirectTo?: string): Promise<AuthResult<{ url: string; state?: string }>> {
     return this.executeWithRetry(async () => {
-      // 🔥 IMPORT PKCE MANAGER DYNAMICALLY TO AVOID CIRCULAR DEPS
-      const { PKCEStateManager } = await import('@/utils/pkceManager');
-      
-      // Generate and store PKCE state with INFINITY IQ precision
-      const pkceResult = await PKCEStateManager.generateAndStoreState(
-        redirectTo, 
-        SupabaseManager.getInstanceId()
-      );
-      
-      if (!pkceResult.success) {
-        throw new Error(pkceResult.error?.message || 'Failed to generate PKCE state');
-      }
-      
-      const pkceState = pkceResult.data!;
-      
-      console.log('🚀 [AUTH SERVICE] PKCE state generated for Google OAuth', {
-        state: pkceState.state,
-        hasCodeVerifier: !!pkceState.codeVerifier,
-        hasCodeChallenge: !!pkceState.codeChallenge,
-        storageMethod: pkceState.storageMethod,
-        expiresAt: new Date(pkceState.expiresAt).toISOString()
-      });
+      console.log('🚀 [AUTH SERVICE] Starting Google OAuth with Supabase native PKCE flow');
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -286,34 +265,31 @@ export class AuthenticationService {
             access_type: 'offline',
             prompt: 'consent',
           },
-          // 🔥 INCLUDE PKCE PARAMETERS - THIS IS THE MAGIC!
           scopes: 'openid email profile',
         },
       });
 
-      if (error) throw error;
-      if (!data.url) throw new Error('No OAuth URL returned');
+      if (error) {
+        console.error('🚨 [AUTH SERVICE] Google OAuth initiation failed', {
+          error: error.message,
+          code: error.status
+        });
+        throw error;
+      }
+      
+      if (!data.url) {
+        throw new Error('No OAuth URL returned from Supabase');
+      }
 
-      // 💪 MANUALLY ADD PKCE PARAMETERS TO URL (Supabase doesn't expose this)
-      const url = new URL(data.url);
-      url.searchParams.set('code_challenge', pkceState.codeChallenge);
-      url.searchParams.set('code_challenge_method', 'S256');
-      url.searchParams.set('state', pkceState.state);
-      
-      const finalUrl = url.toString();
-      
-      console.log('🌟 [AUTH SERVICE] Google OAuth URL enhanced with PKCE parameters', {
-        originalUrl: data.url,
-        enhancedUrl: finalUrl,
-        state: pkceState.state,
-        hasCodeChallenge: url.searchParams.has('code_challenge')
+      console.log('🌟 [AUTH SERVICE] Google OAuth URL generated successfully', {
+        url: data.url,
+        hasUrl: !!data.url
       });
 
       return { 
-        url: finalUrl,
-        state: pkceState.state
+        url: data.url
       };
-    }, 'Google OAuth Sign In with PKCE');
+    }, 'Google OAuth Sign In with Native Supabase PKCE');
   }
 
   // 🔄 SESSION REFRESH
@@ -345,80 +321,33 @@ export class AuthenticationService {
     }, 'Get Current Session');
   }
 
-  // 🔐 EXCHANGE CODE FOR SESSION WITH PKCE (OAuth Callback)
-  async exchangeCodeForSession(code: string, stateParam?: string): Promise<AuthResult<Session>> {
+  // 🔐 EXCHANGE CODE FOR SESSION (OAuth Callback)
+  async exchangeCodeForSession(code: string): Promise<AuthResult<Session>> {
     return this.executeWithRetry(async () => {
-      // 🔥 IMPORT PKCE MANAGER FOR CODE VERIFIER RETRIEVAL
-      const { PKCEStateManager } = await import('@/utils/pkceManager');
+      console.log('🔥 [AUTH SERVICE] Performing token exchange with Supabase native PKCE');
       
-      let codeVerifier: string | undefined;
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
       
-      // If we have a state parameter, try to retrieve the PKCE state
-      if (stateParam) {
-        console.log('🔍 [AUTH SERVICE] Retrieving PKCE state for token exchange', {
-          stateParam,
-          hasCode: !!code
+      if (error) {
+        console.error('🚨 [AUTH SERVICE] Token exchange failed', {
+          error: error.message,
+          code: code.substring(0, 10) + '...'
         });
-        
-        const pkceResult = await PKCEStateManager.retrieveState(stateParam);
-        
-        if (pkceResult.success && pkceResult.data) {
-          codeVerifier = pkceResult.data.codeVerifier;
-          
-          console.log('🎉 [AUTH SERVICE] PKCE state retrieved successfully', {
-            stateParam,
-            hasCodeVerifier: !!codeVerifier,
-            storageMethod: pkceResult.data.storageMethod
-          });
-          
-          // Clean up the used PKCE state
-          await PKCEStateManager.cleanupState(stateParam);
-        } else {
-          console.warn('⚠️ [AUTH SERVICE] PKCE state not found or expired', {
-            stateParam,
-            error: pkceResult.error?.message
-          });
-        }
+        throw error;
       }
       
-      // 🚀 PERFORM TOKEN EXCHANGE WITH OR WITHOUT PKCE
-      if (codeVerifier) {
-        console.log('🔥 [AUTH SERVICE] Performing PKCE token exchange');
-        
-        // Use the new Supabase method for PKCE token exchange
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-        
-        if (error) {
-          console.error('🚨 [AUTH SERVICE] PKCE token exchange failed', {
-            error: error.message,
-            code: code.substring(0, 10) + '...',
-            hasCodeVerifier: !!codeVerifier
-          });
-          throw error;
-        }
-        
-        if (!data.session) {
-          throw new Error('No session returned from PKCE code exchange');
-        }
-        
-        console.log('🎉 [AUTH SERVICE] PKCE token exchange successful', {
-          userId: data.session.user.id,
-          userEmail: data.session.user.email,
-          expiresAt: data.session.expires_at ? new Date(data.session.expires_at * 1000).toISOString() : null
-        });
-        
-        return data.session;
-      } else {
-        console.log('🔄 [AUTH SERVICE] Performing standard token exchange (no PKCE)');
-        
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-        
-        if (error) throw error;
-        if (!data.session) throw new Error('No session returned from code exchange');
+      if (!data.session) {
+        throw new Error('No session returned from code exchange');
+      }
+      
+      console.log('🎉 [AUTH SERVICE] Token exchange successful', {
+        userId: data.session.user.id,
+        userEmail: data.session.user.email,
+        expiresAt: data.session.expires_at ? new Date(data.session.expires_at * 1000).toISOString() : null
+      });
 
-        return data.session;
-      }
-    }, 'Exchange Code for Session with PKCE');
+      return data.session;
+    }, 'Exchange Code for Session');
   }
 
   // 🏥 HEALTH CHECK

@@ -222,19 +222,13 @@ export default function OAuthCallback() {
       let sessionResult;
       
       if (urlValidation.code) {
-        // 🔥 EXTRACT STATE PARAMETER FOR PKCE FLOW
-        const urlParams = new URLSearchParams(window.location.search);
-        const stateParam = urlParams.get('state');
-        
-        logAuthEvent(AuthEventType.OAUTH_CALLBACK, 'Exchanging authorization code for session with PKCE support', {
+        logAuthEvent(AuthEventType.OAUTH_CALLBACK, 'Exchanging authorization code for session with native Supabase PKCE', {
           codeLength: urlValidation.code.length,
-          codePrefix: urlValidation.code.slice(0, 8),
-          hasState: !!stateParam,
-          stateParam: stateParam?.slice(0, 8)
+          codePrefix: urlValidation.code.slice(0, 8)
         });
         
-        // 🚀 EXCHANGE CODE WITH PKCE STATE PARAMETER
-        sessionResult = await authService.exchangeCodeForSession(urlValidation.code, stateParam || undefined);
+        // 🚀 EXCHANGE CODE - SUPABASE HANDLES PKCE INTERNALLY
+        sessionResult = await authService.exchangeCodeForSession(urlValidation.code);
       } else {
         logAuthEvent(AuthEventType.OAUTH_CALLBACK, 'Getting current session (no code found)');
         sessionResult = await authService.getCurrentSession();

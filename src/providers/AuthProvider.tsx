@@ -467,10 +467,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLastFailedOperation(() => () => signInWithGoogle(redirectTo));
 
     try {
-      // 🔍 CALL OAUTH FLOW MANAGER FOR OPTIMAL STRATEGY
-      logAuthEvent(AuthEventType.OAUTH_REDIRECT, 'Calling OAuth Flow Manager for optimal strategy');
-      const { executeOptimalOAuthFlow } = await import('@/utils/oauthFlowManager');
-      const result = await executeOptimalOAuthFlow(redirectTo);
+      // 🔍 CALL AUTH SERVICE DIRECTLY - SUPABASE HANDLES PKCE INTERNALLY
+      logAuthEvent(AuthEventType.OAUTH_REDIRECT, 'Calling authService.signInWithGoogle with native Supabase PKCE');
+      const result = await authService.signInWithGoogle(redirectTo);
       
       if (result.success && result.data?.url) {
         // 🎉 SUCCESS - REDIRECT TO OAUTH
