@@ -44,7 +44,7 @@ export default function OAuthCallback() {
   const validateCallbackUrl = (): { isValid: boolean; code?: string; error?: string; errorDescription?: string } => {
     try {
       console.log('🔍 [OAUTH CALLBACK] Validating URL:', window.location.href);
-      
+
       // SECURITY: Validate URL origin to prevent CSRF attacks
       const currentOrigin = window.location.origin;
       const expectedOrigins = [
@@ -53,7 +53,7 @@ export default function OAuthCallback() {
         'http://localhost:3000',
         'http://127.0.0.1:5173'
       ];
-      
+
       if (!expectedOrigins.includes(currentOrigin)) {
         console.warn('🚨 [OAUTH CALLBACK] Invalid origin detected:', currentOrigin);
         return {
@@ -62,20 +62,20 @@ export default function OAuthCallback() {
           errorDescription: 'OAuth callback from unauthorized origin'
         };
       }
-      
+
       const urlParams = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
-      
+
       // SECURITY: Sanitize URL parameters to prevent XSS
       const sanitizeParam = (param: string | null): string | null => {
         if (!param) return null;
         return param.replace(/[<>\"'&]/g, '').trim();
       };
-      
+
       // Check for OAuth errors first
       const errorParam = urlParams.get('error');
       const errorDescription = urlParams.get('error_description');
-      
+
       if (errorParam) {
         return {
           isValid: false,
@@ -83,10 +83,10 @@ export default function OAuthCallback() {
           errorDescription: errorDescription || undefined
         };
       }
-      
+
       // Look for authorization code
       const code = urlParams.get('code');
-      
+
       if (!code && !hash.includes('access_token')) {
         return {
           isValid: false,
@@ -94,7 +94,7 @@ export default function OAuthCallback() {
           errorDescription: 'No authorization code or access token found in callback URL'
         };
       }
-      
+
       return {
         isValid: true,
         code: code || undefined
@@ -120,7 +120,7 @@ export default function OAuthCallback() {
       if (error && error.code === 'PGRST116') {
         // Profile doesn't exist, create it
         console.log('🔧 [OAUTH CALLBACK] Creating new profile for user:', userId);
-        
+
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert({
@@ -155,7 +155,7 @@ export default function OAuthCallback() {
   const navigateToDestination = (profile: any) => {
     const destination = profile?.onboarding_completed === false ? '/onboarding' : '/';
     console.log('🎯 [OAUTH CALLBACK] Navigating to:', destination);
-    
+
     // Use full page reload for clean state
     window.location.href = `${window.location.origin}${destination}`;
   };
@@ -163,12 +163,12 @@ export default function OAuthCallback() {
   // 💪 MAIN CALLBACK PROCESSING WITH INFINITY IQ DEBUGGING
   const processCallback = async () => {
     const performanceId = `oauth_callback_${Date.now()}`;
-    
+
     try {
       // 🚀 STEP 1: INITIALIZE WITH DEBUGGING
       setState(CallbackState.INITIALIZING);
       setProgress(10);
-      
+
       authDebugger.startPerformanceTracking(performanceId, AuthEventType.OAUTH_CALLBACK, 'OAuth callback processing');
       logAuthEvent(AuthEventType.OAUTH_CALLBACK, 'Starting INFINITY IQ OAuth callback processing', {
         url: window.location.href,
@@ -178,19 +178,19 @@ export default function OAuthCallback() {
         retryAttempt: retryCount,
         startTime: startTime.current
       });
-      
+
       // 🔍 STEP 2: VALIDATE URL WITH DEBUGGING
       setState(CallbackState.VALIDATING_URL);
       setProgress(20);
-      
+
       logAuthEvent(AuthEventType.OAUTH_CALLBACK, 'Validating OAuth callback URL', {
         fullUrl: window.location.href,
         search: window.location.search,
         hash: window.location.hash
       });
-      
+
       const urlValidation = validateCallbackUrl();
-      
+
       if (!urlValidation.isValid) {
         // 🚨 URL VALIDATION FAILED
         logAuthError(AuthEventType.OAUTH_CALLBACK, 'OAuth callback URL validation failed', new Error(urlValidation.error || 'Invalid URL'), {
@@ -198,7 +198,7 @@ export default function OAuthCallback() {
           errorDescription: urlValidation.errorDescription,
           url: window.location.href
         });
-        
+
         throw {
           type: AuthErrorType.OAUTH_ERROR,
           message: urlValidation.error || 'Invalid callback URL',
@@ -218,15 +218,15 @@ export default function OAuthCallback() {
       // 🔄 STEP 3: EXCHANGE CODE FOR SESSION WITH DEBUGGING
       setState(CallbackState.EXCHANGING_CODE);
       setProgress(40);
-      
+
       let sessionResult;
-      
+
       if (urlValidation.code) {
         logAuthEvent(AuthEventType.OAUTH_CALLBACK, 'Exchanging authorization code for session with native Supabase PKCE', {
           codeLength: urlValidation.code.length,
           codePrefix: urlValidation.code.slice(0, 8)
         });
-        
+
         // 🚀 EXCHANGE CODE - SUPABASE HANDLES PKCE INTERNALLY
         sessionResult = await authService.exchangeCodeForSession(urlValidation.code);
       } else {
@@ -240,7 +240,7 @@ export default function OAuthCallback() {
           serviceResult: sessionResult,
           hasCode: !!urlValidation.code
         });
-        
+
         throw {
           type: AuthErrorType.OAUTH_ERROR,
           message: sessionResult.error?.message || 'Session exchange failed',
@@ -252,7 +252,7 @@ export default function OAuthCallback() {
       }
 
       const session = sessionResult.data;
-      
+
       // ✅ SESSION EXCHANGE SUCCESS
       logAuthEvent(AuthEventType.SIGN_IN_SUCCESS, 'OAuth session established successfully', {
         userId: session.user.id,
@@ -264,13 +264,13 @@ export default function OAuthCallback() {
       // 👤 STEP 4: LOAD USER PROFILE WITH DEBUGGING
       setState(CallbackState.LOADING_PROFILE);
       setProgress(70);
-      
+
       logAuthEvent(AuthEventType.PROFILE_LOAD, 'Loading user profile after OAuth success', {
         userId: session.user.id
       });
-      
+
       const profile = await loadUserProfile(session.user.id);
-      
+
       if (profile) {
         logAuthEvent(AuthEventType.PROFILE_LOAD, 'User profile loaded successfully', {
           userId: session.user.id,
@@ -282,18 +282,18 @@ export default function OAuthCallback() {
           userId: session.user.id
         });
       }
-      
+
       // 🎉 STEP 5: SUCCESS WITH DEBUGGING
       setState(CallbackState.SUCCESS);
       setProgress(90);
-      
+
       logAuthEvent(AuthEventType.OAUTH_CALLBACK, 'OAuth callback processing completed successfully', {
         userId: session.user.id,
         userEmail: session.user.email,
         hasProfile: !!profile,
         processingTime: Date.now() - startTime.current
       });
-      
+
       toast.success(`Welcome back, ${session.user.email}!`, {
         description: 'Successfully signed in to CropGenius',
         duration: 3000
@@ -302,21 +302,21 @@ export default function OAuthCallback() {
       // 🎯 STEP 6: NAVIGATE WITH DEBUGGING
       setState(CallbackState.REDIRECTING);
       setProgress(100);
-      
+
       const destination = profile?.onboarding_completed === false ? '/onboarding' : '/';
-      
+
       logAuthEvent(AuthEventType.OAUTH_CALLBACK, 'Redirecting user after successful OAuth', {
         destination,
         userId: session.user.id,
         onboardingRequired: profile?.onboarding_completed === false
       });
-      
+
       // End performance tracking on success
       authDebugger.endPerformanceTracking(performanceId, AuthEventType.OAUTH_CALLBACK, 'OAuth callback completed successfully', {
         totalTime: Date.now() - startTime.current,
         destination
       });
-      
+
       // Small delay for user feedback
       setTimeout(() => {
         navigateToDestination(profile);
@@ -331,7 +331,7 @@ export default function OAuthCallback() {
         processingTime: Date.now() - startTime.current,
         url: window.location.href
       });
-      
+
       const callbackError: CallbackError = {
         type: error.type || AuthErrorType.OAUTH_ERROR,
         message: error.message || 'Unknown callback error',
@@ -340,20 +340,20 @@ export default function OAuthCallback() {
         retryable: error.retryable !== false,
         timestamp: new Date().toISOString()
       };
-      
+
       setError(callbackError);
       setState(CallbackState.ERROR);
-      
+
       // End performance tracking on error
       authDebugger.endPerformanceTracking(performanceId, AuthEventType.OAUTH_CALLBACK, 'OAuth callback failed');
-      
+
       // Auto-redirect to auth page after delay if not retryable
       if (!callbackError.retryable) {
         logAuthEvent(AuthEventType.OAUTH_CALLBACK, 'Auto-redirecting to auth page (non-retryable error)', {
           errorCode: callbackError.code,
           redirectDelay: 5000
         });
-        
+
         setTimeout(() => {
           navigate('/auth', { replace: true });
         }, 5000);
@@ -376,6 +376,19 @@ export default function OAuthCallback() {
       clearTimeout(timeoutRef.current);
     }
 
+    // 🔥 PRODUCTION FIX: Check if this is a direct access (no OAuth params)
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasCode = urlParams.get('code');
+    const hasError = urlParams.get('error');
+    const hasState = urlParams.get('state');
+
+    // If no OAuth parameters, redirect to auth page immediately
+    if (!hasCode && !hasError && !hasState && !window.location.hash.includes('access_token')) {
+      console.log('🔄 [OAUTH CALLBACK] Direct access detected, redirecting to auth page');
+      navigate('/auth', { replace: true });
+      return;
+    }
+
     // Start processing with small delay
     timeoutRef.current = setTimeout(() => {
       processCallback();
@@ -387,7 +400,7 @@ export default function OAuthCallback() {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, []);
+  }, [navigate]);
 
   // 🎨 BEAUTIFUL UI STATES
   const renderContent = () => {
@@ -409,9 +422,9 @@ export default function OAuthCallback() {
                   Try Again
                 </Button>
               )}
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/auth', { replace: true })} 
+              <Button
+                variant="outline"
+                onClick={() => navigate('/auth', { replace: true })}
                 className="w-full"
               >
                 Back to Sign In
@@ -455,8 +468,8 @@ export default function OAuthCallback() {
               {getStateMessage()}
             </p>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-4">
-              <div 
-                className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500" 
+              <div
+                className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
