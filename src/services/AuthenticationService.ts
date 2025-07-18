@@ -312,10 +312,16 @@ export class AuthenticationService {
     }, 'Sign Out');
   }
 
-  // 🔍 GET CURRENT SESSION
+  // 🔍 GET CURRENT SESSION WITH TIMEOUT PROTECTION
   async getCurrentSession(): Promise<AuthResult<Session | null>> {
     return this.executeWithRetry(async () => {
-      const { data, error } = await supabase.auth.getSession();
+      // 🚨 NUCLEAR FIX: Add timeout to prevent hanging
+      const sessionPromise = supabase.auth.getSession();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Session check timeout after 5 seconds')), 5000);
+      });
+      
+      const { data, error } = await Promise.race([sessionPromise, timeoutPromise]) as any;
       if (error) throw error;
       return data.session;
     }, 'Get Current Session');

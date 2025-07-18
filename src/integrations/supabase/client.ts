@@ -151,7 +151,7 @@ class SupabaseClientManager {
           auth: {
             autoRefreshToken: true,
             persistSession: true,
-            detectSessionInUrl: true,
+            detectSessionInUrl: false, // 🚨 NUCLEAR FIX: Disable to prevent hanging
             flowType: 'pkce',
             storageKey: 'cropgenius-auth-v4', // FIXED: Consistent storage key for PKCE persistence
             debug: import.meta.env.DEV
