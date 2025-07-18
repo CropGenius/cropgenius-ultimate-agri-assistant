@@ -7,41 +7,67 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { authDebugger, AuthEventType, DebugLevel, logAuthEvent, logAuthError } from '@/utils/authDebugger';
 
-// 🚀 INFINITY IQ ENHANCED AUTH STATE
+// 🚀 INFINITY IQ ENHANCED AUTH STATE WITH ULTIMATE GRANULAR MANAGEMENT
 export interface EnhancedAuthState {
   // Core Authentication
   user: User | null;
   session: Session | null;
   profile: any | null; // Will be typed properly when profile system is enhanced
   
-  // Granular Loading States
+  // ULTRA GRANULAR Loading States - INFINITY IQ LEVEL
   isLoading: boolean;
   isInitializing: boolean;
   isSigningIn: boolean;
   isSigningOut: boolean;
   isRefreshing: boolean;
   isLoadingProfile: boolean;
+  isValidatingSession: boolean;
+  isExchangingCode: boolean;
+  isCheckingHealth: boolean;
+  isRecovering: boolean;
   
-  // Authentication Status
+  // Authentication Status with ENHANCED GRANULARITY
   isAuthenticated: boolean;
   isOnboardingComplete: boolean;
   hasProfile: boolean;
+  isSessionValid: boolean;
+  isSessionExpired: boolean;
+  canRetry: boolean;
   
-  // Error Management
+  // COMPREHENSIVE Error Management
   error: CropGeniusAuthError | null;
   lastError: CropGeniusAuthError | null;
+  errorHistory: CropGeniusAuthError[];
+  recoveryAttempts: number;
+  maxRecoveryAttempts: number;
   
-  // System Health
+  // ADVANCED System Health Monitoring
   isOnline: boolean;
   connectionHealth: 'healthy' | 'degraded' | 'offline' | 'unknown';
+  lastSuccessfulOperation: string | null;
+  operationHistory: string[];
   
-  // Debug Information (development only)
+  // INFINITY IQ Debug Information (development only)
   debugInfo?: {
     instanceId: string;
     lastAuthEvent: string;
     configurationStatus: 'valid' | 'invalid' | 'unknown';
     initializationTime: number;
     lastHealthCheck: string;
+    totalOperations: number;
+    successfulOperations: number;
+    failedOperations: number;
+    averageResponseTime: number;
+    sessionStartTime: number | null;
+    lastActivityTime: number;
+  };
+  
+  // STATE PERSISTENCE AND RECOVERY
+  persistedState: {
+    hasPersistedSession: boolean;
+    lastSignInTime: number | null;
+    lastSignInMethod: 'google' | 'email' | null;
+    recoveryData: any;
   };
 }
 
@@ -83,35 +109,61 @@ export function AuthProvider({ children }: AuthProviderProps) {
     session: null,
     profile: null,
     
-    // Granular Loading States
+    // ULTRA GRANULAR Loading States - INFINITY IQ LEVEL
     isLoading: true,
     isInitializing: true,
     isSigningIn: false,
     isSigningOut: false,
     isRefreshing: false,
     isLoadingProfile: false,
+    isValidatingSession: false,
+    isExchangingCode: false,
+    isCheckingHealth: false,
+    isRecovering: false,
     
-    // Authentication Status
+    // Authentication Status with ENHANCED GRANULARITY
     isAuthenticated: false,
     isOnboardingComplete: false,
     hasProfile: false,
+    isSessionValid: false,
+    isSessionExpired: false,
+    canRetry: true,
     
-    // Error Management
+    // COMPREHENSIVE Error Management
     error: null,
     lastError: null,
+    errorHistory: [],
+    recoveryAttempts: 0,
+    maxRecoveryAttempts: 3,
     
-    // System Health
+    // ADVANCED System Health Monitoring
     isOnline: navigator.onLine,
     connectionHealth: 'unknown',
+    lastSuccessfulOperation: null,
+    operationHistory: [],
     
-    // Debug Information
+    // INFINITY IQ Debug Information (development only)
     debugInfo: import.meta.env.DEV ? {
       instanceId: SupabaseManager.getInstanceId(),
       lastAuthEvent: 'INITIALIZING',
       configurationStatus: 'unknown',
       initializationTime: Date.now(),
-      lastHealthCheck: new Date().toISOString()
-    } : undefined
+      lastHealthCheck: new Date().toISOString(),
+      totalOperations: 0,
+      successfulOperations: 0,
+      failedOperations: 0,
+      averageResponseTime: 0,
+      sessionStartTime: null,
+      lastActivityTime: Date.now()
+    } : undefined,
+    
+    // STATE PERSISTENCE AND RECOVERY
+    persistedState: {
+      hasPersistedSession: false,
+      lastSignInTime: null,
+      lastSignInMethod: null,
+      recoveryData: null
+    }
   });
 
   const [retryCount, setRetryCount] = useState(0);

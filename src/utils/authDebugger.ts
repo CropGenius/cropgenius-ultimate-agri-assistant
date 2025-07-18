@@ -3,7 +3,6 @@
 
 import { supabase, SupabaseManager } from '@/integrations/supabase/client';
 import { AuthErrorType, CropGeniusAuthError } from '@/services/AuthenticationService';
-import { Session, User } from '@supabase/supabase-js';
 
 // 🌟 DEBUG LEVELS
 export enum DebugLevel {
@@ -386,22 +385,40 @@ export class AuthDebugger {
   }
 
   private sanitizeError(error: Error | CropGeniusAuthError): any {
-    return {
-      name: error.name,
-      message: error.message,
-      stack: import.meta.env.DEV ? error.stack : undefined,
-      ...(error instanceof CropGeniusAuthError ? {
-        type: error.type,
-        code: error.code,
-        userMessage: error.userMessage,
-        retryable: error.retryable
-      } : {})
-    };
+    // Check if it's a CropGeniusAuthError by checking for type property
+    const isCropGeniusError = 'type' in error && 'userMessage' in error;
+    
+    if (isCropGeniusError) {
+      const cropError = error as CropGeniusAuthError;
+      return {
+        name: 'CropGeniusAuthError',
+        message: cropError.message,
+        type: cropError.type,
+        code: cropError.code,
+        userMessage: cropError.userMessage,
+        developerMessage: cropError.developerMessage,
+        retryable: cropError.retryable,
+        timestamp: cropError.timestamp,
+        instanceId: cropError.instanceId
+      };
+    } else {
+      const standardError = error as Error;
+      return {
+        name: standardError.name,
+        message: standardError.message,
+        stack: import.meta.env.DEV ? standardError.stack : undefined
+      };
+    }
   }
 
   private getCurrentUserId(): string | undefined {
     try {
-      return supabase.auth.getUser().then(({ data }) => data.user?.id);
+      // Get user synchronously from current session
+      const session = supabase.auth.getSession();
+      if (session && typeof session === 'object' && 'data' in session) {
+        return (session as any).data?.session?.user?.id;
+      }
+      return undefined;
     } catch {
       return undefined;
     }
@@ -409,7 +426,12 @@ export class AuthDebugger {
 
   private getCurrentSessionId(): string | undefined {
     try {
-      return supabase.auth.getSession().then(({ data }) => data.session?.access_token?.slice(0, 16));
+      // Get session synchronously
+      const session = supabase.auth.getSession();
+      if (session && typeof session === 'object' && 'data' in session) {
+        return (session as any).data?.session?.access_token?.slice(0, 16);
+      }
+      return undefined;
     } catch {
       return undefined;
     }

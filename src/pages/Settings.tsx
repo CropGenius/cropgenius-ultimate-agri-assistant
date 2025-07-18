@@ -22,11 +22,13 @@ import {
   Trash2,
   AlertTriangle,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Bug
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
+import { AuthDebugDashboard } from '@/components/auth/AuthDebugDashboard';
 
 interface UserProfile {
   id: string;
@@ -60,6 +62,7 @@ const Settings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDebugDashboard, setShowDebugDashboard] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -493,6 +496,36 @@ const Settings: React.FC = () => {
                     <p>User ID: {user?.id}</p>
                   </div>
                 </div>
+
+                {/* 🔥 INFINITY IQ DEBUG DASHBOARD - DEVELOPMENT ONLY */}
+                {import.meta.env.DEV && (
+                  <>
+                    <Separator />
+                    <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <Bug className="h-5 w-5 text-green-600 mt-0.5" />
+                        <div className="flex-1">
+                          <h4 className="font-medium text-green-800 dark:text-green-200">
+                            🚀 INFINITY IQ Debug Dashboard
+                          </h4>
+                          <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                            Production-ready authentication debugging system for 100M farmers. 
+                            Monitor auth events, system health, and performance metrics in real-time.
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3 bg-gradient-to-r from-green-600 to-blue-600 text-white border-none hover:from-green-700 hover:to-blue-700"
+                            onClick={() => setShowDebugDashboard(true)}
+                          >
+                            <Bug className="h-4 w-4 mr-2" />
+                            Open Debug Dashboard
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -549,6 +582,12 @@ const Settings: React.FC = () => {
             </Card>
           </div>
         )}
+
+        {/* 🚀 INFINITY IQ AUTH DEBUG DASHBOARD */}
+        <AuthDebugDashboard 
+          isVisible={showDebugDashboard} 
+          onToggle={() => setShowDebugDashboard(!showDebugDashboard)} 
+        />
       </div>
     </ErrorBoundary>
   );

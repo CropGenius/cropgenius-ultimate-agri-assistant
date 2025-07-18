@@ -37,7 +37,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallba
     );
   }
 
-  const { user, isLoading, isAuthenticated, isInitialized } = authContext;
+  const { user, isLoading, isAuthenticated, isInitializing } = authContext;
 
   // Debug logging
   console.log('🛡️ [PROTECTED ROUTE] Auth state:', {
@@ -45,12 +45,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallba
     userEmail: user?.email,
     isLoading,
     isAuthenticated,
-    isInitialized,
+    isInitializing,
     contextKeys: Object.keys(authContext)
   });
 
   // Show loading state while authentication is initializing
-  if (isLoading || !isInitialized) {
+  if (isLoading || isInitializing) {
     console.log('🛡️ [PROTECTED ROUTE] Showing loading...');
     return fallback || (
       <div className="min-h-screen flex items-center justify-center">

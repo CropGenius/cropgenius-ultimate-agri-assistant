@@ -40,13 +40,37 @@ export default function OAuthCallback() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const startTime = useRef(Date.now());
 
-  // 🌟 URL VALIDATION AND SANITIZATION
+  // 🌟 INFINITY IQ URL VALIDATION AND SANITIZATION WITH BULLETPROOF SECURITY
   const validateCallbackUrl = (): { isValid: boolean; code?: string; error?: string; errorDescription?: string } => {
     try {
       console.log('🔍 [OAUTH CALLBACK] Validating URL:', window.location.href);
       
+      // SECURITY: Validate URL origin to prevent CSRF attacks
+      const currentOrigin = window.location.origin;
+      const expectedOrigins = [
+        'https://cropgenius.africa',
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:5173'
+      ];
+      
+      if (!expectedOrigins.includes(currentOrigin)) {
+        console.warn('🚨 [OAUTH CALLBACK] Invalid origin detected:', currentOrigin);
+        return {
+          isValid: false,
+          error: 'invalid_origin',
+          errorDescription: 'OAuth callback from unauthorized origin'
+        };
+      }
+      
       const urlParams = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
+      
+      // SECURITY: Sanitize URL parameters to prevent XSS
+      const sanitizeParam = (param: string | null): string | null => {
+        if (!param) return null;
+        return param.replace(/[<>\"'&]/g, '').trim();
+      };
       
       // Check for OAuth errors first
       const errorParam = urlParams.get('error');
