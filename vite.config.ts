@@ -28,9 +28,10 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           format: 'es',
-          entryFileNames: '[name].js',
-          chunkFileNames: '[name].js',
-          assetFileNames: '[name].[ext]'
+          // 🔥 NUCLEAR CACHE-BUSTING - FORCE NEW FILENAMES WITH TIMESTAMP
+          entryFileNames: `[name]-${Date.now()}.js`,
+          chunkFileNames: `[name]-${Date.now()}.js`,
+          assetFileNames: `[name]-${Date.now()}.[ext]`
         }
       }
     },
