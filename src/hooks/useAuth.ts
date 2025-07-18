@@ -25,6 +25,7 @@ export interface AuthState {
   isLoading: boolean;
   isLoadingProfile: boolean;
   isRefreshing: boolean;
+  isInitialized: boolean; // NEW: Track initialization completion
   
   // Error states
   error: AppError | null;

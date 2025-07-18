@@ -88,9 +88,11 @@ root.render(
   <StrictMode>
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <GrowthEngineProvider>
-          <App />
-        </GrowthEngineProvider>
+        <AuthProvider>
+          <GrowthEngineProvider>
+            <App />
+          </GrowthEngineProvider>
+        </AuthProvider>
         <Toaster />
         <Suspense fallback={null}>
           <Devtools initialIsOpen={false} />

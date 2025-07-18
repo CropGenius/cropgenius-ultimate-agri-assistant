@@ -8,7 +8,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 
 import { setupOfflinePersistence, OfflineManager } from './lib/offlineStorage';
-import { AuthProvider } from './providers/AuthProvider';
 import AppRoutes from './AppRoutes';
 import './App.css';
 
@@ -35,11 +34,9 @@ function App() {
   
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <div className="App min-h-screen overflow-hidden">
-          <AppRoutes />
-        </div>
-      </AuthProvider>
+      <div className="App min-h-screen overflow-hidden">
+        <AppRoutes />
+      </div>
     </BrowserRouter>
   );
 }
