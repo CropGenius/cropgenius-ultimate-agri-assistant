@@ -9,6 +9,7 @@ import { BrowserRouter } from 'react-router-dom';
 
 import { setupOfflinePersistence, OfflineManager } from './lib/offlineStorage';
 import AppRoutes from './AppRoutes';
+import PKCEDebugDashboard from './components/auth/PKCEDebugDashboard';
 import './App.css';
 
 function App() {
@@ -36,6 +37,8 @@ function App() {
     <BrowserRouter>
       <div className="App min-h-screen overflow-hidden">
         <AppRoutes />
+        {/* 🔥 INFINITY IQ PKCE DEBUG DASHBOARD - DEVELOPMENT ONLY */}
+        <PKCEDebugDashboard />
       </div>
     </BrowserRouter>
   );

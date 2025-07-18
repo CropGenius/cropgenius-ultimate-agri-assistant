@@ -222,12 +222,19 @@ export default function OAuthCallback() {
       let sessionResult;
       
       if (urlValidation.code) {
-        logAuthEvent(AuthEventType.OAUTH_CALLBACK, 'Exchanging authorization code for session', {
+        // 🔥 EXTRACT STATE PARAMETER FOR PKCE FLOW
+        const urlParams = new URLSearchParams(window.location.search);
+        const stateParam = urlParams.get('state');
+        
+        logAuthEvent(AuthEventType.OAUTH_CALLBACK, 'Exchanging authorization code for session with PKCE support', {
           codeLength: urlValidation.code.length,
-          codePrefix: urlValidation.code.slice(0, 8)
+          codePrefix: urlValidation.code.slice(0, 8),
+          hasState: !!stateParam,
+          stateParam: stateParam?.slice(0, 8)
         });
         
-        sessionResult = await authService.exchangeCodeForSession(urlValidation.code);
+        // 🚀 EXCHANGE CODE WITH PKCE STATE PARAMETER
+        sessionResult = await authService.exchangeCodeForSession(urlValidation.code, stateParam || undefined);
       } else {
         logAuthEvent(AuthEventType.OAUTH_CALLBACK, 'Getting current session (no code found)');
         sessionResult = await authService.getCurrentSession();

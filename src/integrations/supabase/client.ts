@@ -153,7 +153,7 @@ class SupabaseClientManager {
             persistSession: true,
             detectSessionInUrl: true,
             flowType: 'pkce',
-            storageKey: `cropgenius-auth-v3-${this.instanceId}`, // Unique storage key per instance
+            storageKey: 'cropgenius-auth-v4', // FIXED: Consistent storage key for PKCE persistence
             debug: import.meta.env.DEV
           },
           global: {
@@ -179,7 +179,7 @@ class SupabaseClientManager {
         console.log('🌟 [CROPGENIUS SINGLETON] Client created successfully!', {
           instanceId: this.instanceId,
           url: environmentConfig.supabaseUrl.replace(/https:\/\/([^.]+)\..*/, 'https://$1.supabase.co'),
-          storageKey: `cropgenius-auth-v3-${this.instanceId}`
+          storageKey: 'cropgenius-auth-v4'
         });
       }
     }

@@ -467,9 +467,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setLastFailedOperation(() => () => signInWithGoogle(redirectTo));
 
     try {
-      // 🔍 CALL AUTH SERVICE
-      logAuthEvent(AuthEventType.OAUTH_REDIRECT, 'Calling authService.signInWithGoogle');
-      const result = await authService.signInWithGoogle(redirectTo);
+      // 🔍 CALL OAUTH FLOW MANAGER FOR OPTIMAL STRATEGY
+      logAuthEvent(AuthEventType.OAUTH_REDIRECT, 'Calling OAuth Flow Manager for optimal strategy');
+      const { executeOptimalOAuthFlow } = await import('@/utils/oauthFlowManager');
+      const result = await executeOptimalOAuthFlow(redirectTo);
       
       if (result.success && result.data?.url) {
         // 🎉 SUCCESS - REDIRECT TO OAUTH
