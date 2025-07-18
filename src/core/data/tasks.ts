@@ -1,4 +1,4 @@
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { Task, TaskStatus, TaskPriority } from '@/features/mission-control/taskTypes';
 
 const TABLE_NAME = 'tasks'; // Schema name is 'tasks'

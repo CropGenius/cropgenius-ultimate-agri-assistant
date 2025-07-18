@@ -27,7 +27,7 @@ import { useAuthContext as useAuth } from '@/providers/AuthProvider';
 import { useCredits } from '@/hooks/useCredits';
 import { useWeather } from '@/hooks/useWeather';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/types/supabase';
 
 interface DashboardCardProps {

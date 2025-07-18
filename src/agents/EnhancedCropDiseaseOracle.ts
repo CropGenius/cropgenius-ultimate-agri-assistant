@@ -4,7 +4,7 @@
  * NO PLACEHOLDERS - REAL AI INTEGRATION WITH MULTIPLE SOURCES
  */
 
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 // API Configuration
 const PLANTNET_API_KEY = import.meta.env.VITE_PLANTNET_API_KEY;

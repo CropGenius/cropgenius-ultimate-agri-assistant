@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthContext as useAuth } from '@/providers/AuthProvider';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export interface UserMemory {

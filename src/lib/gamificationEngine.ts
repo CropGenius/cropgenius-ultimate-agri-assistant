@@ -1,4 +1,4 @@
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { useHapticFeedback } from './hapticFeedback';
 
 export interface Achievement {

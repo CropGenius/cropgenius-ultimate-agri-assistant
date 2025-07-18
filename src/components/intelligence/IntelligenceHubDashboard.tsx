@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cropGeniusIntelligenceHub } from '@/services/CropGeniusIntelligenceHub';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 export const IntelligenceHubDashboard = () => {
   const [intelligence, setIntelligence] = useState(null);

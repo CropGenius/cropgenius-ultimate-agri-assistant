@@ -1,6 +1,6 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { Field } from '@/types/field';
 import { isOnline } from './isOnline';
 import { toast } from 'sonner';

@@ -1,5 +1,5 @@
 import { completeOnboarding } from '../onboardingService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { mockOnboardingData } from '@/test-utils/onboarding-test-utils';
 
 // Mock the supabase client

@@ -4,7 +4,7 @@
  * NO PLACEHOLDERS - REAL SATELLITE DATA FROM MULTIPLE SOURCES
  */
 
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   getSentinelHubAuthenticatedFetch, 
   isSentinelHubAuthConfigured,

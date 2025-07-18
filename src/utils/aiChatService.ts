@@ -1,5 +1,5 @@
 
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from '@/integrations/supabase/client';
 
 export type ChatCategory = "all" | "crops" | "diseases" | "machinery" | "market";
 

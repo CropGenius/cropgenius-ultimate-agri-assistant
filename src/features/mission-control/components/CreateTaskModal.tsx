@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/select';
 import { createTask, CreateTaskData } from '@/core/data/tasks';
 import { Task, TaskPriority, mapDisplayPriorityToInteger } from '../taskTypes';
-import { supabase } from '@/services/supabaseClient'; // For fetching fields
+import { supabase } from '@/integrations/supabase/client'; // For fetching fields
 
 // Schema for the form, aligning with CreateTaskData and new Task structure
 const taskFormSchema = z.object({

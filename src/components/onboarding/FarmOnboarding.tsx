@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuthContext as useAuth } from '@/providers/AuthProvider';
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from "sonner";
 import { Database } from "@/types/supabase";
 

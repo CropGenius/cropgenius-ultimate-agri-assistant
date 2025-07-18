@@ -4,7 +4,7 @@
  * NO PLACEHOLDERS - REAL MARKET PRICES AND TRENDS
  */
 
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface MarketPrice {
   crop_type: string;

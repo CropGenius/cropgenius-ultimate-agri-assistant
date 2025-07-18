@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { supabase } from '@/services/supabaseClient'; // Actual path
+import { supabase } from '@/integrations/supabase/client'; // Actual path
 import { getTasks, createTask, updateTaskStatus, CreateTaskData } from '@/core/data/tasks';
 import { Task, TaskStatus } from '@/features/mission-control/taskTypes';
 

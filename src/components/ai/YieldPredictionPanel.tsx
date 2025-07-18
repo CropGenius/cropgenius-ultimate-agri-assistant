@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { generateYieldPrediction, YieldPredictionInput } from '@/agents/YieldPredictorAgent';
 import { getCurrentWeather } from '@/agents/WeatherAgent';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface YieldPrediction {

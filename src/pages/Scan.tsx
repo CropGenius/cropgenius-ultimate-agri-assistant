@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/utils/authService";
 import { Camera, Sparkles, Zap, CheckCircle2, AlertTriangle, Leaf, TestTube } from "lucide-react";
 import { motion } from "framer-motion";
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from '@/integrations/supabase/client';
 import { Database } from "@/types/supabase";
 import { useParams } from "react-router-dom";
 

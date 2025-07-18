@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useCredits } from '@/hooks/useCredits';
 import { toast } from 'sonner';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import OutOfCreditsModal from '@/components/growth/OutOfCreditsModal';
 import LowCreditBanner from '@/components/growth/LowCreditBanner';
 import OverdriveModal from '@/components/growth/OverdriveModal';

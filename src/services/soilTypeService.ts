@@ -1,5 +1,5 @@
 
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from '@/integrations/supabase/client';
 import { SoilType } from "@/types/field";
 
 // Get all soil types

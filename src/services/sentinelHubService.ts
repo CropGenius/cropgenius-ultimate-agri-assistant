@@ -1,5 +1,5 @@
 // Sentinel Hub API service for satellite imagery integration
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SentinelHubCredentials {
   clientId: string;

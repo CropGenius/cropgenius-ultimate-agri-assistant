@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { fetchWeatherData } from '@/services/weatherService';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';

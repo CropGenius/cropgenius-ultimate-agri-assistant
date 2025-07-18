@@ -1,5 +1,5 @@
 import { offlineManager } from '@/services/offlineManager';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { openDB } from 'idb';
 

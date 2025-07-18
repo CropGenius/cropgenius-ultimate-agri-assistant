@@ -1,5 +1,5 @@
 
-import { supabase } from "@/services/supabaseClient";
+import { supabase } from '@/integrations/supabase/client';
 
 // Interface for weather data
 export interface WeatherData {

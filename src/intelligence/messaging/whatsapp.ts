@@ -1,5 +1,5 @@
 import { fetchJSON } from '@/utils/network';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 const WA_BASE = 'https://graph.facebook.com/v17.0';
 const PHONE_ID = import.meta.env.VITE_WHATSAPP_PHONE_ID;

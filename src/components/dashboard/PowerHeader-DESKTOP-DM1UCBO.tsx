@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { supabase } from '@/services/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { isOnline } from '@/utils/isOnline';
 import { cn } from '@/lib/utils';
 import { addOnlineStatusListener } from '@/utils/isOnline';
