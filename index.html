@@ -1,28 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CropGenius - Smart Farming</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <style>
-      body { 
-        margin: 0; 
-        font-family: system-ui, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-      }
-      #root { min-height: 100vh; }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module">
-      import('/src/main.tsx').catch(e => {
-        console.error('Failed to load app:', e);
-        document.body.innerHTML = '<div style="color:white;text-align:center;padding:50px;"><h1>CropGenius</h1><p>Loading...</p></div>';
-        setTimeout(() => location.reload(), 2000);
-      });
-    </script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CropGenius - SmartFarming Simplified</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- 🔥 EMERGENCY SUPABASE CONFIG - NUCLEAR INJECTION -->
+  <script>
+    // INFINITY IQ NUCLEAR SOLUTION - INJECT WORKING CREDENTIALS
+    window.SUPABASE_URL = 'https://bapqlyvfwxsichlyjxpd.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g';
+
+    // Clear all old auth data to force fresh start
+    try {
+      localStorage.removeItem('sb-bapqlyvfwxsichlyjxpd-auth-token');
+      localStorage.removeItem('cropgenius-auth');
+      localStorage.removeItem('cropgenius-auth-v2');
+      localStorage.removeItem('cropgenius-auth-v3');
+      sessionStorage.clear();
+      console.log('🚨 [NUCLEAR FIX] Emergency Supabase config injected and old auth cleared');
+    } catch (e) {
+      console.warn('Storage clear failed:', e);
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    #root {
+      min-height: 100vh;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import('/src/main.tsx').catch(e => {
+      console.error('Failed to load app:', e);
+      document.body.innerHTML = '<div style="color:white;text-align:center;padding:50px;"><h1>CropGenius</h1><p>Loading...</p></div>';
+      setTimeout(() => location.reload(), 2000);
+    });
+  </script>
+</body>
+
 </html>
