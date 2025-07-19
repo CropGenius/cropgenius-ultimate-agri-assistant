@@ -83,13 +83,27 @@ function validateEnvironment(): EnvironmentConfig {
 // 🌟 ENVIRONMENT VALIDATION EXECUTION
 const environmentConfig = validateEnvironment();
 
-// 🚨 NUCLEAR FIX: HARDCODE WORKING CREDENTIALS FOR IMMEDIATE RESOLUTION
+// 🔒 SECURE FALLBACK: NO HARDCODED CREDENTIALS IN PRODUCTION
 if (!environmentConfig.isValid || environmentConfig.errors.length > 0) {
-  console.warn('🚨 [NUCLEAR FIX] Environment validation failed, using hardcoded credentials');
-  environmentConfig.supabaseUrl = 'https://bapqlyvfwxsichlyjxpd.supabase.co';
-  environmentConfig.supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHFseXZmd3hzaWNobHlqeHBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMzIsImV4cCI6MjA1NzI4NDIzMn0.hk2D1tvqIM7id40ajPE9_2xtAIC7_thqQN9m0b_4m5g';
-  environmentConfig.isValid = true;
-  environmentConfig.errors = [];
+  console.error('🚨 [SECURITY] Environment validation failed - no hardcoded fallbacks allowed');
+  
+  // In development, provide helpful guidance
+  if (import.meta.env.DEV) {
+    console.error(`
+🔧 DEVELOPMENT SETUP REQUIRED:
+1. Copy .env.example to .env
+2. Add your Supabase project credentials:
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key
+3. Restart the development server
+
+Current errors:
+${environmentConfig.errors.map(error => `❌ ${error}`).join('\n')}
+    `);
+  }
+  
+  // Throw error to prevent application from running with invalid configuration
+  throw new Error('Supabase configuration validation failed. Please check your environment variables.');
 }
 
 // 🚨 CRITICAL ERROR HANDLING - NO FALLBACKS IN PRODUCTION

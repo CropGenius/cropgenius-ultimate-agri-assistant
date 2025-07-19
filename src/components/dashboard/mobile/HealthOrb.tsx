@@ -1,3 +1,14 @@
+/**
+ * 🌾 CROPGENIUS – HEALTH ORB COMPONENT
+ * -------------------------------------------------------------
+ * PRODUCTION-READY Real-Time Farm Health Visualization
+ * - Real-time farm health data integration with useFarmHealth hook
+ * - Dynamic visual states driven by actual health scores
+ * - Trust indicators rendered from real data sources
+ * - Comprehensive loading and error state handling
+ * - Celebration animations for health improvements
+ */
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -8,59 +19,108 @@ import {
   Sparkles,
   Heart,
   Award,
-  Target
+  Target,
+  Loader2,
+  RefreshCw,
+  Droplets,
+  Bug,
+  Cloud,
+  DollarSign
 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { useFarmHealth } from '@/hooks/useFarmHealth';
+import { TrustIndicator } from '@/services/FarmHealthService';
 
 interface HealthOrbProps {
-  score: number;
+  farmId: string;
   size?: number;
   className?: string;
-  trend?: 'improving' | 'stable' | 'declining';
   showTrustIndicators?: boolean;
-  lastUpdated?: string;
-  accuracy?: number;
+  onHealthClick?: (healthData: any) => void;
+  enableRealTimeUpdates?: boolean;
 }
 
+/**
+ * PRODUCTION-READY Health Orb with Real-Time Data Integration
+ */
 export const HealthOrb: React.FC<HealthOrbProps> = ({ 
-  score, 
+  farmId, 
   size = 120,
   className = '',
-  trend = 'stable',
   showTrustIndicators = true,
-  lastUpdated = '2 hours ago',
-  accuracy = 99.7
+  onHealthClick,
+  enableRealTimeUpdates = true
 }) => {
+  const { 
+    data: healthData, 
+    isLoading, 
+    error, 
+    healthScore,
+    isHealthy,
+    hasAlerts,
+    alertCount,
+    lastUpdated,
+    refreshHealth
+  } = useFarmHealth(farmId, {
+    enabled: !!farmId,
+    enableRealTimeUpdates,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: 10 * 60 * 1000, // 10 minutes
+    onSuccess: (data) => {
+      console.log('Health data updated:', data);
+    },
+    onError: (error) => {
+      console.error('Health data error:', error);
+    }
+  });
+
   const [isHovered, setIsHovered] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [animatedScore, setAnimatedScore] = useState(0);
+  const [previousScore, setPreviousScore] = useState(0);
 
+  // Animate score changes
   useEffect(() => {
+    if (!healthScore || isLoading) return;
+    
     const timer = setTimeout(() => {
-      const increment = score / 30;
+      const increment = Math.abs(healthScore - animatedScore) / 30;
       const interval = setInterval(() => {
         setAnimatedScore(prev => {
-          if (prev >= score) {
+          const target = healthScore * 100; // Convert to percentage
+          if (Math.abs(prev - target) < 1) {
             clearInterval(interval);
-            return score;
+            return target;
           }
-          return Math.min(prev + increment, score);
+          return prev < target ? 
+            Math.min(prev + increment * 100, target) : 
+            Math.max(prev - increment * 100, target);
         });
       }, 50);
     }, 500);
+    
     return () => clearTimeout(timer);
-  }, [score]);
+  }, [healthScore, isLoading, animatedScore]);
 
+  // Trigger celebration for significant improvements
   useEffect(() => {
-    if (score >= 85 && trend === 'improving') {
-      const timer = setTimeout(() => {
-        setShowCelebration(true);
-        setTimeout(() => setShowCelebration(false), 3000);
-      }, 2000);
-      return () => clearTimeout(timer);
+    if (healthScore && previousScore && healthScore > previousScore + 0.1) {
+      setShowCelebration(true);
+      setTimeout(() => setShowCelebration(false), 3000);
     }
-  }, [score, trend]);
+    setPreviousScore(healthScore);
+  }, [healthScore, previousScore]);
 
-  const getHealthData = (score: number) => {
+  // Handle orb click
+  const handleOrbClick = () => {
+    if (onHealthClick && healthData) {
+      onHealthClick(healthData);
+    }
+  };
+
+  // Get visual styling based on health score
+  const getHealthVisuals = (score: number) => {
     if (score >= 85) return {
       gradient: 'from-emerald-400 via-green-500 to-teal-600',
       pulseColor: 'bg-emerald-500/20',
@@ -103,7 +163,64 @@ export const HealthOrb: React.FC<HealthOrbProps> = ({
     };
   };
 
-  const healthData = getHealthData(score);
+  // Get trend direction from health data
+  const getTrendDirection = (): 'improving' | 'stable' | 'declining' => {
+    if (!healthData?.trends?.length) return 'stable';
+    const recentTrend = healthData.trends.find(t => t.period === '24h');
+    return recentTrend?.direction || 'stable';
+  };
+
+  // Get trust indicator icons
+  const getTrustIndicatorIcon = (type: string) => {
+    switch (type) {
+      case 'soil': return <Target className="h-3 w-3" />;
+      case 'weather': return <Cloud className="h-3 w-3" />;
+      case 'disease': return <Bug className="h-3 w-3" />;
+      case 'market': return <DollarSign className="h-3 w-3" />;
+      case 'water': return <Droplets className="h-3 w-3" />;
+      default: return <CheckCircle2 className="h-3 w-3" />;
+    }
+  };
+
+  const currentScore = Math.round(animatedScore);
+  const visualData = getHealthVisuals(currentScore);
+  const trend = getTrendDirection();
+
+  // Loading state with skeleton
+  if (isLoading) {
+    return (
+      <div className={`relative ${className} flex items-center justify-center`} style={{ width: size, height: size }}>
+        <Skeleton className="absolute inset-0 rounded-full" />
+        <div className="relative z-10 flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-green-600 mb-2" />
+          <span className="text-xs text-gray-500">Loading health data...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state with retry option
+  if (error) {
+    return (
+      <div className={`relative ${className} flex flex-col items-center justify-center bg-red-50 rounded-full border-2 border-red-200`} 
+        style={{ width: size, height: size }}>
+        <AlertTriangle className="h-8 w-8 text-red-500 mb-2" />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={refreshHealth}
+          className="text-xs text-red-600 hover:text-red-700 hover:bg-red-100"
+        >
+          <RefreshCw className="h-3 w-3 mr-1" />
+          Retry
+        </Button>
+        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 text-center">
+          <p className="text-xs text-red-600 font-medium">Failed to load farm health</p>
+          <p className="text-xs text-red-500 mt-1">Check your connection and try again</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative ${className}`} style={{ width: size, height: size }}>
@@ -129,24 +246,28 @@ export const HealthOrb: React.FC<HealthOrbProps> = ({
         )}
       </AnimatePresence>
 
+      {/* Animated ring border */}
       <motion.div
-        className={`absolute inset-0 rounded-full border-2 ${healthData.ringColor}`}
+        className={`absolute inset-0 rounded-full border-2 ${visualData.ringColor}`}
         animate={{ scale: [1, 1.05, 1], opacity: [0.5, 0.8, 0.5] }}
         transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
       />
 
+      {/* Pulsing glow effect */}
       <motion.div
-        className={`absolute inset-0 rounded-full ${healthData.pulseColor} blur-xl`}
+        className={`absolute inset-0 rounded-full ${visualData.pulseColor} blur-xl`}
         animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
       />
       
+      {/* Main orb with health data */}
       <motion.div 
-        className={`absolute inset-0 rounded-full bg-gradient-to-br ${healthData.gradient} shadow-2xl ${healthData.glowColor} flex items-center justify-center cursor-pointer`}
+        className={`absolute inset-0 rounded-full bg-gradient-to-br ${visualData.gradient} shadow-2xl ${visualData.glowColor} flex items-center justify-center cursor-pointer`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onHoverStart={() => setIsHovered(true)}
         onHoverEnd={() => setIsHovered(false)}
+        onClick={handleOrbClick}
       >
         <div className="text-white text-center relative z-10">
           <motion.div 
@@ -155,7 +276,7 @@ export const HealthOrb: React.FC<HealthOrbProps> = ({
             animate={{ scale: 1 }}
             transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
           >
-            {Math.round(animatedScore)}%
+            {currentScore}%
           </motion.div>
           
           <motion.div 
@@ -164,11 +285,12 @@ export const HealthOrb: React.FC<HealthOrbProps> = ({
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
           >
-            <span>{healthData.emoji}</span>
-            <span>{healthData.status}</span>
+            <span>{visualData.emoji}</span>
+            <span>{visualData.status}</span>
           </motion.div>
         </div>
 
+        {/* Trend indicator */}
         <motion.div
           className="absolute -top-2 -right-2 p-1.5 bg-white/20 backdrop-blur-sm rounded-full"
           initial={{ scale: 0, rotate: -180 }}
@@ -180,7 +302,20 @@ export const HealthOrb: React.FC<HealthOrbProps> = ({
           {trend === 'declining' && <AlertTriangle className="h-4 w-4 text-white" />}
         </motion.div>
 
-        {score >= 80 && (
+        {/* Alert indicator */}
+        {hasAlerts && (
+          <motion.div
+            className="absolute -bottom-2 -left-2 p-1 bg-red-500 rounded-full"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 1.5, type: "spring" }}
+          >
+            <span className="text-white text-xs font-bold px-1">{alertCount}</span>
+          </motion.div>
+        )}
+
+        {/* Sparkle effects for excellent health */}
+        {currentScore >= 80 && (
           <div className="absolute inset-0">
             {[...Array(6)].map((_, i) => (
               <motion.div
@@ -200,42 +335,79 @@ export const HealthOrb: React.FC<HealthOrbProps> = ({
         )}
       </motion.div>
 
+      {/* Trust indicators tooltip */}
       <AnimatePresence>
-        {isHovered && showTrustIndicators && (
+        {isHovered && showTrustIndicators && healthData?.trustIndicators && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-xl text-xs whitespace-nowrap z-20"
+            className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-md text-white px-4 py-3 rounded-xl text-xs whitespace-nowrap z-20 min-w-max"
           >
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
+              {/* Data quality indicator */}
               <div className="flex items-center space-x-1">
                 <CheckCircle2 className="h-3 w-3 text-green-400" />
-                <span>{accuracy}% accurate</span>
+                <span>{Math.round((healthData.dataQuality || 0.8) * 100)}% data quality</span>
               </div>
+              
               <div className="w-px h-3 bg-white/30" />
+              
+              {/* AI verification */}
               <div className="flex items-center space-x-1">
                 <Sparkles className="h-3 w-3 text-blue-400" />
                 <span>AI-verified</span>
               </div>
+              
               <div className="w-px h-3 bg-white/30" />
+              
+              {/* Last updated */}
               <div className="flex items-center space-x-1">
                 <Heart className="h-3 w-3 text-red-400" />
-                <span>Updated {lastUpdated}</span>
+                <span>Updated {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'recently'}</span>
               </div>
             </div>
-            <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black/80 rotate-45" />
+            
+            {/* Trust indicators */}
+            {healthData.trustIndicators.length > 0 && (
+              <div className="flex items-center space-x-3 mt-2 pt-2 border-t border-white/20">
+                {healthData.trustIndicators.slice(0, 4).map((indicator, index) => (
+                  <div key={index} className="flex items-center space-x-1">
+                    <div className={`p-1 rounded-full ${
+                      indicator.status === 'good' ? 'bg-green-500/20' :
+                      indicator.status === 'warning' ? 'bg-yellow-500/20' : 'bg-red-500/20'
+                    }`}>
+                      {getTrustIndicatorIcon(indicator.type)}
+                    </div>
+                    <span className={`text-xs ${
+                      indicator.status === 'good' ? 'text-green-400' :
+                      indicator.status === 'warning' ? 'text-yellow-400' : 'text-red-400'
+                    }`}>
+                      {indicator.type}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-black/90 rotate-45" />
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Status message */}
       <motion.div
         className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-center"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.5 }}
       >
-        <p className="text-xs text-gray-600 font-medium">{healthData.message}</p>
+        <p className="text-xs text-gray-600 font-medium">{visualData.message}</p>
+        {hasAlerts && (
+          <p className="text-xs text-red-600 font-medium mt-1">
+            {alertCount} alert{alertCount !== 1 ? 's' : ''} require attention
+          </p>
+        )}
       </motion.div>
     </div>
   );

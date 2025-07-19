@@ -157,34 +157,33 @@ export const getCropRecommendations = async (fieldId: string): Promise<{
   }[];
 }> => {
   try {
-    // In a complete implementation, this would call a dedicated edge function
-    // For now, we'll return simulated recommendations
-    const crops = [
-      {
-        name: "Maize",
-        confidence: 0.87,
-        description: "Well-suited to your soil type and climate conditions.",
-        rotationBenefit: "Good rotation option after legumes."
-      },
-      {
-        name: "Cassava",
-        confidence: 0.81,
-        description: "Highly tolerant to drought conditions in your area.",
-        rotationBenefit: "Can grow in poorer soils after other crops."
-      },
-      {
-        name: "Sweet Potatoes",
-        confidence: 0.75,
-        description: "Good fit for your sandy loam soil type.",
-        rotationBenefit: "Excellent after grains or maize."
-      },
-      {
-        name: "Groundnuts",
-        confidence: 0.69,
-        description: "Will improve soil nitrogen for subsequent crops.",
-        rotationBenefit: "Plant before cereal crops for nitrogen benefits."
+    // Get field data from Supabase
+    const { data: fieldData, error: fieldError } = await supabase
+      .from('fields')
+      .select('*')
+      .eq('id', fieldId)
+      .single();
+
+    if (fieldError) {
+      console.error('Error fetching field data:', fieldError);
+      throw new Error('Failed to fetch field data');
+    }
+
+    // Try to get AI-powered recommendations from edge function
+    const { data: aiRecommendations, error: aiError } = await supabase.functions.invoke('crop-recommendations', {
+      body: { 
+        fieldId,
+        fieldData,
+        userId: (await supabase.auth.getUser()).data.user?.id
       }
-    ];
+    });
+
+    if (!aiError && aiRecommendations?.crops) {
+      return aiRecommendations;
+    }
+
+    // Fallback to intelligent recommendations based on field data
+    const crops = generateIntelligentRecommendations(fieldData);
     
     // Simulate network delay for realistic experience
     await new Promise(resolve => setTimeout(resolve, 800));
@@ -195,3 +194,87 @@ export const getCropRecommendations = async (fieldId: string): Promise<{
     return { crops: [] };
   }
 };
+
+/**
+ * Generate intelligent crop recommendations based on field data
+ */
+function generateIntelligentRecommendations(fieldData: any) {
+  const soilType = fieldData.soil_type?.toLowerCase() || '';
+  const cropType = fieldData.crop_type?.toLowerCase() || '';
+  const season = fieldData.season?.toLowerCase() || '';
+  const size = fieldData.size || 1;
+
+  // Base recommendations with intelligence
+  let crops = [
+    {
+      name: "Maize",
+      confidence: 87,
+      description: "Well-suited to your soil type and climate conditions.",
+      rotationBenefit: "Good rotation option after legumes."
+    },
+    {
+      name: "Cassava",
+      confidence: 81,
+      description: "Highly tolerant to drought conditions in your area.",
+      rotationBenefit: "Can grow in poorer soils after other crops."
+    },
+    {
+      name: "Sweet Potatoes",
+      confidence: 75,
+      description: "Good fit for your sandy loam soil type.",
+      rotationBenefit: "Excellent after grains or maize."
+    },
+    {
+      name: "Groundnuts",
+      confidence: 69,
+      description: "Will improve soil nitrogen for subsequent crops.",
+      rotationBenefit: "Plant before cereal crops for nitrogen benefits."
+    }
+  ];
+
+  // Adjust recommendations based on soil type
+  if (soilType.includes('clay')) {
+    crops[0].confidence += 5; // Maize likes clay soil
+    crops[2].confidence -= 10; // Sweet potatoes prefer lighter soil
+  } else if (soilType.includes('sandy')) {
+    crops[2].confidence += 10; // Sweet potatoes love sandy soil
+    crops[3].confidence += 5; // Groundnuts do well in sandy soil
+  }
+
+  // Adjust based on current crop (rotation logic)
+  if (cropType.includes('maize')) {
+    crops[3].confidence += 15; // Groundnuts excellent after maize
+    crops[0].confidence -= 20; // Don't repeat maize
+  } else if (cropType.includes('legume') || cropType.includes('groundnut')) {
+    crops[0].confidence += 15; // Maize excellent after legumes
+    crops[3].confidence -= 15; // Don't repeat legumes
+  }
+
+  // Adjust based on season
+  if (season.includes('dry')) {
+    crops[1].confidence += 10; // Cassava drought tolerant
+    crops[2].confidence += 5; // Sweet potatoes handle dry conditions
+  } else if (season.includes('wet') || season.includes('rain')) {
+    crops[0].confidence += 8; // Maize loves rainy season
+  }
+
+  // Adjust based on field size
+  if (size < 0.5) {
+    // Small fields - favor high-value crops
+    crops.push({
+      name: "Tomato",
+      confidence: 78,
+      description: "High-value crop suitable for small-scale intensive farming.",
+      rotationBenefit: "Excellent cash crop for small fields."
+    });
+  }
+
+  // Sort by confidence and return top 4-5
+  return crops
+    .sort((a, b) => b.confidence - a.confidence)
+    .slice(0, 5)
+    .map(crop => ({
+      ...crop,
+      confidence: crop.confidence / 100 // Convert to decimal
+    }));
+}

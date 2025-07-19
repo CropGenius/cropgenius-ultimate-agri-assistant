@@ -1,5 +1,17 @@
+/**
+ * 🌾 CROPGENIUS – INTELLIGENT FARM PLANNER
+ * -------------------------------------------------------------
+ * BILLIONAIRE-GRADE Farm Planning System
+ * - AI-powered task scheduling and optimization
+ * - Real-time field integration with crop recommendations
+ * - Weather-aware planning and automatic adjustments
+ * - Economic optimization and resource allocation
+ * - Comprehensive analytics and progress tracking
+ */
+
 import React, { useState, useEffect } from 'react';
-import { useAuthContext } from '@/providers/AuthProvider';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,12 +46,22 @@ import {
   TrendingUp,
   BarChart3,
   Zap,
-  Loader2
+  Loader2,
+  Brain,
+  CloudRain,
+  DollarSign,
+  MapPin,
+  Users,
+  Sparkles
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays, isAfter, isBefore } from 'date-fns';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
-import ErrorBoundary from '@/components/error/ErrorBoundary';
+import { motion, AnimatePresence } from 'framer-motion';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import CropRecommendation from '@/components/CropRecommendation';
+import { useCropRecommendations, type FarmContext } from '@/hooks/useCropRecommendations';
+import { getCurrentWeather } from '@/agents/WeatherAgent';
+import { analyzeField, getFieldRecommendations } from '@/services/fieldAIService';
 
 interface FarmPlan {
   id: string;
@@ -64,8 +86,30 @@ interface PlanTask {
   estimated_duration: number; // in hours
 }
 
+interface EnhancedFarmPlan extends FarmPlan {
+  aiOptimized?: boolean;
+  weatherIntegrated?: boolean;
+  economicScore?: number;
+  riskAssessment?: {
+    level: 'low' | 'medium' | 'high';
+    factors: string[];
+  };
+}
+
+interface SmartTask extends PlanTask {
+  aiGenerated?: boolean;
+  weatherDependent?: boolean;
+  economicImpact?: number;
+  dependencies?: string[];
+  autoScheduled?: boolean;
+}
+
+/**
+ * BILLIONAIRE-GRADE Farm Planner with AI Intelligence
+ */
 const FarmPlanner: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [plans, setPlans] = useState<FarmPlan[]>([]);
   const [fields, setFields] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

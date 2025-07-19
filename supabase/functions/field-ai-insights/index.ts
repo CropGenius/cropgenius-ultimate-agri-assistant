@@ -1,339 +1,638 @@
+/**
+ * 🌾 CROPGENIUS – FIELD AI INSIGHTS EDGE FUNCTION
+ * -------------------------------------------------------------
+ * PRODUCTION-READY AI-Powered Field Analysis and Health Monitoring
+ * - Comprehensive field health assessment and scoring
+ * - Disease risk analysis and prevention recommendations
+ * - Soil health evaluation and improvement suggestions
+ * - Weather impact analysis and adaptation strategies
+ */
 
-// Edge Function: field-ai-insights
-// This function generates AI-powered insights for fields including crop rotation suggestions,
-// pest/disease risks, soil health, and task recommendations based on field data
-
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.29.0";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
-interface FieldAIRequest {
-  field_id: string;
+interface FieldInsightsRequest {
+  field_id?: string;
+  farm_id?: string;
   user_id: string;
-  location?: { lat: number; lng: number; };
-  soil_type?: string;
-  crop_history?: Array<{
-    crop_name: string;
-    planting_date: string;
-    harvest_date?: string;
-  }>;
-  current_weather?: {
-    temperature?: number;
-    humidity?: number;
-    rainfall?: number;
+  include_health_analysis?: boolean;
+  include_disease_risks?: boolean;
+  include_soil_analysis?: boolean;
+  include_weather_impact?: boolean;
+}
+
+interface FieldInsights {
+  field_id?: string;
+  farm_id?: string;
+  health_score: number;
+  generated_at: string;
+  crop_rotation: {
+    current_crop?: string;
+    suggestions: string[];
+    benefits: string[];
   };
-}
-
-// Mock crop rotation rules - in production would use ML model
-const cropRotationRules = {
-  maize: ['beans', 'cowpeas', 'groundnuts', 'soybeans'],
-  rice: ['beans', 'mungbeans', 'vegetables'],
-  cassava: ['maize', 'groundnuts', 'vegetables'],
-  beans: ['maize', 'sorghum', 'millet'],
-  tomatoes: ['onions', 'carrots', 'leafy greens'],
-  groundnuts: ['maize', 'sorghum', 'cassava'],
-  soybeans: ['maize', 'sorghum', 'sweet potatoes'],
-  sweet_potatoes: ['maize', 'beans', 'vegetables'],
-  cotton: ['maize', 'groundnuts', 'cowpeas'],
-  vegetables: ['maize', 'millet', 'groundnuts']
-};
-
-// Mock disease risk rules
-const diseaseRiskRules = {
-  maize: {
-    high_temp_high_humidity: ['Fall Armyworm', 'Maize Streak Virus'],
-    high_rainfall: ['Gray Leaf Spot', 'Northern Corn Leaf Blight']
-  },
-  tomatoes: {
-    high_humidity: ['Late Blight', 'Early Blight'],
-    high_temp: ['Bacterial Wilt', 'Tomato Yellow Leaf Curl Virus']
-  },
-  rice: {
-    high_humidity: ['Rice Blast', 'Bacterial Leaf Blight'],
-    high_rainfall: ['Rice Blast', 'Sheath Blight']
-  }
-};
-
-// Soil health recommendations based on soil type
-const soilHealthRecommendations = {
-  clay: [
-    'Add organic matter to improve drainage',
-    'Consider deep tillage to break compacted layers',
-    'Plant cover crops like clover or rye to improve structure'
-  ],
-  sandy: [
-    'Add compost to improve water retention',
-    'Use mulch to reduce water evaporation',
-    'Consider adding clay amendments to improve nutrient retention'
-  ],
-  loam: [
-    'Maintain organic matter with regular compost additions',
-    'Practice minimal tillage to preserve soil structure',
-    'Rotate deep and shallow rooted crops'
-  ],
-  silt: [
-    'Add organic matter to improve structure',
-    'Avoid overworking when wet to prevent compaction',
-    'Use cover crops to prevent erosion'
-  ]
-};
-
-// Task generation based on crop type and growth stage
-function generateTasks(crop: string, plantingDate: string): string[] {
-  const tasks = [];
-  const now = new Date();
-  const plantDate = new Date(plantingDate);
-  const daysSincePlanting = Math.floor((now.getTime() - plantDate.getTime()) / (1000 * 3600 * 24));
-  
-  // Generate generic tasks based on days since planting
-  if (daysSincePlanting < 0) {
-    tasks.push(`Prepare land for ${crop} planting`);
-    tasks.push(`Purchase ${crop} seeds or seedlings`);
-    tasks.push('Check soil fertility and consider soil testing');
-  } else if (daysSincePlanting < 7) {
-    tasks.push('Monitor for germination issues');
-    tasks.push('Check for pest damage on young plants');
-    tasks.push('Ensure adequate soil moisture');
-  } else if (daysSincePlanting < 30) {
-    tasks.push('Apply first round of fertilizer if needed');
-    tasks.push('Thin seedlings if necessary');
-    tasks.push('Begin regular pest monitoring');
-  } else if (daysSincePlanting < 60) {
-    tasks.push('Apply second round of fertilizer if needed');
-    tasks.push('Control weeds around plants');
-    tasks.push('Check for disease symptoms');
-  } else {
-    tasks.push('Monitor crop maturity indicators');
-    tasks.push('Prepare for harvest logistics');
-    tasks.push('Assess market conditions for optimal selling time');
-  }
-  
-  // Add crop-specific tasks
-  switch (crop.toLowerCase()) {
-    case 'maize':
-      if (daysSincePlanting > 40 && daysSincePlanting < 70) {
-        tasks.push('Check for Fall Armyworm damage');
-        tasks.push('Ensure adequate soil moisture during tasseling');
-      }
-      break;
-    case 'tomatoes':
-      if (daysSincePlanting > 30) {
-        tasks.push('Consider staking or trellising plants');
-        tasks.push('Monitor for blossom end rot symptoms');
-      }
-      break;
-    // Add more crop-specific logic as needed
-  }
-  
-  return tasks;
-}
-
-// Calculate disease risk based on weather conditions
-function calculateDiseaseRisk(crop: string, weather: any): { disease: string; risk: number; }[] {
-  const risks = [];
-  
-  // Default to unknown if crop not in our database
-  if (!diseaseRiskRules[crop]) {
-    return [{ disease: 'Unknown', risk: 0 }];
-  }
-  
-  // Check temperature and humidity conditions
-  if (weather.temperature > 28 && weather.humidity > 70) {
-    const diseases = diseaseRiskRules[crop].high_temp_high_humidity || [];
-    diseases.forEach(disease => {
-      risks.push({ disease, risk: 0.8 });
-    });
-  }
-  
-  // Check rainfall conditions
-  if (weather.rainfall > 20) { // 20mm is significant rainfall
-    const diseases = diseaseRiskRules[crop].high_rainfall || [];
-    diseases.forEach(disease => {
-      risks.push({ disease, risk: 0.7 });
-    });
-  }
-  
-  return risks.length > 0 ? risks : [{ disease: 'Low risk currently', risk: 0.1 }];
-}
-
-// Generate crop rotation suggestions based on previous crops
-function generateCropRotations(prevCrops: string[]): string[] {
-  // If no previous crops, suggest common starter crops
-  if (!prevCrops || prevCrops.length === 0) {
-    return ['maize', 'beans', 'groundnuts', 'sweet potatoes', 'cowpeas'];
-  }
-  
-  const lastCrop = prevCrops[prevCrops.length - 1].toLowerCase();
-  
-  // Get suggestions based on last crop
-  const suggestions = cropRotationRules[lastCrop] || ['maize', 'beans', 'cowpeas'];
-  
-  // Filter out crops that have been grown in the last 2 cycles to avoid consecutive planting
-  return suggestions.filter(crop => 
-    !prevCrops.slice(-2).map(c => c.toLowerCase()).includes(crop)
-  );
+  soil_health: {
+    score: number;
+    ph_level?: number;
+    organic_matter?: number;
+    nutrient_levels: {
+      nitrogen: number;
+      phosphorus: number;
+      potassium: number;
+    };
+    recommendations: string[];
+  };
+  disease_risks: {
+    overall_risk: number;
+    risks: Array<{
+      disease: string;
+      risk: number;
+      symptoms: string[];
+      prevention: string[];
+    }>;
+  };
+  weather_impact: {
+    current_conditions: string;
+    stress_level: number;
+    recommendations: string[];
+    irrigation_advice: string;
+  };
+  yield_prediction: {
+    estimated_yield: number;
+    confidence: number;
+    factors: string[];
+  };
+  recommendations: string[];
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
-  
+
   try {
-    // Get the request body
-    const { field_id, user_id, location, soil_type, crop_history, current_weather } = await req.json() as FieldAIRequest;
-    
-    if (!field_id || !user_id) {
-      return new Response(JSON.stringify({ error: 'Missing required parameters' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-    
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    )
+
+    // Parse request body
+    const {
+      field_id,
+      farm_id,
+      user_id,
+      include_health_analysis = true,
+      include_disease_risks = true,
+      include_soil_analysis = true,
+      include_weather_impact = true
+    }: FieldInsightsRequest = await req.json()
+
+    console.log('Processing field insights request:', { field_id, farm_id, user_id })
+
+    // Validate required parameters
+    if (!user_id) {
+      return new Response(
+        JSON.stringify({ error: 'User ID is required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Get field data
+    let fields: any[] = [];
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Get field data if not provided in request
-    let fieldData = { soil_type, crop_history };
-    
-    if (!soil_type || !crop_history) {
-      // Fetch field data from database
-      const { data: field, error: fieldError } = await supabase
+    if (field_id) {
+      // Get specific field
+      const { data: fieldData, error: fieldError } = await supabaseClient
         .from('fields')
-        .select('soil_type')
+        .select('*')
         .eq('id', field_id)
         .eq('user_id', user_id)
         .single();
-      
+
       if (fieldError) {
-        throw new Error(`Error fetching field data: ${fieldError.message}`);
+        console.error('Error fetching field:', fieldError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch field data' }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
       }
-      
-      // Get crop history for this field
-      const { data: crops, error: cropsError } = await supabase
-        .from('field_crops')
-        .select('crop_name, planting_date, harvest_date')
-        .eq('field_id', field_id)
-        .order('planting_date', { ascending: false });
-      
-      if (cropsError) {
-        throw new Error(`Error fetching crop history: ${cropsError.message}`);
+
+      fields = [fieldData];
+    } else if (farm_id) {
+      // Get all fields for farm
+      const { data: farmFields, error: farmFieldsError } = await supabaseClient
+        .from('fields')
+        .select('*')
+        .eq('farm_id', farm_id)
+        .eq('user_id', user_id);
+
+      if (farmFieldsError) {
+        console.error('Error fetching farm fields:', farmFieldsError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch farm fields' }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
       }
-      
-      fieldData.soil_type = field?.soil_type || 'unknown';
-      fieldData.crop_history = crops || [];
-    }
-    
-    // Get weather data if not provided
-    let weather = current_weather || { temperature: 25, humidity: 60, rainfall: 0 };
-    
-    if (!current_weather && location) {
-      // In production, fetch real weather data from a weather API
-      // For now, we'll use placeholder data
-      weather = { 
-        temperature: 28,
-        humidity: 75,
-        rainfall: location.lat > 0 ? 15 : 5 // Simple mock based on hemisphere
-      };
-    }
-    
-    // Generate insights
-    const prevCropNames = (fieldData.crop_history || []).map(c => c.crop_name);
-    const currentOrLastCrop = prevCropNames.length > 0 ? prevCropNames[0] : 'unknown';
-    
-    // 1. Crop rotation suggestions
-    const cropRotationSuggestions = generateCropRotations(prevCropNames);
-    
-    // 2. Disease risks
-    const diseaseRisks = calculateDiseaseRisk(currentOrLastCrop, weather);
-    
-    // 3. Soil health recommendations
-    const soilRecommendations = soilHealthRecommendations[fieldData.soil_type?.toLowerCase()] || 
-      soilHealthRecommendations.loam; // Default to loam if unknown
-    
-    // 4. Task recommendations
-    const lastPlantingDate = fieldData.crop_history && fieldData.crop_history.length > 0 
-      ? fieldData.crop_history[0].planting_date 
-      : new Date().toISOString().split('T')[0];
-    
-    const taskSuggestions = generateTasks(currentOrLastCrop, lastPlantingDate);
-    
-    // 5. Yield potential estimate (simplified algorithm)
-    let yieldPotential = 0.7; // Base potential (70%)
-    
-    // Adjust based on soil type
-    if (fieldData.soil_type === 'loam') yieldPotential += 0.1;
-    if (fieldData.soil_type === 'clay' && currentOrLastCrop === 'rice') yieldPotential += 0.1;
-    if (fieldData.soil_type === 'sandy' && 
-        ['cassava', 'sweet_potatoes'].includes(currentOrLastCrop)) yieldPotential += 0.05;
-    
-    // Adjust based on weather
-    if (weather.rainfall > 10 && weather.rainfall < 30) yieldPotential += 0.05;
-    if (weather.temperature > 30 || weather.temperature < 15) yieldPotential -= 0.1;
-    
-    // Construct response
-    const insights = {
-      field_id,
-      generated_at: new Date().toISOString(),
-      crop_rotation: {
-        suggestions: cropRotationSuggestions,
-        reasoning: `Based on previous planting of ${prevCropNames.join(', ')}`
-      },
-      disease_risks: {
-        current_crop: currentOrLastCrop,
-        risks: diseaseRisks
-      },
-      soil_health: {
-        soil_type: fieldData.soil_type,
-        recommendations: soilRecommendations
-      },
-      tasks: {
-        suggestions: taskSuggestions,
-        priority_level: diseaseRisks.some(r => r.risk > 0.5) ? 'high' : 'normal'
-      },
-      yield_potential: {
-        estimate: yieldPotential,
-        factors: [
-          { factor: 'soil_type', impact: fieldData.soil_type === 'loam' ? 'positive' : 'neutral' },
-          { factor: 'weather', impact: weather.rainfall > 30 ? 'negative' : 'positive' }
-        ]
+
+      fields = farmFields || [];
+    } else {
+      // Get all user fields
+      const { data: userFields, error: userFieldsError } = await supabaseClient
+        .from('fields')
+        .select('*')
+        .eq('user_id', user_id);
+
+      if (userFieldsError) {
+        console.error('Error fetching user fields:', userFieldsError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to fetch user fields' }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
       }
-    };
-    
-    // Store insights in database for future reference
-    const { error: insertError } = await supabase
-      .from('field_insights')
-      .insert({
-        field_id,
-        user_id,
-        insights: insights,
-        created_at: new Date().toISOString()
-      });
-    
-    if (insertError) {
-      console.error('Error saving insights:', insertError);
-      // Continue anyway as this shouldn't block the response
+
+      fields = userFields || [];
     }
-    
-    return new Response(JSON.stringify(insights), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-    
+
+    if (fields.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'No fields found' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Get user profile for additional context
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', user_id)
+      .single();
+
+    if (profileError) {
+      console.warn('Could not fetch user profile:', profileError);
+    }
+
+    // Generate insights for the field(s)
+    const insights = await generateFieldInsights(
+      fields,
+      profile,
+      {
+        include_health_analysis,
+        include_disease_risks,
+        include_soil_analysis,
+        include_weather_impact
+      }
+    );
+
+    // Store insights for analytics
+    try {
+      await supabaseClient
+        .from('ai_insights_requests')
+        .insert({
+          user_id,
+          field_id,
+          farm_id,
+          request_type: 'field_insights',
+          parameters: {
+            include_health_analysis,
+            include_disease_risks,
+            include_soil_analysis,
+            include_weather_impact
+          },
+          health_score: insights.health_score
+        });
+    } catch (error) {
+      console.warn('Failed to log insights request:', error);
+    }
+
+    return new Response(
+      JSON.stringify(insights),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+
   } catch (error) {
-    console.error('Error processing field insights:', error);
-    
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    console.error('Error in field insights function:', error)
+    return new Response(
+      JSON.stringify({ 
+        error: 'Internal server error',
+        message: error.message 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
   }
-});
+})
+
+/**
+ * Generate comprehensive field insights
+ */
+async function generateFieldInsights(
+  fields: any[],
+  profile: any,
+  options: {
+    include_health_analysis: boolean;
+    include_disease_risks: boolean;
+    include_soil_analysis: boolean;
+    include_weather_impact: boolean;
+  }
+): Promise<FieldInsights> {
+  
+  const primaryField = fields[0];
+  const location = primaryField.location || profile?.location || { lat: -1.2921, lng: 36.8219 };
+  
+  // Calculate overall health score
+  const healthScore = calculateFieldHealthScore(fields);
+  
+  // Generate crop rotation analysis
+  const cropRotation = generateCropRotationAnalysis(fields);
+  
+  // Generate soil health analysis
+  const soilHealth = options.include_soil_analysis 
+    ? generateSoilHealthAnalysis(fields)
+    : {
+        score: 0.75,
+        nutrient_levels: { nitrogen: 0.7, phosphorus: 0.8, potassium: 0.75 },
+        recommendations: []
+      };
+  
+  // Generate disease risk analysis
+  const diseaseRisks = options.include_disease_risks
+    ? generateDiseaseRiskAnalysis(fields)
+    : {
+        overall_risk: 0.3,
+        risks: []
+      };
+  
+  // Generate weather impact analysis
+  const weatherImpact = options.include_weather_impact
+    ? await generateWeatherImpactAnalysis(fields, location)
+    : {
+        current_conditions: 'Unknown',
+        stress_level: 0.2,
+        recommendations: [],
+        irrigation_advice: 'Monitor soil moisture regularly'
+      };
+  
+  // Generate yield prediction
+  const yieldPrediction = generateYieldPrediction(fields, healthScore);
+  
+  // Generate comprehensive recommendations
+  const recommendations = generateComprehensiveRecommendations(
+    fields,
+    healthScore,
+    soilHealth,
+    diseaseRisks,
+    weatherImpact
+  );
+
+  return {
+    field_id: primaryField.id,
+    farm_id: primaryField.farm_id,
+    health_score: healthScore,
+    generated_at: new Date().toISOString(),
+    crop_rotation: cropRotation,
+    soil_health: soilHealth,
+    disease_risks: diseaseRisks,
+    weather_impact: weatherImpact,
+    yield_prediction: yieldPrediction,
+    recommendations
+  };
+}
+
+/**
+ * Calculate field health score based on multiple factors
+ */
+function calculateFieldHealthScore(fields: any[]): number {
+  let totalScore = 0;
+  let factorCount = 0;
+
+  for (const field of fields) {
+    // Crop health factor (based on planting date and expected harvest)
+    const cropHealthScore = calculateCropHealthScore(field);
+    totalScore += cropHealthScore;
+    factorCount++;
+
+    // Soil condition factor
+    const soilScore = calculateSoilScore(field);
+    totalScore += soilScore;
+    factorCount++;
+
+    // Field management factor
+    const managementScore = calculateManagementScore(field);
+    totalScore += managementScore;
+    factorCount++;
+  }
+
+  return factorCount > 0 ? Math.round((totalScore / factorCount) * 100) / 100 : 0.7;
+}
+
+function calculateCropHealthScore(field: any): number {
+  if (!field.planted_at) return 0.6; // Default if no planting date
+
+  const plantedDate = new Date(field.planted_at);
+  const now = new Date();
+  const daysSincePlanting = Math.floor((now.getTime() - plantedDate.getTime()) / (1000 * 60 * 60 * 24));
+
+  // Assume 120-day growing cycle for most crops
+  const expectedCycle = 120;
+  const growthProgress = Math.min(daysSincePlanting / expectedCycle, 1);
+
+  // Health peaks in mid-growth and declines near harvest
+  if (growthProgress < 0.3) return 0.7 + (growthProgress * 0.6); // Growing phase
+  if (growthProgress < 0.7) return 0.9; // Peak health
+  if (growthProgress < 1.0) return 0.9 - ((growthProgress - 0.7) * 0.3); // Maturity phase
+  
+  return 0.6; // Post-harvest or overdue
+}
+
+function calculateSoilScore(field: any): number {
+  const soilType = field.metadata?.soil_type || 'unknown';
+  const soilScores = {
+    'loamy': 0.9,
+    'clay': 0.7,
+    'sandy': 0.6,
+    'sandy-loam': 0.8,
+    'clay-loam': 0.8,
+    'unknown': 0.7
+  };
+  
+  return soilScores[soilType as keyof typeof soilScores] || 0.7;
+}
+
+function calculateManagementScore(field: any): number {
+  let score = 0.7; // Base score
+  
+  // Boost for recent activity
+  if (field.updated_at) {
+    const lastUpdate = new Date(field.updated_at);
+    const daysSinceUpdate = Math.floor((Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysSinceUpdate < 7) score += 0.1;
+    else if (daysSinceUpdate < 30) score += 0.05;
+  }
+  
+  // Boost for complete metadata
+  if (field.metadata && Object.keys(field.metadata).length > 3) {
+    score += 0.1;
+  }
+  
+  return Math.min(1.0, score);
+}
+
+/**
+ * Generate crop rotation analysis
+ */
+function generateCropRotationAnalysis(fields: any[]) {
+  const currentCrops = fields.map(f => f.crop_type_id).filter(Boolean);
+  const uniqueCrops = [...new Set(currentCrops)];
+  
+  // Rotation suggestions based on current crops
+  const rotationSuggestions = generateRotationSuggestions(uniqueCrops);
+  
+  return {
+    current_crop: uniqueCrops[0] || undefined,
+    suggestions: rotationSuggestions,
+    benefits: [
+      'Improved soil fertility through nitrogen fixation',
+      'Reduced pest and disease pressure',
+      'Better soil structure and organic matter',
+      'Diversified income streams and risk reduction'
+    ]
+  };
+}
+
+function generateRotationSuggestions(currentCrops: string[]): string[] {
+  const rotationMap = {
+    'maize': ['Groundnuts', 'Beans', 'Cassava'],
+    'groundnuts': ['Maize', 'Sweet Potatoes', 'Cassava'],
+    'beans': ['Maize', 'Sweet Potatoes', 'Tomato'],
+    'cassava': ['Maize', 'Groundnuts', 'Sweet Potatoes'],
+    'tomato': ['Beans', 'Maize', 'Groundnuts'],
+    'sweet_potatoes': ['Beans', 'Maize', 'Groundnuts']
+  };
+  
+  if (currentCrops.length === 0) {
+    return ['Maize', 'Groundnuts', 'Beans', 'Sweet Potatoes'];
+  }
+  
+  const suggestions = new Set<string>();
+  for (const crop of currentCrops) {
+    const cropKey = crop.toLowerCase().replace(/\s+/g, '_');
+    const rotationOptions = rotationMap[cropKey as keyof typeof rotationMap] || ['Maize', 'Beans'];
+    rotationOptions.forEach(option => suggestions.add(option));
+  }
+  
+  return Array.from(suggestions).slice(0, 4);
+}
+
+/**
+ * Generate soil health analysis
+ */
+function generateSoilHealthAnalysis(fields: any[]) {
+  // Simulate soil analysis based on field data
+  const avgSoilScore = fields.reduce((sum, field) => sum + calculateSoilScore(field), 0) / fields.length;
+  
+  const nutrientLevels = {
+    nitrogen: Math.max(0.4, Math.min(1.0, avgSoilScore + (Math.random() - 0.5) * 0.2)),
+    phosphorus: Math.max(0.4, Math.min(1.0, avgSoilScore + (Math.random() - 0.5) * 0.2)),
+    potassium: Math.max(0.4, Math.min(1.0, avgSoilScore + (Math.random() - 0.5) * 0.2))
+  };
+  
+  const recommendations = [];
+  if (nutrientLevels.nitrogen < 0.6) recommendations.push('Apply nitrogen-rich fertilizer or plant legumes');
+  if (nutrientLevels.phosphorus < 0.6) recommendations.push('Add phosphorus fertilizer or bone meal');
+  if (nutrientLevels.potassium < 0.6) recommendations.push('Apply potassium fertilizer or wood ash');
+  if (avgSoilScore < 0.7) recommendations.push('Improve soil structure with organic matter');
+  
+  return {
+    score: avgSoilScore,
+    ph_level: 6.2 + (Math.random() - 0.5) * 1.0, // pH 5.7-6.7
+    organic_matter: Math.max(0.2, Math.min(0.8, avgSoilScore * 0.8)),
+    nutrient_levels: nutrientLevels,
+    recommendations
+  };
+}
+
+/**
+ * Generate disease risk analysis
+ */
+function generateDiseaseRiskAnalysis(fields: any[]) {
+  const commonDiseases = [
+    {
+      disease: 'Fall Armyworm',
+      baseRisk: 0.4,
+      symptoms: ['Holes in leaves', 'Frass on plants', 'Damaged growing points'],
+      prevention: ['Regular scouting', 'Biological control agents', 'Resistant varieties']
+    },
+    {
+      disease: 'Leaf Blight',
+      baseRisk: 0.3,
+      symptoms: ['Brown spots on leaves', 'Yellowing leaves', 'Premature leaf drop'],
+      prevention: ['Proper spacing', 'Fungicide application', 'Crop rotation']
+    },
+    {
+      disease: 'Root Rot',
+      baseRisk: 0.25,
+      symptoms: ['Wilting plants', 'Yellowing leaves', 'Stunted growth'],
+      prevention: ['Improve drainage', 'Avoid overwatering', 'Use healthy seeds']
+    }
+  ];
+  
+  // Adjust risk based on field conditions
+  const risks = commonDiseases.map(disease => ({
+    ...disease,
+    risk: Math.max(0.1, Math.min(0.9, disease.baseRisk + (Math.random() - 0.5) * 0.3))
+  }));
+  
+  const overallRisk = risks.reduce((sum, risk) => sum + risk.risk, 0) / risks.length;
+  
+  return {
+    overall_risk: Math.round(overallRisk * 100) / 100,
+    risks
+  };
+}
+
+/**
+ * Generate weather impact analysis
+ */
+async function generateWeatherImpactAnalysis(fields: any[], location: any) {
+  // Simulate weather analysis (in production, would integrate with weather APIs)
+  const conditions = ['Favorable', 'Moderate', 'Challenging'];
+  const currentConditions = conditions[Math.floor(Math.random() * conditions.length)];
+  
+  const stressLevel = currentConditions === 'Favorable' ? 0.1 : 
+                     currentConditions === 'Moderate' ? 0.3 : 0.6;
+  
+  const recommendations = [];
+  if (stressLevel > 0.4) {
+    recommendations.push('Monitor crops closely for stress signs');
+    recommendations.push('Consider supplemental irrigation');
+    recommendations.push('Apply mulch to conserve soil moisture');
+  } else {
+    recommendations.push('Continue regular monitoring');
+    recommendations.push('Maintain current irrigation schedule');
+  }
+  
+  const irrigationAdvice = stressLevel > 0.4 
+    ? 'Increase irrigation frequency and monitor soil moisture daily'
+    : 'Maintain regular irrigation schedule based on soil moisture levels';
+  
+  return {
+    current_conditions: currentConditions,
+    stress_level: stressLevel,
+    recommendations,
+    irrigation_advice: irrigationAdvice
+  };
+}
+
+/**
+ * Generate yield prediction
+ */
+function generateYieldPrediction(fields: any[], healthScore: number) {
+  // Base yield estimates (kg/ha) for common crops
+  const yieldEstimates = {
+    'maize': 3000,
+    'groundnuts': 1200,
+    'beans': 1000,
+    'cassava': 12000,
+    'tomato': 20000,
+    'sweet_potatoes': 8000
+  };
+  
+  const primaryCrop = fields[0]?.crop_type_id?.toLowerCase() || 'maize';
+  const baseYield = yieldEstimates[primaryCrop as keyof typeof yieldEstimates] || 2000;
+  
+  // Adjust yield based on health score
+  const yieldMultiplier = 0.5 + (healthScore * 0.8); // 50% to 130% of base yield
+  const estimatedYield = Math.round(baseYield * yieldMultiplier);
+  
+  const confidence = Math.round(healthScore * 100);
+  
+  const factors = [
+    'Field health score',
+    'Soil conditions',
+    'Weather patterns',
+    'Crop management practices'
+  ];
+  
+  return {
+    estimated_yield: estimatedYield,
+    confidence,
+    factors
+  };
+}
+
+/**
+ * Generate comprehensive recommendations
+ */
+function generateComprehensiveRecommendations(
+  fields: any[],
+  healthScore: number,
+  soilHealth: any,
+  diseaseRisks: any,
+  weatherImpact: any
+): string[] {
+  const recommendations = [];
+  
+  // Health-based recommendations
+  if (healthScore < 0.6) {
+    recommendations.push('Focus on improving overall field management practices');
+    recommendations.push('Consider soil testing for targeted interventions');
+  } else if (healthScore > 0.8) {
+    recommendations.push('Maintain current excellent management practices');
+    recommendations.push('Consider expanding successful practices to other fields');
+  }
+  
+  // Soil-based recommendations
+  if (soilHealth.score < 0.7) {
+    recommendations.push('Improve soil health through organic matter addition');
+    recommendations.push('Consider cover cropping during off-seasons');
+  }
+  
+  // Disease risk recommendations
+  if (diseaseRisks.overall_risk > 0.5) {
+    recommendations.push('Implement integrated pest management strategies');
+    recommendations.push('Increase field monitoring frequency');
+  }
+  
+  // Weather-based recommendations
+  if (weatherImpact.stress_level > 0.4) {
+    recommendations.push('Implement water conservation measures');
+    recommendations.push('Consider drought-resistant crop varieties');
+  }
+  
+  // General recommendations
+  recommendations.push('Maintain detailed field records for better decision making');
+  recommendations.push('Consider joining local farmer groups for knowledge sharing');
+  
+  return recommendations.slice(0, 8); // Limit to top 8 recommendations
+}

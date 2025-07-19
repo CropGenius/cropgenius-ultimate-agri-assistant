@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   CheckCircle2
 } from 'lucide-react';
+import { HealthOrb } from '@/components/dashboard/mobile/HealthOrb';
 import { toast } from 'sonner';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
 
@@ -213,11 +214,21 @@ export default function Index() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Farm Health</p>
                   <div className="flex items-center gap-2">
-                    <p className="text-2xl font-bold text-gray-900">{stats.farmHealth}%</p>
-                    <Badge className={getHealthColor(stats.farmHealth)}>
-                      {stats.farmHealth >= 80 ? 'Excellent' : 
-                       stats.farmHealth >= 60 ? 'Good' : 'Needs Attention'}
-                    </Badge>
+                    {user && (
+                      <div className="flex items-center">
+                        <div className="mr-3">
+                          <HealthOrb 
+                            farmId={user.id} 
+                            size={60} 
+                            showTrustIndicators={false} 
+                          />
+                        </div>
+                        <Badge className={getHealthColor(stats.farmHealth)}>
+                          {stats.farmHealth >= 80 ? 'Excellent' : 
+                           stats.farmHealth >= 60 ? 'Good' : 'Needs Attention'}
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="p-2 bg-blue-100 rounded-lg">
