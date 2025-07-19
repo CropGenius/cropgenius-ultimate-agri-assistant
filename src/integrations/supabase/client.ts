@@ -308,6 +308,161 @@ export const SupabaseManager = {
       instanceId: SupabaseClientManager.getInstanceId(),
       attempts: retries
     };
+  },
+
+  // 🚀 COMPREHENSIVE RETRY LOGIC FOR OPERATIONS
+  withRetry: async <T>(
+    operation: () => Promise<T>,
+    options: {
+      maxRetries?: number;
+      baseDelay?: number;
+      maxDelay?: number;
+      retryCondition?: (error: any) => boolean;
+      onRetry?: (attempt: number, error: any) => void;
+    } = {}
+  ): Promise<T> => {
+    const {
+      maxRetries = 3,
+      baseDelay = 1000,
+      maxDelay = 10000,
+      retryCondition = (error) => {
+        // Retry on network errors, timeouts, and temporary server errors
+        return error?.code === 'PGRST301' || // Connection error
+               error?.code === 'PGRST116' || // Timeout
+               error?.message?.includes('timeout') ||
+               error?.message?.includes('network') ||
+               error?.message?.includes('connection') ||
+               (error?.status >= 500 && error?.status < 600); // Server errors
+      },
+      onRetry = () => {}
+    } = options;
+
+    let lastError: any;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+
+        // Don't retry on the last attempt or if retry condition fails
+        if (attempt === maxRetries || !retryCondition(error)) {
+          throw error;
+        }
+
+        // Calculate delay with exponential backoff and jitter
+        const delay = Math.min(
+          baseDelay * Math.pow(2, attempt) + Math.random() * 1000,
+          maxDelay
+        );
+
+        onRetry(attempt + 1, error);
+
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    throw lastError;
+  },
+
+  // 🔍 COMPREHENSIVE DIAGNOSTICS
+  diagnostics: async (): Promise<{
+    environment: EnvironmentConfig;
+    connection: Awaited<ReturnType<typeof checkSupabaseConnection>>;
+    auth: {
+      hasSession: boolean;
+      userId?: string;
+      sessionExpiry?: string;
+    };
+    performance: {
+      queryLatency?: number;
+      authLatency?: number;
+    };
+    features: {
+      realtime: boolean;
+      storage: boolean;
+      edgeFunctions: boolean;
+    };
+  }> => {
+    const startTime = Date.now();
+    
+    // Test connection
+    const connection = await checkSupabaseConnection();
+    
+    // Test auth
+    const { data: { session } } = await supabase.auth.getSession();
+    const auth = {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      sessionExpiry: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : undefined
+    };
+
+    // Test performance
+    const queryStart = Date.now();
+    try {
+      await supabase.from('profiles').select('count').limit(1);
+    } catch (error) {
+      // Ignore errors for performance test
+    }
+    const queryLatency = Date.now() - queryStart;
+
+    const authStart = Date.now();
+    try {
+      await supabase.auth.getUser();
+    } catch (error) {
+      // Ignore errors for performance test
+    }
+    const authLatency = Date.now() - authStart;
+
+    // Test features
+    const features = {
+      realtime: true, // Assume available
+      storage: true,  // Assume available
+      edgeFunctions: true // Assume available
+    };
+
+    return {
+      environment: environmentConfig,
+      connection,
+      auth,
+      performance: {
+        queryLatency,
+        authLatency
+      },
+      features
+    };
+  },
+
+  // 📊 TELEMETRY AND MONITORING
+  telemetry: {
+    enabled: !import.meta.env.PROD, // Disable in production unless explicitly enabled
+    
+    logOperation: (operation: string, duration: number, success: boolean, error?: any) => {
+      if (!SupabaseManager.telemetry.enabled) return;
+      
+      console.log(`📊 [SUPABASE TELEMETRY] ${operation}`, {
+        duration: `${duration}ms`,
+        success,
+        error: error?.message,
+        timestamp: new Date().toISOString(),
+        instanceId: SupabaseClientManager.getInstanceId()
+      });
+    },
+
+    trackQuery: async <T>(queryName: string, queryFn: () => Promise<T>): Promise<T> => {
+      const startTime = Date.now();
+      try {
+        const result = await queryFn();
+        const duration = Date.now() - startTime;
+        SupabaseManager.telemetry.logOperation(queryName, duration, true);
+        return result;
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        SupabaseManager.telemetry.logOperation(queryName, duration, false, error);
+        throw error;
+      }
+    }
   }
 };
 

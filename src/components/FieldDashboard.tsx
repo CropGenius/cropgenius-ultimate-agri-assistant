@@ -47,6 +47,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import CropRecommendation from '@/components/CropRecommendation';
+import SatelliteImageryDisplay from '@/components/SatelliteImageryDisplay';
 import type { FarmContext } from '@/hooks/useCropRecommendations';
 
 interface FieldDashboardProps {
@@ -502,10 +503,7 @@ const FieldDetailView: React.FC<{ fieldId: string; onClose: () => void }> = ({ f
           </TabsContent>
 
           <TabsContent value="analytics">
-            <div className="text-center py-8 text-gray-500">
-              <Activity className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p>Advanced analytics coming soon</p>
-            </div>
+            <SatelliteImageryDisplay />
           </TabsContent>
 
           <TabsContent value="history">

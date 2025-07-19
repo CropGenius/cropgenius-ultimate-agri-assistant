@@ -9,11 +9,10 @@
  * - Comprehensive error handling and offline support
  */
 
-import { useQuery, useQueries, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { analyzeField, getFieldRecommendations, checkFieldRisks } from '@/services/fieldAIService';
 import { getCurrentWeather } from '@/agents/WeatherAgent';
 import { toast } from 'sonner';
 
@@ -116,5 +115,444 @@ export const useFieldData = (options: UseFieldDataOptions = {}) => {
 
       const { data, error } = await query;
 
-      if (error) throw new Error(`Failed to fetch fields: ${error.message}`);\n      return data || [];
-    },\n    enabled: enabled && !!user?.id,\n    staleTime: 5 * 60 * 1000, // 5 minutes\n  });\n\n  // Enhanced field data with AI analysis\n  const enhancedFieldsQuery = useQuery({\n    queryKey: ['enhanced-fields', user?.id, farmId, includeAIAnalysis, includeWeather, includeSatelliteData, includeEconomicData],\n    queryFn: async (): Promise<EnhancedField[]> => {\n      if (!fieldsQuery.data) return [];\n\n      const enhancedFields = await Promise.all(\n        fieldsQuery.data.map(async (field) => {\n          try {\n            const enhanced: EnhancedField = { ...field };\n\n            // AI Analysis Integration\n            if (includeAIAnalysis) {\n              try {\n                const [analysis, risks, recommendations] = await Promise.all([\n                  analyzeField(field.id),\n                  checkFieldRisks(field.id),\n                  getFieldRecommendations(field.id)\n                ]);\n\n                // Real health score from AI analysis\n                enhanced.health_score = analysis?.health_score || calculateHealthScore(field, analysis);\n                \n                // Disease and weather risk assessment\n                enhanced.disease_risk = risks.hasRisks ? \n                  (risks.risks.some(r => r.likelihood === 'high') ? 'high' : 'medium') : 'low';\n                \n                enhanced.weather_risk = analysis?.weather_risk || 'low';\n\n                // AI insights with confidence scoring\n                enhanced.ai_insights = {\n                  recommendations: recommendations?.recommendations || [],\n                  warnings: risks.risks.map(r => r.description) || [],\n                  opportunities: analysis?.opportunities || [],\n                  confidence: analysis?.confidence || 0.7\n                };\n\n                // Yield prediction from AI\n                enhanced.yield_prediction = analysis?.yield_prediction || generateYieldPrediction(field);\n\n              } catch (aiError) {\n                console.error(`AI analysis failed for field ${field.id}:`, aiError);\n                // Fallback to basic calculations\n                enhanced.health_score = calculateHealthScore(field);\n                enhanced.disease_risk = 'low';\n                enhanced.weather_risk = 'low';\n              }\n            }\n\n            // Satellite Data Integration\n            if (includeSatelliteData) {\n              try {\n                // Call field-ai-insights Edge Function for satellite data\n                const { data: satelliteData } = await supabase.functions.invoke('field-ai-insights', {\n                  body: { \n                    field_id: field.id, \n                    user_id: user?.id,\n                    analysis_type: 'satellite'\n                  }\n                });\n\n                if (satelliteData) {\n                  enhanced.ndvi_value = satelliteData.ndvi_value;\n                  enhanced.satellite_data = {\n                    last_updated: satelliteData.last_updated || new Date().toISOString(),\n                    ndvi_trend: satelliteData.ndvi_trend || 'stable',\n                    change_detection: satelliteData.change_detection || []\n                  };\n                }\n              } catch (satelliteError) {\n                console.error(`Satellite data failed for field ${field.id}:`, satelliteError);\n                // Fallback to simulated NDVI\n                enhanced.ndvi_value = 0.4 + Math.random() * 0.3;\n                enhanced.satellite_data = {\n                  last_updated: new Date().toISOString(),\n                  ndvi_trend: 'stable',\n                  change_detection: []\n                };\n              }\n            }\n\n            // Weather Context Integration\n            if (includeWeather && field.coordinates) {\n              try {\n                const weather = await getCurrentWeather(\n                  field.coordinates.lat, \n                  field.coordinates.lng, \n                  `field-${field.id}`,\n                  false,\n                  user?.id\n                );\n\n                enhanced.weather_context = {\n                  current: weather,\n                  forecast: weather.forecast || [],\n                  alerts: weather.alerts || []\n                };\n\n                // Update weather risk based on actual weather\n                if (weather.alerts && weather.alerts.length > 0) {\n                  enhanced.weather_risk = 'high';\n                } else if (weather.precipitationMm > 50) {\n                  enhanced.weather_risk = 'medium';\n                }\n              } catch (weatherError) {\n                console.error(`Weather data failed for field ${field.id}:`, weatherError);\n              }\n            }\n\n            // Economic Analysis Integration\n            if (includeEconomicData) {\n              try {\n                // Call crop-recommendations Edge Function for market data\n                const { data: marketData } = await supabase.functions.invoke('crop-recommendations', {\n                  body: { \n                    field_id: field.id,\n                    crop_type: field.crop_type,\n                    analysis_type: 'economic'\n                  }\n                });\n\n                if (marketData?.economic_analysis) {\n                  enhanced.economic_outlook = marketData.economic_analysis;\n                } else {\n                  // Fallback economic calculation\n                  enhanced.economic_outlook = calculateEconomicOutlook(field);\n                }\n              } catch (economicError) {\n                console.error(`Economic analysis failed for field ${field.id}:`, economicError);\n                enhanced.economic_outlook = calculateEconomicOutlook(field);\n              }\n            }\n\n            return enhanced;\n          } catch (error) {\n            console.error(`Error enhancing field ${field.id}:`, error);\n            return field as EnhancedField;\n          }\n        })\n      );\n\n      return enhancedFields;\n    },\n    enabled: enabled && !!user?.id && fieldsQuery.isSuccess,\n    staleTime: 10 * 60 * 1000, // 10 minutes\n    refetchInterval: realTimeUpdates ? 15 * 60 * 1000 : false, // 15 minutes if real-time\n  });\n\n  // Real-time subscriptions for field updates\n  useEffect(() => {\n    if (!realTimeUpdates || !user?.id) return;\n\n    const subscription = supabase\n      .channel('field-updates')\n      .on(\n        'postgres_changes',\n        {\n          event: '*',\n          schema: 'public',\n          table: 'fields',\n          filter: `user_id=eq.${user.id}`\n        },\n        (payload) => {\n          console.log('Field update received:', payload);\n          queryClient.invalidateQueries({ queryKey: ['fields', user.id] });\n          queryClient.invalidateQueries({ queryKey: ['enhanced-fields', user.id] });\n        }\n      )\n      .subscribe();\n\n    return () => {\n      subscription.unsubscribe();\n    };\n  }, [realTimeUpdates, user?.id, queryClient]);\n\n  // Create new field mutation\n  const createFieldMutation = useMutation({\n    mutationFn: async (fieldData: Partial<EnhancedField>) => {\n      if (!user?.id) throw new Error('User authentication required');\n\n      const { data, error } = await supabase\n        .from('fields')\n        .insert({\n          ...fieldData,\n          user_id: user.id,\n          created_at: new Date().toISOString(),\n          updated_at: new Date().toISOString()\n        })\n        .select()\n        .single();\n\n      if (error) throw error;\n      return data;\n    },\n    onSuccess: () => {\n      queryClient.invalidateQueries({ queryKey: ['fields'] });\n      queryClient.invalidateQueries({ queryKey: ['enhanced-fields'] });\n      toast.success('Field created successfully');\n    },\n    onError: (error) => {\n      console.error('Failed to create field:', error);\n      toast.error('Failed to create field');\n    }\n  });\n\n  // Update field mutation\n  const updateFieldMutation = useMutation({\n    mutationFn: async ({ fieldId, updates }: { fieldId: string; updates: Partial<EnhancedField> }) => {\n      const { data, error } = await supabase\n        .from('fields')\n        .update({\n          ...updates,\n          updated_at: new Date().toISOString()\n        })\n        .eq('id', fieldId)\n        .eq('user_id', user?.id)\n        .select()\n        .single();\n\n      if (error) throw error;\n      return data;\n    },\n    onSuccess: () => {\n      queryClient.invalidateQueries({ queryKey: ['fields'] });\n      queryClient.invalidateQueries({ queryKey: ['enhanced-fields'] });\n      toast.success('Field updated successfully');\n    },\n    onError: (error) => {\n      console.error('Failed to update field:', error);\n      toast.error('Failed to update field');\n    }\n  });\n\n  // Delete field mutation\n  const deleteFieldMutation = useMutation({\n    mutationFn: async (fieldId: string) => {\n      const { error } = await supabase\n        .from('fields')\n        .delete()\n        .eq('id', fieldId)\n        .eq('user_id', user?.id);\n\n      if (error) throw error;\n    },\n    onSuccess: () => {\n      queryClient.invalidateQueries({ queryKey: ['fields'] });\n      queryClient.invalidateQueries({ queryKey: ['enhanced-fields'] });\n      toast.success('Field deleted successfully');\n    },\n    onError: (error) => {\n      console.error('Failed to delete field:', error);\n      toast.error('Failed to delete field');\n    }\n  });\n\n  // Refresh field data\n  const refreshFields = useCallback(async () => {\n    try {\n      toast.info('Refreshing field data...');\n      \n      await Promise.all([\n        queryClient.invalidateQueries({ queryKey: ['fields'] }),\n        queryClient.invalidateQueries({ queryKey: ['enhanced-fields'] })\n      ]);\n      \n      toast.success('Field data refreshed');\n    } catch (error) {\n      console.error('Failed to refresh fields:', error);\n      toast.error('Failed to refresh field data');\n    }\n  }, [queryClient]);\n\n  // Get field by ID\n  const getFieldById = useCallback((fieldId: string) => {\n    return enhancedFieldsQuery.data?.find(field => field.id === fieldId);\n  }, [enhancedFieldsQuery.data]);\n\n  // Calculate aggregate statistics\n  const fieldStats = useCallback(() => {\n    if (!enhancedFieldsQuery.data) return null;\n\n    const fields = enhancedFieldsQuery.data;\n    const totalFields = fields.length;\n    const totalArea = fields.reduce((sum, field) => sum + (field.size || 0), 0);\n    const averageHealth = fields.reduce((sum, field) => sum + (field.health_score || 0), 0) / totalFields;\n    const highRiskFields = fields.filter(field => \n      field.disease_risk === 'high' || field.weather_risk === 'high'\n    ).length;\n\n    return {\n      totalFields,\n      totalArea,\n      averageHealth,\n      highRiskFields,\n      areaUnit: fields[0]?.size_unit || 'hectares'\n    };\n  }, [enhancedFieldsQuery.data]);\n\n  return {\n    // Data\n    fields: enhancedFieldsQuery.data || [],\n    rawFields: fieldsQuery.data || [],\n    fieldStats: fieldStats(),\n    \n    // Loading states\n    isLoading: fieldsQuery.isLoading || enhancedFieldsQuery.isLoading,\n    isError: fieldsQuery.isError || enhancedFieldsQuery.isError,\n    error: fieldsQuery.error || enhancedFieldsQuery.error,\n    \n    // Mutations\n    createField: createFieldMutation.mutate,\n    updateField: updateFieldMutation.mutate,\n    deleteField: deleteFieldMutation.mutate,\n    \n    // Utilities\n    refreshFields,\n    getFieldById,\n    \n    // Mutation states\n    isCreating: createFieldMutation.isPending,\n    isUpdating: updateFieldMutation.isPending,\n    isDeleting: deleteFieldMutation.isPending\n  };\n};\n\n// Helper functions for fallback calculations\nfunction calculateHealthScore(field: any, analysis?: any): number {\n  let score = 70; // Base score\n  \n  // Soil type bonus\n  if (field.soil_type?.toLowerCase().includes('fertile') || \n      field.soil_type?.toLowerCase().includes('loamy')) {\n    score += 10;\n  }\n  \n  // Irrigation bonus\n  if (field.irrigation_type === 'drip' || field.irrigation_type === 'sprinkler') {\n    score += 8;\n  }\n  \n  // Analysis bonus\n  if (analysis?.insights?.length > 0) {\n    score += 5;\n  }\n  \n  // Season adjustment\n  if (field.season === 'rainy') {\n    score += 5;\n  }\n  \n  // Add some realistic variation\n  score += Math.random() * 10 - 5;\n  \n  return Math.min(Math.max(Math.round(score), 0), 100);\n}\n\nfunction generateYieldPrediction(field: any) {\n  const yieldData: Record<string, { base: number; unit: string; factors: string[] }> = {\n    maize: { \n      base: 3000, \n      unit: 'kg/ha',\n      factors: ['Soil fertility', 'Rainfall pattern', 'Pest management']\n    },\n    cassava: { \n      base: 10000, \n      unit: 'kg/ha',\n      factors: ['Soil drainage', 'Variety selection', 'Harvest timing']\n    },\n    tomato: { \n      base: 20000, \n      unit: 'kg/ha',\n      factors: ['Disease control', 'Irrigation', 'Market timing']\n    },\n    beans: {\n      base: 1500,\n      unit: 'kg/ha',\n      factors: ['Nitrogen fixation', 'Pest control', 'Weather conditions']\n    }\n  };\n  \n  const cropKey = field.crop_type?.toLowerCase() || 'maize';\n  const data = yieldData[cropKey] || yieldData.maize;\n  \n  // Apply field-specific modifiers\n  let modifier = 1.0;\n  if (field.soil_type?.toLowerCase().includes('fertile')) modifier += 0.2;\n  if (field.irrigation_type === 'drip') modifier += 0.15;\n  if (field.size < 1) modifier -= 0.1; // Small field penalty\n  \n  return {\n    estimated: Math.round(data.base * modifier * (0.8 + Math.random() * 0.4)),\n    confidence: Math.round(65 + Math.random() * 30),\n    unit: data.unit,\n    factors: data.factors\n  };\n}\n\nfunction calculateEconomicOutlook(field: any) {\n  // Market prices per kg (USD)\n  const marketPrices: Record<string, number> = {\n    maize: 0.35,\n    cassava: 0.25,\n    tomato: 0.80,\n    beans: 0.90,\n    'sweet potato': 0.45\n  };\n  \n  const cropKey = field.crop_type?.toLowerCase() || 'maize';\n  const marketPrice = marketPrices[cropKey] || marketPrices.maize;\n  \n  // Estimate yield in kg\n  const estimatedYield = generateYieldPrediction(field).estimated;\n  \n  // Calculate revenue\n  const revenue = estimatedYield * marketPrice;\n  \n  // Estimate costs (30-50% of revenue typically)\n  const costPercentage = 0.35 + Math.random() * 0.15;\n  const cost = revenue * costPercentage;\n  \n  // Break-even yield\n  const breakEvenYield = Math.round(cost / marketPrice);\n  \n  return {\n    revenue_potential: Math.round(revenue),\n    cost_estimate: Math.round(cost),\n    profit_margin: Math.round(((revenue - cost) / revenue) * 100),\n    market_price: marketPrice,\n    break_even_yield: breakEvenYield\n  };\n}"
+      if (error) throw new Error(`Failed to fetch fields: ${error.message}`);
+      return data || [];
+    },
+    enabled: enabled && !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Enhanced field data with AI analysis
+  const enhancedFieldsQuery = useQuery({
+    queryKey: ['enhanced-fields', user?.id, farmId, includeAIAnalysis, includeWeather, includeSatelliteData, includeEconomicData],
+    queryFn: async (): Promise<EnhancedField[]> => {
+      if (!fieldsQuery.data) return [];
+
+      const enhancedFields = await Promise.all(
+        fieldsQuery.data.map(async (field) => {
+          try {
+            const enhanced: EnhancedField = { ...field };
+
+            // Satellite Data Integration - PRIORITY FIRST
+            if (includeSatelliteData) {
+              try {
+                // Call field-ai-insights Edge Function for satellite data
+                const { data: satelliteData, error: satelliteError } = await supabase.functions.invoke('field-ai-insights', {
+                  body: { 
+                    field_id: field.id, 
+                    user_id: user?.id,
+                    analysis_type: 'satellite'
+                  }
+                });
+
+                if (satelliteError) {
+                  console.error(`Satellite Edge Function error for field ${field.id}:`, satelliteError);
+                  throw satelliteError;
+                }
+
+                if (satelliteData) {
+                  // Extract NDVI from vegetation indices or yield factors
+                  const ndviFromFactors = satelliteData.yield_prediction?.factors?.find((f: string) => f.includes('NDVI:'));
+                  enhanced.ndvi_value = ndviFromFactors ? 
+                    parseFloat(ndviFromFactors.split('NDVI: ')[1]) : 
+                    (satelliteData.health_score * 0.8 + 0.2); // Convert health to NDVI range
+                  
+                  // Map satellite data structure
+                  enhanced.satellite_data = {
+                    last_updated: satelliteData.generated_at || new Date().toISOString(),
+                    ndvi_trend: satelliteData.health_score > 0.7 ? 'improving' : 
+                               satelliteData.health_score < 0.5 ? 'declining' : 'stable',
+                    change_detection: satelliteData.recommendations || []
+                  };
+
+                  // Update health score with satellite data
+                  enhanced.health_score = Math.round(satelliteData.health_score * 100);
+                  
+                  // Update yield prediction with satellite analysis
+                  enhanced.yield_prediction = {
+                    estimated: satelliteData.yield_prediction?.estimated_yield || 0,
+                    confidence: satelliteData.yield_prediction?.confidence || 0,
+                    unit: 'kg/ha',
+                    factors: satelliteData.yield_prediction?.factors || []
+                  };
+
+                  // Update AI insights with satellite recommendations
+                  enhanced.ai_insights = {
+                    recommendations: satelliteData.recommendations || [],
+                    warnings: satelliteData.weather_impact?.recommendations || [],
+                    opportunities: [`Satellite confidence: ${satelliteData.yield_prediction?.confidence}%`],
+                    confidence: (satelliteData.yield_prediction?.confidence || 70) / 100
+                  };
+
+                  // Update weather and disease risk from satellite analysis
+                  enhanced.weather_risk = satelliteData.weather_impact?.stress_level > 0.6 ? 'high' :
+                                         satelliteData.weather_impact?.stress_level > 0.3 ? 'medium' : 'low';
+                  
+                  enhanced.disease_risk = satelliteData.disease_risks?.overall_risk > 0.6 ? 'high' :
+                                         satelliteData.disease_risks?.overall_risk > 0.3 ? 'medium' : 'low';
+                }
+              } catch (satelliteError) {
+                console.error(`Satellite data failed for field ${field.id}:`, satelliteError);
+                // Fallback to basic calculations
+                enhanced.ndvi_value = 0.4 + Math.random() * 0.3;
+                enhanced.health_score = calculateHealthScore(field);
+                enhanced.satellite_data = {
+                  last_updated: new Date().toISOString(),
+                  ndvi_trend: 'stable',
+                  change_detection: ['Satellite analysis unavailable - using fallback data']
+                };
+                enhanced.disease_risk = 'low';
+                enhanced.weather_risk = 'low';
+              }
+            }
+
+            // Weather Context Integration
+            if (includeWeather && field.coordinates) {
+              try {
+                const weather = await getCurrentWeather(
+                  field.coordinates.lat, 
+                  field.coordinates.lng, 
+                  `field-${field.id}`,
+                  false,
+                  user?.id
+                );
+
+                enhanced.weather_context = {
+                  current: weather,
+                  forecast: weather.forecast || [],
+                  alerts: weather.alerts || []
+                };
+
+                // Update weather risk based on actual weather
+                if (weather.alerts && weather.alerts.length > 0) {
+                  enhanced.weather_risk = 'high';
+                } else if (weather.precipitationMm > 50) {
+                  enhanced.weather_risk = 'medium';
+                }
+              } catch (weatherError) {
+                console.error(`Weather data failed for field ${field.id}:`, weatherError);
+              }
+            }
+
+            // Economic Analysis Integration
+            if (includeEconomicData) {
+              try {
+                // Call crop-recommendations Edge Function for market data
+                const { data: marketData } = await supabase.functions.invoke('crop-recommendations', {
+                  body: { 
+                    field_id: field.id,
+                    crop_type: field.crop_type,
+                    analysis_type: 'economic'
+                  }
+                });
+
+                if (marketData?.economic_analysis) {
+                  enhanced.economic_outlook = marketData.economic_analysis;
+                } else {
+                  // Fallback economic calculation
+                  enhanced.economic_outlook = calculateEconomicOutlook(field);
+                }
+              } catch (economicError) {
+                console.error(`Economic analysis failed for field ${field.id}:`, economicError);
+                enhanced.economic_outlook = calculateEconomicOutlook(field);
+              }
+            }
+
+            return enhanced;
+          } catch (error) {
+            console.error(`Error enhancing field ${field.id}:`, error);
+            return field as EnhancedField;
+          }
+        })
+      );
+
+      return enhancedFields;
+    },
+    enabled: enabled && !!user?.id && fieldsQuery.isSuccess,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchInterval: realTimeUpdates ? 15 * 60 * 1000 : false, // 15 minutes if real-time
+  });
+
+  // Real-time subscriptions for field updates
+  useEffect(() => {
+    if (!realTimeUpdates || !user?.id) return;
+
+    const subscription = supabase
+      .channel('field-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'fields',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Field update received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['fields', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['enhanced-fields', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [realTimeUpdates, user?.id, queryClient]);
+
+  // Create new field mutation
+  const createFieldMutation = useMutation({
+    mutationFn: async (fieldData: Partial<EnhancedField>) => {
+      if (!user?.id) throw new Error('User authentication required');
+
+      const { data, error } = await supabase
+        .from('fields')
+        .insert({
+          ...fieldData,
+          user_id: user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fields'] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-fields'] });
+      toast.success('Field created successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to create field:', error);
+      toast.error('Failed to create field');
+    }
+  });
+
+  // Update field mutation
+  const updateFieldMutation = useMutation({
+    mutationFn: async ({ fieldId, updates }: { fieldId: string; updates: Partial<EnhancedField> }) => {
+      const { data, error } = await supabase
+        .from('fields')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', fieldId)
+        .eq('user_id', user?.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fields'] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-fields'] });
+      toast.success('Field updated successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to update field:', error);
+      toast.error('Failed to update field');
+    }
+  });
+
+  // Delete field mutation
+  const deleteFieldMutation = useMutation({
+    mutationFn: async (fieldId: string) => {
+      const { error } = await supabase
+        .from('fields')
+        .delete()
+        .eq('id', fieldId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fields'] });
+      queryClient.invalidateQueries({ queryKey: ['enhanced-fields'] });
+      toast.success('Field deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to delete field:', error);
+      toast.error('Failed to delete field');
+    }
+  });
+
+  // Refresh field data
+  const refreshFields = useCallback(async () => {
+    try {
+      toast.info('Refreshing field data...');
+      
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['fields'] }),
+        queryClient.invalidateQueries({ queryKey: ['enhanced-fields'] })
+      ]);
+      
+      toast.success('Field data refreshed');
+    } catch (error) {
+      console.error('Failed to refresh fields:', error);
+      toast.error('Failed to refresh field data');
+    }
+  }, [queryClient]);
+
+  // Get field by ID
+  const getFieldById = useCallback((fieldId: string) => {
+    return enhancedFieldsQuery.data?.find(field => field.id === fieldId);
+  }, [enhancedFieldsQuery.data]);
+
+  // Calculate aggregate statistics
+  const fieldStats = useCallback(() => {
+    if (!enhancedFieldsQuery.data) return null;
+
+    const fields = enhancedFieldsQuery.data;
+    const totalFields = fields.length;
+    const totalArea = fields.reduce((sum, field) => sum + (field.size || 0), 0);
+    const averageHealth = fields.reduce((sum, field) => sum + (field.health_score || 0), 0) / totalFields;
+    const highRiskFields = fields.filter(field => 
+      field.disease_risk === 'high' || field.weather_risk === 'high'
+    ).length;
+
+    return {
+      totalFields,
+      totalArea,
+      averageHealth,
+      highRiskFields,
+      areaUnit: fields[0]?.size_unit || 'hectares'
+    };
+  }, [enhancedFieldsQuery.data]);
+
+  return {
+    // Data
+    fields: enhancedFieldsQuery.data || [],
+    rawFields: fieldsQuery.data || [],
+    fieldStats: fieldStats(),
+    
+    // Loading states
+    isLoading: fieldsQuery.isLoading || enhancedFieldsQuery.isLoading,
+    isError: fieldsQuery.isError || enhancedFieldsQuery.isError,
+    error: fieldsQuery.error || enhancedFieldsQuery.error,
+    
+    // Mutations
+    createField: createFieldMutation.mutate,
+    updateField: updateFieldMutation.mutate,
+    deleteField: deleteFieldMutation.mutate,
+    
+    // Utilities
+    refreshFields,
+    getFieldById,
+    
+    // Mutation states
+    isCreating: createFieldMutation.isPending,
+    isUpdating: updateFieldMutation.isPending,
+    isDeleting: deleteFieldMutation.isPending
+  };
+};
+
+// Helper functions for fallback calculations
+function calculateHealthScore(field: any, analysis?: any): number {
+  let score = 70; // Base score
+  
+  // Soil type bonus
+  if (field.soil_type?.toLowerCase().includes('fertile') || 
+      field.soil_type?.toLowerCase().includes('loamy')) {
+    score += 10;
+  }
+  
+  // Irrigation bonus
+  if (field.irrigation_type === 'drip' || field.irrigation_type === 'sprinkler') {
+    score += 8;
+  }
+  
+  // Analysis bonus
+  if (analysis?.insights?.length > 0) {
+    score += 5;
+  }
+  
+  // Season adjustment
+  if (field.season === 'rainy') {
+    score += 5;
+  }
+  
+  // Add some realistic variation
+  score += Math.random() * 10 - 5;
+  
+  return Math.min(Math.max(Math.round(score), 0), 100);
+}
+
+function generateYieldPrediction(field: any) {
+  const yieldData: Record<string, { base: number; unit: string; factors: string[] }> = {
+    maize: { 
+      base: 3000, 
+      unit: 'kg/ha',
+      factors: ['Soil fertility', 'Rainfall pattern', 'Pest management']
+    },
+    cassava: { 
+      base: 10000, 
+      unit: 'kg/ha',
+      factors: ['Soil drainage', 'Variety selection', 'Harvest timing']
+    },
+    tomato: { 
+      base: 20000, 
+      unit: 'kg/ha',
+      factors: ['Disease control', 'Irrigation', 'Market timing']
+    },
+    beans: {
+      base: 1500,
+      unit: 'kg/ha',
+      factors: ['Nitrogen fixation', 'Pest control', 'Weather conditions']
+    }
+  };
+  
+  const cropKey = field.crop_type?.toLowerCase() || 'maize';
+  const data = yieldData[cropKey] || yieldData.maize;
+  
+  // Apply field-specific modifiers
+  let modifier = 1.0;
+  if (field.soil_type?.toLowerCase().includes('fertile')) modifier += 0.2;
+  if (field.irrigation_type === 'drip') modifier += 0.15;
+  if (field.size < 1) modifier -= 0.1; // Small field penalty
+  
+  return {
+    estimated: Math.round(data.base * modifier * (0.8 + Math.random() * 0.4)),
+    confidence: Math.round(65 + Math.random() * 30),
+    unit: data.unit,
+    factors: data.factors
+  };
+}
+
+function calculateEconomicOutlook(field: any) {
+  // Market prices per kg (USD)
+  const marketPrices: Record<string, number> = {
+    maize: 0.35,
+    cassava: 0.25,
+    tomato: 0.80,
+    beans: 0.90,
+    'sweet potato': 0.45
+  };
+  
+  const cropKey = field.crop_type?.toLowerCase() || 'maize';
+  const marketPrice = marketPrices[cropKey] || marketPrices.maize;
+  
+  // Estimate yield in kg
+  const estimatedYield = generateYieldPrediction(field).estimated;
+  
+  // Calculate revenue
+  const revenue = estimatedYield * marketPrice;
+  
+  // Estimate costs (30-50% of revenue typically)
+  const costPercentage = 0.35 + Math.random() * 0.15;
+  const cost = revenue * costPercentage;
+  
+  // Break-even yield
+  const breakEvenYield = Math.round(cost / marketPrice);
+  
+  return {
+    revenue_potential: Math.round(revenue),
+    cost_estimate: Math.round(cost),
+    profit_margin: Math.round(((revenue - cost) / revenue) * 100),
+    market_price: marketPrice,
+    break_even_yield: breakEvenYield
+  };
+}
